@@ -1,0 +1,87 @@
+import(ggplot2)
+import(methods)
+
+importClassesFrom(kernlab, ksvm)
+importClassesFrom(party, RandomForest)
+
+importFrom(abind, abind)
+importFrom(foreach, "%dopar%", foreach, registerDoSEQ)
+importFrom(graphics, plot)
+importFrom(Hmisc, rcorr.cens)
+importFrom(irr, kappa2)
+importFrom(magrittr, "%>%")
+importFrom(MLmetrics, PRAUC)
+importFrom(ModelMetrics, auc, brier, ce, kappa, mae, rmse, sensitivity,
+           specificity)
+importFrom(recipes, bake, juice, prep)
+importFrom(rsample, assessment, bootstraps, prepper, rsample2caret, vfold_cv)
+importFrom(stats, approx, coef, cor, formula, median, model.frame, model.matrix,
+           model.response, model.weights, na.omit, p.adjust, pchisq, predict,
+           sd, t.test, terms, vcov)
+importFrom(survival, is.Surv, Surv, survfit)
+importFrom(survivalROC, survivalROC)
+importFrom(utils, combn, head, stack, tail)
+
+
+export(.,
+       fit,
+       resample,
+       Resamples,
+       response,
+       tune,
+       varimp)
+
+export(BootControl,
+       CVControl,
+       OOBControl)
+
+exportClasses(MLControl)
+
+export(MLModel,
+       C50Model,
+       CForestModel,
+       CoxModel,
+       CoxStepAICModel,
+       GBMModel,
+       GLMModel,
+       GLMStepAICModel,
+       GLMNetModel,
+       NNetModel,
+       PLSModel,
+       POLRModel,
+       RandomForestModel,
+       SurvRegModel,
+       SurvRegStepAICModel,
+       SVMModel,
+       SVMANOVAModel,
+       SVMBesselModel,
+       SVMLaplaceModel,
+       SVMLinearModel,
+       SVMPolyModel,
+       SVMRadialModel,
+       SVMSplineModel,
+       SVMTanhModel)
+
+exportClasses(MLModelFit)
+
+exportMethods(modelmetrics)
+
+S3method(diff, MLModelTune)
+S3method(diff, Resamples)
+S3method(fit, data.frame)
+S3method(fit, formula)
+S3method(fit, recipe)
+S3method(plot, MLModelTune)
+S3method(plot, Resamples)
+S3method(plot, VarImp)
+S3method(predict, MLModelFit)
+S3method(resample, data.frame)
+S3method(resample, formula)
+S3method(resample, recipe)
+S3method(response, formula)
+S3method(summary, MLModelTune)
+S3method(summary, Resamples)
+S3method(t.test, ResamplesDiff)
+S3method(tune, data.frame)
+S3method(tune, formula)
+S3method(tune, recipe)

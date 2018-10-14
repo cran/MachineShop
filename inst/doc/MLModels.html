@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Brian J Smith" />
+
+<meta name="date" content="2018-10-02" />
+
+<title>Conventions for MLModels Implementation</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Conventions for MLModels Implementation</h1>
+<h4 class="author"><em>Brian J Smith</em></h4>
+<h4 class="date"><em>2018-10-02</em></h4>
+
+
+
+<div id="model-constructor-components" class="section level2">
+<h2>Model Constructor Components</h2>
+<div id="constructor-arguments" class="section level3">
+<h3>Constructor Arguments</h3>
+<ul>
+<li><p>Parameters without defaults are required and will trigger an error message if not supplied values when called.</p></li>
+<li><p>Ideally, the constructor should produce a valid model if called without any arguments; i.e., not have any required arguments.</p></li>
+<li><p>The source package defaults will be used for parameters with <code>NULL</code> values.</p></li>
+<li><p>Model formula, data, and weights are separate from model parameters and should not be included among the constructor arguments.</p></li>
+</ul>
+</div>
+<div id="name-slot" class="section level3">
+<h3>name Slot</h3>
+<ul>
+<li>Use the same name as the constructor.</li>
+</ul>
+</div>
+<div id="packages-slot" class="section level3">
+<h3>packages Slot</h3>
+<ul>
+<li><p>Include all packages whose functions are called directly from within the constructor.</p></li>
+<li><p>Use :: or ::: to reference source package functions.</p></li>
+</ul>
+</div>
+<div id="types-slot" class="section level3">
+<h3>types Slot</h3>
+<ul>
+<li>Include all response variable types (<code>&quot;factor&quot;</code>, <code>&quot;numeric&quot;</code>, <code>&quot;ordered&quot;</code>, and/or <code>&quot;Surv&quot;</code>) that can be analyzed with the model.</li>
+</ul>
+</div>
+<div id="params-slot" class="section level3">
+<h3>params Slot</h3>
+<ul>
+<li>List of parameter values set by the constructor, typically obtained with <code>params(environment())</code> if all arguments are to be passed to the source package fit function as supplied. Additional steps may be needed to pass the constructor arguments to the source package in a different format; e.g., when some model parameters must be passed in a control structure, as in C50Model and CForestModel.</li>
+</ul>
+</div>
+<div id="nvars-function" class="section level3">
+<h3>nvars Function</h3>
+<ul>
+<li>Should have a single <code>data</code> argument that represents a model frame and return its number of analytic predictor variables.</li>
+</ul>
+</div>
+<div id="fit-function" class="section level3">
+<h3>fit Function</h3>
+<ul>
+<li><p>The first three arguments should be <code>formula</code>, <code>data</code>, and <code>weights</code> followed by a three dot ellipsis.</p></li>
+<li><p>Set <code>environment(formula) &lt;- environment()</code> if the formula will be passed to the source package fit function. Some fit functions expect the formula to be defined in the same environment as the data and weights belong; i.e., the fit formula environment.</p></li>
+<li><p>If weights are not supported, the following should be included in the function:</p></li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span>(<span class="op">!</span><span class="kw">all</span>(weights <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)) <span class="kw">warning</span>(<span class="st">&quot;weights are unsupported and will be ignored&quot;</span>)</code></pre></div>
+<ul>
+<li><p>Only add elements to the resulting fit object if they are needed and will be used in the <code>predict</code>, <code>response</code>, or <code>varimp</code> functions.</p></li>
+<li><p>Return the fit object.</p></li>
+</ul>
+</div>
+<div id="predict-function" class="section level3">
+<h3>predict Function</h3>
+<ul>
+<li><p>The arguments are a model fit <code>object</code>, <code>newdata</code> frame, optionally <code>time</code> for prediction at survival time points, and an ellipsis.</p></li>
+<li><p>Extract any new elements added in the fit function and then recast with <code>unMLModelFit</code> to convert the fit object to its original class.</p></li>
+<li><p>The predict function should return a vector or matrix of probabilities for 2-level factors, a matrix for factors with more than 2 levels, a vector or matrix of expected responses if numeric, a matrix of survival probabilities if follow-up times are supplied, or a vector of survival risks if no follow-up times.</p></li>
+</ul>
+</div>
+<div id="response-function" class="section level3">
+<h3>response Function</h3>
+<ul>
+<li><p>Should have a single model fit <code>object</code> argument, followed by an ellipsis, and return the original response variable supplied to the fit function.</p></li>
+<li><p>Sometimes the original response is easily extracted from the fit function result. At other times, it may be nested within the results and require some extra work to extract (see GBMModel). If it is impossible to extract the response from the source package fit function results, add the response as a new element to the results in the fit function.</p></li>
+</ul>
+</div>
+<div id="varimp-function" class="section level3">
+<h3>varimp Function</h3>
+<ul>
+<li><p>Should have a single model fit <code>object</code> argument followed by an ellipsis.</p></li>
+<li><p>Variable importance results should generally be returned as a vector with elements named after the corresponding predictor variables. The package will take care of conversions to a data frame and VarImp object. If there is more than one set of relevant variable importance measures, they can be returned as a matrix or data frame with predictor variable names as the row names.</p></li>
+</ul>
+</div>
+</div>
+<div id="documenting-an-mlmodel" class="section level2">
+<h2>Documenting an MLModel</h2>
+<div id="model-parameters" class="section level3">
+<h3>Model Parameters</h3>
+<ul>
+<li><p>Include the first sentences from the source package.</p></li>
+<li><p>Start sentences with the parameter value type (logical, numeric, character, etc.).</p></li>
+<li><p>Start sentences with lowercase.</p></li>
+<li><p>Omit indefinite articles (a, an, etc.) from the starting sentences.</p></li>
+</ul>
+</div>
+<div id="details-section" class="section level3">
+<h3>Details Section</h3>
+<ul>
+<li><p>Include response types (factor, numeric, ordered, and/or Surv).</p></li>
+<li><p>Include the following sentence:</p></li>
+</ul>
+<blockquote>
+<p>Default values for the  arguments and further model details can be found in the source link below.</p>
+</blockquote>
+</div>
+<div id="return-value-section" class="section level3">
+<h3>Return (Value) Section</h3>
+<ul>
+<li>Include the following sentence:</li>
+</ul>
+<blockquote>
+<p>MLModel class object.</p>
+</blockquote>
+</div>
+<div id="see-also-section" class="section level3">
+<h3>See Also Section</h3>
+<ul>
+<li>Include a link to the source package function and the other method functions shown below.</li>
+</ul>
+<pre><code>\code{\link[&lt;source package&gt;]{&lt;fit function&gt;}}, \code{\link{fit}},
+\code{\link{resample}}, \code{\link{tune}}</code></pre>
+</div>
+</div>
+<div id="package-extensions" class="section level2">
+<h2>Package Extensions</h2>
+<ul>
+<li><p>For full compatibility with the <code>MachineShop</code> package, model constructors must belong to its namespace.</p></li>
+<li><p>This can be accomplished by rebuilding the package with source code for a new model added; or by defining a new model constructor, say <code>CustomModel</code>, and manually adding it to the namespace as follows.</p></li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">environment</span>(CustomModel) &lt;-<span class="st"> </span><span class="kw">asNamespace</span>(<span class="st">&quot;MachineShop&quot;</span>)</code></pre></div>
+<ul>
+<li>If adding a new model to the package, save its source code in a file whose name begins with “ML” followed by the model name, and ending with a .R extension; e.g., <code>&quot;MLCustomModel.R&quot;</code>.</li>
+</ul>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
