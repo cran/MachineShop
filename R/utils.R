@@ -1,4 +1,6 @@
-utils::globalVariables(c("group", "i", "model", "values", "variables", "y"))
+utils::globalVariables(c("Found", "group", "i", "Lower", "Mean", "Midpoint",
+                         "model", "Model", "Predictor", "Response", "Tested",
+                         "Upper", "Value", "values", "variables", "y", "..y.."))
 
 
 .onLoad <- function(libname, pkgname) {
@@ -46,14 +48,73 @@ basehaz <- function(y, risk, times) {
 }
 
 
-field <- function(object, name) {
-  if (isS4(object)) slot(object, name) else object[[name]]
+setGeneric("append", function(x, y, ...) standardGeneric("append"))
+
+
+setMethod("append", c("data.frame", "data.frame"),
+  function(x, y) {
+    stopifnot(names(x) == names(y))
+    df <- data.frame(matrix(nrow = nrow(x) + nrow(y), ncol = 0))
+    for (varname in names(x)) {
+      df[[varname]] <- append(x[[varname]], y[[varname]])
+    }
+    df
+  }
+)
+
+
+setMethod("append", c("factor", "factor"),
+  function(x, y) unlist(list(x, y))
+)
+
+
+setMethod("append", c("matrix", "matrix"),
+  function(x, y) rbind(x, y)
+)
+
+
+setMethod("append", c("Surv", "Surv"),
+  function(x, y) {
+    df <- as.data.frame(rbind(x, y))
+    names(df) <- NULL
+    do.call(Surv, df)
+  }
+)
+
+
+setMethod("append", c("vector", "vector"),
+  function(x, y) c(x, y)
+)
+
+
+fitbit <- function(object, name) {
+  fitbits <- if (isS4(object)) object@fitbits else object$fitbits
+  slot(fitbits, name)
 }
 
 
-"field<-" <- function(object, name, value) {
-  if (isS4(object)) slot(object, name) <- value else object[[name]] <- value
+"fitbit<-" <- function(object, name, value) {
+  if (isS4(object)) {
+    slot(object@fitbits, name) <- value
+  } else {
+    slot(object$fitbits, name) <- value
+  }
   object
+}
+
+
+getdata <- function(x, ...) {
+  UseMethod("getdata")
+}
+
+
+getdata.data.frame <- function(x, ...) {
+  x
+}
+
+
+getdata.recipe <- function(x, ...) {
+  x$template
 }
 
 
@@ -62,6 +123,15 @@ getMLObject <- function(x, class) {
   if (is.function(x)) x <- x()
   if (!is(x, class)) stop("object not of class ", class)
   x
+}
+
+
+is_response <- function(object, class2) {
+  if (class2 == "binary") {
+    is(object, "factor") && nlevels(object) == 2
+  } else {
+    is(object, class2)
+  }
 }
 
 
@@ -81,7 +151,9 @@ nvars <- function(data, design = c("terms", "model.matrix")) {
   switch(match.arg(design),
          "terms" = length(labels(modelterms)),
          "model.matrix" = {
-           ncol(model.matrix(modelterms, data)) - attr(modelterms, "intercept")
+           fo <- formula(modelterms)
+           mf <- model.frame(fo, data)
+           ncol(model.matrix(fo, mf)) - attr(modelterms, "intercept")
          }
   )
 }
@@ -89,10 +161,26 @@ nvars <- function(data, design = c("terms", "model.matrix")) {
 
 params <- function(envir) {
   args <- as.list(envir)
-  is_missing <- sapply(args, function(x) is.symbol(x) && nchar(x) == 0)
+  is_missing <- sapply(args, function(x) is.symbol(x) && !nzchar(x))
   if (any(is_missing)) stop("missing values for required argument(s) ",
                             toString(names(args)[is_missing]))
   args[!sapply(args, is.null)]
+}
+
+
+preprocess <- function(x, data = NULL, ...) {
+  UseMethod("preprocess")
+}
+
+
+preprocess.default <- function(x, data, ...) {
+  if (is.null(data)) x else data
+}
+
+
+preprocess.recipe <- function(x, data, ...) {
+  x <- prep(x, retain = TRUE)
+  if (is.null(data)) juice(x) else bake(x, new_data = data)
 }
 
 
@@ -112,7 +200,7 @@ stepAIC_args <- function(formula, direction, scope) {
 
 
 strata <- function(object, ...) {
-  UseMethod("strata", object)
+  UseMethod("strata")
 }
 
 
@@ -130,4 +218,12 @@ switch_class <- function(EXPR, ...) {
   blocks <- eval(substitute(alist(...)))
   isClass <- sapply(names(blocks), function(class) is(EXPR, class))
   eval.parent(blocks[[match(TRUE, isClass)]])
+}
+
+
+terms.recipe <- function(x, ...) {
+  info <- summary(x)
+  lhs <- with(info, variable[role == "outcome"])
+  rhs <- with(info, variable[role == "predictor"])
+  terms(reformulate(rhs, lhs))
 }

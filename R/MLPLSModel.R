@@ -11,8 +11,7 @@
 #' \item{Response Types:}{\code{factor}, \code{numeric}}
 #' }
 #' 
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Further model details can be found in the source link below.
 #' 
 #' @return MLModel class object.
 #' 
@@ -42,16 +41,11 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
         data[[varname]] <- I(mm)
         formula[[2]] <- as.symbol(varname)
       }
-      mfit <- pls::plsr(formula, data = data, ...)
-      mfit$y <- y
-      mfit
+      pls::plsr(formula, data = data, ...)
     },
     predict = function(object, newdata, ...) {
       predict(unMLModelFit(object), newdata = newdata, ncomp = object$ncomp,
-              type = "response") %>% drop
-    },
-    response = function(object, ...) {
-      object$y
+              type = "response")
     },
     varimp = function(object, ...) {
       beta <- coef(object, comps = 1:object$ncomp)

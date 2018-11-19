@@ -5,7 +5,10 @@
 #' @param family response type.  Set automatically according to the class type
 #' of the response variable.
 #' @param alpha elasticnet mixing parameter.
-#' @param lambda regularization parameter.
+#' @param lambda regularization parameter.  The default value \code{lambda = 0}
+#' performs no regularization and should be increased to avoid model fitting
+#' issues if the number of predictor variables is greater than the number of
+#' observations.
 #' @param standardize logical flag for predictor variable standardization, prior
 #' to model fitting.
 #' @param intercept logical indicating whether to fit intercepts.
@@ -55,7 +58,7 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, family = NULL, ...) {
-      mf <- model.frame(formula, data, na.action = NULL)
+      mf <- model.frame(formula, data, na.action = na.pass)
       x <- model.matrix(formula, mf)[, -1, drop = FALSE]
       y <- model.response(mf)
       if (is.null(family)) {
@@ -68,32 +71,28 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
       mfit <- glmnet::glmnet(x, y, weights = weights, family = family,
                              nlambda = 1, ...)
       mfit$x <- x
-      mfit$y <- y
       mfit$formula <- formula
       mfit
     },
-    predict = function(object, newdata, times = numeric(), ...) {
+    predict = function(object, newdata, times, ...) {
       x <- object$x
-      y <- object$y
+      y <- response(object)
       fo <- object$formula[-2]
       object <- unMLModelFit(object)
-      newmf <- model.frame(fo, newdata, na.action = NULL)
+      newmf <- model.frame(fo, newdata, na.action = na.pass)
       newx <- model.matrix(fo, newmf)[, -1, drop = FALSE]
       if (is.Surv(y)) {
         if (length(times)) {
           lp <- predict(object, newx = x, type = "link") %>% drop
           newlp <- predict(object, newx = newx, type = "link") %>% drop
           cumhaz <- basehaz(y, exp(lp), times)
-          exp(exp(newlp - mean(lp)) %o% -cumhaz)
+          exp(exp(newlp) %o% -cumhaz)
         } else {
           exp(predict(object, newx = newx, type = "link")) %>% drop
         }
       } else {
-        predict(object, newx = newx, type = "response") %>% drop
+        predict(object, newx = newx, type = "response")
       }
-    },
-    response = function(object, ...) {
-      object$y
     },
     varimp = function(object, ...) {
       convert <- function(x) abs(drop(as.matrix(x)))

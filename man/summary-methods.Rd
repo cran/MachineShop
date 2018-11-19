@@ -15,9 +15,8 @@
 \arguments{
 \item{object}{object to summarize.}
 
-\item{stats}{list of named functions to include in the calculation of summary
-statistics.  Supplied functions should contain a \code{na.rm} argument in
-their definitions.}
+\item{stats}{function or list of named functions to include in the
+calculation of summary statistics.}
 
 \item{na.rm}{logical indicating whether to exclude missing values.}
 
@@ -34,7 +33,7 @@ Summary statistics for resampled model performance metrics.
 \examples{
 ## Factor response example
 
-fo <- factor(Species) ~ .
+fo <- Species ~ .
 control <- CVControl()
 
 gbmperf1 <- resample(fo, iris, GBMModel(n.trees = 25), control)

@@ -3,34 +3,51 @@
 \name{plot}
 \alias{plot}
 \alias{plot.MLModelTune}
+\alias{plot.PartialDependence}
 \alias{plot.Resamples}
+\alias{plot.ResamplesCalibration}
+\alias{plot.ResamplesLift}
 \alias{plot.VarImp}
 \title{Model Performance Plots}
 \usage{
 \method{plot}{MLModelTune}(x, metrics = NULL, stat = mean,
   type = c("boxplot", "density", "errorbar", "line", "violin"), ...)
 
+\method{plot}{PartialDependence}(x, stats = NULL, ...)
+
 \method{plot}{Resamples}(x, metrics = NULL, stat = mean,
   type = c("boxplot", "density", "errorbar", "violin"), ...)
+
+\method{plot}{ResamplesCalibration}(x, type = c("line", "point"),
+  se = FALSE, ...)
+
+\method{plot}{ResamplesLift}(x, find = NULL, ...)
 
 \method{plot}{VarImp}(x, n = NULL, ...)
 }
 \arguments{
 \item{x}{object to plot.}
 
-\item{metrics}{vector of numeric indexes or character names of the performance
+\item{metrics}{vector of numeric indexes or character names of performance
 metrics to plot.}
 
 \item{stat}{function to compute a summary statistic on resampled values for
-MLModelTune line plots and Resamples model sorting.  The supplied function
-should contain a \code{na.rm} argument in its definition.}
+MLModelTune line plots and Resamples model sorting.}
 
 \item{type}{type of plot to construct.}
 
 \item{...}{arguments passed to other methods.}
 
+\item{stats}{vector of numeric indexes or character names of partial
+dependence summary statistics to plot.}
+
+\item{se}{logical indicating whether to include standard error bars.}
+
+\item{find}{numeric percent of observed events at which to display reference
+lines indicating the corresponding percent tested in lift plots.}
+
 \item{n}{number of most important variables to include in the plot
-(default: all).}
+[default: all].}
 }
 \description{
 Plot measures of model performance and predictor variable importance.
@@ -38,10 +55,10 @@ Plot measures of model performance and predictor variable importance.
 \examples{
 ## Factor response example
 
-fo <- factor(Species) ~ .
+fo <- Species ~ .
 control <- CVControl()
 
-gbmfit <- fit(fo, iris, GBMModel, control)
+gbmfit <- fit(fo, data = iris, model = GBMModel, control = control)
 plot(varimp(gbmfit))
 
 gbmperf1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
@@ -56,6 +73,12 @@ plot(perf)
 \seealso{
 \code{\link{diff}}, \code{\link{resample}}, \code{\link{Resamples}},
 \code{\link{tune}}
+
+\code{\link{dependence}}
+
+\code{\link{calibration}}
+
+\code{\link{lift}}
 
 \code{\link{varimp}}
 }

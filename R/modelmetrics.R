@@ -6,7 +6,6 @@
 #' 
 #' @param observed vector of observed responses.
 #' @param predicted model-predicted responses.
-#' @param na.rm logical indicating whether to remove \code{NA} values.
 #' @param ... arguments passed to or from other methods.
 #' 
 #' @seealso \code{\link{predict}}, \code{\linkS4class{MLControl}}
@@ -14,26 +13,17 @@
 #' @examples
 #' ## Survival response example
 #' library(survival)
+#' library(MASS)
 #' 
-#' fo <- Surv(time, status) ~ age + sex + ph.ecog + ph.karno + pat.karno +
-#'                            meal.cal + wt.loss
-#' gbmfit <- fit(fo, lung, GBMModel)
+#' fo <- Surv(time, status != 2) ~ sex + age + year + thickness + ulcer
+#' gbmfit <- fit(fo, data = Melanoma, model = GBMModel)
 #' 
-#' obs <- response(fo, lung)
-#' pred <- predict(gbmfit, newdata = lung, type = "prob")
+#' obs <- response(fo, data = Melanoma)
+#' pred <- predict(gbmfit, newdata = Melanoma, type = "prob")
 #' modelmetrics(obs, pred)
 #' 
-setGeneric("modelmetrics", function(observed, predicted, na.rm = FALSE, ...) {
-  if (na.rm) {
-    df <- data.frame(
-      observed = I(observed),
-      predicted = I(predicted)
-    ) %>% na.omit
-    observed <- unAsIs(df$observed)
-    predicted <- unAsIs(df$predicted)
-  }
-  standardGeneric("modelmetrics")
-})
+setGeneric("modelmetrics",
+           function(observed, predicted, ...) standardGeneric("modelmetrics"))
 
 
 #' @rdname modelmetrics
@@ -55,12 +45,12 @@ setMethod("modelmetrics", c("factor", "factor"),
 #' 
 setMethod("modelmetrics", c("factor", "matrix"),
   function(observed, predicted, ...) {
-    if (nlevels(observed) > 2) {
-      c(modelmetrics(observed, convert(observed, predicted), ...),
-        "MLogLoss" = multinomLogLoss(observed, predicted))
-    } else {
-      modelmetrics(observed, predicted[, ncol(predicted)], ...)
-    }
+    metrics <- modelmetrics(observed,
+                            convert_response(observed, predicted), ...)
+    observed <- model.matrix(~ observed - 1)
+    metrics["Brier"] <- sum((observed - predicted)^2) / nrow(observed)
+    metrics["MLogLoss"] <- multinomLogLoss(observed, predicted)
+    metrics
   }
 )
 
@@ -73,8 +63,7 @@ setMethod("modelmetrics", c("factor", "matrix"),
 #' 
 setMethod("modelmetrics", c("factor", "numeric"),
   function(observed, predicted, cutoff = 0.5,
-           cutoff_index = function(sens, spec) sens + spec,
-           na.rm = FALSE, ...) {
+           cutoff_index = function(sens, spec) sens + spec, ...) {
     observed <- observed == levels(observed)[2]
     sens <- sensitivity(observed, predicted, cutoff)
     spec <- specificity(observed, predicted, cutoff)
@@ -104,16 +93,6 @@ setMethod("modelmetrics", c("matrix", "matrix"),
 
 #' @rdname modelmetrics
 #' 
-setMethod("modelmetrics", c("numeric", "matrix"),
-  function(observed, predicted, ...) {
-    stopifnot(ncol(predicted) == 1)
-    modelmetrics(observed, drop(predicted), ...)
-  }
-)
-
-
-#' @rdname modelmetrics
-#' 
 setMethod("modelmetrics", c("numeric", "numeric"),
   function(observed, predicted, ...) {
     c("R2" =
@@ -130,20 +109,14 @@ setMethod("modelmetrics", c("numeric", "numeric"),
 #' were predicted.
 #' 
 setMethod("modelmetrics", c("Surv", "matrix"),
-  function(observed, predicted, times, na.rm = FALSE, ...) {
-    ntimes <- length(times)
-    roc <- brier <- rep(NA, ntimes)
-    for (i in 1:ntimes) {
-      roc[i] <- rocSurv(observed, predicted[, i], times[i])
-      brier[i] <- brierSurv(observed, predicted[, i], times[i])
-    }
-    if (ntimes > 1) {
-      data.frame(
-        "ROC" = meanSurvMetric(roc, times),
-        "Brier" = meanSurvMetric(brier, times),
-        "ROCTime" = I(t(roc)),
-        "BrierTime" = I(t(brier))
-      )
+  function(observed, predicted, times, ...) {
+    roc <- ROC.Surv(observed, predicted, times)
+    brier <- Brier.Surv(observed, predicted, times)
+    if (length(times) > 1) {
+      c("ROC" = mean(roc),
+        "Brier" = mean(brier),
+        "ROCTime" = roc,
+        "BrierTime" = brier)
     } else {
       c("ROC" = roc, "Brier" = brier)
     }
@@ -155,37 +128,58 @@ setMethod("modelmetrics", c("Surv", "matrix"),
 #' 
 setMethod("modelmetrics", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    c("CIndex" = rcorr.cens(-predicted, observed)[[1]])
+    c("CIndex" = CIndex.Surv(observed, predicted))
   }
 )
 
 
-brierSurv <- function(observed, predicted, time) {
+Brier.Surv <- function(observed, predicted, times) {
+  stopifnot(ncol(predicted) == length(times))
+  
   obs_times <- observed[, "time"]
   obs_events <- observed[, "status"]
   fitcens <- survfit(Surv(obs_times, 1 - obs_events) ~ 1)
-  is_obs_after <- obs_times > time
-  weights <- (obs_events == 1 | is_obs_after) /
-    predict(fitcens, pmin(obs_times, time))
-  mean(weights * (is_obs_after - predicted)^2)
+
+  metrics <- sapply(seq(times), function(i) {
+    time <- times[i]
+    is_obs_after <- obs_times > time
+    weights <- (obs_events == 1 | is_obs_after) /
+      predict(fitcens, pmin(obs_times, time))
+    mean(weights * (is_obs_after - predicted[, i])^2)
+  })
+  attr(metrics, "times") <- times
+  class(metrics) <- c("SurvMetric", "numeric")
+  metrics
 }
 
 
-meanSurvMetric <- function(x, times) {
+CIndex.Surv <- function(observed, predicted) {
+  rcorr.cens(-predicted, observed)[[1]]
+}
+
+
+ROC.Surv <- function(observed, predicted, times) {
+  stopifnot(ncol(predicted) == length(times))
+  
+  metrics <- sapply(seq(times), function(i) {
+    survivalROC(observed[, "time"], observed[, "status"], 1 - predicted[, i],
+                predict.time = times[i], method = "KM")$AUC
+  })
+  attr(metrics, "times") <- times
+  class(metrics) <- c("SurvMetric", "numeric")
+  metrics
+}
+
+
+mean.SurvMetric <- function(x) {
+  times <- attr(x, "times")
   weights <- diff(c(0, times)) / tail(times, 1)
   sum(weights * x)
 }
 
 
 multinomLogLoss <- function(observed, predicted) {
-  if (!is.matrix(observed)) observed <- model.matrix(~ observed - 1)
   eps <- 1e-15
   predicted <- pmax(pmin(predicted, 1 - eps), eps)
   -sum(observed * log(predicted)) / nrow(predicted)
-}
-
-
-rocSurv <- function(observed, predicted, time) {
-  survivalROC(observed[, "time"], observed[, "status"], 1 - predicted,
-              predict.time = time, method = "KM")$AUC
 }

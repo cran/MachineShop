@@ -14,15 +14,16 @@
 #' @examples
 #' ## Survival response example
 #' library(survival)
+#' library(MASS)
 #' 
-#' gbmfit <- fit(Surv(time, status) ~ age + sex + ph.ecog + ph.karno +
-#'                                    pat.karno + meal.cal + wt.loss,
-#'               data = lung, GBMModel)
+#' gbmfit <- fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+#'               data = Melanoma, model = GBMModel)
 #' (vi <- varimp(gbmfit))
 #' plot(vi)
 #'
 varimp <- function(object, scale = TRUE, ...) {
-  requireModelNamespaces(field(object, ".packages"))
-  varimp <- field(object, ".varimp")
+  stopifnot(is(object, "MLModelFit"))
+  requireModelNamespaces(fitbit(object, "packages"))
+  varimp <- fitbit(object, "varimp")
   VarImp(as(varimp(object, ...), "VarImp"), scale = scale)
 }

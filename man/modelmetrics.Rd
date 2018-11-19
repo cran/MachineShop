@@ -7,45 +7,32 @@
 \alias{modelmetrics,factor,matrix-method}
 \alias{modelmetrics,factor,numeric-method}
 \alias{modelmetrics,matrix,matrix-method}
-\alias{modelmetrics,numeric,matrix-method}
 \alias{modelmetrics,numeric,numeric-method}
 \alias{modelmetrics,Surv,matrix-method}
 \alias{modelmetrics,Surv,numeric-method}
 \title{Model Performance Metrices}
 \usage{
-modelmetrics(observed, predicted, na.rm = FALSE, ...)
+modelmetrics(observed, predicted, ...)
 
-\S4method{modelmetrics}{factor,factor}(observed, predicted,
-  na.rm = FALSE, ...)
+\S4method{modelmetrics}{factor,factor}(observed, predicted, ...)
 
-\S4method{modelmetrics}{factor,matrix}(observed, predicted,
-  na.rm = FALSE, ...)
+\S4method{modelmetrics}{factor,matrix}(observed, predicted, ...)
 
 \S4method{modelmetrics}{factor,numeric}(observed, predicted,
-  cutoff = 0.5, cutoff_index = function(sens, spec) sens + spec,
-  na.rm = FALSE, ...)
+  cutoff = 0.5, cutoff_index = function(sens, spec) sens + spec, ...)
 
-\S4method{modelmetrics}{matrix,matrix}(observed, predicted,
-  na.rm = FALSE, ...)
+\S4method{modelmetrics}{matrix,matrix}(observed, predicted, ...)
 
-\S4method{modelmetrics}{numeric,matrix}(observed, predicted,
-  na.rm = FALSE, ...)
+\S4method{modelmetrics}{numeric,numeric}(observed, predicted, ...)
 
-\S4method{modelmetrics}{numeric,numeric}(observed, predicted,
-  na.rm = FALSE, ...)
+\S4method{modelmetrics}{Surv,matrix}(observed, predicted, times, ...)
 
-\S4method{modelmetrics}{Surv,matrix}(observed, predicted, times,
-  na.rm = FALSE, ...)
-
-\S4method{modelmetrics}{Surv,numeric}(observed, predicted, na.rm = FALSE,
-  ...)
+\S4method{modelmetrics}{Surv,numeric}(observed, predicted, ...)
 }
 \arguments{
 \item{observed}{vector of observed responses.}
 
 \item{predicted}{model-predicted responses.}
-
-\item{na.rm}{logical indicating whether to remove \code{NA} values.}
 
 \item{...}{arguments passed to or from other methods.}
 
@@ -63,13 +50,13 @@ Compute measures of model performance.
 \examples{
 ## Survival response example
 library(survival)
+library(MASS)
 
-fo <- Surv(time, status) ~ age + sex + ph.ecog + ph.karno + pat.karno +
-                           meal.cal + wt.loss
-gbmfit <- fit(fo, lung, GBMModel)
+fo <- Surv(time, status != 2) ~ sex + age + year + thickness + ulcer
+gbmfit <- fit(fo, data = Melanoma, model = GBMModel)
 
-obs <- response(fo, lung)
-pred <- predict(gbmfit, newdata = lung, type = "prob")
+obs <- response(fo, data = Melanoma)
+pred <- predict(gbmfit, newdata = Melanoma, type = "prob")
 modelmetrics(obs, pred)
 
 }

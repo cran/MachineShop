@@ -16,14 +16,14 @@
 #' @examples
 #' ## Survival response example
 #' library(survival)
+#' library(MASS)
 #' 
-#' fo <- Surv(time, status) ~ age + sex + ph.ecog + ph.karno + pat.karno +
-#'                            meal.cal + wt.loss
+#' fo <- Surv(time, status != 2) ~ sex + age + year + thickness + ulcer
 #' control <- CVControl()
 #' 
-#' gbmperf1 <- resample(fo, lung, GBMModel(n.trees = 25), control)
-#' gbmperf2 <- resample(fo, lung, GBMModel(n.trees = 50), control)
-#' gbmperf3 <- resample(fo, lung, GBMModel(n.trees = 100), control)
+#' gbmperf1 <- resample(fo, Melanoma, GBMModel(n.trees = 25), control)
+#' gbmperf2 <- resample(fo, Melanoma, GBMModel(n.trees = 50), control)
+#' gbmperf3 <- resample(fo, Melanoma, GBMModel(n.trees = 100), control)
 #' 
 #' perf <- Resamples(GBM1 = gbmperf1, GBM2 = gbmperf2, GBM3 = gbmperf3)
 #' perfdiff <- diff(perf)
@@ -43,10 +43,10 @@ diff.Resamples <- function(x, ...) {
   indices1 <- indices[1,]
   indices2 <- indices[2,]
   xdiff <- x[, , indices1, drop = FALSE] - x[, , indices2, drop = FALSE]
-  modelnames <- dimnames(x)[[3]]
-  dimnames(xdiff)[[3]] <- paste(modelnames[indices1], "-", modelnames[indices2])
-  ResamplesDiff(xdiff, method = x@method, seed = x@seed,
-                modelnames = modelnames)
+  model_names <- dimnames(x)[[3]]
+  dimnames(xdiff)[[3]] <-
+    paste(model_names[indices1], "-", model_names[indices2])
+  ResamplesDiff(xdiff, control = x@control, response = x@response)
 }
 
 
@@ -91,9 +91,10 @@ t.test.ResamplesDiff <- function(x, adjust = "holm", ...)
     apply(2, p.adjust, method = adjust)
   meandiffs <- apply(x, c(3, 2), mean, na.rm = TRUE)
   
-  nmodels <- length(x@modelnames)
-  results <- array(NA, dim = c(nmodels, nmodels, dim(x)[2]),
-                   dimnames = list(x@modelnames, x@modelnames, dimnames(x)[[2]]))
+  model_names <- levels(x@response$Model)
+  num_models <- length(model_names)
+  results <- array(NA, dim = c(num_models, num_models, dim(x)[2]),
+                   dimnames = list(model_names, model_names, dimnames(x)[[2]]))
   indices <- lower.tri(results[, , 1])
   results[indices] <- meandiffs
   results <- aperm(results, perm = c(2, 1, 3))

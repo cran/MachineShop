@@ -6,9 +6,8 @@
 #' @rdname summary-methods
 #' 
 #' @param object object to summarize.
-#' @param stats list of named functions to include in the calculation of summary
-#' statistics.  Supplied functions should contain a \code{na.rm} argument in
-#' their definitions.
+#' @param stats function or list of named functions to include in the
+#' calculation of summary statistics.
 #' @param na.rm logical indicating whether to exclude missing values.
 #' @param ... arguments passed to other methods.
 #' 
@@ -22,7 +21,7 @@
 #' @examples
 #' ## Factor response example
 #' 
-#' fo <- factor(Species) ~ .
+#' fo <- Species ~ .
 #' control <- CVControl()
 #' 
 #' gbmperf1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
@@ -53,11 +52,18 @@ summary.Resamples <- function(object,
                                         "Min" = min,
                                         "Max" = max),
                               na.rm = TRUE, ...) {
-  f <- function(x) {
-    sapply(stats, function(stat) {
-      c(stat(x, na.rm = na.rm))
-    }) %>% c("NA" = mean(is.na(x)))
+  if (is.list(stats)) {
+    stats <- eval(bquote(
+      function(x) sapply(.(stats), function(stat) stat(x))
+    ))
   }
+  
+  f <- function(x) {
+    prop_na <- mean(is.na(x))
+    if (na.rm) x <- na.omit(x)
+    c(stats(x), "NA" = prop_na)
+  }
+  
   margins <- 2
   perm <- c(2, 1)
   if (length(dim(object)) > 2) {
@@ -69,6 +75,19 @@ summary.Resamples <- function(object,
 
 
 summary.MLControl <- function(object, observed, predicted, ...) {
+  if (object@na.rm) {
+    df <- data.frame(
+      observed = I(observed),
+      predicted = I(predicted)
+    ) %>% na.omit
+    observed <- unAsIs(df$observed)
+    predicted <- unAsIs(df$predicted)
+  }
   do.call(object@summary, c(list(observed = observed, predicted = predicted),
                             as(object, "list")))
+}
+
+
+summary.MLModelFit <- function(object, ...) {
+  summary(unMLModelFit(object))
 }

@@ -4,14 +4,14 @@
 \alias{Resamples}
 \title{Resamples Class Contructor}
 \usage{
-Resamples(..., method = NULL, seed = NULL)
+Resamples(..., control = NULL, response = NULL)
 }
 \arguments{
 \item{...}{named or unnamed resample output from one or more models.}
 
-\item{method}{character string indicating the type of resampling method.}
+\item{control}{MLControl object used to generate the resample output.}
 
-\item{seed}{integer seed from the resampling control object.}
+\item{response}{data frame of resampled observed and predicted resposnes.}
 }
 \value{
 Resamples class object.
@@ -20,16 +20,15 @@ Resamples class object.
 Create an object of resampled performance metrics from one or more models.
 }
 \details{
-Arguments \code{method} and \code{seed} need only be specified if
-the supplied output is not a Resamples object.  Output being combined from
-more than one model must have been generated with the same resampling
-method, random number generator seed, performance metrics, and number of
-resampling evaluations.
+Argument \code{control} need only be specified if the supplied
+output is not a Resamples object.  Output being combined from more than one
+model must have been generated with the same resampling object and
+performance metrics.
 }
 \examples{
 ## Factor response example
 
-fo <- factor(Species) ~ .
+fo <- Species ~ .
 control <- CVControl()
 
 gbmperf1 <- resample(fo, iris, GBMModel(n.trees = 25), control)

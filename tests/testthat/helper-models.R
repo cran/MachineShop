@@ -1,9 +1,12 @@
-TEST_MODEL_FITTING <- Sys.getenv("TEST_MODEL_FITTING") == "true"
+TEST_ALL <- Sys.getenv("TEST_ALL") == "true"
+TEST_MODEL_FITTING <- TEST_ALL || Sys.getenv("TEST_MODEL_FITTING") == "true"
+TEST_MODEL_COMPARISONS <-
+  TEST_ALL || Sys.getenv("TEST_MODEL_COMPARISONS") == "true"
 
 
 data(Boston, package = "MASS", envir = environment())
 data(Pima.tr, package = "MASS", envir = environment())
-data(lung, package = "survival", envir = environment())
+data(Melanoma, package = "MASS", envir = environment())
 
 
 test_model <- function(formula, data, model, times = numeric()) {
@@ -11,12 +14,10 @@ test_model <- function(formula, data, model, times = numeric()) {
   modelfit <- fit(formula, data, model)
   print(modelfit)
   
-  if(!is(modelfit, "SVMModelFit")) {
-    vi <- varimp(modelfit)
-    print(vi)
-    print(plot(vi))
-  }
-  
+  vi <- varimp(modelfit)
+  print(vi)
+  print(plot(vi))
+
   pred <- head(predict(modelfit, data))
   print(pred)
   pred_prob <- head(predict(modelfit, data, type = "prob"))
@@ -54,39 +55,28 @@ test_model <- function(formula, data, model, times = numeric()) {
 
 
 test_model_factor <- function(model) {
-  df <- iris
-  df$Species <- factor(df$Species)
-  fo <- Species ~ .
-  test_model(fo, df, model)
+  test_model(factor(Species) ~ ., data = iris, model = model)
 }
 
 
 test_model_factor2 <- function(model) {
-  df <- Pima.tr
-  df$type <- factor(df$type)
-  fo <- type ~ .
-  test_model(fo, df, model)
+  test_model(factor(type) ~ ., data = Pima.tr, model = model)
 }
 
 
 test_model_numeric <- function(model) {
-  df <- Boston
-  fo <- medv ~ .
-  test_model(fo, df, model)
+  test_model(medv ~ ., data = Boston, model = model)
 }
 
 
 test_model_ordered <- function(model) {
   df <- Boston
-  df$medv <- cut(df$medv, breaks = c(0, 15, 20, 25, 50), ordered = TRUE)
-  fo <- medv ~ .
-  test_model(fo, df, model)
+  df$medv <- cut(Boston$medv, breaks = c(0, 15, 20, 25, 50), ordered = TRUE)
+  test_model(medv ~ ., data = df, model = model)
 }
 
 
 test_model_Surv <- function(model) {
-  df <- na.omit(lung)
-  fo <- survival::Surv(time, status) ~ age + sex + ph.ecog + ph.karno +
-    pat.karno + meal.cal + wt.loss
-  test_model(fo, df, model, times = c(180, 360, 540))
+  test_model(survival::Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+             data = Melanoma, model = model, times = 365 * c(2, 5, 10))
 }

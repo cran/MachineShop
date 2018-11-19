@@ -1,3 +1,4 @@
+setOldClass("ModelFrame")
 setOldClass("recipe")
 
 
@@ -53,7 +54,7 @@ setClass("MLControl",
 setMethod("initialize", "MLControl",
   function(.Object, summary = modelmetrics, cutoff = 0.5,
            cutoff_index = function(sens, spec) sens + spec,
-           surv_times = numeric(), na.rm = FALSE, seed = NULL, ...) {
+           surv_times = numeric(), na.rm = TRUE, seed = NULL, ...) {
     if (is.null(seed)) seed <- sample.int(.Machine$integer.max, 1)
     callNextMethod(.Object, summary = summary, cutoff = cutoff,
                    cutoff_index = cutoff_index, surv_times = surv_times,
@@ -76,11 +77,11 @@ setMethod("initialize", "MLControl",
 #' BootControl(samples = 100)
 #' 
 BootControl <- function(samples = 25, ...) {
-  new("BootControl", samples = samples, ...)
+  new("BootMLControl", samples = samples, ...)
 }
 
 
-setClass("BootControl",
+setClass("BootMLControl",
   slots = c(samples = "numeric"),
   contains = "MLControl"
 )
@@ -102,17 +103,17 @@ setClass("BootControl",
 #' CVControl(folds = 10, repeats = 5)
 #' 
 CVControl <- function(folds = 10, repeats = 1, ...) {
-  new("CVControl", folds = folds, repeats = repeats, ...)
+  new("CVMLControl", folds = folds, repeats = repeats, ...)
 }
 
 
-setClass("CVControl",
+setClass("CVMLControl",
   slots = c(folds = "numeric", repeats = "numeric"),
   contains = "MLControl"
 )
 
 
-#' \code{OOBControl} constructs an MLControl object for out-of-bag bootstrap
+#' \code{OOBControl} constructs an MLControl object for out-of-bootstrap
 #' resampling in which models are fit with bootstrap resampled training sets and
 #' used to predict the unsampled cases.
 #' 
@@ -120,17 +121,70 @@ setClass("CVControl",
 #' @rdname MLControl-class
 #' 
 #' @examples
-#' ## 100 out-of-bag bootstrap samples
+#' ## 100 out-of-bootstrap samples
 #' OOBControl(samples = 100)
 #' 
 OOBControl <- function(samples = 25, ...) {
-  new("OOBControl", samples = samples, ...)
+  new("OOBMLControl", samples = samples, ...)
 }
 
 
-setClass("OOBControl",
+setClass("OOBMLControl",
   slots = c(samples = "numeric"),
   contains = "MLControl"
+)
+
+
+#' \code{SplitControl} constructs an MLControl object for splitting data into a
+#' seperate trianing and test set.
+#' 
+#' @param prop proportion of cases to include in the training set
+#' (\code{0 < prop < 1}).
+#' 
+#' @name SplitControl
+#' @rdname MLControl-class
+#' 
+#' @examples
+#' ## Split sample of 2/3 training and 1/3 testing
+#' SplitControl(prop = 2/3)
+#' 
+SplitControl <- function(prop = 2/3, ...) {
+  new("SplitMLControl", prop = prop, ...)
+}
+
+
+setClass("SplitMLControl",
+  slots = c(prop = "numeric"),
+  contains = "MLControl"
+)
+
+
+#' \code{TrainControl} constructs an MLControl object for training and
+#' performance evaluation to be performed on the same training set.
+#' 
+#' @name TrainControl
+#' @rdname MLControl-class
+#' 
+#' @examples
+#' ## Same training and test set
+#' TrainControl()
+#' 
+TrainControl <- function(...) {
+  new("TrainMLControl", ...)
+}
+
+
+setClass("TrainMLControl",
+  contains = "MLControl"
+)
+
+
+MLFitBits <- setClass("MLFitBits",
+  slots = c(packages = "character",
+            predict = "function",
+            varimp = "function",
+            x = "ANY",
+            y = "ANY")
 )
 
 
@@ -145,7 +199,6 @@ setClass("OOBControl",
 #' given model frame.
 #' @param fit model fitting function.
 #' @param predict model prediction function.
-#' @param response function to extract the response variable from a model fit.
 #' @param varimp variable importance function.
 #' 
 MLModel <- function(name = "MLModel", packages = character(0),
@@ -155,13 +208,21 @@ MLModel <- function(name = "MLModel", packages = character(0),
                       stop("no fit function"),
                     predict = function(object, newdata, times, ...)
                       stop("no predict function"),
-                    response = function(object, ...)
-                      stop("no response function"),
                     varimp = function(object, ...)
                       stop("no varimp function")) {
-  new("MLModel", name = name, packages = packages, types = types,
-      params = params, nvars = nvars, fit = fit, predict = predict,
-      response = response, varimp = varimp)
+  
+  stopifnot(types %in% c("binary", "factor", "numeric", "ordered", "Surv"))
+  
+  new("MLModel",
+      name = name,
+      packages = packages,
+      types = types,
+      params = params,
+      nvars = nvars,
+      fit = fit,
+      fitbits = MLFitBits(packages = packages,
+                          predict = predict,
+                          varimp = varimp))
 }
 
 
@@ -172,30 +233,12 @@ setClass("MLModel",
             params = "list",
             nvars = "function",
             fit = "function",
-            predict = "function",
-            response = "function",
-            varimp = "function")
+            fitbits = "MLFitBits")
 )
 
 
-#' Model Fit Class
-#' 
-#' MLModelFit is the base class for model fit objects.  Direct calls to the
-#' MLModelFit constructor are not necessary unless implementing custom models.
-#'
-#' @name MLModelFit-class
-#' @rdname MLModelFit-class
-#' 
-#' @slot .packages character vector of packages required by the object.
-#' @slot .predict model prediction function.
-#' @slot .response function to extract the response variable from a model fit.
-#' @slot .varimp variable importance function.
-#' 
 setClass("MLModelFit",
-  slots = c(.packages = "character",
-            .predict = "function",
-            .response = "function",
-            .varimp = "function"),
+  slots = c(fitbits = "MLFitBits"),
   contains = "VIRTUAL"
 )
 
@@ -208,15 +251,14 @@ setClass("CForestModelFit", contains = c("MLModelFit", "RandomForest"))
 #' 
 #' Create an object of resampled performance metrics from one or more models.
 #' 
-#' @param method character string indicating the type of resampling method.
-#' @param seed integer seed from the resampling control object.
+#' @param response data frame of resampled observed and predicted resposnes.
+#' @param control MLControl object used to generate the resample output.
 #' @param ... named or unnamed resample output from one or more models.
 #' 
-#' @details Arguments \code{method} and \code{seed} need only be specified if
-#' the supplied output is not a Resamples object.  Output being combined from
-#' more than one model must have been generated with the same resampling
-#' method, random number generator seed, performance metrics, and number of
-#' resampling evaluations.
+#' @details Argument \code{control} need only be specified if the supplied
+#' output is not a Resamples object.  Output being combined from more than one
+#' model must have been generated with the same resampling object and
+#' performance metrics.
 #' 
 #' @return Resamples class object.
 #' 
@@ -225,7 +267,7 @@ setClass("CForestModelFit", contains = c("MLModelFit", "RandomForest"))
 #' @examples
 #' ## Factor response example
 #' 
-#' fo <- factor(Species) ~ .
+#' fo <- Species ~ .
 #' control <- CVControl()
 #' 
 #' gbmperf1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
@@ -236,55 +278,66 @@ setClass("CForestModelFit", contains = c("MLModelFit", "RandomForest"))
 #' summary(perf)
 #' plot(perf)
 #' 
-Resamples <- function(..., method = NULL, seed = NULL) {
-  new("Resamples", ..., method = method, seed = seed)  
+Resamples <- function(..., control = NULL, response = NULL) {
+  new("Resamples", ..., control = control, response = response)
 }
 
 
 setClass("Resamples",
-  slots = c("method" = "character", seed = "numeric"),
+  slots = c(control = "MLControl", response = "data.frame"),
   contains = "array"
 )
 
 
 setMethod("initialize", "Resamples",
-  function(.Object, ..., method = NULL, seed = NULL) {
+  function(.Object, ..., control = NULL, response = NULL) {
     args <- list(...)
-    if (length(args) == 0) stop("no values given")
+    
+    if (length(args) == 0) stop("no resample output given")
+    
     .Data <- args[[1]]
     if (length(args) == 1) {
-      if (is(.Data, "Resamples")) {
-        method <- .Data@method
-        seed <- .Data@seed
-      } else if (is.data.frame(.Data)) {
-        .Data <- as.matrix(.Data)
-      }
+      if (is(.Data, "Resamples")) response <- .Data@response
     } else {
       if (!all(sapply(args, function(x) is(x, "Resamples") && is.matrix(x)))) {
         stop("values to combine must be 2 dimensional Resamples objects")
       }
-      if (!all(sapply(args, slot, name = "method") == .Data@method)) {
-        stop("resamples use different methods")
-      }
-      if (!all(sapply(args, slot, name = "seed") == .Data@seed)) {
-        stop("resamples use different seeds")
+      control <- .Data@control
+      is_equal_control <- function(x) isTRUE(all.equal(x@control, control))
+      if (!all(sapply(args, is_equal_control))) {
+        stop("resamples have different control structures")
       }
       if (!all(sapply(args, colnames) == colnames(.Data))) {
         stop("resamples contain different metrics")
       }
-      if (!all(sapply(args, nrow) == nrow(.Data))) {
-        stop("resamples have different numbers of evaluations")
+      
+      response <- Reduce(append, lapply(args, slot, name = "response"))
+      
+      old_model_names <- sapply(args, function(x) levels(x@response$Model))
+      model_names <- names(args)
+      if (is.null(model_names)) {
+        model_names <- old_model_names
+      } else {
+        model_names <- ifelse(nzchar(model_names), model_names, old_model_names)
       }
-      method <- .Data@method
-      seed <- .Data@seed
-      modelnames <- names(args)
-      if (is.null(modelnames)) modelnames <- paste0("Model", seq(args))
+      model_names <- make.names(model_names, unique = TRUE)
+      num_times <- sapply(args, function(x) nrow(x@response))
+      response$Model <- factor(rep(model_names, num_times),
+                               levels = model_names)
+
       names(args) <- NULL
       args$along <- 3
-      args$new.names <- list(1:nrow(.Data), NULL, modelnames)
+      args$new.names <- list(NULL, NULL, model_names)
       .Data <- do.call(abind, args)
     }
-    callNextMethod(.Object, .Data, method = method, seed = seed)
+    
+    response_vars <- c("Resample", "Case", "Observed", "Predicted", "Model")
+    is_missing <- !(response_vars %in% names(response))
+    if (any(is_missing)) {
+      stop("missing response variables: ", toString(response_vars[is_missing]))
+    }
+    
+    callNextMethod(.Object, .Data, control = control, response = response)
   }
 )
 
@@ -296,17 +349,7 @@ MLModelTune <- setClass("MLModelTune",
 
 
 ResamplesDiff <- setClass("ResamplesDiff",
-  slots = c("modelnames" = "character"),
   contains = "Resamples"
-)
-
-
-setMethod("initialize", "ResamplesDiff",
-  function(.Object, modelnames, ...) {
-    .Object <- callNextMethod(.Object, ...)
-    .Object@modelnames <- modelnames
-    .Object
-  }
 )
 
 

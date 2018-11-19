@@ -22,9 +22,10 @@
 #' 
 #' @examples
 #' library(survival)
+#' library(MASS)
 #' 
-#' fit(Surv(time, status) ~ age + sex + ph.ecog + ph.karno + meal.cal + wt.loss,
-#'     data = lung, model = CoxModel())
+#' fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+#'     data = Melanoma, model = CoxModel())
 #' 
 CoxModel <- function(ties = c("efron", "breslow", "exact"), control = NULL) {
   ties <- match.arg(ties)
@@ -39,7 +40,7 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), control = NULL) {
       rms::cph(formula, data = data, weights = weights, singular.ok = TRUE,
                surv = TRUE, y = TRUE, ...)
     },
-    predict = function(object, newdata, times = numeric(), ...) {
+    predict = function(object, newdata, times, ...) {
       object <- unMLModelFit(object)
       if (length(times)) {
         rms::survest(object, newdata = newdata, times = times,
@@ -47,9 +48,6 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), control = NULL) {
       } else {
         exp(predict(object, newdata = newdata, type = "lp"))
       }
-    },
-    response = function(object, ...) {
-      object$y
     },
     varimp = function(object, ...) {
       pchisq(coef(object)^2 / diag(vcov(object)), 1)
@@ -88,8 +86,8 @@ CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"),
   stepmodel <- CoxModel(ties = ties, control = control)
   MLModel(
     name = "CoxStepAICModel",
-    packages = c("MASS", "rms"),
-    types = "Surv",
+    packages = c("MASS", stepmodel@packages),
+    types = stepmodel@types,
     params = args,
     nvars = stepmodel@nvars,
     fit = function(formula, data, weights, direction = "both", scope = list(),
@@ -101,8 +99,7 @@ CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"),
         MASS::stepAIC(direction = direction, scope = stepargs$scope, k = k,
                       trace = trace, steps = steps)
     },
-    predict = stepmodel@predict,
-    response = stepmodel@response,
-    varimp = stepmodel@varimp
+    predict = fitbit(stepmodel, "predict"),
+    varimp = fitbit(stepmodel, "varimp")
   )
 }

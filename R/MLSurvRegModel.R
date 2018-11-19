@@ -34,7 +34,7 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
       environment(formula) <- environment()
       rms::psm(formula, data = data, weights = weights, ...)
     },
-    predict = function(object, newdata, times = numeric(), ...) {
+    predict = function(object, newdata, times, ...) {
       object <- unMLModelFit(object)
       if (length(times)) {
         pred <- rms::survest(object, newdata = newdata, times = times,
@@ -43,9 +43,6 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
       } else {
         exp(predict(object, newdata = newdata, type = "lp"))
       }
-    },
-    response = function(object, ...) {
-      object$y
     },
     varimp = function(object, ...) {
       pchisq(coef(object)^2 / diag(vcov(object)), 1)
@@ -75,9 +72,10 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
 #' 
 #' @examples
 #' library(survival)
+#' library(MASS)
 #' 
-#' fit(Surv(time, status) ~ age + sex + ph.ecog + ph.karno + meal.cal + wt.loss,
-#'     data = lung, model = SurvRegModel())
+#' fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+#'     data = Melanoma, model = SurvRegModel())
 #'
 SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
                                          "logistic", "lognormal",
@@ -93,8 +91,8 @@ SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
                             control = control)
   MLModel(
     name = "SurvRegStepAICModel",
-    packages = c("MASS", "rms"),
-    types = "Surv",
+    packages = c("MASS", stepmodel@packages),
+    types = stepmodel@types,
     params = args,
     nvars = stepmodel@nvars,
     fit = function(formula, data, weights, direction = "both", scope = list(),
@@ -105,8 +103,7 @@ SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
         MASS::stepAIC(direction = direction, scope = stepargs$scope, k = k,
                       trace = trace, steps = steps)
     },
-    predict = stepmodel@predict,
-    response = stepmodel@response,
-    varimp = stepmodel@varimp
+    predict = fitbit(stepmodel, "predict"),
+    varimp = fitbit(stepmodel, "varimp")
   )
 }

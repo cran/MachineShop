@@ -57,11 +57,16 @@ SVMModel <- function(scaled = TRUE, type = NULL,
                        type = ifelse(is.factor(response(object)),
                                      "probabilities", "response"))
     },
-    response = function(object, ...) {
-      if (is.character(object@lev)) {
-        factor(object@ymatrix, levels = 1:object@nclass, labels = object@lev)
+    varimp = function(object, ...) {
+      warning("variable importance values undefined for SVMModel")
+      lev <- object@lev
+      if (is.character(lev)) {
+        varnames <- colnames(object@xmatrix[[1]])
+        matrix(NA_integer_, length(varnames), length(lev),
+               dimnames = list(varnames, lev))
       } else {
-        object@ymatrix
+        varnames <- colnames(object@xmatrix)
+        structure(rep(NA_integer_, length(varnames)), names = varnames)
       }
     }
   )

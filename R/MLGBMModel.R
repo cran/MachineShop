@@ -29,7 +29,7 @@
 #' 
 #' @examples
 #' 
-#' fit(factor(Species) ~ ., data = iris, model = GBMModel())
+#' fit(Species ~ ., data = iris, model = GBMModel())
 #'
 GBMModel <- function(distribution = NULL, n.trees = 100,
                      interaction.depth = 1, n.minobsinnode = 10,
@@ -51,7 +51,7 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
       gbm::gbm(formula, data = data, weights = weights,
                distribution = distribution, ...)
     },
-    predict = function(object, newdata, times = numeric(), ...) {
+    predict = function(object, newdata, times, ...) {
       obs <- response(object)
       object <- unMLModelFit(object)
       if (object$distribution$name == "coxph") {
@@ -60,24 +60,15 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
           newlp <- predict(object, newdata = newdata, n.trees = object$n.trees,
                            type = "link")
           cumhaz <- basehaz(obs, exp(lp), times)
-          exp(exp(newlp - mean(lp)) %o% -cumhaz)
+          exp(exp(newlp) %o% -cumhaz)
         } else {
           exp(predict(object, newdata = newdata, n.trees = object$n.trees,
                       type = "link"))
         }
       } else {
         predict(object, newdata = newdata, n.trees = object$n.trees,
-                type = "response") %>% drop
+                type = "response")
       }
-    },
-    response = function(object, ...) {
-      switch(object$distribution$name,
-        "multinomial" = matrix(object$data$y, ncol = object$num.classes) %>%
-          max.col %>%
-          factor(levels = 1:object$num.classes, labels = object$classes),
-        "coxph" = with(object$data, Surv(y, Misc)[order(i.timeorder),]),
-        object$data$y
-      )
     },
     varimp = function(object, n.trees = object$n.trees, ...) {
       gbm::relative.influence(object, n.trees = n.trees, ...)

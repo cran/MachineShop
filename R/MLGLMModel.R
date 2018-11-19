@@ -10,7 +10,7 @@
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor} (two-levels), \code{numeric}}
+#' \item{Response Types:}{\code{binary factor}, \code{numeric}}
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -30,7 +30,7 @@ GLMModel <- function(family = NULL, control = NULL) {
   MLModel(
     name = "GLMModel",
     packages = "stats",
-    types = c("factor", "numeric"),
+    types = c("binary", "numeric"),
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, family = NULL, ...) {
@@ -44,9 +44,6 @@ GLMModel <- function(family = NULL, control = NULL) {
     },
     predict = function(object, newdata, ...) {
       predict(unMLModelFit(object), newdata = newdata, type = "response")
-    },
-    response = function(object, ...) {
-      response(object$formula, object$data)
     },
     varimp = function(object, ...) {
       pchisq(coef(object)^2 / diag(vcov(object)), 1)
@@ -82,8 +79,8 @@ GLMStepAICModel <- function(family = NULL, control = NULL,
   stepmodel <- GLMModel(family = family, control = control)
   MLModel(
     name = "GLMStepAICModel",
-    packages = c("MASS", "stats"),
-    types = c("factor", "numeric"),
+    packages = c("MASS", stepmodel@packages),
+    types = stepmodel@types,
     params = args,
     nvars = stepmodel@nvars,
     fit = function(formula, data, weights, family = NULL, direction = "both",
@@ -100,8 +97,7 @@ GLMStepAICModel <- function(family = NULL, control = NULL,
         MASS::stepAIC(direction = direction, scope = stepargs$scope, k = k,
                       trace = trace, steps = steps)
     },
-    predict = stepmodel@predict,
-    response = stepmodel@response,
-    varimp = stepmodel@varimp
+    predict = fitbit(stepmodel, "predict"),
+    varimp = fitbit(stepmodel, "varimp")
   )
 }

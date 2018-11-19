@@ -5,7 +5,8 @@
 #' @name predict
 #' 
 #' @param object MLModelFit object from a model fit.
-#' @param newdata data frame with which to obtain predictions.
+#' @param newdata optional data frame with which to obtain predictions.  If not
+#' specified, the training data will be used by default.
 #' @param type specifies prediction on the original outcome scale
 #' (\code{"response"}) or on a probability distribution scale (\code{"prob"}).
 #' @param cutoff threshold above which probabilities are classified as success
@@ -20,28 +21,29 @@
 #' @examples
 #' ## Survival response example
 #' library(survival)
+#' library(MASS)
 #' 
-#' gbmfit <- fit(Surv(time, status) ~ age + sex + ph.ecog + ph.karno +
-#'                                    pat.karno + meal.cal + wt.loss,
-#'               data = lung, GBMModel)
-#' predict(gbmfit, lung, times = c(180, 360, 540), type = "prob")
+#' gbmfit <- fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+#'               data = Melanoma, model = GBMModel)
+#' predict(gbmfit, newdata = Melanoma, times = 365 * c(2, 5, 10), type = "prob")
 #' 
-predict.MLModelFit <- function(object, newdata, type = c("response", "prob"),
-                               cutoff = 0.5, times = NULL, ...) {
-  if (missing(newdata)) stop("newdata is missing")
-  requireModelNamespaces(field(object, ".packages"))
-  predict <- field(object, ".predict")
-  pred <- predict(object, newdata, times = times)
+predict.MLModelFit <- function(object, newdata = NULL,
+                               type = c("response", "prob"), cutoff = 0.5,
+                               times = numeric(), ...) {
+  newdata <- preprocess(fitbit(object, "x"), newdata)
+  requireModelNamespaces(fitbit(object, "packages"))
+  predict <- fitbit(object, "predict")
+  obs <- response(object)
+  pred <- convert_dim(obs, predict(object, newdata, times = times))
   if (match.arg(type) == "response") {
-    pred <- convert(response(object), pred, cutoff = cutoff)
+    pred <- convert_response(obs, pred, cutoff = cutoff)
   }
   pred
 }
 
 
 predict.survfit <- function(object, times, ...) {
-  survtimes <- c(0, object$time)
-  survprobs <- c(1, object$surv)
-  idx <- sapply(times, function(x) max(which(survtimes <= x)))
-  survprobs[idx]
+  surv_times <- c(0, object$time)
+  surv_probs <- c(1, object$surv)
+  surv_probs[findInterval(times, surv_times)]
 }

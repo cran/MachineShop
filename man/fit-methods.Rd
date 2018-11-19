@@ -2,30 +2,30 @@
 % Please edit documentation in R/fit.R
 \name{fit}
 \alias{fit}
-\alias{fit.data.frame}
 \alias{fit.formula}
+\alias{fit.ModelFrame}
 \alias{fit.recipe}
 \title{Model Fitting}
 \usage{
 fit(x, ...)
 
-\method{fit}{data.frame}(x, model, ...)
-
 \method{fit}{formula}(x, data, model, ...)
+
+\method{fit}{ModelFrame}(x, model, ...)
 
 \method{fit}{recipe}(x, model, ...)
 }
 \arguments{
 \item{x}{defined relationship between model predictors and an outcome.  May
-be a model.frame (data.frame) containing a formula, data, and optionally case
-weights; a formula; or a recipe.}
+be a ModelFrame containing a formula, data, and optionally case weights; a
+formula; or a recipe.}
 
 \item{...}{arguments passed to other methods.}
 
+\item{data}{data frame containing observed predictors and outcomes.}
+
 \item{model}{MLModel object, constructor function, or character string
 naming a constructor function that returns an MLModel object.}
-
-\item{data}{data frame containing observed predictors and outcomes.}
 }
 \value{
 MLModelFit class object.
@@ -36,10 +36,10 @@ Fit a model to estimate its parameters from a data set.
 \examples{
 ## Survival response example
 library(survival)
+library(MASS)
 
-gbmfit <- fit(Surv(time, status) ~ age + sex + ph.ecog + ph.karno +
-                                   pat.karno + meal.cal + wt.loss,
-              data = lung, GBMModel)
+gbmfit <- fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+              data = Melanoma, model = GBMModel)
 varimp(gbmfit)
 
 }

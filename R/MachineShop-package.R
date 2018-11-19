@@ -14,13 +14,17 @@
 #'   \code{\link{GLMModel}}            \tab x \tab x \tab   \tab   \cr
 #'   \code{\link{GLMStepAICModel}}     \tab x \tab x \tab   \tab   \cr
 #'   \code{\link{GLMNetModel}}         \tab x \tab x \tab   \tab x \cr
+#'   \code{\link{KNNModel}}            \tab x \tab x \tab x \tab   \cr
 #'   \code{\link{NNetModel}}           \tab x \tab x \tab   \tab   \cr
 #'   \code{\link{PLSModel}}            \tab x \tab x \tab   \tab   \cr
 #'   \code{\link{POLRModel}}           \tab   \tab   \tab x \tab   \cr
 #'   \code{\link{RandomForestModel}}   \tab x \tab x \tab   \tab   \cr
+#'   \code{\link{StackedModel}}        \tab x \tab x \tab x \tab x \cr
+#'   \code{\link{SuperModel}}          \tab x \tab x \tab x \tab x \cr
 #'   \code{\link{SurvRegModel}}        \tab   \tab   \tab   \tab x \cr
 #'   \code{\link{SurvRegStepAICModel}} \tab   \tab   \tab   \tab x \cr
 #'   \code{\link{SVMModel}}            \tab x \tab x \tab   \tab   \cr
+#'   \code{\link{XGBModel}}            \tab x \tab x \tab   \tab   \cr
 #' }
 #' 
 #' The following set of standard model fitting, prediction, performance
@@ -29,6 +33,9 @@
 #' \tabular{ll}{
 #'   \code{\link{fit}} \tab Model Fitting \cr
 #'   \code{\link{predict}} \tab Model Prediction \cr
+#'   \code{\link{calibration}} \tab Model Calibration \cr
+#'   \code{\link{dependence}} \tab Parital Dependence \cr
+#'   \code{\link{lift}} \tab Lift Curves \cr
 #'   \code{\link{resample}} \tab Resample Estimation of Model Performance \cr
 #'   \code{\link{tune}} \tab Model Tuning \cr
 #'   \code{\link{diff}} \tab Model Performance Differences \cr
@@ -40,7 +47,9 @@
 #' \tabular{ll}{
 #'   \code{\link{BootControl}} \tab Simple Bootstrap \cr
 #'   \code{\link{CVControl}} \tab Repeated K-Fold Cross-Validation \cr
-#'   \code{\link{OOBControl}} \tab Out-of-Bag Bootstrap \cr
+#'   \code{\link{OOBControl}} \tab Out-of-Bootstrap \cr
+#'   \code{\link{SplitControl}} \tab Split Training-Testing \cr
+#'   \code{\link{TrainControl}} \tab Training Resubstitution \cr
 #' }  
 #' 
 #' Tabular and graphical summaries of modeling results can be obtained with

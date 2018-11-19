@@ -23,8 +23,7 @@
 #' }
 #' 
 #' Supplied arguments are passed to \code{\link[party]{cforest_control}}.
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Further model details can be found in the source link below.
 #' 
 #' @return MLModel class object.
 #' 
@@ -54,7 +53,7 @@ CForestModel <- function(teststat = c("quad", "max"),
       environment(formula) <- environment()
       party::cforest(formula, data = data, weights = weights, ...)
     },
-    predict = function(object, newdata, times = numeric(), ...) {
+    predict = function(object, newdata, times, ...) {
       object <- unMLModelFit(object)
       if (object@responses@is_censored) {
         if (length(times)) {
@@ -67,12 +66,8 @@ CForestModel <- function(teststat = c("quad", "max"),
       } else {
         predict(object, newdata = newdata, type = "prob") %>%
           unlist %>%
-          matrix(nrow = nrow(newdata), byrow = TRUE) %>%
-          drop
+          matrix(nrow = nrow(newdata), byrow = TRUE)
       }
-    },
-    response = function(object, ...) {
-      object@responses@variables[[1]]
     },
     varimp = function(object, ...) {
       party::varimp(object, ...)

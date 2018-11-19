@@ -2,25 +2,27 @@
 % Please edit documentation in R/resample.R
 \name{resample}
 \alias{resample}
-\alias{resample.data.frame}
 \alias{resample.formula}
+\alias{resample.ModelFrame}
 \alias{resample.recipe}
 \title{Resample Estimation of Model Performance}
 \usage{
 resample(x, ...)
 
-\method{resample}{data.frame}(x, model, control = CVControl, ...)
-
 \method{resample}{formula}(x, data, model, control = CVControl, ...)
+
+\method{resample}{ModelFrame}(x, model, control = CVControl, ...)
 
 \method{resample}{recipe}(x, model, control = CVControl, ...)
 }
 \arguments{
 \item{x}{defined relationship between model predictors and an outcome.  May
-be a model.frame (data.frame) containing a formula, data, and optionally case
-weights; a formula; or a recipe.}
+be a ModelFrame containing a formula, data, and optionally case weights; a
+formula; or a recipe.}
 
 \item{...}{arguments passed to other methods.}
+
+\item{data}{data frame containing observed predictors and outcomes.}
 
 \item{model}{MLModel object, constructor function, or character string
 naming a constructor function that returns an MLModel object.}
@@ -28,8 +30,6 @@ naming a constructor function that returns an MLModel object.}
 \item{control}{\code{\linkS4class{MLControl}} object, control function, or
 character string naming a control function defining the resampling method to
 be employed.}
-
-\item{data}{data frame containing observed predictors and outcomes.}
 }
 \value{
 Resamples class object.
@@ -42,20 +42,19 @@ on training and test samples generated from an observed data set.
 \donttest{
 ## Survival response example
 library(survival)
+library(MASS)
 
-(gbmperf <- resample(Surv(time, status) ~ age + sex + ph.ecog + ph.karno +
-                                          pat.karno + meal.cal + wt.loss,
-                     data = lung,
-                     model = GBMModel,
+(gbmperf <- resample(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+                     data = Melanoma, model = GBMModel,
                      control = CVControl(folds = 10, repeats = 5,
-                                         surv_times = c(180, 360, 540))))
+                                         surv_times = 365 * c(2, 5, 10))))
 summary(gbmperf)
 plot(gbmperf)
 }
 
 }
 \seealso{
-\code{\link{tune}}, \code{\link[stats]{model.frame}},
+\code{\link{tune}}, \code{\link{ModelFrame}},
 \code{\link[recipes]{recipe}}, \code{\link{BootControl}},
 \code{\link{CVControl}}, \code{\link{OOBControl}}, \code{\link{Resamples}},
 \code{\link{plot}}, \code{\link{summary}}

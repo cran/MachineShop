@@ -5,13 +5,14 @@
 \alias{predict.MLModelFit}
 \title{Model Prediction}
 \usage{
-\method{predict}{MLModelFit}(object, newdata, type = c("response",
-  "prob"), cutoff = 0.5, times = NULL, ...)
+\method{predict}{MLModelFit}(object, newdata = NULL,
+  type = c("response", "prob"), cutoff = 0.5, times = numeric(), ...)
 }
 \arguments{
 \item{object}{MLModelFit object from a model fit.}
 
-\item{newdata}{data frame with which to obtain predictions.}
+\item{newdata}{optional data frame with which to obtain predictions.  If not
+specified, the training data will be used by default.}
 
 \item{type}{specifies prediction on the original outcome scale
 (\code{"response"}) or on a probability distribution scale (\code{"prob"}).}
@@ -31,11 +32,11 @@ Predict outcomes with a fitted model.
 \examples{
 ## Survival response example
 library(survival)
+library(MASS)
 
-gbmfit <- fit(Surv(time, status) ~ age + sex + ph.ecog + ph.karno +
-                                   pat.karno + meal.cal + wt.loss,
-              data = lung, GBMModel)
-predict(gbmfit, lung, times = c(180, 360, 540), type = "prob")
+gbmfit <- fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+              data = Melanoma, model = GBMModel)
+predict(gbmfit, newdata = Melanoma, times = 365 * c(2, 5, 10), type = "prob")
 
 }
 \seealso{

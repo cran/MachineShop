@@ -17,33 +17,29 @@ setAs("MLControl", "list",
   function(from) {
     list(cutoff = from@cutoff,
          cutoff_index = from@cutoff_index,
-         times = from@surv_times,
-         na.rm = from@na.rm)
+         times = from@surv_times)
   }
 )
 
 
-asMLModelFit <- function(object, Class, model = NULL) {
+asMLModelFit <- function(object, Class, model) {
   if (is(object, Class)) {
     object <- unMLModelFit(object)
   } else if (is(object, "MLModelFit")) {
     stop("cannot change MLModelFit class")
   }
+  
+  if (!is(model, "MLModel")) stop("model not of class MLModel")
+  
   if (isS4(object)) {
-    object <- as(object, Class)
-    if (!is(object, "MLModelFit")) stop("Class not from MLModelFit")
+    object <- new(Class, object, fitbits = model@fitbits)
   } else if (is.list(object)) {
+    object$fitbits <- model@fitbits
     class(object) <- c(Class, "MLModelFit", class(object))
   } else {
     stop("unsupported object class")
   }
-  if (!is.null(model)) {
-    if (!is(model, "MLModel")) stop("model not of class MLModel")
-    field(object, ".packages") <- model@packages
-    field(object, ".predict") <- model@predict
-    field(object, ".response") <- model@response
-    field(object, ".varimp") <- model@varimp
-  }
+
   object
 }
 
@@ -54,7 +50,7 @@ unMLModelFit <- function(object) {
     classes <- extends(class(object))
     as(object, classes[match("MLModelFit", classes) + 1])
   } else {
-    object[c(".packages", ".predict", ".response", ".varimp")] <- NULL
+    object$fitbits <- NULL
     classes <- class(object)
     pos <- match("MLModelFit", classes)
     structure(object, class = classes[-c(pos - 1, pos)])

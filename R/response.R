@@ -10,18 +10,13 @@
 #' @examples
 #' ## Survival response example
 #' library(survival)
+#' library(MASS)
 #' 
-#' fo <- Surv(time, status) ~ age + sex + ph.ecog + ph.karno + pat.karno +
-#'                            meal.cal + wt.loss
-#' response(fo, lung)
+#' fo <- Surv(time, status != 2) ~ sex + age + year + thickness + ulcer
+#' response(fo, data = Melanoma)
 #' 
 response <- function(object, ...) {
-  UseMethod("response", object)
-}
-
-
-response.data.frame <- function(object, ...) {
-  model.response(object)
+  UseMethod("response")
 }
 
 
@@ -34,6 +29,16 @@ response.formula <- function(object, data, ...) {
 }
 
 
+response.ModelFrame <- function(object, ...) {
+  response(formula(terms(object)), object)
+}
+
+
+response.tbl_df <- function(object, ...) {
+  response(formula(object), object)
+}
+
+
 response.terms <- function(object, ...) {
   i <- attr(object, "response")
   all.vars(object)[i]
@@ -41,6 +46,5 @@ response.terms <- function(object, ...) {
 
 
 response.MLModelFit <- function(object, ...) {
-  response <- field(object, ".response")
-  response(object)
+  fitbit(object, "y")
 }
