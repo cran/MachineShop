@@ -12,7 +12,7 @@
 
 <meta name="author" content="Brian J Smith" />
 
-<meta name="date" content="2018-11-19" />
+<meta name="date" content="2018-11-22" />
 
 <title>Introduction to the MachineShop Package</title>
 
@@ -285,7 +285,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Introduction to the MachineShop Package</h1>
 <h4 class="author"><em>Brian J Smith</em></h4>
-<h4 class="date"><em>2018-11-19</em></h4>
+<h4 class="date"><em>2018-11-22</em></h4>
 
 
 
@@ -407,36 +407,40 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb7-2" data-line-number="2">(perf &lt;-<span class="st"> </span><span class="kw">resample</span>(fo, <span class="dt">data =</span> Melanoma, <span class="dt">model =</span> GBMModel, <span class="dt">control =</span> control))</a>
 <a class="sourceLine" id="cb7-3" data-line-number="3"><span class="co">#&gt; An object of class &quot;Resamples&quot;</span></a>
 <a class="sourceLine" id="cb7-4" data-line-number="4"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-5" data-line-number="5"><span class="co">#&gt; Metrics: ROC, Brier, ROCTime1, ROCTime2, ROCTime3, BrierTime1, BrierTime2, BrierTime3 </span></a>
+<a class="sourceLine" id="cb7-5" data-line-number="5"><span class="co">#&gt; Models: GBMModel</span></a>
 <a class="sourceLine" id="cb7-6" data-line-number="6"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-7" data-line-number="7"><span class="co">#&gt; Resamples control object of class &quot;CVMLControl&quot;</span></a>
+<a class="sourceLine" id="cb7-7" data-line-number="7"><span class="co">#&gt; Metrics: ROC, Brier, ROCTime1, ROCTime2, ROCTime3, BrierTime1, BrierTime2, BrierTime3</span></a>
 <a class="sourceLine" id="cb7-8" data-line-number="8"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-9" data-line-number="9"><span class="co">#&gt; Method: K-Fold Cross-Validation</span></a>
+<a class="sourceLine" id="cb7-9" data-line-number="9"><span class="co">#&gt; Stratification variable: (strata) </span></a>
 <a class="sourceLine" id="cb7-10" data-line-number="10"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-11" data-line-number="11"><span class="co">#&gt; Folds: 10</span></a>
+<a class="sourceLine" id="cb7-11" data-line-number="11"><span class="co">#&gt; Resamples control object of class &quot;CVMLControl&quot;</span></a>
 <a class="sourceLine" id="cb7-12" data-line-number="12"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-13" data-line-number="13"><span class="co">#&gt; Repeats: 5</span></a>
+<a class="sourceLine" id="cb7-13" data-line-number="13"><span class="co">#&gt; Method: K-Fold Cross-Validation</span></a>
 <a class="sourceLine" id="cb7-14" data-line-number="14"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-15" data-line-number="15"><span class="co">#&gt; Class cutoff probability: 0.5 </span></a>
+<a class="sourceLine" id="cb7-15" data-line-number="15"><span class="co">#&gt; Folds: 10</span></a>
 <a class="sourceLine" id="cb7-16" data-line-number="16"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-17" data-line-number="17"><span class="co">#&gt; Survival times: 730, 1825, 3650 </span></a>
+<a class="sourceLine" id="cb7-17" data-line-number="17"><span class="co">#&gt; Repeats: 5</span></a>
 <a class="sourceLine" id="cb7-18" data-line-number="18"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-19" data-line-number="19"><span class="co">#&gt; Omit missing responses: TRUE</span></a>
+<a class="sourceLine" id="cb7-19" data-line-number="19"><span class="co">#&gt; Class cutoff probability: 0.5 </span></a>
 <a class="sourceLine" id="cb7-20" data-line-number="20"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb7-21" data-line-number="21"><span class="co">#&gt; Seed: 1235503296</span></a>
-<a class="sourceLine" id="cb7-22" data-line-number="22"></a>
-<a class="sourceLine" id="cb7-23" data-line-number="23"><span class="kw">summary</span>(perf)</a>
-<a class="sourceLine" id="cb7-24" data-line-number="24"><span class="co">#&gt;                  Mean     Median         SD        Min       Max   NA</span></a>
-<a class="sourceLine" id="cb7-25" data-line-number="25"><span class="co">#&gt; ROC        0.68604239 0.70874170 0.13112744 0.30403646 0.9243192 0.00</span></a>
-<a class="sourceLine" id="cb7-26" data-line-number="26"><span class="co">#&gt; Brier      0.19842301 0.18785439 0.05065880 0.11119681 0.3191915 0.06</span></a>
-<a class="sourceLine" id="cb7-27" data-line-number="27"><span class="co">#&gt; ROCTime1   0.70223615 0.78703704 0.25757157 0.00000000 1.0000000 0.00</span></a>
-<a class="sourceLine" id="cb7-28" data-line-number="28"><span class="co">#&gt; ROCTime2   0.71955421 0.71661879 0.12419261 0.40947014 0.9625000 0.00</span></a>
-<a class="sourceLine" id="cb7-29" data-line-number="29"><span class="co">#&gt; ROCTime3   0.65945780 0.66159861 0.13864165 0.32682292 0.9081753 0.00</span></a>
-<a class="sourceLine" id="cb7-30" data-line-number="30"><span class="co">#&gt; BrierTime1 0.08801901 0.09111647 0.03456247 0.00964609 0.1742736 0.00</span></a>
-<a class="sourceLine" id="cb7-31" data-line-number="31"><span class="co">#&gt; BrierTime2 0.18637499 0.18367866 0.04184711 0.10990137 0.3386482 0.00</span></a>
-<a class="sourceLine" id="cb7-32" data-line-number="32"><span class="co">#&gt; BrierTime3 0.24878603 0.23675365 0.09215865 0.08383085 0.5169392 0.06</span></a>
-<a class="sourceLine" id="cb7-33" data-line-number="33"></a>
-<a class="sourceLine" id="cb7-34" data-line-number="34"><span class="kw">plot</span>(perf, <span class="dt">metrics =</span> metrics)</a></code></pre></div>
+<a class="sourceLine" id="cb7-21" data-line-number="21"><span class="co">#&gt; Survival times: 730, 1825, 3650 </span></a>
+<a class="sourceLine" id="cb7-22" data-line-number="22"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-23" data-line-number="23"><span class="co">#&gt; Omit missing responses: TRUE</span></a>
+<a class="sourceLine" id="cb7-24" data-line-number="24"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb7-25" data-line-number="25"><span class="co">#&gt; Seed: 1235503296</span></a>
+<a class="sourceLine" id="cb7-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb7-27" data-line-number="27"><span class="kw">summary</span>(perf)</a>
+<a class="sourceLine" id="cb7-28" data-line-number="28"><span class="co">#&gt;                  Mean     Median         SD        Min       Max   NA</span></a>
+<a class="sourceLine" id="cb7-29" data-line-number="29"><span class="co">#&gt; ROC        0.68604239 0.70874170 0.13112744 0.30403646 0.9243192 0.00</span></a>
+<a class="sourceLine" id="cb7-30" data-line-number="30"><span class="co">#&gt; Brier      0.19842301 0.18785439 0.05065880 0.11119681 0.3191915 0.06</span></a>
+<a class="sourceLine" id="cb7-31" data-line-number="31"><span class="co">#&gt; ROCTime1   0.70223615 0.78703704 0.25757157 0.00000000 1.0000000 0.00</span></a>
+<a class="sourceLine" id="cb7-32" data-line-number="32"><span class="co">#&gt; ROCTime2   0.71955421 0.71661879 0.12419261 0.40947014 0.9625000 0.00</span></a>
+<a class="sourceLine" id="cb7-33" data-line-number="33"><span class="co">#&gt; ROCTime3   0.65945780 0.66159861 0.13864165 0.32682292 0.9081753 0.00</span></a>
+<a class="sourceLine" id="cb7-34" data-line-number="34"><span class="co">#&gt; BrierTime1 0.08801901 0.09111647 0.03456247 0.00964609 0.1742736 0.00</span></a>
+<a class="sourceLine" id="cb7-35" data-line-number="35"><span class="co">#&gt; BrierTime2 0.18637499 0.18367866 0.04184711 0.10990137 0.3386482 0.00</span></a>
+<a class="sourceLine" id="cb7-36" data-line-number="36"><span class="co">#&gt; BrierTime3 0.24878603 0.23675365 0.09215865 0.08383085 0.5169392 0.06</span></a>
+<a class="sourceLine" id="cb7-37" data-line-number="37"></a>
+<a class="sourceLine" id="cb7-38" data-line-number="38"><span class="kw">plot</span>(perf, <span class="dt">metrics =</span> metrics)</a></code></pre></div>
 <p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
 </div>
 <div id="resampling-for-model-comparisons" class="section level3">
@@ -451,42 +455,44 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb8-7" data-line-number="7">(perf &lt;-<span class="st"> </span><span class="kw">Resamples</span>(<span class="dt">GBM1 =</span> gbmperf1, <span class="dt">GBM2 =</span> gbmperf2, <span class="dt">GBM3 =</span> gbmperf3))</a>
 <a class="sourceLine" id="cb8-8" data-line-number="8"><span class="co">#&gt; An object of class &quot;Resamples&quot;</span></a>
 <a class="sourceLine" id="cb8-9" data-line-number="9"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-10" data-line-number="10"><span class="co">#&gt; Models: GBM1, GBM2, GBM3 </span></a>
+<a class="sourceLine" id="cb8-10" data-line-number="10"><span class="co">#&gt; Models: GBM1, GBM2, GBM3</span></a>
 <a class="sourceLine" id="cb8-11" data-line-number="11"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-12" data-line-number="12"><span class="co">#&gt; Metrics: ROC, Brier, ROCTime1, ROCTime2, ROCTime3, BrierTime1, BrierTime2, BrierTime3 </span></a>
+<a class="sourceLine" id="cb8-12" data-line-number="12"><span class="co">#&gt; Metrics: ROC, Brier, ROCTime1, ROCTime2, ROCTime3, BrierTime1, BrierTime2, BrierTime3</span></a>
 <a class="sourceLine" id="cb8-13" data-line-number="13"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-14" data-line-number="14"><span class="co">#&gt; Resamples control object of class &quot;CVMLControl&quot;</span></a>
+<a class="sourceLine" id="cb8-14" data-line-number="14"><span class="co">#&gt; Stratification variable: (strata) </span></a>
 <a class="sourceLine" id="cb8-15" data-line-number="15"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-16" data-line-number="16"><span class="co">#&gt; Method: K-Fold Cross-Validation</span></a>
+<a class="sourceLine" id="cb8-16" data-line-number="16"><span class="co">#&gt; Resamples control object of class &quot;CVMLControl&quot;</span></a>
 <a class="sourceLine" id="cb8-17" data-line-number="17"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-18" data-line-number="18"><span class="co">#&gt; Folds: 10</span></a>
+<a class="sourceLine" id="cb8-18" data-line-number="18"><span class="co">#&gt; Method: K-Fold Cross-Validation</span></a>
 <a class="sourceLine" id="cb8-19" data-line-number="19"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-20" data-line-number="20"><span class="co">#&gt; Repeats: 5</span></a>
+<a class="sourceLine" id="cb8-20" data-line-number="20"><span class="co">#&gt; Folds: 10</span></a>
 <a class="sourceLine" id="cb8-21" data-line-number="21"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-22" data-line-number="22"><span class="co">#&gt; Class cutoff probability: 0.5 </span></a>
+<a class="sourceLine" id="cb8-22" data-line-number="22"><span class="co">#&gt; Repeats: 5</span></a>
 <a class="sourceLine" id="cb8-23" data-line-number="23"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-24" data-line-number="24"><span class="co">#&gt; Survival times: 730, 1825, 3650 </span></a>
+<a class="sourceLine" id="cb8-24" data-line-number="24"><span class="co">#&gt; Class cutoff probability: 0.5 </span></a>
 <a class="sourceLine" id="cb8-25" data-line-number="25"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-26" data-line-number="26"><span class="co">#&gt; Omit missing responses: TRUE</span></a>
+<a class="sourceLine" id="cb8-26" data-line-number="26"><span class="co">#&gt; Survival times: 730, 1825, 3650 </span></a>
 <a class="sourceLine" id="cb8-27" data-line-number="27"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-28" data-line-number="28"><span class="co">#&gt; Seed: 1235503296</span></a>
-<a class="sourceLine" id="cb8-29" data-line-number="29"></a>
-<a class="sourceLine" id="cb8-30" data-line-number="30"><span class="kw">summary</span>(perf)[, , metrics]</a>
-<a class="sourceLine" id="cb8-31" data-line-number="31"><span class="co">#&gt; , , ROC</span></a>
-<a class="sourceLine" id="cb8-32" data-line-number="32"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-33" data-line-number="33"><span class="co">#&gt;           Mean    Median        SD       Min       Max NA</span></a>
-<a class="sourceLine" id="cb8-34" data-line-number="34"><span class="co">#&gt; GBM1 0.7126959 0.7249419 0.1303829 0.3231771 0.9539048  0</span></a>
-<a class="sourceLine" id="cb8-35" data-line-number="35"><span class="co">#&gt; GBM2 0.7078389 0.7232105 0.1289528 0.3888021 0.9324742  0</span></a>
-<a class="sourceLine" id="cb8-36" data-line-number="36"><span class="co">#&gt; GBM3 0.6860424 0.7087417 0.1311274 0.3040365 0.9243192  0</span></a>
-<a class="sourceLine" id="cb8-37" data-line-number="37"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-38" data-line-number="38"><span class="co">#&gt; , , Brier</span></a>
+<a class="sourceLine" id="cb8-28" data-line-number="28"><span class="co">#&gt; Omit missing responses: TRUE</span></a>
+<a class="sourceLine" id="cb8-29" data-line-number="29"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-30" data-line-number="30"><span class="co">#&gt; Seed: 1235503296</span></a>
+<a class="sourceLine" id="cb8-31" data-line-number="31"></a>
+<a class="sourceLine" id="cb8-32" data-line-number="32"><span class="kw">summary</span>(perf)[, , metrics]</a>
+<a class="sourceLine" id="cb8-33" data-line-number="33"><span class="co">#&gt; , , ROC</span></a>
+<a class="sourceLine" id="cb8-34" data-line-number="34"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-35" data-line-number="35"><span class="co">#&gt;           Mean    Median        SD       Min       Max NA</span></a>
+<a class="sourceLine" id="cb8-36" data-line-number="36"><span class="co">#&gt; GBM1 0.7126959 0.7249419 0.1303829 0.3231771 0.9539048  0</span></a>
+<a class="sourceLine" id="cb8-37" data-line-number="37"><span class="co">#&gt; GBM2 0.7078389 0.7232105 0.1289528 0.3888021 0.9324742  0</span></a>
+<a class="sourceLine" id="cb8-38" data-line-number="38"><span class="co">#&gt; GBM3 0.6860424 0.7087417 0.1311274 0.3040365 0.9243192  0</span></a>
 <a class="sourceLine" id="cb8-39" data-line-number="39"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb8-40" data-line-number="40"><span class="co">#&gt;           Mean    Median         SD        Min       Max   NA</span></a>
-<a class="sourceLine" id="cb8-41" data-line-number="41"><span class="co">#&gt; GBM1 0.1860707 0.1760822 0.04476337 0.10706487 0.2978184 0.06</span></a>
-<a class="sourceLine" id="cb8-42" data-line-number="42"><span class="co">#&gt; GBM2 0.1892243 0.1814450 0.04603588 0.09965699 0.2994825 0.06</span></a>
-<a class="sourceLine" id="cb8-43" data-line-number="43"><span class="co">#&gt; GBM3 0.1984230 0.1878544 0.05065880 0.11119681 0.3191915 0.06</span></a>
-<a class="sourceLine" id="cb8-44" data-line-number="44"></a>
-<a class="sourceLine" id="cb8-45" data-line-number="45"><span class="kw">plot</span>(perf, <span class="dt">metrics =</span> metrics)</a></code></pre></div>
+<a class="sourceLine" id="cb8-40" data-line-number="40"><span class="co">#&gt; , , Brier</span></a>
+<a class="sourceLine" id="cb8-41" data-line-number="41"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb8-42" data-line-number="42"><span class="co">#&gt;           Mean    Median         SD        Min       Max   NA</span></a>
+<a class="sourceLine" id="cb8-43" data-line-number="43"><span class="co">#&gt; GBM1 0.1860707 0.1760822 0.04476337 0.10706487 0.2978184 0.06</span></a>
+<a class="sourceLine" id="cb8-44" data-line-number="44"><span class="co">#&gt; GBM2 0.1892243 0.1814450 0.04603588 0.09965699 0.2994825 0.06</span></a>
+<a class="sourceLine" id="cb8-45" data-line-number="45"><span class="co">#&gt; GBM3 0.1984230 0.1878544 0.05065880 0.11119681 0.3191915 0.06</span></a>
+<a class="sourceLine" id="cb8-46" data-line-number="46"></a>
+<a class="sourceLine" id="cb8-47" data-line-number="47"><span class="kw">plot</span>(perf, <span class="dt">metrics =</span> metrics)</a></code></pre></div>
 <p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">plot</span>(perf, <span class="dt">metrics =</span> metrics, <span class="dt">type =</span> <span class="st">&quot;density&quot;</span>)</a></code></pre></div>
 <p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
@@ -499,46 +505,48 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb12-2" data-line-number="2">(perfdiff &lt;-<span class="st"> </span><span class="kw">diff</span>(perf))</a>
 <a class="sourceLine" id="cb12-3" data-line-number="3"><span class="co">#&gt; An object of class &quot;ResamplesDiff&quot;</span></a>
 <a class="sourceLine" id="cb12-4" data-line-number="4"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="co">#&gt; Models: GBM1 - GBM2, GBM1 - GBM3, GBM2 - GBM3 </span></a>
+<a class="sourceLine" id="cb12-5" data-line-number="5"><span class="co">#&gt; Models: GBM1, GBM2, GBM3</span></a>
 <a class="sourceLine" id="cb12-6" data-line-number="6"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-7" data-line-number="7"><span class="co">#&gt; Metrics: ROC, Brier, ROCTime1, ROCTime2, ROCTime3, BrierTime1, BrierTime2, BrierTime3 </span></a>
+<a class="sourceLine" id="cb12-7" data-line-number="7"><span class="co">#&gt; Metrics: ROC, Brier, ROCTime1, ROCTime2, ROCTime3, BrierTime1, BrierTime2, BrierTime3</span></a>
 <a class="sourceLine" id="cb12-8" data-line-number="8"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-9" data-line-number="9"><span class="co">#&gt; Resamples control object of class &quot;CVMLControl&quot;</span></a>
+<a class="sourceLine" id="cb12-9" data-line-number="9"><span class="co">#&gt; Stratification variable: (strata) </span></a>
 <a class="sourceLine" id="cb12-10" data-line-number="10"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-11" data-line-number="11"><span class="co">#&gt; Method: K-Fold Cross-Validation</span></a>
+<a class="sourceLine" id="cb12-11" data-line-number="11"><span class="co">#&gt; Resamples control object of class &quot;CVMLControl&quot;</span></a>
 <a class="sourceLine" id="cb12-12" data-line-number="12"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-13" data-line-number="13"><span class="co">#&gt; Folds: 10</span></a>
+<a class="sourceLine" id="cb12-13" data-line-number="13"><span class="co">#&gt; Method: K-Fold Cross-Validation</span></a>
 <a class="sourceLine" id="cb12-14" data-line-number="14"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-15" data-line-number="15"><span class="co">#&gt; Repeats: 5</span></a>
+<a class="sourceLine" id="cb12-15" data-line-number="15"><span class="co">#&gt; Folds: 10</span></a>
 <a class="sourceLine" id="cb12-16" data-line-number="16"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-17" data-line-number="17"><span class="co">#&gt; Class cutoff probability: 0.5 </span></a>
+<a class="sourceLine" id="cb12-17" data-line-number="17"><span class="co">#&gt; Repeats: 5</span></a>
 <a class="sourceLine" id="cb12-18" data-line-number="18"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-19" data-line-number="19"><span class="co">#&gt; Survival times: 730, 1825, 3650 </span></a>
+<a class="sourceLine" id="cb12-19" data-line-number="19"><span class="co">#&gt; Class cutoff probability: 0.5 </span></a>
 <a class="sourceLine" id="cb12-20" data-line-number="20"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-21" data-line-number="21"><span class="co">#&gt; Omit missing responses: TRUE</span></a>
+<a class="sourceLine" id="cb12-21" data-line-number="21"><span class="co">#&gt; Survival times: 730, 1825, 3650 </span></a>
 <a class="sourceLine" id="cb12-22" data-line-number="22"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-23" data-line-number="23"><span class="co">#&gt; Seed: 1235503296</span></a>
-<a class="sourceLine" id="cb12-24" data-line-number="24"></a>
-<a class="sourceLine" id="cb12-25" data-line-number="25"><span class="kw">summary</span>(perfdiff)[, , metrics]</a>
-<a class="sourceLine" id="cb12-26" data-line-number="26"><span class="co">#&gt; , , ROC</span></a>
-<a class="sourceLine" id="cb12-27" data-line-number="27"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-28" data-line-number="28"><span class="co">#&gt;                    Mean      Median         SD         Min       Max NA</span></a>
-<a class="sourceLine" id="cb12-29" data-line-number="29"><span class="co">#&gt; GBM1 - GBM2 0.004857001 0.005014928 0.02777305 -0.06562500 0.0637349  0</span></a>
-<a class="sourceLine" id="cb12-30" data-line-number="30"><span class="co">#&gt; GBM1 - GBM3 0.026653553 0.025452828 0.04132958 -0.04401444 0.1605615  0</span></a>
-<a class="sourceLine" id="cb12-31" data-line-number="31"><span class="co">#&gt; GBM2 - GBM3 0.021796551 0.026398966 0.03335346 -0.02937940 0.1339694  0</span></a>
-<a class="sourceLine" id="cb12-32" data-line-number="32"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-33" data-line-number="33"><span class="co">#&gt; , , Brier</span></a>
+<a class="sourceLine" id="cb12-23" data-line-number="23"><span class="co">#&gt; Omit missing responses: TRUE</span></a>
+<a class="sourceLine" id="cb12-24" data-line-number="24"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb12-25" data-line-number="25"><span class="co">#&gt; Seed: 1235503296</span></a>
+<a class="sourceLine" id="cb12-26" data-line-number="26"></a>
+<a class="sourceLine" id="cb12-27" data-line-number="27"><span class="kw">summary</span>(perfdiff)[, , metrics]</a>
+<a class="sourceLine" id="cb12-28" data-line-number="28"><span class="co">#&gt; , , ROC</span></a>
+<a class="sourceLine" id="cb12-29" data-line-number="29"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb12-30" data-line-number="30"><span class="co">#&gt;                    Mean      Median         SD         Min       Max NA</span></a>
+<a class="sourceLine" id="cb12-31" data-line-number="31"><span class="co">#&gt; GBM1 - GBM2 0.004857001 0.005014928 0.02777305 -0.06562500 0.0637349  0</span></a>
+<a class="sourceLine" id="cb12-32" data-line-number="32"><span class="co">#&gt; GBM1 - GBM3 0.026653553 0.025452828 0.04132958 -0.04401444 0.1605615  0</span></a>
+<a class="sourceLine" id="cb12-33" data-line-number="33"><span class="co">#&gt; GBM2 - GBM3 0.021796551 0.026398966 0.03335346 -0.02937940 0.1339694  0</span></a>
 <a class="sourceLine" id="cb12-34" data-line-number="34"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb12-35" data-line-number="35"><span class="co">#&gt;                     Mean       Median         SD         Min        Max</span></a>
-<a class="sourceLine" id="cb12-36" data-line-number="36"><span class="co">#&gt; GBM1 - GBM2 -0.003153596 -0.003936083 0.00906714 -0.02699968 0.01698245</span></a>
-<a class="sourceLine" id="cb12-37" data-line-number="37"><span class="co">#&gt; GBM1 - GBM3 -0.012352336 -0.010910743 0.01560477 -0.04889790 0.01718238</span></a>
-<a class="sourceLine" id="cb12-38" data-line-number="38"><span class="co">#&gt; GBM2 - GBM3 -0.009198740 -0.006745434 0.01141701 -0.03430725 0.01210852</span></a>
-<a class="sourceLine" id="cb12-39" data-line-number="39"><span class="co">#&gt;               NA</span></a>
-<a class="sourceLine" id="cb12-40" data-line-number="40"><span class="co">#&gt; GBM1 - GBM2 0.06</span></a>
-<a class="sourceLine" id="cb12-41" data-line-number="41"><span class="co">#&gt; GBM1 - GBM3 0.06</span></a>
-<a class="sourceLine" id="cb12-42" data-line-number="42"><span class="co">#&gt; GBM2 - GBM3 0.06</span></a>
-<a class="sourceLine" id="cb12-43" data-line-number="43"></a>
-<a class="sourceLine" id="cb12-44" data-line-number="44"><span class="kw">plot</span>(perfdiff, <span class="dt">metrics =</span> metrics)</a></code></pre></div>
+<a class="sourceLine" id="cb12-35" data-line-number="35"><span class="co">#&gt; , , Brier</span></a>
+<a class="sourceLine" id="cb12-36" data-line-number="36"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb12-37" data-line-number="37"><span class="co">#&gt;                     Mean       Median         SD         Min        Max</span></a>
+<a class="sourceLine" id="cb12-38" data-line-number="38"><span class="co">#&gt; GBM1 - GBM2 -0.003153596 -0.003936083 0.00906714 -0.02699968 0.01698245</span></a>
+<a class="sourceLine" id="cb12-39" data-line-number="39"><span class="co">#&gt; GBM1 - GBM3 -0.012352336 -0.010910743 0.01560477 -0.04889790 0.01718238</span></a>
+<a class="sourceLine" id="cb12-40" data-line-number="40"><span class="co">#&gt; GBM2 - GBM3 -0.009198740 -0.006745434 0.01141701 -0.03430725 0.01210852</span></a>
+<a class="sourceLine" id="cb12-41" data-line-number="41"><span class="co">#&gt;               NA</span></a>
+<a class="sourceLine" id="cb12-42" data-line-number="42"><span class="co">#&gt; GBM1 - GBM2 0.06</span></a>
+<a class="sourceLine" id="cb12-43" data-line-number="43"><span class="co">#&gt; GBM1 - GBM3 0.06</span></a>
+<a class="sourceLine" id="cb12-44" data-line-number="44"><span class="co">#&gt; GBM2 - GBM3 0.06</span></a>
+<a class="sourceLine" id="cb12-45" data-line-number="45"></a>
+<a class="sourceLine" id="cb12-46" data-line-number="46"><span class="kw">plot</span>(perfdiff, <span class="dt">metrics =</span> metrics)</a></code></pre></div>
 <p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">t.test</span>(perfdiff)[, , metrics]</a>
 <a class="sourceLine" id="cb13-2" data-line-number="2"><span class="co">#&gt; , , ROC</span></a>
@@ -612,74 +620,76 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <a class="sourceLine" id="cb14-52" data-line-number="52"><span class="co">#&gt; resamples:</span></a>
 <a class="sourceLine" id="cb14-53" data-line-number="53"><span class="co">#&gt; An object of class &quot;Resamples&quot;</span></a>
 <a class="sourceLine" id="cb14-54" data-line-number="54"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-55" data-line-number="55"><span class="co">#&gt; Models: GBMModel, GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6, GBMModel.7, GBMModel.8, GBMModel.9, GBMModel.10, GBMModel.11, GBMModel.12, GBMModel.13, GBMModel.14, GBMModel.15, GBMModel.16, GBMModel.17 </span></a>
+<a class="sourceLine" id="cb14-55" data-line-number="55"><span class="co">#&gt; Models: GBMModel, GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6, GBMModel.7, GBMModel.8, GBMModel.9, GBMModel.10, GBMModel.11, GBMModel.12, GBMModel.13, GBMModel.14, GBMModel.15, GBMModel.16, GBMModel.17</span></a>
 <a class="sourceLine" id="cb14-56" data-line-number="56"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-57" data-line-number="57"><span class="co">#&gt; Metrics: ROC, Brier, ROCTime1, ROCTime2, ROCTime3, BrierTime1, BrierTime2, BrierTime3 </span></a>
+<a class="sourceLine" id="cb14-57" data-line-number="57"><span class="co">#&gt; Metrics: ROC, Brier, ROCTime1, ROCTime2, ROCTime3, BrierTime1, BrierTime2, BrierTime3</span></a>
 <a class="sourceLine" id="cb14-58" data-line-number="58"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-59" data-line-number="59"><span class="co">#&gt; Resamples control object of class &quot;CVMLControl&quot;</span></a>
+<a class="sourceLine" id="cb14-59" data-line-number="59"><span class="co">#&gt; Stratification variable: (strata) </span></a>
 <a class="sourceLine" id="cb14-60" data-line-number="60"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-61" data-line-number="61"><span class="co">#&gt; Method: K-Fold Cross-Validation</span></a>
+<a class="sourceLine" id="cb14-61" data-line-number="61"><span class="co">#&gt; Resamples control object of class &quot;CVMLControl&quot;</span></a>
 <a class="sourceLine" id="cb14-62" data-line-number="62"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-63" data-line-number="63"><span class="co">#&gt; Folds: 10</span></a>
+<a class="sourceLine" id="cb14-63" data-line-number="63"><span class="co">#&gt; Method: K-Fold Cross-Validation</span></a>
 <a class="sourceLine" id="cb14-64" data-line-number="64"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-65" data-line-number="65"><span class="co">#&gt; Repeats: 5</span></a>
+<a class="sourceLine" id="cb14-65" data-line-number="65"><span class="co">#&gt; Folds: 10</span></a>
 <a class="sourceLine" id="cb14-66" data-line-number="66"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-67" data-line-number="67"><span class="co">#&gt; Class cutoff probability: 0.5 </span></a>
+<a class="sourceLine" id="cb14-67" data-line-number="67"><span class="co">#&gt; Repeats: 5</span></a>
 <a class="sourceLine" id="cb14-68" data-line-number="68"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-69" data-line-number="69"><span class="co">#&gt; Survival times: 730, 1825, 3650 </span></a>
+<a class="sourceLine" id="cb14-69" data-line-number="69"><span class="co">#&gt; Class cutoff probability: 0.5 </span></a>
 <a class="sourceLine" id="cb14-70" data-line-number="70"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-71" data-line-number="71"><span class="co">#&gt; Omit missing responses: TRUE</span></a>
+<a class="sourceLine" id="cb14-71" data-line-number="71"><span class="co">#&gt; Survival times: 730, 1825, 3650 </span></a>
 <a class="sourceLine" id="cb14-72" data-line-number="72"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-73" data-line-number="73"><span class="co">#&gt; Seed: 1235503296</span></a>
+<a class="sourceLine" id="cb14-73" data-line-number="73"><span class="co">#&gt; Omit missing responses: TRUE</span></a>
 <a class="sourceLine" id="cb14-74" data-line-number="74"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-75" data-line-number="75"><span class="co">#&gt; Selected: Model10 (ROC)</span></a>
-<a class="sourceLine" id="cb14-76" data-line-number="76"></a>
-<a class="sourceLine" id="cb14-77" data-line-number="77"><span class="kw">summary</span>(gbmtune)[, , metrics]</a>
-<a class="sourceLine" id="cb14-78" data-line-number="78"><span class="co">#&gt; , , ROC</span></a>
-<a class="sourceLine" id="cb14-79" data-line-number="79"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-80" data-line-number="80"><span class="co">#&gt;                  Mean    Median        SD       Min       Max NA</span></a>
-<a class="sourceLine" id="cb14-81" data-line-number="81"><span class="co">#&gt; GBMModel    0.7084099 0.7334550 0.1317115 0.2912007 0.9378315  0</span></a>
-<a class="sourceLine" id="cb14-82" data-line-number="82"><span class="co">#&gt; GBMModel.1  0.7044935 0.7216624 0.1280673 0.3786458 0.9209873  0</span></a>
-<a class="sourceLine" id="cb14-83" data-line-number="83"><span class="co">#&gt; GBMModel.2  0.6914334 0.7205510 0.1229936 0.4113761 0.9116389  0</span></a>
-<a class="sourceLine" id="cb14-84" data-line-number="84"><span class="co">#&gt; GBMModel.3  0.6920790 0.7160629 0.1221498 0.3727638 0.9132602  0</span></a>
-<a class="sourceLine" id="cb14-85" data-line-number="85"><span class="co">#&gt; GBMModel.4  0.6848302 0.6918460 0.1250106 0.3704309 0.9528189  0</span></a>
-<a class="sourceLine" id="cb14-86" data-line-number="86"><span class="co">#&gt; GBMModel.5  0.6691489 0.6816788 0.1391156 0.2993490 0.9158057  0</span></a>
-<a class="sourceLine" id="cb14-87" data-line-number="87"><span class="co">#&gt; GBMModel.6  0.6879942 0.6914624 0.1282246 0.3758064 0.9396974  0</span></a>
-<a class="sourceLine" id="cb14-88" data-line-number="88"><span class="co">#&gt; GBMModel.7  0.6769710 0.6873528 0.1358296 0.3204427 0.9218421  0</span></a>
-<a class="sourceLine" id="cb14-89" data-line-number="89"><span class="co">#&gt; GBMModel.8  0.6527250 0.6528089 0.1456248 0.2634115 0.9004983  0</span></a>
-<a class="sourceLine" id="cb14-90" data-line-number="90"><span class="co">#&gt; GBMModel.9  0.7126959 0.7249419 0.1303829 0.3231771 0.9539048  0</span></a>
-<a class="sourceLine" id="cb14-91" data-line-number="91"><span class="co">#&gt; GBMModel.10 0.7078389 0.7232105 0.1289528 0.3888021 0.9324742  0</span></a>
-<a class="sourceLine" id="cb14-92" data-line-number="92"><span class="co">#&gt; GBMModel.11 0.6860424 0.7087417 0.1311274 0.3040365 0.9243192  0</span></a>
-<a class="sourceLine" id="cb14-93" data-line-number="93"><span class="co">#&gt; GBMModel.12 0.6994989 0.7266897 0.1234906 0.3975260 0.9485726  0</span></a>
-<a class="sourceLine" id="cb14-94" data-line-number="94"><span class="co">#&gt; GBMModel.13 0.6921657 0.7104928 0.1336868 0.3523811 0.9336789  0</span></a>
-<a class="sourceLine" id="cb14-95" data-line-number="95"><span class="co">#&gt; GBMModel.14 0.6814255 0.6918727 0.1373640 0.3334635 0.9053087  0</span></a>
-<a class="sourceLine" id="cb14-96" data-line-number="96"><span class="co">#&gt; GBMModel.15 0.6956087 0.7147426 0.1366645 0.3521014 0.9636788  0</span></a>
-<a class="sourceLine" id="cb14-97" data-line-number="97"><span class="co">#&gt; GBMModel.16 0.6929889 0.6900073 0.1289404 0.3296225 0.9262851  0</span></a>
-<a class="sourceLine" id="cb14-98" data-line-number="98"><span class="co">#&gt; GBMModel.17 0.6744827 0.6672509 0.1368483 0.3111367 0.9409702  0</span></a>
-<a class="sourceLine" id="cb14-99" data-line-number="99"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-100" data-line-number="100"><span class="co">#&gt; , , Brier</span></a>
+<a class="sourceLine" id="cb14-75" data-line-number="75"><span class="co">#&gt; Seed: 1235503296</span></a>
+<a class="sourceLine" id="cb14-76" data-line-number="76"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb14-77" data-line-number="77"><span class="co">#&gt; Selected: GBMModel.9 (ROC)</span></a>
+<a class="sourceLine" id="cb14-78" data-line-number="78"></a>
+<a class="sourceLine" id="cb14-79" data-line-number="79"><span class="kw">summary</span>(gbmtune)[, , metrics]</a>
+<a class="sourceLine" id="cb14-80" data-line-number="80"><span class="co">#&gt; , , ROC</span></a>
+<a class="sourceLine" id="cb14-81" data-line-number="81"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb14-82" data-line-number="82"><span class="co">#&gt;                  Mean    Median        SD       Min       Max NA</span></a>
+<a class="sourceLine" id="cb14-83" data-line-number="83"><span class="co">#&gt; GBMModel    0.7084099 0.7334550 0.1317115 0.2912007 0.9378315  0</span></a>
+<a class="sourceLine" id="cb14-84" data-line-number="84"><span class="co">#&gt; GBMModel.1  0.7044935 0.7216624 0.1280673 0.3786458 0.9209873  0</span></a>
+<a class="sourceLine" id="cb14-85" data-line-number="85"><span class="co">#&gt; GBMModel.2  0.6914334 0.7205510 0.1229936 0.4113761 0.9116389  0</span></a>
+<a class="sourceLine" id="cb14-86" data-line-number="86"><span class="co">#&gt; GBMModel.3  0.6920790 0.7160629 0.1221498 0.3727638 0.9132602  0</span></a>
+<a class="sourceLine" id="cb14-87" data-line-number="87"><span class="co">#&gt; GBMModel.4  0.6848302 0.6918460 0.1250106 0.3704309 0.9528189  0</span></a>
+<a class="sourceLine" id="cb14-88" data-line-number="88"><span class="co">#&gt; GBMModel.5  0.6691489 0.6816788 0.1391156 0.2993490 0.9158057  0</span></a>
+<a class="sourceLine" id="cb14-89" data-line-number="89"><span class="co">#&gt; GBMModel.6  0.6879942 0.6914624 0.1282246 0.3758064 0.9396974  0</span></a>
+<a class="sourceLine" id="cb14-90" data-line-number="90"><span class="co">#&gt; GBMModel.7  0.6769710 0.6873528 0.1358296 0.3204427 0.9218421  0</span></a>
+<a class="sourceLine" id="cb14-91" data-line-number="91"><span class="co">#&gt; GBMModel.8  0.6527250 0.6528089 0.1456248 0.2634115 0.9004983  0</span></a>
+<a class="sourceLine" id="cb14-92" data-line-number="92"><span class="co">#&gt; GBMModel.9  0.7126959 0.7249419 0.1303829 0.3231771 0.9539048  0</span></a>
+<a class="sourceLine" id="cb14-93" data-line-number="93"><span class="co">#&gt; GBMModel.10 0.7078389 0.7232105 0.1289528 0.3888021 0.9324742  0</span></a>
+<a class="sourceLine" id="cb14-94" data-line-number="94"><span class="co">#&gt; GBMModel.11 0.6860424 0.7087417 0.1311274 0.3040365 0.9243192  0</span></a>
+<a class="sourceLine" id="cb14-95" data-line-number="95"><span class="co">#&gt; GBMModel.12 0.6994989 0.7266897 0.1234906 0.3975260 0.9485726  0</span></a>
+<a class="sourceLine" id="cb14-96" data-line-number="96"><span class="co">#&gt; GBMModel.13 0.6921657 0.7104928 0.1336868 0.3523811 0.9336789  0</span></a>
+<a class="sourceLine" id="cb14-97" data-line-number="97"><span class="co">#&gt; GBMModel.14 0.6814255 0.6918727 0.1373640 0.3334635 0.9053087  0</span></a>
+<a class="sourceLine" id="cb14-98" data-line-number="98"><span class="co">#&gt; GBMModel.15 0.6956087 0.7147426 0.1366645 0.3521014 0.9636788  0</span></a>
+<a class="sourceLine" id="cb14-99" data-line-number="99"><span class="co">#&gt; GBMModel.16 0.6929889 0.6900073 0.1289404 0.3296225 0.9262851  0</span></a>
+<a class="sourceLine" id="cb14-100" data-line-number="100"><span class="co">#&gt; GBMModel.17 0.6744827 0.6672509 0.1368483 0.3111367 0.9409702  0</span></a>
 <a class="sourceLine" id="cb14-101" data-line-number="101"><span class="co">#&gt; </span></a>
-<a class="sourceLine" id="cb14-102" data-line-number="102"><span class="co">#&gt;                  Mean    Median         SD        Min       Max   NA</span></a>
-<a class="sourceLine" id="cb14-103" data-line-number="103"><span class="co">#&gt; GBMModel    0.1902605 0.1813742 0.04592658 0.11447004 0.3193480 0.06</span></a>
-<a class="sourceLine" id="cb14-104" data-line-number="104"><span class="co">#&gt; GBMModel.1  0.1961846 0.1886240 0.04975919 0.10223360 0.3154243 0.06</span></a>
-<a class="sourceLine" id="cb14-105" data-line-number="105"><span class="co">#&gt; GBMModel.2  0.2078215 0.1938710 0.05463432 0.10857945 0.3326337 0.06</span></a>
-<a class="sourceLine" id="cb14-106" data-line-number="106"><span class="co">#&gt; GBMModel.3  0.2000988 0.1889826 0.05218615 0.11031448 0.3438735 0.06</span></a>
-<a class="sourceLine" id="cb14-107" data-line-number="107"><span class="co">#&gt; GBMModel.4  0.2083254 0.1956902 0.05685070 0.10189786 0.4286941 0.06</span></a>
-<a class="sourceLine" id="cb14-108" data-line-number="108"><span class="co">#&gt; GBMModel.5  0.2208186 0.2032064 0.06503518 0.11316272 0.4389034 0.06</span></a>
-<a class="sourceLine" id="cb14-109" data-line-number="109"><span class="co">#&gt; GBMModel.6  0.2064209 0.1902088 0.06189791 0.11349287 0.4031801 0.06</span></a>
-<a class="sourceLine" id="cb14-110" data-line-number="110"><span class="co">#&gt; GBMModel.7  0.2158404 0.2015343 0.06175487 0.12184607 0.4338749 0.06</span></a>
-<a class="sourceLine" id="cb14-111" data-line-number="111"><span class="co">#&gt; GBMModel.8  0.2298594 0.2177718 0.06491117 0.13337052 0.4328804 0.06</span></a>
-<a class="sourceLine" id="cb14-112" data-line-number="112"><span class="co">#&gt; GBMModel.9  0.1860707 0.1760822 0.04476337 0.10706487 0.2978184 0.06</span></a>
-<a class="sourceLine" id="cb14-113" data-line-number="113"><span class="co">#&gt; GBMModel.10 0.1892243 0.1814450 0.04603588 0.09965699 0.2994825 0.06</span></a>
-<a class="sourceLine" id="cb14-114" data-line-number="114"><span class="co">#&gt; GBMModel.11 0.1984230 0.1878544 0.05065880 0.11119681 0.3191915 0.06</span></a>
-<a class="sourceLine" id="cb14-115" data-line-number="115"><span class="co">#&gt; GBMModel.12 0.1913985 0.1792700 0.04994485 0.10789194 0.3220089 0.06</span></a>
-<a class="sourceLine" id="cb14-116" data-line-number="116"><span class="co">#&gt; GBMModel.13 0.1934831 0.1834812 0.04891230 0.10869662 0.3102272 0.06</span></a>
-<a class="sourceLine" id="cb14-117" data-line-number="117"><span class="co">#&gt; GBMModel.14 0.2048976 0.1832971 0.05809369 0.12257865 0.3389919 0.06</span></a>
-<a class="sourceLine" id="cb14-118" data-line-number="118"><span class="co">#&gt; GBMModel.15 0.1923398 0.1777437 0.05219178 0.11132775 0.3530243 0.06</span></a>
-<a class="sourceLine" id="cb14-119" data-line-number="119"><span class="co">#&gt; GBMModel.16 0.1967562 0.1889953 0.05172487 0.11615526 0.3188928 0.06</span></a>
-<a class="sourceLine" id="cb14-120" data-line-number="120"><span class="co">#&gt; GBMModel.17 0.2100014 0.1980636 0.05540928 0.12776140 0.3323675 0.06</span></a>
-<a class="sourceLine" id="cb14-121" data-line-number="121"></a>
-<a class="sourceLine" id="cb14-122" data-line-number="122"><span class="kw">plot</span>(gbmtune, <span class="dt">type =</span> <span class="st">&quot;line&quot;</span>, <span class="dt">metrics =</span> metrics)</a></code></pre></div>
+<a class="sourceLine" id="cb14-102" data-line-number="102"><span class="co">#&gt; , , Brier</span></a>
+<a class="sourceLine" id="cb14-103" data-line-number="103"><span class="co">#&gt; </span></a>
+<a class="sourceLine" id="cb14-104" data-line-number="104"><span class="co">#&gt;                  Mean    Median         SD        Min       Max   NA</span></a>
+<a class="sourceLine" id="cb14-105" data-line-number="105"><span class="co">#&gt; GBMModel    0.1902605 0.1813742 0.04592658 0.11447004 0.3193480 0.06</span></a>
+<a class="sourceLine" id="cb14-106" data-line-number="106"><span class="co">#&gt; GBMModel.1  0.1961846 0.1886240 0.04975919 0.10223360 0.3154243 0.06</span></a>
+<a class="sourceLine" id="cb14-107" data-line-number="107"><span class="co">#&gt; GBMModel.2  0.2078215 0.1938710 0.05463432 0.10857945 0.3326337 0.06</span></a>
+<a class="sourceLine" id="cb14-108" data-line-number="108"><span class="co">#&gt; GBMModel.3  0.2000988 0.1889826 0.05218615 0.11031448 0.3438735 0.06</span></a>
+<a class="sourceLine" id="cb14-109" data-line-number="109"><span class="co">#&gt; GBMModel.4  0.2083254 0.1956902 0.05685070 0.10189786 0.4286941 0.06</span></a>
+<a class="sourceLine" id="cb14-110" data-line-number="110"><span class="co">#&gt; GBMModel.5  0.2208186 0.2032064 0.06503518 0.11316272 0.4389034 0.06</span></a>
+<a class="sourceLine" id="cb14-111" data-line-number="111"><span class="co">#&gt; GBMModel.6  0.2064209 0.1902088 0.06189791 0.11349287 0.4031801 0.06</span></a>
+<a class="sourceLine" id="cb14-112" data-line-number="112"><span class="co">#&gt; GBMModel.7  0.2158404 0.2015343 0.06175487 0.12184607 0.4338749 0.06</span></a>
+<a class="sourceLine" id="cb14-113" data-line-number="113"><span class="co">#&gt; GBMModel.8  0.2298594 0.2177718 0.06491117 0.13337052 0.4328804 0.06</span></a>
+<a class="sourceLine" id="cb14-114" data-line-number="114"><span class="co">#&gt; GBMModel.9  0.1860707 0.1760822 0.04476337 0.10706487 0.2978184 0.06</span></a>
+<a class="sourceLine" id="cb14-115" data-line-number="115"><span class="co">#&gt; GBMModel.10 0.1892243 0.1814450 0.04603588 0.09965699 0.2994825 0.06</span></a>
+<a class="sourceLine" id="cb14-116" data-line-number="116"><span class="co">#&gt; GBMModel.11 0.1984230 0.1878544 0.05065880 0.11119681 0.3191915 0.06</span></a>
+<a class="sourceLine" id="cb14-117" data-line-number="117"><span class="co">#&gt; GBMModel.12 0.1913985 0.1792700 0.04994485 0.10789194 0.3220089 0.06</span></a>
+<a class="sourceLine" id="cb14-118" data-line-number="118"><span class="co">#&gt; GBMModel.13 0.1934831 0.1834812 0.04891230 0.10869662 0.3102272 0.06</span></a>
+<a class="sourceLine" id="cb14-119" data-line-number="119"><span class="co">#&gt; GBMModel.14 0.2048976 0.1832971 0.05809369 0.12257865 0.3389919 0.06</span></a>
+<a class="sourceLine" id="cb14-120" data-line-number="120"><span class="co">#&gt; GBMModel.15 0.1923398 0.1777437 0.05219178 0.11132775 0.3530243 0.06</span></a>
+<a class="sourceLine" id="cb14-121" data-line-number="121"><span class="co">#&gt; GBMModel.16 0.1967562 0.1889953 0.05172487 0.11615526 0.3188928 0.06</span></a>
+<a class="sourceLine" id="cb14-122" data-line-number="122"><span class="co">#&gt; GBMModel.17 0.2100014 0.1980636 0.05540928 0.12776140 0.3323675 0.06</span></a>
+<a class="sourceLine" id="cb14-123" data-line-number="123"></a>
+<a class="sourceLine" id="cb14-124" data-line-number="124"><span class="kw">plot</span>(gbmtune, <span class="dt">type =</span> <span class="st">&quot;line&quot;</span>, <span class="dt">metrics =</span> metrics)</a></code></pre></div>
 <p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
 <p>The value returned by <code>tune</code> contains an object produced by a call to the modelling function with the the optimal tuning parameters. Thus, the value can be passed on to the <code>fit</code> function for model fitting to a set of data.</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1">## Fit the tuned model</a>
@@ -872,54 +882,43 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </div>
 <div id="model-frames" class="section level3">
 <h3>Model Frames</h3>
-<p>The second specification is similar to the first, except the formula and data frame pair are give in a <code>ModelFrame</code>. The model frame approach has a few subtle advantages. One is that cases with missing values on any of the response or predictor variables are excluded from the model frame by default. This is often desirable for models that cannot handle missing values. Note, however, that some models like <code>GBMModel</code> do accommodate missing values. For those, missing values can be retained in the model frame by setting its argument <code>na.action = na.pass</code>.</p>
+<p>The second specification is similar to the first, except the formula and data frame pair are give in a <code>ModelFrame</code>. The model frame approach has a few subtle advantages. One is that cases with missing values on any of the response or predictor variables are excluded from the model frame by default. This is often desirable for models that cannot handle missing values. Note, however, that some models like <code>GBMModel</code> do accommodate missing values. For those, missing values can be retained in the model frame by setting its argument <code>na.action = na.pass</code>. A second advantage is user-specification of a factor for stratified resampling via the <code>strata</code> argument.</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1">## Model frame specification</a>
-<a class="sourceLine" id="cb25-2" data-line-number="2">mf &lt;-<span class="st"> </span><span class="kw">ModelFrame</span>(medv <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> Boston)</a>
-<a class="sourceLine" id="cb25-3" data-line-number="3">gbmfit &lt;-<span class="st"> </span><span class="kw">fit</span>(mf, <span class="dt">model =</span> GBMModel)</a>
-<a class="sourceLine" id="cb25-4" data-line-number="4"><span class="kw">varimp</span>(gbmfit)</a>
-<a class="sourceLine" id="cb25-5" data-line-number="5"><span class="co">#&gt;             Overall</span></a>
-<a class="sourceLine" id="cb25-6" data-line-number="6"><span class="co">#&gt; lstat   100.0000000</span></a>
-<a class="sourceLine" id="cb25-7" data-line-number="7"><span class="co">#&gt; rm       82.6120444</span></a>
-<a class="sourceLine" id="cb25-8" data-line-number="8"><span class="co">#&gt; dis      10.8108254</span></a>
-<a class="sourceLine" id="cb25-9" data-line-number="9"><span class="co">#&gt; nox       9.1394081</span></a>
-<a class="sourceLine" id="cb25-10" data-line-number="10"><span class="co">#&gt; crim      8.9966411</span></a>
-<a class="sourceLine" id="cb25-11" data-line-number="11"><span class="co">#&gt; ptratio   5.8691895</span></a>
-<a class="sourceLine" id="cb25-12" data-line-number="12"><span class="co">#&gt; chas      1.9284354</span></a>
-<a class="sourceLine" id="cb25-13" data-line-number="13"><span class="co">#&gt; tax       1.7704196</span></a>
-<a class="sourceLine" id="cb25-14" data-line-number="14"><span class="co">#&gt; age       0.9264470</span></a>
-<a class="sourceLine" id="cb25-15" data-line-number="15"><span class="co">#&gt; black     0.7716104</span></a>
-<a class="sourceLine" id="cb25-16" data-line-number="16"><span class="co">#&gt; zn        0.0000000</span></a>
-<a class="sourceLine" id="cb25-17" data-line-number="17"><span class="co">#&gt; indus     0.0000000</span></a>
-<a class="sourceLine" id="cb25-18" data-line-number="18"><span class="co">#&gt; rad       0.0000000</span></a></code></pre></div>
-<p>Another advantage is that case weights can be included in the model frame and will be passed on to the model fitting functions.</p>
+<a class="sourceLine" id="cb25-2" data-line-number="2">mf &lt;-<span class="st"> </span><span class="kw">ModelFrame</span>(medv <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> Boston, <span class="dt">strata =</span> medv)</a>
+<a class="sourceLine" id="cb25-3" data-line-number="3">gbmfit &lt;-<span class="st"> </span><span class="kw">resample</span>(mf, <span class="dt">model =</span> GBMModel)</a>
+<a class="sourceLine" id="cb25-4" data-line-number="4"><span class="kw">summary</span>(gbmfit)</a>
+<a class="sourceLine" id="cb25-5" data-line-number="5"><span class="co">#&gt;          Mean    Median         SD       Min      Max NA</span></a>
+<a class="sourceLine" id="cb25-6" data-line-number="6"><span class="co">#&gt; R2   0.823065 0.8466665 0.07681428 0.6901865 0.917819  0</span></a>
+<a class="sourceLine" id="cb25-7" data-line-number="7"><span class="co">#&gt; RMSE 3.759063 3.5676627 0.79349932 2.4537273 4.984724  0</span></a>
+<a class="sourceLine" id="cb25-8" data-line-number="8"><span class="co">#&gt; MAE  2.594832 2.5448202 0.35326922 1.9265916 3.230131  0</span></a></code></pre></div>
+<p>A third is that case weights can be included in the model frame and will be passed on to the model fitting functions.</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1">## Model frame specification with case weights</a>
 <a class="sourceLine" id="cb26-2" data-line-number="2">mf &lt;-<span class="st"> </span><span class="kw">ModelFrame</span>(ncases <span class="op">/</span><span class="st"> </span>(ncases <span class="op">+</span><span class="st"> </span>ncontrols) <span class="op">~</span><span class="st"> </span>agegp <span class="op">+</span><span class="st"> </span>tobgp <span class="op">+</span><span class="st"> </span>alcgp,</a>
 <a class="sourceLine" id="cb26-3" data-line-number="3">                 <span class="dt">data =</span> esoph, <span class="dt">weights =</span> ncases <span class="op">+</span><span class="st"> </span>ncontrols)</a>
 <a class="sourceLine" id="cb26-4" data-line-number="4">gbmfit &lt;-<span class="st"> </span><span class="kw">fit</span>(mf, <span class="dt">model =</span> GBMModel)</a>
 <a class="sourceLine" id="cb26-5" data-line-number="5"><span class="kw">varimp</span>(gbmfit)</a>
 <a class="sourceLine" id="cb26-6" data-line-number="6"><span class="co">#&gt;         Overall</span></a>
-<a class="sourceLine" id="cb26-7" data-line-number="7"><span class="co">#&gt; agegp 100.00000</span></a>
-<a class="sourceLine" id="cb26-8" data-line-number="8"><span class="co">#&gt; alcgp  80.68625</span></a>
+<a class="sourceLine" id="cb26-7" data-line-number="7"><span class="co">#&gt; alcgp 100.00000</span></a>
+<a class="sourceLine" id="cb26-8" data-line-number="8"><span class="co">#&gt; agegp  69.76564</span></a>
 <a class="sourceLine" id="cb26-9" data-line-number="9"><span class="co">#&gt; tobgp   0.00000</span></a></code></pre></div>
 </div>
 <div id="preprocessing-recipes" class="section level3">
 <h3>Preprocessing Recipes</h3>
-<p>The <code>recipes</code> package <span class="citation">(Kuhn and Wickham 2018)</span> provides a framework for defining predictor and response variables and preprocessing steps to be applied to them prior to model fitting. Using recipes helps to ensure that estimation of predictive performance accounts for all modeling step. They are also a very convenient way of consistently applying preprocessing to new data. Recipes currently support <code>factor</code> and <code>numeric</code> responses, but not generally <code>Surv</code>.</p>
+<p>The <code>recipes</code> package <span class="citation">(Kuhn and Wickham 2018)</span> provides a framework for defining predictor and response variables and preprocessing steps to be applied to them prior to model fitting. Using recipes helps to ensure that estimation of predictive performance accounts for all modeling step. They are also a very convenient way of consistently applying preprocessing to new data. Stratified resampling and case weights are supported for recipes via the designations of <code>&quot;case_strata&quot;</code> and <code>&quot;case_weight&quot;</code> roles, respectively. Recipes currently support <code>factor</code> and <code>numeric</code> responses, but not generally <code>Surv</code>.</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1">## Recipe specification</a>
 <a class="sourceLine" id="cb27-2" data-line-number="2"><span class="kw">library</span>(recipes)</a>
 <a class="sourceLine" id="cb27-3" data-line-number="3">rec &lt;-<span class="st"> </span><span class="kw">recipe</span>(medv <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> Boston) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb27-4" data-line-number="4"><span class="st">  </span><span class="kw">step_center</span>(<span class="kw">all_predictors</span>()) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb27-5" data-line-number="5"><span class="st">  </span><span class="kw">step_scale</span>(<span class="kw">all_predictors</span>()) <span class="op">%&gt;%</span></a>
-<a class="sourceLine" id="cb27-6" data-line-number="6"><span class="st">  </span><span class="kw">step_pca</span>(<span class="kw">all_predictors</span>())</a>
-<a class="sourceLine" id="cb27-7" data-line-number="7"></a>
-<a class="sourceLine" id="cb27-8" data-line-number="8">gbmfit &lt;-<span class="st"> </span><span class="kw">fit</span>(rec, <span class="dt">model =</span> GBMModel)</a>
-<a class="sourceLine" id="cb27-9" data-line-number="9"><span class="kw">varimp</span>(gbmfit)</a>
-<a class="sourceLine" id="cb27-10" data-line-number="10"><span class="co">#&gt;       Overall</span></a>
-<a class="sourceLine" id="cb27-11" data-line-number="11"><span class="co">#&gt; PC1 100.00000</span></a>
-<a class="sourceLine" id="cb27-12" data-line-number="12"><span class="co">#&gt; PC3  62.32739</span></a>
-<a class="sourceLine" id="cb27-13" data-line-number="13"><span class="co">#&gt; PC4  21.66044</span></a>
-<a class="sourceLine" id="cb27-14" data-line-number="14"><span class="co">#&gt; PC5  14.50879</span></a>
-<a class="sourceLine" id="cb27-15" data-line-number="15"><span class="co">#&gt; PC2   0.00000</span></a></code></pre></div>
+<a class="sourceLine" id="cb27-4" data-line-number="4"><span class="st">  </span><span class="kw">add_role</span>(medv, <span class="dt">new_role =</span> <span class="st">&quot;case_strata&quot;</span>) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb27-5" data-line-number="5"><span class="st">  </span><span class="kw">step_center</span>(<span class="kw">all_predictors</span>()) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb27-6" data-line-number="6"><span class="st">  </span><span class="kw">step_scale</span>(<span class="kw">all_predictors</span>()) <span class="op">%&gt;%</span></a>
+<a class="sourceLine" id="cb27-7" data-line-number="7"><span class="st">  </span><span class="kw">step_pca</span>(<span class="kw">all_predictors</span>())</a>
+<a class="sourceLine" id="cb27-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb27-9" data-line-number="9">gbmfit &lt;-<span class="st"> </span><span class="kw">resample</span>(rec, <span class="dt">model =</span> GBMModel)</a>
+<a class="sourceLine" id="cb27-10" data-line-number="10"><span class="kw">summary</span>(gbmfit)</a>
+<a class="sourceLine" id="cb27-11" data-line-number="11"><span class="co">#&gt;           Mean    Median         SD       Min       Max NA</span></a>
+<a class="sourceLine" id="cb27-12" data-line-number="12"><span class="co">#&gt; R2   0.6769315 0.6947974 0.08967663 0.4983108 0.7927627  0</span></a>
+<a class="sourceLine" id="cb27-13" data-line-number="13"><span class="co">#&gt; RMSE 5.1230350 4.9512878 0.79009256 4.1645549 6.4105137  0</span></a>
+<a class="sourceLine" id="cb27-14" data-line-number="14"><span class="co">#&gt; MAE  3.5560936 3.5404909 0.31286201 3.0887000 3.9491308  0</span></a></code></pre></div>
 </div>
 <div id="available-models" class="section level3">
 <h3>Available Models</h3>
@@ -931,7 +930,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 </th>
 <th style="border-bottom:hidden" colspan="1">
 </th>
-<th style="border-bottom:hidden; padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="4">
+<th style="border-bottom:hidden; padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="3">
 <div style="border-bottom: 1px solid #ddd; padding-bottom: 5px;">
 Response Variable Types
 </div>
@@ -944,16 +943,13 @@ Response Variable Types
 Constructor
 </th>
 <th style="text-align:center;">
-factor
+Categorical<sup>1</sup>
 </th>
 <th style="text-align:center;">
-numeric
+Continuous<sup>2</sup>
 </th>
 <th style="text-align:center;">
-ordered
-</th>
-<th style="text-align:center;">
-Surv
+Survival<sup>3</sup>
 </th>
 </tr>
 </thead>
@@ -966,9 +962,7 @@ C5.0 Classification
 C50Model
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
+f
 </td>
 <td style="text-align:center;">
 </td>
@@ -983,15 +977,13 @@ Conditional Inference Trees
 CForestModel
 </td>
 <td style="text-align:center;">
-x
+f
 </td>
 <td style="text-align:center;">
-x
+n
 </td>
 <td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-x
+S
 </td>
 </tr>
 <tr>
@@ -1006,9 +998,7 @@ CoxModel
 <td style="text-align:center;">
 </td>
 <td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-x
+S
 </td>
 </tr>
 <tr>
@@ -1023,9 +1013,24 @@ CoxStepAICModel
 <td style="text-align:center;">
 </td>
 <td style="text-align:center;">
+S
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Gradient Boosted Models
 </td>
 <td style="text-align:center;">
-x
+GBMModel
+</td>
+<td style="text-align:center;">
+f
+</td>
+<td style="text-align:center;">
+n
+</td>
+<td style="text-align:center;">
+S
 </td>
 </tr>
 <tr>
@@ -1036,12 +1041,10 @@ Generalized Linear Models
 GLMModel
 </td>
 <td style="text-align:center;">
-2
+b
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
+n
 </td>
 <td style="text-align:center;">
 </td>
@@ -1054,33 +1057,12 @@ Generalized Linear Models (Stepwise)
 GLMStepAICModel
 </td>
 <td style="text-align:center;">
-2
+b
 </td>
 <td style="text-align:center;">
-x
+n
 </td>
 <td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-Gradient Boosted Models
-</td>
-<td style="text-align:center;">
-GBMModel
-</td>
-<td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-x
 </td>
 </tr>
 <tr>
@@ -1091,15 +1073,13 @@ Lasso and Elastic-Net
 GLMNetModel
 </td>
 <td style="text-align:center;">
-x
+f
 </td>
 <td style="text-align:center;">
-x
+m, n
 </td>
 <td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-x
+S
 </td>
 </tr>
 <tr>
@@ -1110,13 +1090,41 @@ K-Nearest Neighbors Model
 KNNModel
 </td>
 <td style="text-align:center;">
-x
+f, o
 </td>
 <td style="text-align:center;">
-x
+n
 </td>
 <td style="text-align:center;">
-x
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Linear Discriminant Analysis
+</td>
+<td style="text-align:center;">
+LDAModel
+</td>
+<td style="text-align:center;">
+f
+</td>
+<td style="text-align:center;">
+</td>
+<td style="text-align:center;">
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Linear Model
+</td>
+<td style="text-align:center;">
+LMModel
+</td>
+<td style="text-align:center;">
+f
+</td>
+<td style="text-align:center;">
+m, n
 </td>
 <td style="text-align:center;">
 </td>
@@ -1129,12 +1137,10 @@ Feed-Forward Neural Networks
 NNetModel
 </td>
 <td style="text-align:center;">
-x
+f
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
+n
 </td>
 <td style="text-align:center;">
 </td>
@@ -1147,12 +1153,10 @@ Partial Least Squares
 PLSModel
 </td>
 <td style="text-align:center;">
-x
+f
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
+n
 </td>
 <td style="text-align:center;">
 </td>
@@ -1165,11 +1169,24 @@ Ordered Logistic Regression
 POLRModel
 </td>
 <td style="text-align:center;">
+o
 </td>
 <td style="text-align:center;">
 </td>
 <td style="text-align:center;">
-x
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Quadratic Discriminant Analysis
+</td>
+<td style="text-align:center;">
+QDAModel
+</td>
+<td style="text-align:center;">
+f
+</td>
+<td style="text-align:center;">
 </td>
 <td style="text-align:center;">
 </td>
@@ -1182,12 +1199,10 @@ Random Forests
 RandomForestModel
 </td>
 <td style="text-align:center;">
-x
+f
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
+n
 </td>
 <td style="text-align:center;">
 </td>
@@ -1200,16 +1215,13 @@ Stacked Regression
 StackedModel
 </td>
 <td style="text-align:center;">
-x
+f, o
 </td>
 <td style="text-align:center;">
-x
+m, n
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
-x
+S
 </td>
 </tr>
 <tr>
@@ -1220,16 +1232,13 @@ Super Learner
 SuperModel
 </td>
 <td style="text-align:center;">
-x
+f, o
 </td>
 <td style="text-align:center;">
-x
+m, n
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
-x
+S
 </td>
 </tr>
 <tr>
@@ -1244,9 +1253,7 @@ SurvRegModel
 <td style="text-align:center;">
 </td>
 <td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-x
+S
 </td>
 </tr>
 <tr>
@@ -1261,9 +1268,7 @@ SurvRegStepAICModel
 <td style="text-align:center;">
 </td>
 <td style="text-align:center;">
-</td>
-<td style="text-align:center;">
-x
+S
 </td>
 </tr>
 <tr>
@@ -1274,12 +1279,10 @@ Support Vector Machines
 SVMModel
 </td>
 <td style="text-align:center;">
-x
+f
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
+n
 </td>
 <td style="text-align:center;">
 </td>
@@ -1292,17 +1295,32 @@ Extreme Gradient Boosting
 XGBModel
 </td>
 <td style="text-align:center;">
-x
+f
 </td>
 <td style="text-align:center;">
-x
-</td>
-<td style="text-align:center;">
+n
 </td>
 <td style="text-align:center;">
 </td>
 </tr>
 </tbody>
+<tfoot>
+<tr>
+<td style="padding: 0; border: 0;" colspan="100%">
+<sup>1</sup> b = binary, f = factor, o = ordered
+</td>
+</tr>
+<tr>
+<td style="padding: 0; border: 0;" colspan="100%">
+<sup>2</sup> m = matrix, n = numeric
+</td>
+</tr>
+<tr>
+<td style="padding: 0; border: 0;" colspan="100%">
+<sup>3</sup> S = Surv
+</td>
+</tr>
+</tfoot>
 </table>
 </div>
 </div>

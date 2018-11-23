@@ -40,7 +40,7 @@ StackedModel <- function(..., control = CVControl, weights = NULL) {
   
   new("StackedModel",
     name = "StackedModel",
-    types = c("factor", "numeric", "ordered", "Surv"),
+    types = c("factor", "matrix", "numeric", "ordered", "Surv"),
     params = as.list(environment()),
     fitbits = MLFitBits(
       predict = function(object, newdata, ...) {
@@ -52,11 +52,7 @@ StackedModel <- function(..., control = CVControl, weights = NULL) {
         }
         predicted
       },
-      varimp = function(object, ...) {
-        warning("variable importance values undefined for StackedModel")
-        varnames <- all.vars(object$formula[[3]])
-        structure(rep(NA_integer_, length(varnames)), names = varnames)
-      }
+      varimp = function(object, ...) NULL
     )
   )
   
@@ -98,14 +94,11 @@ setClass("StackedModel", contains = "MLModel")
                      control = list(trace = FALSE))$pars
   }
   
-  fitbit(model, "x") <- x
-  fitbit(model, "y") <- response(mf)
   list(base_fits = lapply(base_learners,
                           function(learner) fit(mf, model = learner)),
        weights = weights,
-       times = times,
-       formula = formula(terms(mf))) %>%
-    asMLModelFit("StackedModelFit", model)
+       times = times) %>%
+    asMLModelFit("StackedModelFit", model, x, response(mf))
 }
 
 
@@ -135,7 +128,7 @@ setMethod("stack_loss", c("factor", "matrix"),
 
 setMethod("stack_loss", c("factor", "numeric"),
   function(observed, predicted, ...) {
-    stack_loss(observed, cbind(predicted, 1 - predicted))
+    stack_loss(observed, cbind(1 - predicted, predicted))
   }
 )
 

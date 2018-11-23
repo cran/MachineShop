@@ -48,7 +48,7 @@ SVMModel <- function(scaled = TRUE, type = NULL,
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
-      if (!all(weights == 1)) warning("weights are unsupported and will be ignored")
+      assert_equal_weights(weights)
       environment(formula) <- environment()
       kernlab::ksvm(formula, data = data, prob.model = TRUE, ...)
     },
@@ -56,18 +56,6 @@ SVMModel <- function(scaled = TRUE, type = NULL,
       kernlab::predict(unMLModelFit(object), newdata = newdata,
                        type = ifelse(is.factor(response(object)),
                                      "probabilities", "response"))
-    },
-    varimp = function(object, ...) {
-      warning("variable importance values undefined for SVMModel")
-      lev <- object@lev
-      if (is.character(lev)) {
-        varnames <- colnames(object@xmatrix[[1]])
-        matrix(NA_integer_, length(varnames), length(lev),
-               dimnames = list(varnames, lev))
-      } else {
-        varnames <- colnames(object@xmatrix)
-        structure(rep(NA_integer_, length(varnames)), names = varnames)
-      }
     }
   )
 }

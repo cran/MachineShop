@@ -24,7 +24,8 @@
 #' 
 #' @details 
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#' \item{Response Types:}{\code{factor}, \code{matrix}, \code{numeric},
+#' \code{Surv}}
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model
@@ -54,7 +55,7 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
   MLModel(
     name = "GLMNetModel",
     packages = "glmnet",
-    types = c("factor", "numeric", "Surv"),
+    types = c("factor", "matrix", "numeric", "Surv"),
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, family = NULL, ...) {
@@ -65,19 +66,19 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
         family <- switch_class(y,
                                "factor" = ifelse(nlevels(y) == 2,
                                                  "binomial", "multinomial"),
+                               "matrix" = "mgaussian",
                                "numeric" = "gaussian",
                                "Surv" = "cox")
       }
-      mfit <- glmnet::glmnet(x, y, weights = weights, family = family,
-                             nlambda = 1, ...)
-      mfit$x <- x
-      mfit$formula <- formula
-      mfit
+      modelfit <- glmnet::glmnet(x, y, weights = weights, family = family,
+                                 nlambda = 1, ...)
+      modelfit$x <- x
+      modelfit
     },
     predict = function(object, newdata, times, ...) {
       x <- object$x
       y <- response(object)
-      fo <- object$formula[-2]
+      fo <- formula(object)[-2]
       object <- unMLModelFit(object)
       newmf <- model.frame(fo, newdata, na.action = na.pass)
       newx <- model.matrix(fo, newmf)[, -1, drop = FALSE]

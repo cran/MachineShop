@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 0.2.0
-Date: 2018-11-19
+Version: 0.3.0
+Date: 2018-11-22
 Authors@R: person("Brian J", "Smith", email = "brian-j-smith@uiowa.edu", role = c("aut", "cre"))
 Author: Brian J Smith [aut, cre]
 Maintainer: Brian J Smith <brian-j-smith@uiowa.edu>
@@ -18,6 +18,6 @@ BugReports: https://github.com/brian-j-smith/MachineShop/issues
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2018-11-19 15:58:57 UTC; bjsmith
+Packaged: 2018-11-22 17:41:36 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2018-11-19 16:30:03 UTC
+Date/Publication: 2018-11-23 11:20:18 UTC

@@ -178,9 +178,9 @@ varimp(gbmfit)
 
 ## ------------------------------------------------------------------------
 ## Model frame specification
-mf <- ModelFrame(medv ~ ., data = Boston)
-gbmfit <- fit(mf, model = GBMModel)
-varimp(gbmfit)
+mf <- ModelFrame(medv ~ ., data = Boston, strata = medv)
+gbmfit <- resample(mf, model = GBMModel)
+summary(gbmfit)
 
 ## ------------------------------------------------------------------------
 ## Model frame specification with case weights
@@ -193,26 +193,30 @@ varimp(gbmfit)
 ## Recipe specification
 library(recipes)
 rec <- recipe(medv ~ ., data = Boston) %>%
+  add_role(medv, new_role = "case_strata") %>%
   step_center(all_predictors()) %>%
   step_scale(all_predictors()) %>%
   step_pca(all_predictors())
 
-gbmfit <- fit(rec, model = GBMModel)
-varimp(gbmfit)
+gbmfit <- resample(rec, model = GBMModel)
+summary(gbmfit)
 
 ## ----echo = FALSE--------------------------------------------------------
 modelnames <- c("C5.0 Classification" = "C50Model",
                 "Conditional Inference Trees" = "CForestModel",
                 "Cox Regression" = "CoxModel",
                 "Cox Regression (Stepwise)" = "CoxStepAICModel",
+                "Gradient Boosted Models" = "GBMModel",
                 "Generalized Linear Models" = "GLMModel",
                 "Generalized Linear Models (Stepwise)" = "GLMStepAICModel",
-                "Gradient Boosted Models" = "GBMModel",
                 "Lasso and Elastic-Net" = "GLMNetModel",
                 "K-Nearest Neighbors Model" = "KNNModel",
+                "Linear Discriminant Analysis" = "LDAModel",
+                "Linear Model" = "LMModel",
                 "Feed-Forward Neural Networks" = "NNetModel",
                 "Partial Least Squares" = "PLSModel",
                 "Ordered Logistic Regression" = "POLRModel",
+                "Quadratic Discriminant Analysis" = "QDAModel",
                 "Random Forests" = "RandomForestModel",
                 "Stacked Regression" = "StackedModel",
                 "Super Learner" = "SuperModel",
@@ -221,17 +225,29 @@ modelnames <- c("C5.0 Classification" = "C50Model",
                 "Support Vector Machines" = "SVMModel",
                 "Extreme Gradient Boosting" = "XGBModel")
 
-types <- c("binary", "factor", "numeric", "ordered", "Surv")
+types <- c("binary" = "b", "factor" = "f", "matrix" = "m", "numeric" = "n",
+           "ordered" = "o", "Surv" = "S")
 x <- lapply(modelnames, function(modelname) {
   model <- get(modelname)()
-  structure(c(modelname, ifelse(types %in% model@types, "x", "")),
-            names = c("Constructor", types))
+  structure(c(modelname, ifelse(names(types) %in% model@types, types, NA)),
+            names = c("Constructor", names(types)))
 })
 df <- as.data.frame(do.call(rbind, x), stringsAsFactors = FALSE)
-df$factor <- with(df, ifelse(!nzchar(factor) & nzchar(binary), "2", factor))
-df$binary <- NULL
 
-kable(df, align = "c") %>%
+toString2 <- function(x) toString(na.omit(x))
+df_classes <- data.frame(
+  Constructor = df$Constructor,
+  Categorical = apply(df[c("binary", "factor", "ordered")], 1, toString2),
+  Continuous = apply(df[c("matrix", "numeric")], 1, toString2),
+  Survival = apply(df["Surv"], 1, toString2)
+)
+names(df_classes)[-1] <- paste0(names(df_classes)[-1],
+                                footnote_marker_number(1:3))
+
+kable(df_classes, align = "c", escape = FALSE) %>%
   kable_styling("striped", full_width = FALSE, position = "center") %>%
-  add_header_above(c(" " = 1, " " = 1, "Response Variable Types" = 4))
+  add_header_above(c(" " = 1, " " = 1, "Response Variable Types" = 3)) %>%
+  footnote(number = c("b = binary, f = factor, o = ordered",
+                      "m = matrix, n = numeric",
+                      "S = Surv"))
 

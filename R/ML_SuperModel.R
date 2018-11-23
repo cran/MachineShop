@@ -44,11 +44,11 @@ SuperModel <- function(..., model = GBMModel, control = CVControl,
   
   new("SuperModel",
     name = "SuperModel",
-    types = c("factor", "numeric", "ordered", "Surv"),
+    types = c("factor", "matrix", "numeric", "ordered", "Surv"),
     params = as.list(environment()),
     fitbits = MLFitBits(
       predict = function(object, newdata, times, ...) {
-        newdata <- ModelFrame(object$formula, newdata, na.action = na.pass)
+        newdata <- ModelFrame(formula(object), newdata, na.action = na.pass)
         
         learner_predictors <- lapply(object$base_fits, function(fit) {
           predict(fit, newdata = newdata, times = object$times, type = "prob")
@@ -60,11 +60,7 @@ SuperModel <- function(..., model = GBMModel, control = CVControl,
         
         predict(object$super_fit, newdata = mf, times = times, type = "prob")
       },
-      varimp = function(object, ...) {
-        warning("variable importance values undefined for SuperModel")
-        varnames <- all.vars(object$formula[[3]])
-        structure(rep(NA_integer_, length(varnames)), names = varnames)
-      }
+      varimp = function(object, ...) NULL
     )
   )
 
@@ -93,15 +89,12 @@ setClass("SuperModel", contains = "MLModel")
   super_mf <- ModelFrame(formula(df), df, na.action = na.action)
   if (params$all_vars) super_mf <- add_predictors(mf, super_mf)
 
-  fitbit(model, "x") <- x
-  fitbit(model, "y") <- response(mf)
   list(base_fits = lapply(base_learners,
                           function(learner) fit(mf, model = learner)),
        super_fit = fit(super_mf, model = super_learner),
        all_vars = params$all_vars,
-       times = control@surv_times,
-       formula = formula(terms(mf))) %>%
-    asMLModelFit("SuperModelFit", model)
+       times = control@surv_times) %>%
+    asMLModelFit("SuperModelFit", model, x, response(mf))
 }
 
 

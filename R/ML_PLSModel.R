@@ -31,14 +31,14 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
-      if (!all(weights == 1)) warning("weights are unsupported and will be ignored")
+      assert_equal_weights(weights)
       environment(formula) <- environment()
       y <- response(formula, data)
       if (is.factor(y)) {
         varname <- response(terms(formula))
         mm <- model.matrix(~ y - 1)
         colnames(mm) <- levels(y)
-        data[[varname]] <- I(mm)
+        data[[varname]] <- mm
         formula[[2]] <- as.symbol(varname)
       }
       pls::plsr(formula, data = data, ...)

@@ -37,6 +37,13 @@ utils::globalVariables(c("Found", "group", "i", "Lower", "Mean", "Midpoint",
 }
 
 
+assert_equal_weights <- function(weights) {
+  if (any(diff(weights) != 0)) {
+    warn("model weights are not supported and will be ignored")
+  }
+}
+
+
 basehaz <- function(y, risk, times) {
   y_times <- unique(y[, "time"]) %>% sort
   nrisk <- rowsum(risk, y[, "time"]) %>% rev %>% cumsum %>% rev
@@ -87,19 +94,14 @@ setMethod("append", c("vector", "vector"),
 )
 
 
-fitbit <- function(object, name) {
-  fitbits <- if (isS4(object)) object@fitbits else object$fitbits
-  slot(fitbits, name)
+formula.MLModelFit <- function(object) {
+  formula(terms(fitbit(object, "x")))
 }
 
 
-"fitbit<-" <- function(object, name, value) {
-  if (isS4(object)) {
-    slot(object@fitbits, name) <- value
-  } else {
-    slot(object$fitbits, name) <- value
-  }
-  object
+fitbit <- function(object, name) {
+  fitbits <- if (isS4(object)) object@fitbits else object$fitbits
+  slot(fitbits, name)
 }
 
 
@@ -140,7 +142,7 @@ match_indices <- function(indices, choices) {
   indices <- na.omit(names(lookup)[lookup[indices]])
   if (length(indices) == 0) {
     indices <- names(lookup)[1]
-    warning("specified indices not found; using ", indices, " instead")
+    warn("specified indices not found; using ", indices, " instead")
   }
   indices
 }
@@ -168,18 +170,22 @@ params <- function(envir) {
 }
 
 
+prep.data.frame <- function(x, ...) {
+  x
+}
+
+
 preprocess <- function(x, data = NULL, ...) {
   UseMethod("preprocess")
 }
 
 
-preprocess.default <- function(x, data, ...) {
+preprocess.default <- function(x, data = NULL, ...) {
   if (is.null(data)) x else data
 }
 
 
-preprocess.recipe <- function(x, data, ...) {
-  x <- prep(x, retain = TRUE)
+preprocess.recipe <- function(x, data = NULL, ...) {
   if (is.null(data)) juice(x) else bake(x, new_data = data)
 }
 
@@ -209,8 +215,31 @@ strata.default <- function(object, ...) {
 }
 
 
+strata.matrix <- function(object, ...) {
+  object[, 1]
+}
+
+
 strata.Surv <- function(object, ...) {
   object[, "status"]
+}
+
+
+strata_var <- function(object, ...) {
+  UseMethod("strata_var")
+}
+
+
+strata_var.ModelFrame <- function(object, ...) {
+  if ("(strata)" %in% names(object)) "(strata)" else NULL
+}
+
+
+strata_var.recipe <- function(object, ...) {
+  info <- summary(object)
+  strata_index <- which(info$role %in% "case_strata")
+  if (length(strata_index) > 1) stop("multiple strata variables specified")
+  if (length(strata_index) == 1) info$variable[strata_index] else NULL
 }
 
 
@@ -226,4 +255,9 @@ terms.recipe <- function(x, ...) {
   lhs <- with(info, variable[role == "outcome"])
   rhs <- with(info, variable[role == "predictor"])
   terms(reformulate(rhs, lhs))
+}
+
+
+warn <- function(...) {
+  warning(..., call. = FALSE)
 }
