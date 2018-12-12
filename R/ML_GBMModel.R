@@ -22,18 +22,18 @@
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[gbm]{gbm}}, \code{\link{fit}}, \code{\link{resample}},
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' 
 #' fit(Species ~ ., data = iris, model = GBMModel())
 #'
 GBMModel <- function(distribution = NULL, n.trees = 100,
                      interaction.depth = 1, n.minobsinnode = 10,
                      shrinkage = 0.1, bag.fraction = 0.5) {
+  
   MLModel(
     name = "GBMModel",
     packages = "gbm",
@@ -51,27 +51,26 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
       gbm::gbm(formula, data = data, weights = weights,
                distribution = distribution, ...)
     },
-    predict = function(object, newdata, times, ...) {
-      obs <- response(object)
-      object <- unMLModelFit(object)
+    predict = function(object, newdata, fitbits, times, ...) {
       if (object$distribution$name == "coxph") {
+        new_neg_risk <- -exp(predict(object, newdata = newdata,
+                                     n.trees = object$n.trees, type = "link"))
         if (length(times)) {
-          lp <- predict(object, n.trees = object$n.trees, type = "link")
-          newlp <- predict(object, newdata = newdata, n.trees = object$n.trees,
-                           type = "link")
-          cumhaz <- basehaz(obs, exp(lp), times)
-          exp(exp(newlp) %o% -cumhaz)
+          y <- response(fitbits)
+          risk <- exp(predict(object, n.trees = object$n.trees, type = "link"))
+          cumhaz <- basehaz(y, risk, times)
+          exp(new_neg_risk %o% cumhaz)
         } else {
-          exp(predict(object, newdata = newdata, n.trees = object$n.trees,
-                      type = "link"))
+          new_neg_risk
         }
       } else {
         predict(object, newdata = newdata, n.trees = object$n.trees,
                 type = "response")
       }
     },
-    varimp = function(object, n.trees = object$n.trees, ...) {
-      gbm::relative.influence(object, n.trees = n.trees, ...)
+    varimp = function(object, ...) {
+      gbm::relative.influence(object, n.trees = object$n.trees)
     }
   )
+  
 }

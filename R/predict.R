@@ -4,9 +4,9 @@
 #' 
 #' @name predict
 #' 
-#' @param object MLModelFit object from a model fit.
-#' @param newdata optional data frame with which to obtain predictions.  If not
-#' specified, the training data will be used by default.
+#' @param object \code{MLModelFit} object from a model fit.
+#' @param newdata optional \code{data.frame} with which to obtain predictions.
+#' If not specified, the training data will be used by default.
 #' @param type specifies prediction on the original outcome scale
 #' (\code{"response"}) or on a probability distribution scale (\code{"prob"}).
 #' @param cutoff threshold above which probabilities are classified as success
@@ -16,7 +16,8 @@
 #' survival events.
 #' @param ... arguments passed to model-specific prediction functions.
 #' 
-#' @seealso \code{\link{fit}}, \code{\link{modelmetrics}}
+#' @seealso \code{\link{fit}}, \code{\link{confusion}},
+#' \code{\link{modelmetrics}}
 #' 
 #' @examples
 #' ## Survival response example
@@ -33,7 +34,9 @@ predict.MLModelFit <- function(object, newdata = NULL,
   newdata <- preprocess(fitbit(object, "x"), newdata)
   requireModelNamespaces(fitbit(object, "packages"))
   obs <- response(object)
-  pred <- fitbit(object, "predict")(object, newdata, times = times, ...)
+  pred <- fitbit(object, "predict")(unMLModelFit(object), newdata,
+                                    fitbits = field(object, "fitbits"),
+                                    times = times, ...)
   pred <- convert_dim(obs, pred)
   if (match.arg(type) == "response") {
     pred <- convert_response(obs, pred, cutoff = cutoff)

@@ -29,7 +29,7 @@
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[kernlab]{ksvm}}, \code{\link{fit}},
 #' \code{\link{resample}}, \code{\link{tune}}
@@ -40,7 +40,9 @@ SVMModel <- function(scaled = TRUE, type = NULL,
                                 "splinedot"),
                      kpar = "automatic", C = 1, nu = 0.2, epsilon = 0.1,
                      cache = 40, tol = 0.001, shrinking = TRUE) {
+  
   kernel <- match.arg(kernel)
+  
   MLModel(
     name = "SVMModel",
     packages = "kernlab",
@@ -52,12 +54,13 @@ SVMModel <- function(scaled = TRUE, type = NULL,
       environment(formula) <- environment()
       kernlab::ksvm(formula, data = data, prob.model = TRUE, ...)
     },
-    predict = function(object, newdata, ...) {
-      kernlab::predict(unMLModelFit(object), newdata = newdata,
-                       type = ifelse(is.factor(response(object)),
+    predict = function(object, newdata, fitbits, ...) {
+      kernlab::predict(object, newdata = newdata,
+                       type = ifelse(is.factor(response(fitbits)),
                                      "probabilities", "response"))
     }
   )
+  
 }
 
 
@@ -69,7 +72,7 @@ SVMModel <- function(scaled = TRUE, type = NULL,
 #' @param ... arguments to be passed to \code{SVMModel}.
 #' 
 SVMANOVAModel <- function(sigma = 1, degree = 1, ...) {
-  .SVMModel("anovadot", environment(), ...)
+  .SVMModel("SVMANOVAModel", "anovadot", environment(), ...)
 }
 
 
@@ -78,21 +81,21 @@ SVMANOVAModel <- function(sigma = 1, degree = 1, ...) {
 #' @param order order of the Bessel function to be used as a kernel.
 #' 
 SVMBesselModel <- function(sigma = 1, order = 1, degree = 1, ...) {
-  .SVMModel("besseldot", environment(), ...)
+  .SVMModel("SVMBesselModel", "besseldot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMLaplaceModel <- function(sigma = NULL, ...) {
-  .SVMModel("laplacedot", environment(), ...)
+  .SVMModel("SVMLaplaceModel","laplacedot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMLinearModel <- function(...) {
-  .SVMModel("vanilladot", environment(), ...)
+  .SVMModel("SVMLinearModel", "vanilladot", environment(), ...)
 }
 
 
@@ -109,32 +112,32 @@ SVMLinearModel <- function(...) {
 #' fit(medv ~ ., data = Boston, model = SVMRadialModel())
 #' 
 SVMPolyModel <- function(degree = 1, scale = 1, offset = 1, ...) {
-  .SVMModel("polydot", environment(), ...)
+  .SVMModel("SVMPolyModel", "polydot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMRadialModel <- function(sigma = NULL, ...) {
-  .SVMModel("rbfdot", environment(), ...)
+  .SVMModel("SVMRadialModel", "rbfdot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMSplineModel <- function(...) {
-  .SVMModel("splinedot", environment(), ...)
+  .SVMModel("SVMSplineModel", "splinedot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMTanhModel <- function(scale = 1, offset = 1, ...) {
-  .SVMModel("tanhdot", environment(), ...)
+  .SVMModel("SVMTanhModel", "tanhdot", environment(), ...)
 }
 
 
-.SVMModel <- function(kernel, envir, ...) {
+.SVMModel <- function(name, kernel, envir, ...) {
   args <- list(...)
   args$kernel <- kernel
   kpar <- params(envir)
@@ -143,5 +146,7 @@ SVMTanhModel <- function(scale = 1, offset = 1, ...) {
   } else {
     as.call(c(.(list), kpar))
   }
-  do.call(SVMModel, args, quote = TRUE)
+  model <- do.call(SVMModel, args, quote = TRUE)
+  model@name <- name
+  model
 }

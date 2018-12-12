@@ -6,13 +6,13 @@
 \usage{
 dependence(object, data = NULL, select = NULL, interaction = FALSE,
   n = 10, intervals = c("uniform", "quantile"), stats = c(Mean =
-  mean))
+  base::mean))
 }
 \arguments{
-\item{object}{MLModelFit object.}
+\item{object}{\code{MLModelFit} object.}
 
-\item{data}{data frame containing all predictor variables.  If not specified,
-the training data will be used by default.}
+\item{data}{\code{data.frame} containing all predictor variables.  If not
+specified, the training data will be used by default.}
 
 \item{select}{expression indicating predictor variables for which to compute
 partial dependence (see \code{\link[base]{subset}} for syntax)
@@ -24,14 +24,16 @@ interacted predictors.}
 \item{n}{number of predictor values at which to perform calculations.}
 
 \item{intervals}{character string specifying whether the \code{n} values are
-spaced according to variable quantiles (\code{"quantile"}) or uniformly
-(\code{"uniform"}).}
+spaced uniformly (\code{"uniform"}) or according to variable quantiles
+(\code{"quantile"}).}
 
-\item{stats}{function or list of named functions with which to aggregate
-the response variable over the non-selected predictor variables.}
+\item{stats}{function, one or more function names, or list of named functions
+with which to aggregate the response variable over the non-selected predictor
+variables.}
 }
 \value{
-PartialDependence class object.
+\code{PartialDependence} class object that inherits from
+\code{data.frame}.
 }
 \description{
 Calculate partial dependence of a response on select predictor variables.

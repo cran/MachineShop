@@ -3,13 +3,14 @@ print.MLModelFit <- function(x, ...) {
 }
 
 
+print.Resamples <- function(x, ...) {
+  show(x)
+}
+
+
 setMethod("show", "MLControl",
   function(object) {
-    cat("Class cutoff probability:", object@cutoff, "\n\n")
-    if (length(object@surv_times)) {
-      cat("Survival times:", toString(object@surv_times), "\n\n")
-    }
-    cat("Omit missing responses: ", object@na.rm, "\n\n",
+    cat("Survival times: ", toString(object@surv_times), "\n\n",
         "Seed: ", object@seed, "\n\n", sep = "")
     invisible()
   }
@@ -105,7 +106,7 @@ setMethod("show", "MLModelTune",
     print(object@grid)
     cat("\nresamples:\n")
     print(object@resamples)
-    model_names <- levels(object@resamples@response$Model)
+    model_names <- levels(object@resamples$Model)
     if (length(model_names) > 1) {
       cat("Selected: ", model_names[object@selected],
           " (", names(object@selected), ")\n\n", sep = "")
@@ -114,11 +115,21 @@ setMethod("show", "MLModelTune",
 )
 
 
+setMethod("show", "ModelMetrics",
+  function(object) {
+    cat("An object of class \"", class(object), "\"\n\n", sep = "")
+    if (length(dim(object)) > 2) {
+      cat("Models:", toString(dimnames(object)[[3]]), "\n\n")
+    }
+    cat("Metrics:", toString(dimnames(object)[[2]]), "\n\n")
+  }
+)
+
+
 setMethod("show", "Resamples",
   function(object) {
     cat("An object of class \"", class(object), "\"\n\n",
-        "Models: ", toString(levels(object@response$Model)), "\n\n",
-        "Metrics: ", toString(dimnames(object)[[2]]), "\n\n", sep = "")
+        "Models: ", toString(levels(object$Model)), "\n\n", sep = "")
     if (length(object@strata)) {
       cat("Stratification variable:", object@strata, "\n\n")
     }
@@ -128,13 +139,26 @@ setMethod("show", "Resamples",
 )
 
 
-setMethod("show", "ResamplesHTest",
+setMethod("show", "HTestResamples",
   function(object) {
     cat("An object of class \"", class(object), "\"\n\n",
         "Upper diagonal: mean differences (row - column)\n",
         "Lower diagonal: p-values\n",
         "P-value adjustment method: ", object@adjust, "\n\n",
         sep = "")
+    print(object@.Data)
+  }
+)
+
+
+setMethod("show", "SummaryConfusion",
+  function(object) {
+    n <- object@N
+    acc <- object@Accuracy
+    cat("Number of responses: ", n, "\n",
+        "Accuracy (SE): ", acc, " (", sqrt(acc * (1 - acc) / n), ")\n",
+        "Majority class: ", object@Majority, "\n",
+        "Kappa: ", object@Kappa, "\n\n", sep = "")
     print(object@.Data)
   }
 )

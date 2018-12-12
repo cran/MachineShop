@@ -2,9 +2,9 @@
 #' 
 #' Calculate partial dependence of a response on select predictor variables.
 #' 
-#' @param object MLModelFit object.
-#' @param data data frame containing all predictor variables.  If not specified,
-#' the training data will be used by default.
+#' @param object \code{MLModelFit} object.
+#' @param data \code{data.frame} containing all predictor variables.  If not
+#' specified, the training data will be used by default.
 #' @param select expression indicating predictor variables for which to compute
 #' partial dependence (see \code{\link[base]{subset}} for syntax)
 #' [default: all].
@@ -12,12 +12,14 @@
 #' interacted predictors.
 #' @param n number of predictor values at which to perform calculations.
 #' @param intervals character string specifying whether the \code{n} values are
-#' spaced according to variable quantiles (\code{"quantile"}) or uniformly
-#' (\code{"uniform"}).
-#' @param stats function or list of named functions with which to aggregate
-#' the response variable over the non-selected predictor variables.
+#' spaced uniformly (\code{"uniform"}) or according to variable quantiles
+#' (\code{"quantile"}).
+#' @param stats function, one or more function names, or list of named functions
+#' with which to aggregate the response variable over the non-selected predictor
+#' variables.
 #' 
-#' @return PartialDependence class object.
+#' @return \code{PartialDependence} class object that inherits from
+#' \code{data.frame}.
 #'  
 #' @seealso \code{\link{fit}}, \code{\link{plot}}
 #' 
@@ -28,7 +30,7 @@
 #' 
 dependence <- function(object, data = NULL, select = NULL, interaction = FALSE,
                        n = 10, intervals = c("uniform", "quantile"),
-                       stats = c("Mean" = mean)) {
+                       stats = c("Mean" = base::mean)) {
   
   stopifnot(is(object, "MLModelFit"))
 
@@ -37,19 +39,14 @@ dependence <- function(object, data = NULL, select = NULL, interaction = FALSE,
 
   x_labels <- labels(terms(x))
   indices <- structure(match(x_labels, names(data)), names = x_labels)
-  select <- eval(substitute(select), as.list(indices))
-  select <- if (is.null(select)) indices else intersect(select, indices)
-  if (length(select) == 0) stop("no predictors selected")
+  select <- eval(substitute(select), as.list(indices), parent.frame())
+  if (is.null(select)) select <- indices
   data_select <- data[, select, drop = FALSE]
   
   intervals <- match.arg(intervals)
   
-  if (is.list(stats)) {
-    stats <- eval(bquote(
-      function(x) sapply(.(stats), function(stat) stat(x))
-    ))
-  }
-  
+  stats <- list2function(stats)
+
   select_values <- function(x) {
     if (is.factor(x)) {
       unique(x)
@@ -98,7 +95,6 @@ dependence <- function(object, data = NULL, select = NULL, interaction = FALSE,
     df
   })
   
-  structure(do.call(rbind, dependence_list),
-            class = c("PartialDependence", "data.frame"))
+  PartialDependence(do.call(rbind, dependence_list))
 
 }

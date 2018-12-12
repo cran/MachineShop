@@ -6,8 +6,8 @@
 #' @rdname fit-methods
 #' 
 #' @param x defined relationship between model predictors and an outcome.  May
-#' be a ModelFrame containing a formula, data, and optionally case weights; a
-#' formula; or a recipe.
+#' be a \code{ModelFrame} containing a formula, data, and optionally case
+#' weights; a \code{formula}; or a \code{recipe}.
 #' @param ... arguments passed to other methods.
 #' 
 fit <- function(x, ...) {
@@ -17,14 +17,15 @@ fit <- function(x, ...) {
 
 #' @rdname fit-methods
 #' 
-#' @param data data frame containing observed predictors and outcomes.
-#' @param model MLModel object, constructor function, or character string
-#' naming a constructor function that returns an MLModel object.
+#' @param data \code{data.frame} containing observed predictors and outcomes.
+#' @param model \code{MLModel} object, constructor function, or character string
+#' naming a constructor function that returns an \code{MLModel} object.
 #' 
-#' @return MLModelFit class object.
+#' @return \code{MLModelFit} class object.
 #' 
-#' @seealso  \code{\link{tune}}, \code{\link{ModelFrame}},
-#' \code{\link[recipes]{recipe}}, \code{\link{predict}}, \code{\link{varimp}}
+#' @seealso \code{\link{ModelFrame}}, \code{\link[recipes]{recipe}},
+#' \code{\link{modelinfo}}, \code{\link{tune}}, \code{\link{predict}},
+#' \code{\link{varimp}}
 #' 
 #' @examples
 #' ## Survival response example

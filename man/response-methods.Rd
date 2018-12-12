@@ -3,18 +3,22 @@
 \name{response}
 \alias{response}
 \alias{response.formula}
+\alias{response.recipe}
 \title{Extract Response Variable}
 \usage{
 response(object, ...)
 
 \method{response}{formula}(object, data, ...)
+
+\method{response}{recipe}(object, data, ...)
 }
 \arguments{
-\item{object}{object containing a response.}
+\item{object}{object containing response variable values.}
 
 \item{...}{arguments passed to other methods.}
 
-\item{data}{data frame containing the values of a response variable defined in a formula.}
+\item{data}{\code{data.frame} containing the values of a response variable
+defined in a formula.}
 }
 \description{
 Extract the response variable from an object.
@@ -27,4 +31,7 @@ library(MASS)
 fo <- Surv(time, status != 2) ~ sex + age + year + thickness + ulcer
 response(fo, data = Melanoma)
 
+}
+\seealso{
+\code{\link[recipes]{recipe}}
 }

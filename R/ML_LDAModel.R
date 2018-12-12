@@ -25,7 +25,7 @@
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source links below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[MASS]{lda}}, \code{\link[MASS]{predict.lda}},
 #' \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
@@ -37,6 +37,7 @@ LDAModel <- function(prior = NULL, tol = 1e-4,
                      method = c("moment", "mle", "mve", "t"), nu = 5,
                      dimen = NULL,
                      use = c("plug-in", "debiased", "predictive")) {
+  
   method <- match.arg(method)
   use <- match.arg(use)
   
@@ -55,8 +56,9 @@ LDAModel <- function(prior = NULL, tol = 1e-4,
       modelfit
     },
     predict = function(object, newdata, prior = object$prior, ...) {
-      predict(unMLModelFit(object), newdata = newdata, prior = prior,
-              dimen = object$dimen, method = object$use)$posterior
+      predict(object, newdata = newdata, prior = prior, dimen = object$dimen,
+              method = object$use)$posterior
     }
   )
+  
 }

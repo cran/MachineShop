@@ -32,13 +32,22 @@
 #' Latter arguments are passed to \code{\link[C50]{C5.0Control}}.
 #' Further model details can be found in the source link below.
 #' 
-#' @return MLModel class object.
+#' In calls to \code{\link{varimp}} for \code{C50Model}, argument \code{metric}
+#' may be spedified as \code{"usage"} (default) for the percentage of training
+#' set samples that fall into all terminal nodes after the split of each
+#' predictor or as \code{"splits"} for the percentage of splits associated with
+#' each predictor.  Variable importance is automatically scaled to range from 0
+#' to 100.  To obtain unscaled importance values, set \code{scale = FALSE}.  See
+#' example below.
+#' 
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[C50]{C5.0}}, \code{\link{fit}}, \code{\link{resample}},
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' fit(Species ~ ., data = iris, model = C50Model())
+#' modelfit <- fit(Species ~ ., data = iris, model = C50Model())
+#' varimp(modelfit, metric = "splits", scale = FALSE)
 #'
 C50Model <- function(trials = 1, rules = FALSE, subset = TRUE, bands = 0,
                      winnow = FALSE, noGlobalPruning = FALSE, CF = 0.25,
@@ -46,9 +55,9 @@ C50Model <- function(trials = 1, rules = FALSE, subset = TRUE, bands = 0,
                      earlyStopping = TRUE) {
   
   args <- params(environment())
-  mainargs <- names(args) %in% c("trials", "rules")
-  params <- args[mainargs]
-  params$control <- as.call(c(.(C50::C5.0Control), args[!mainargs]))
+  is_main <- names(args) %in% c("trials", "rules")
+  params <- args[is_main]
+  params$control <- as.call(c(.(C50::C5.0Control), args[!is_main]))
   
   MLModel(
     name = "C50Model",
@@ -61,10 +70,11 @@ C50Model <- function(trials = 1, rules = FALSE, subset = TRUE, bands = 0,
       C50::C5.0(formula, data = data, weights = weights, ...)
     },
     predict = function(object, newdata, ...) {
-      predict(unMLModelFit(object), newdata = newdata, type = "prob")
+      predict(object, newdata = newdata, type = "prob")
     },
-    varimp = function(object, ...) {
-      C50::C5imp(object, ...)
+    varimp = function(object, metric = c("usage", "splits"), ...) {
+      C50::C5imp(object, metric = match.arg(metric))
     }
   )
+  
 }

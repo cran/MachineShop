@@ -12,7 +12,7 @@
 #' 
 #' Further model details can be found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[MASS]{polr}}, \code{\link{fit}}, \code{\link{resample}},
 #' \code{\link{tune}}
@@ -26,7 +26,9 @@
 #' 
 POLRModel <- function(method = c("logistic", "probit", "loglog", "cloglog",
                                  "cauchit")) {
+  
   method <- match.arg(method)
+  
   MLModel(
     name = "POLRModel",
     packages = "MASS",
@@ -38,12 +40,13 @@ POLRModel <- function(method = c("logistic", "probit", "loglog", "cloglog",
       MASS::polr(formula, data = data, weights = weights, Hess = TRUE, ...)
     },
     predict = function(object, newdata, ...) {
-      predict(unMLModelFit(object), newdata = newdata, type = "probs")
+      predict(object, newdata = newdata, type = "probs")
     },
     varimp = function(object, ...) {
       beta <- coef(object)
-      s2 <- head(diag(vcov(object)), length(beta))
+      s2 <- diag(vcov(object))[seq_along(beta)]
       pchisq(beta^2 / s2, 1)
     }
   )
+  
 }

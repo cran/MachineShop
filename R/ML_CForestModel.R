@@ -25,7 +25,7 @@
 #' Supplied arguments are passed to \code{\link[party]{cforest_control}}.
 #' Further model details can be found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[party]{cforest}}, \code{\link{fit}},
 #' \code{\link{resample}}, \code{\link{tune}}
@@ -40,9 +40,11 @@ CForestModel <- function(teststat = c("quad", "max"),
                                       "Bonferroni", "MonteCarlo"),
                          mincriterion = 0, ntree = 500, mtry = 5,
                          replace = TRUE, fraction = 0.632) {
+  
   teststat <- match.arg(teststat)
   testtype <- match.arg(testtype)
   args <- params(environment())
+  
   MLModel(
     name = "CForestModel",
     packages = "party",
@@ -53,15 +55,19 @@ CForestModel <- function(teststat = c("quad", "max"),
       environment(formula) <- environment()
       party::cforest(formula, data = data, weights = weights, ...)
     },
-    predict = function(object, newdata, times, ...) {
-      object <- unMLModelFit(object)
+    predict = function(object, newdata, fitbits, times, ...) {
       if (object@responses@is_censored) {
+        pred <- predict(object, newdata = newdata, type = "prob")
         if (length(times)) {
-          predict(object, newdata = newdata, type = "prob") %>%
-            lapply(function(fit) predict(fit, times)) %>%
-            (function(args) do.call(rbind, args))
+          pred_list <- lapply(pred, function(fit) predict(fit, times))
+          do.call(rbind, pred_list)
         } else {
-          log(2) / predict(object, newdata = newdata, type = "response")
+          max_time <- max(response(fitbits)[, "time"])
+          sapply(pred, function(fit) {
+            x <- c(1, fit$surv, 0)
+            fx <- c(fit$time, max_time)
+            -sum(fx * diff(x))
+          })
         }
       } else {
         predict(object, newdata = newdata, type = "prob") %>%
@@ -73,4 +79,5 @@ CForestModel <- function(teststat = c("quad", "max"),
       party::varimp(object, ...)
     }
   )
+  
 }

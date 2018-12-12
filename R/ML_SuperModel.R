@@ -2,12 +2,12 @@
 #' 
 #' Fit a super learner model to predictions from multiple base learners.
 #' 
-#' @param ... MLModel objects to serve as base learners.
-#' @param model MLModel object, constructor function, or character string
+#' @param ... \code{MLModel} objects to serve as base learners.
+#' @param model \code{MLModel} object, constructor function, or character string
 #' naming a constructor function to serve as the super model.
-#' @param control \code{\linkS4class{MLControl}} object, control function, or
-#' character string naming a control function defining the resampling method to
-#' be employed for the estimation of base learner weights.
+#' @param control \code{\link{MLControl}} object, control function, or character
+#' string naming a control function defining the resampling method to be
+#' employed for the estimation of base learner weights.
 #' @param all_vars logical indicating whether to include the original
 #' predictor variables in the super model.
 #' 
@@ -18,7 +18,7 @@
 #' }
 #' }
 #' 
-#' @return SuperModel class object that inherits from MLModel.
+#' @return \code{SuperModel} class object that inherits from \code{MLModel}.
 #' 
 #' @references
 #' 
@@ -40,15 +40,14 @@ SuperModel <- function(..., model = GBMModel, control = CVControl,
   base_learners <- lapply(list(...), getMLObject, class = "MLModel")
 
   control <- getMLObject(control, "MLControl")
-  control@summary <- function(observed, predicted, ...) NA
-  
+
   new("SuperModel",
     name = "SuperModel",
     types = c("factor", "matrix", "numeric", "ordered", "Surv"),
     params = as.list(environment()),
     fitbits = MLFitBits(
-      predict = function(object, newdata, times, ...) {
-        newdata <- ModelFrame(formula(object), newdata, na.action = na.pass)
+      predict = function(object, newdata, fitbits, times, ...) {
+        newdata <- ModelFrame(formula(fitbits), newdata, na.action = na.pass)
         
         learner_predictors <- lapply(object$base_fits, function(fit) {
           predict(fit, newdata = newdata, times = object$times, type = "prob")
@@ -80,13 +79,11 @@ setClass("SuperModel", contains = "MLModel")
 
   learner_predictors <- list()
   for (i in seq(base_learners)) {
-    response <-
-      resample(x, model = base_learners[[i]], control = control)@response
+    response <- resample(x, model = base_learners[[i]], control = control)
     learner_predictors[[i]] <- response$Predicted
   }
   df <- make_super_df(response$Observed, learner_predictors, response$Case)
-  na.action <- ifelse(control@na.rm, na.omit, na.pass)
-  super_mf <- ModelFrame(formula(df), df, na.action = na.action)
+  super_mf <- ModelFrame(formula(df), df, na.action = na.omit)
   if (params$all_vars) super_mf <- add_predictors(mf, super_mf)
 
   list(base_fits = lapply(base_learners,

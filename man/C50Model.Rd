@@ -41,7 +41,7 @@ of data to use in training the model.}
 stopping boosting should be used.}
 }
 \value{
-MLModel class object.
+\code{MLModel} class object.
 }
 \description{
 Fit classification tree models or rule-based models using Quinlan's C5.0
@@ -54,9 +54,18 @@ algorithm.
 
 Latter arguments are passed to \code{\link[C50]{C5.0Control}}.
 Further model details can be found in the source link below.
+
+In calls to \code{\link{varimp}} for \code{C50Model}, argument \code{metric}
+may be spedified as \code{"usage"} (default) for the percentage of training
+set samples that fall into all terminal nodes after the split of each
+predictor or as \code{"splits"} for the percentage of splits associated with
+each predictor.  Variable importance is automatically scaled to range from 0
+to 100.  To obtain unscaled importance values, set \code{scale = FALSE}.  See
+example below.
 }
 \examples{
-fit(Species ~ ., data = iris, model = C50Model())
+modelfit <- fit(Species ~ ., data = iris, model = C50Model())
+varimp(modelfit, metric = "splits", scale = FALSE)
 
 }
 \seealso{

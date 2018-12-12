@@ -3,124 +3,24 @@
 #' Plot measures of model performance and predictor variable importance.
 #'  
 #' @name plot
-#' @rdname plot-method
+#' @rdname plot-methods
 #' 
 #' @param x object to plot.
 #' @param metrics vector of numeric indexes or character names of performance
 #' metrics to plot.
 #' @param stat function to compute a summary statistic on resampled values for
-#' MLModelTune line plots and Resamples model sorting.
+#' \code{MLModelTune} line plots and \code{Resamples} model sorting.
 #' @param type type of plot to construct.
 #' @param ... arguments passed to other methods.
 #' 
-#' @seealso \code{\link{diff}}, \code{\link{resample}}, \code{\link{Resamples}},
-#' \code{\link{tune}}
+#' @seealso \code{\link{modelmetrics}},  \code{\link{resample}},
+#' \code{\link{diff}}, \code{\link{tune}}, \code{\link{calibration}},
+#' \code{\link{confusion}}, \code{\link{lift}}, \code{\link{dependence}},
+#' \code{\link{varimp}}
 #' 
-#' @examples
-#' ## Factor response example
-#' 
-#' fo <- Species ~ .
-#' control <- CVControl()
-#' 
-#' gbmfit <- fit(fo, data = iris, model = GBMModel, control = control)
-#' plot(varimp(gbmfit))
-#' 
-#' gbmperf1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
-#' gbmperf2 <- resample(fo, iris, GBMModel(n.trees = 50), control)
-#' gbmperf3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
-#' plot(gbmperf3)
-#' 
-#' perf <- Resamples(GBM1 = gbmperf1, GBM2 = gbmperf2, GBM3 = gbmperf3)
-#' plot(perf)
-#' 
-plot.MLModelTune <- function(x, metrics = NULL, stat = mean,
-                             type = c("boxplot", "density", "errorbar", "line",
-                                      "violin"), ...) {
-  resamples <- x@resamples
-  type <- match.arg(type)
-  if (type == "line") {
-    grid <- x@grid
-    if (any(dim(grid) == 0)) stop("no tuning parameters to plot")
-    stats <- apply(resamples, c(3, 2), function(x) stat(na.omit(x))) %>%
-      as.data.frame.table
-    df <- data.frame(
-      x = grid[[1]],
-      y = stats$Freq,
-      metric = stats$Var2
-    )
-    
-    metriclevels <- levels(df$metric)
-    if (is.null(metrics)) {
-      metrics <- metriclevels
-    } else {
-      metrics <- match_indices(metrics, metriclevels)
-      df <- df[df$metric %in% metrics, , drop = FALSE]
-    }
-    df$metric <- factor(df$metric, metrics)
-    
-    mapping <- if (ncol(grid) > 1) {
-      df$group <- do.call(interaction, grid[-1])
-      aes(x, y, color = group, shape = group)
-    } else {
-      aes(x, y)
-    }
-    ggplot(df, mapping) +
-      geom_line() +
-      geom_point() +
-      labs(x = names(grid)[1], y = "Values", color = "Params Group",
-           shape = "Params Group") +
-      facet_wrap(~ metric, scales = "free")
-  } else {
-    plot(resamples, metrics = metrics, stat = stat, type = type, ...)
-  }
-}
-
-
-#' @rdname plot-method
-#' 
-#' @param stats vector of numeric indexes or character names of partial
-#' dependence summary statistics to plot.
-#' 
-#' @seealso \code{\link{dependence}}
-#' 
-plot.PartialDependence <- function(x, stats = NULL, ...) {
-  if (any(rowSums(!is.na(x$Predictors)) > 1)) {
-    stop("partial dependence plots not available for interaction efffects")
-  }
-
-  if (!is.null(stats)) {
-    stats <- match_indices(stats, levels(x$Statistic))
-    x <- x[x$Statistic %in% stats, , drop = FALSE]
-  }
-
-  df <- x[c("Statistic", "Response", "Value")]
-
-  aes_response <- if (nlevels(x$Response) > 1) {
-    aes(x = Predictor, y = Value, color = Response)
-  } else {
-    aes(x = Predictor, y = Value)
-  } 
-
-  pl <- list()
-  for (varname in names(x$Predictors)) {
-    df$Predictor <- x$Predictors[[varname]]
-    p <- ggplot(na.omit(df), aes_response)
-    p <- switch_class(df$Predictor,
-                      "factor" = p +
-                        geom_crossbar(aes(ymin = ..y.., ymax = ..y..)),
-                      "numeric" = p + geom_line() + geom_point()) +
-      labs(x = varname) + facet_wrap(~ Statistic, scales = "free")
-    pl[[varname]] <- p
-  }
-  pl
-}
-
-
-#' @rdname plot-method
-#' 
-plot.Resamples <- function(x, metrics = NULL, stat = mean,
-                           type = c("boxplot", "density", "errorbar", "violin"),
-                           ...) {
+plot.ModelMetrics <- function(x, metrics = NULL, stat = mean,
+                              type = c("boxplot", "density", "errorbar",
+                                       "violin"), ...) {
   df <- as.data.frame.table(x)
   if (length(dim(x)) <= 2) df$Var3 <- factor("Model")
   orderednames <- match(c("Var1", "Var2", "Var3", "Freq"), names(df))
@@ -162,14 +62,82 @@ plot.Resamples <- function(x, metrics = NULL, stat = mean,
 }
 
 
-#' @rdname plot-method
+#' @rdname plot-methods
+#' 
+#' @examples
+#' ## Factor response example
+#' 
+#' fo <- Species ~ .
+#' control <- CVControl()
+#' 
+#' gbmfit <- fit(fo, data = iris, model = GBMModel, control = control)
+#' plot(varimp(gbmfit))
+#' 
+#' gbmres1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
+#' gbmres2 <- resample(fo, iris, GBMModel(n.trees = 50), control)
+#' gbmres3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
+#' plot(gbmres3)
+#' 
+#' res <- Resamples(GBM1 = gbmres1, GBM2 = gbmres2, GBM3 = gbmres3)
+#' plot(res)
+#' 
+plot.Resamples <- function(x, metrics = NULL, stat = mean,
+                           type = c("boxplot", "density", "errorbar", "violin"),
+                           ...) {
+  plot(modelmetrics(x), metrics = metrics, stat = stat, type = type)
+}
+
+
+#' @rdname plot-methods
+#' 
+plot.MLModelTune <- function(x, metrics = NULL, stat = mean,
+                             type = c("boxplot", "density", "errorbar", "line",
+                                      "violin"), ...) {
+  perf <- modelmetrics(x@resamples)
+  type <- match.arg(type)
+  if (type == "line") {
+    grid <- x@grid
+    if (any(dim(grid) == 0)) stop("no tuning parameters to plot")
+    stats <- apply(perf, c(3, 2), function(x) stat(na.omit(x))) %>%
+      as.data.frame.table
+    df <- data.frame(
+      x = grid[[1]],
+      y = stats$Freq,
+      metric = stats$Var2
+    )
+    
+    metriclevels <- levels(df$metric)
+    if (is.null(metrics)) {
+      metrics <- metriclevels
+    } else {
+      metrics <- match_indices(metrics, metriclevels)
+      df <- df[df$metric %in% metrics, , drop = FALSE]
+    }
+    df$metric <- factor(df$metric, metrics)
+    
+    mapping <- if (ncol(grid) > 1) {
+      df$group <- do.call(interaction, grid[-1])
+      aes(x, y, color = group, shape = group)
+    } else {
+      aes(x, y)
+    }
+    ggplot(df, mapping) +
+      geom_line() +
+      geom_point() +
+      labs(x = names(grid)[1], y = "Values", color = "Params Group",
+           shape = "Params Group") +
+      facet_wrap(~ metric, scales = "free")
+  } else {
+    plot(perf, metrics = metrics, stat = stat, type = type, ...)
+  }
+}
+
+
+#' @rdname plot-methods
 #' 
 #' @param se logical indicating whether to include standard error bars.
 #' 
-#' @seealso \code{\link{calibration}}
-#' 
-plot.ResamplesCalibration <- function(x, type = c("line", "point"), 
-                                      se = FALSE, ...) {
+plot.Calibration <- function(x, type = c("line", "point"), se = FALSE, ...) {
   type <- match.arg(type)
   
   aes_response <- if (nlevels(x$Response) > 1) {
@@ -206,21 +174,39 @@ plot.ResamplesCalibration <- function(x, type = c("line", "point"),
     
   }, simplify = FALSE)
   
-  pl <- as(pl, "list")
-  names(pl) <- levels(x$Model)
+  structure(as(pl, "list"), names = levels(x$Model))
+}
+
+
+#' @rdname plot-methods
+#' 
+plot.Confusion <- function(x, ...) {
+  pl <- list()
+  for (name in names(x)) {
+    pl[[name]] <- plot(x[[name]]) + labs(title = name)
+  }
   pl
 }
 
 
-#' @rdname plot-method
+#' @rdname plot-methods
+#' 
+plot.ConfusionMatrix <- function(x, ...) {
+  df <- as.data.frame(prop.table(x), responseName = "Value")
+  df$Predicted <- with(df, factor(Predicted, rev(levels(Predicted))))
+  ggplot(df, aes(Observed, Predicted, fill = Value)) +
+    geom_raster() +
+    labs(fill = "Probability") +
+    scale_fill_gradient(trans = "reverse")
+}
+
+
+#' @rdname plot-methods
 #' 
 #' @param find numeric percent of observed events at which to display reference
 #' lines indicating the corresponding percent tested in lift plots.
 #' 
-#' @seealso
-#' \code{\link{lift}}
-#' 
-plot.ResamplesLift <- function(x, find = NULL, ...) {
+plot.Lift <- function(x, find = NULL, ...) {
   aes_model <- if (nlevels(x$Model) > 1) {
     aes(x = Tested, y = Found, color = Model)
   } else {
@@ -252,12 +238,48 @@ plot.ResamplesLift <- function(x, find = NULL, ...) {
 }
 
 
-#' @rdname plot-method
+#' @rdname plot-methods
+#' 
+#' @param stats vector of numeric indexes or character names of partial
+#' dependence summary statistics to plot.
+#' 
+plot.PartialDependence <- function(x, stats = NULL, ...) {
+  if (any(rowSums(!is.na(x$Predictors)) > 1)) {
+    stop("partial dependence plots not available for interaction efffects")
+  }
+
+  if (!is.null(stats)) {
+    stats <- match_indices(stats, levels(x$Statistic))
+    x <- x[x$Statistic %in% stats, , drop = FALSE]
+  }
+
+  df <- x[c("Statistic", "Response", "Value")]
+
+  aes_response <- if (nlevels(x$Response) > 1) {
+    aes(x = Predictor, y = Value, color = Response)
+  } else {
+    aes(x = Predictor, y = Value)
+  } 
+
+  pl <- list()
+  for (varname in names(x$Predictors)) {
+    df$Predictor <- x$Predictors[[varname]]
+    p <- ggplot(na.omit(df), aes_response)
+    p <- switch_class(df$Predictor,
+                      "factor" = p +
+                        geom_crossbar(aes(ymin = ..y.., ymax = ..y..)),
+                      "numeric" = p + geom_line() + geom_point()) +
+      labs(x = varname) + facet_wrap(~ Statistic, scales = "free")
+    pl[[varname]] <- p
+  }
+  pl
+}
+
+
+#' @rdname plot-methods
 #' 
 #' @param n number of most important variables to include in the plot
 #' [default: all].
-#' 
-#' @seealso \code{\link{varimp}}
 #' 
 plot.VarImp <- function(x, n = NULL, ...) {
   if (!is.null(n)) x <- head(x, n)

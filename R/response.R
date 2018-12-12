@@ -4,8 +4,10 @@
 #' 
 #' @rdname response-methods
 #' 
-#' @param object object containing a response.
+#' @param object object containing response variable values.
 #' @param ... arguments passed to other methods.
+#' 
+#' @seealso \code{\link[recipes]{recipe}}
 #' 
 #' @examples
 #' ## Survival response example
@@ -20,17 +22,36 @@ response <- function(object, ...) {
 }
 
 
+response.MLFitBits <- function(object, ...) {
+  object@y
+}
+
+
 #' @rdname response-methods
 #' 
-#' @param data data frame containing the values of a response variable defined in a formula.
+#' @param data \code{data.frame} containing the values of a response variable
+#' defined in a formula.
 #' 
 response.formula <- function(object, data, ...) {
   eval(object[[2]], data)
 }
 
 
+response.MLModelFit <- function(object, ...) {
+  response(field(object, "fitbits"))
+}
+
+
 response.ModelFrame <- function(object, ...) {
   response(formula(terms(object)), object)
+}
+
+
+#' @rdname response-methods
+#' 
+response.recipe <- function(object, data, ...) {
+  object <- prep(object)
+  response(formula(object), bake(object, data))
 }
 
 
@@ -42,9 +63,4 @@ response.tbl_df <- function(object, ...) {
 response.terms <- function(object, ...) {
   i <- attr(object, "response")
   all.vars(object)[i]
-}
-
-
-response.MLModelFit <- function(object, ...) {
-  fitbit(object, "y")
 }

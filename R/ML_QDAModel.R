@@ -23,7 +23,7 @@
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source links below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[MASS]{qda}}, \code{\link[MASS]{predict.qda}},
 #' \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
@@ -34,6 +34,7 @@
 QDAModel <- function(prior = NULL, method = c("moment", "mle", "mve", "t"),
                      nu = 5,
                      use = c("plug-in", "predictive", "debiased", "looCV")) {
+  
   method <- match.arg(method)
   use <- match.arg(use)
   
@@ -43,7 +44,7 @@ QDAModel <- function(prior = NULL, method = c("moment", "mle", "mve", "t"),
     types = "factor",
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
-    fit = function(formula, data, weights, ...) {
+    fit = function(formula, data, weights, use, ...) {
       assert_equal_weights(weights)
       environment(formula) <- environment()
       modelfit <- MASS::qda(formula, data = data, ...)
@@ -51,8 +52,9 @@ QDAModel <- function(prior = NULL, method = c("moment", "mle", "mve", "t"),
       modelfit
     },
     predict = function(object, newdata, prior = object$prior, ...) {
-      predict(unMLModelFit(object), newdata = newdata, prior = prior,
+      predict(object, newdata = newdata, prior = prior,
               method = object$use)$posterior
     }
   )
+  
 }

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Brian J Smith" />
 
-<meta name="date" content="2018-11-22" />
+<meta name="date" content="2018-12-12" />
 
 <title>Conventions for MLModels Implementation</title>
 
@@ -280,7 +280,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Conventions for MLModels Implementation</h1>
 <h4 class="author"><em>Brian J Smith</em></h4>
-<h4 class="date"><em>2018-11-22</em></h4>
+<h4 class="date"><em>2018-12-12</em></h4>
 
 
 
@@ -343,7 +343,6 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <h3>predict Function</h3>
 <ul>
 <li><p>The arguments are a model fit <code>object</code>, <code>newdata</code> frame, optionally <code>time</code> for prediction at survival time points, and an ellipsis.</p></li>
-<li><p>Extract any new elements added in the fit function and then recast with <code>unMLModelFit</code> to convert the fit object to its original class.</p></li>
 <li><p>The predict function should return a vector or matrix of probabilities for 2-level factors, a matrix for factors with more than 2 levels, a vector or matrix of expected responses if numeric, a matrix of survival probabilities if follow-up times are supplied, or a vector of survival risks if no follow-up times.</p></li>
 </ul>
 </div>

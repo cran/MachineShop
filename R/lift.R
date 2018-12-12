@@ -1,45 +1,58 @@
 #' Model Lift
 #' 
-#' Calculate lift estimates from observed and resampled response variable
-#' values.
+#' Calculate lift estimates from observed and predicted responses.
 #' 
-#' @param x Resamples object.
-#' @param ... arguments passed to other methods.
+#' @rdname lift
 #' 
-#' @return ResamplesLift class object.
+#' @param x observed responses or \code{Resamples} object of observed and
+#' predicted responses.
+#' @param y predicted responses.
+#' 
+#' @return \code{Lift} class object that inherits from \code{data.frame}.
 #'  
-#' @seealso \code{\link{resample}}, \code{\link{plot}}
+#' @seealso \code{\link{response}}, \code{\link{predict}},
+#' \code{\link{resample}}, \code{\link{plot}}
 #' 
 #' @examples
 #' library(MASS)
 #' 
-#' perf <- resample(type ~ ., data = Pima.tr, model = GBMModel)
-#' (lf <- lift(perf))
+#' res <- resample(type ~ ., data = Pima.tr, model = GBMModel)
+#' (lf <- lift(res))
 #' plot(lf)
 #' 
-lift <- function(x, ...) {
-  stopifnot(is(x, "Resamples"))
-  
-  response <- x@response
-  
-  lift_list <- by(response, response$Model, function(data) {
-    .lift(data$Observed, data$Predicted) %>%
-      cbind(Model = data$Model[1])
-  }, simplify = FALSE)
-  
-  structure(do.call(rbind, lift_list), class = c("ResamplesLift", "data.frame"))
+lift <- function(x, y = NULL, ...) {
+  .lift(x, y)
 }
 
 
-setGeneric(".lift", function(observed, predicted) standardGeneric(".lift"))
+.lift <- function(x, ...) {
+  UseMethod(".lift")
+}
 
 
-setMethod(".lift", c("ANY", "ANY"),
-  function(observed, predicted) stop("lift unavailable for response type")
+.lift.default <- function(x, y, ...) {
+  Lift(.lift_default(x, y))
+}
+
+
+.lift.Resamples <- function(x, ...) {
+  lf_list <- by(x, x$Model, function(data) {
+    lift(data$Observed, data$Predicted)
+  }, simplify = FALSE)
+  do.call(Lift, lf_list)
+}
+
+
+setGeneric(".lift_default", function(observed, predicted)
+  standardGeneric(".lift_default"))
+
+
+setMethod(".lift_default", c("ANY", "ANY"),
+  function(observed, predicted) stop("lift requires a binary response variable")
 )
 
 
-setMethod(".lift", c("factor", "numeric"),
+setMethod(".lift_default", c("factor", "numeric"),
   function(observed, predicted) {
     df <- data.frame(
       observed = observed == levels(observed)[2],

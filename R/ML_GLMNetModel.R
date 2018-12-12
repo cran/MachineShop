@@ -31,7 +31,7 @@
 #' Default values for the \code{NULL} arguments and further model
 #' details can be found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[glmnet]{glmnet}}, \code{\link{fit}},
 #' \code{\link{resample}}, \code{\link{tune}}
@@ -50,8 +50,10 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
                           .(ifelse(nvars < 500, "covariance", "naive")),
                         type.logistic = c("Newton", "modified.Newton"),
                         type.multinomial = c("ungrouped", "grouped")) {
+  
   type.logistic <- match.arg(type.logistic)
   type.multinomial <- match.arg(type.multinomial)
+  
   MLModel(
     name = "GLMNetModel",
     packages = "glmnet",
@@ -75,21 +77,20 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
       modelfit$x <- x
       modelfit
     },
-    predict = function(object, newdata, times, ...) {
-      x <- object$x
-      y <- response(object)
-      fo <- formula(object)[-2]
-      object <- unMLModelFit(object)
+    predict = function(object, newdata, fitbits, times, ...) {
+      y <- response(fitbits)
+      fo <- formula(fitbits)[-2]
       newmf <- model.frame(fo, newdata, na.action = na.pass)
       newx <- model.matrix(fo, newmf)[, -1, drop = FALSE]
       if (is.Surv(y)) {
+        new_neg_risk <-
+          -exp(predict(object, newx = newx, type = "link")) %>% drop
         if (length(times)) {
-          lp <- predict(object, newx = x, type = "link") %>% drop
-          newlp <- predict(object, newx = newx, type = "link") %>% drop
-          cumhaz <- basehaz(y, exp(lp), times)
-          exp(exp(newlp) %o% -cumhaz)
+          risk <- exp(predict(object, newx = object$x, type = "link")) %>% drop
+          cumhaz <- basehaz(y, risk, times)
+          exp(new_neg_risk %o% cumhaz)
         } else {
-          exp(predict(object, newx = newx, type = "link")) %>% drop
+          new_neg_risk
         }
       } else {
         predict(object, newx = newx, type = "response")
@@ -105,4 +106,5 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
       }
     }
   )
+  
 }

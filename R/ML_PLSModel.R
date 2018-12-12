@@ -13,7 +13,7 @@
 #' 
 #' Further model details can be found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[pls]{mvr}}, \code{\link{fit}}, \code{\link{resample}},
 #' \code{\link{tune}}
@@ -24,6 +24,7 @@
 #' fit(medv ~ ., data = Boston, model = PLSModel())
 #'
 PLSModel <- function(ncomp = 1, scale = FALSE) {
+  
   MLModel(
     name = "PLSModel",
     packages = "pls",
@@ -44,7 +45,7 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
       pls::plsr(formula, data = data, ...)
     },
     predict = function(object, newdata, ...) {
-      predict(unMLModelFit(object), newdata = newdata, ncomp = object$ncomp,
+      predict(object, newdata = newdata, ncomp = object$ncomp,
               type = "response")
     },
     varimp = function(object, ...) {
@@ -59,4 +60,5 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
       vi
     }
   )
+  
 }

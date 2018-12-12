@@ -2,26 +2,36 @@
 % Please edit documentation in R/plots.R
 \name{plot}
 \alias{plot}
-\alias{plot.MLModelTune}
-\alias{plot.PartialDependence}
+\alias{plot.ModelMetrics}
 \alias{plot.Resamples}
-\alias{plot.ResamplesCalibration}
-\alias{plot.ResamplesLift}
+\alias{plot.MLModelTune}
+\alias{plot.Calibration}
+\alias{plot.Confusion}
+\alias{plot.ConfusionMatrix}
+\alias{plot.Lift}
+\alias{plot.PartialDependence}
 \alias{plot.VarImp}
 \title{Model Performance Plots}
 \usage{
-\method{plot}{MLModelTune}(x, metrics = NULL, stat = mean,
-  type = c("boxplot", "density", "errorbar", "line", "violin"), ...)
-
-\method{plot}{PartialDependence}(x, stats = NULL, ...)
+\method{plot}{ModelMetrics}(x, metrics = NULL, stat = mean,
+  type = c("boxplot", "density", "errorbar", "violin"), ...)
 
 \method{plot}{Resamples}(x, metrics = NULL, stat = mean,
   type = c("boxplot", "density", "errorbar", "violin"), ...)
 
-\method{plot}{ResamplesCalibration}(x, type = c("line", "point"),
-  se = FALSE, ...)
+\method{plot}{MLModelTune}(x, metrics = NULL, stat = mean,
+  type = c("boxplot", "density", "errorbar", "line", "violin"), ...)
 
-\method{plot}{ResamplesLift}(x, find = NULL, ...)
+\method{plot}{Calibration}(x, type = c("line", "point"), se = FALSE,
+  ...)
+
+\method{plot}{Confusion}(x, ...)
+
+\method{plot}{ConfusionMatrix}(x, ...)
+
+\method{plot}{Lift}(x, find = NULL, ...)
+
+\method{plot}{PartialDependence}(x, stats = NULL, ...)
 
 \method{plot}{VarImp}(x, n = NULL, ...)
 }
@@ -32,19 +42,19 @@
 metrics to plot.}
 
 \item{stat}{function to compute a summary statistic on resampled values for
-MLModelTune line plots and Resamples model sorting.}
+\code{MLModelTune} line plots and \code{Resamples} model sorting.}
 
 \item{type}{type of plot to construct.}
 
 \item{...}{arguments passed to other methods.}
 
-\item{stats}{vector of numeric indexes or character names of partial
-dependence summary statistics to plot.}
-
 \item{se}{logical indicating whether to include standard error bars.}
 
 \item{find}{numeric percent of observed events at which to display reference
 lines indicating the corresponding percent tested in lift plots.}
+
+\item{stats}{vector of numeric indexes or character names of partial
+dependence summary statistics to plot.}
 
 \item{n}{number of most important variables to include in the plot
 [default: all].}
@@ -61,24 +71,18 @@ control <- CVControl()
 gbmfit <- fit(fo, data = iris, model = GBMModel, control = control)
 plot(varimp(gbmfit))
 
-gbmperf1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
-gbmperf2 <- resample(fo, iris, GBMModel(n.trees = 50), control)
-gbmperf3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
-plot(gbmperf3)
+gbmres1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
+gbmres2 <- resample(fo, iris, GBMModel(n.trees = 50), control)
+gbmres3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
+plot(gbmres3)
 
-perf <- Resamples(GBM1 = gbmperf1, GBM2 = gbmperf2, GBM3 = gbmperf3)
-plot(perf)
+res <- Resamples(GBM1 = gbmres1, GBM2 = gbmres2, GBM3 = gbmres3)
+plot(res)
 
 }
 \seealso{
-\code{\link{diff}}, \code{\link{resample}}, \code{\link{Resamples}},
-\code{\link{tune}}
-
-\code{\link{dependence}}
-
-\code{\link{calibration}}
-
-\code{\link{lift}}
-
+\code{\link{modelmetrics}},  \code{\link{resample}},
+\code{\link{diff}}, \code{\link{tune}}, \code{\link{calibration}},
+\code{\link{confusion}}, \code{\link{lift}}, \code{\link{dependence}},
 \code{\link{varimp}}
 }

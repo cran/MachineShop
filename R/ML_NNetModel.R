@@ -28,7 +28,7 @@
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[nnet]{nnet}}, \code{\link{fit}}, \code{\link{resample}},
 #' \code{\link{tune}}
@@ -42,6 +42,7 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
                       censored = FALSE, skip = FALSE, rang = 0.7, decay = 0,
                       maxit = 100, trace = FALSE, MaxNWts = 1000, abstol = 1e-4,
                       reltol = 1e-8) {
+  
   MLModel(
     name = "NNetModel",
     packages = "nnet",
@@ -53,7 +54,7 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
       nnet::nnet(formula, data = data, weights = weights, ...)
     },
     predict = function(object, newdata, ...) {
-      predict(unMLModelFit(object), newdata = newdata, type = "raw")
+      predict(object, newdata = newdata, type = "raw")
     },
     varimp = function(object, ...) {
       nvars <- object$n[1]
@@ -82,4 +83,5 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
       drop(vi)
     }
   )
+  
 }

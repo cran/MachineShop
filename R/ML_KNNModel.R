@@ -17,7 +17,7 @@
 #' 
 #' Further model details can be found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[kknn]{kknn}}, \code{\link{fit}}, \code{\link{resample}},
 #' \code{\link{tune}}
@@ -29,6 +29,7 @@ KNNModel <- function(k = 7, distance = 2, scale = TRUE,
                      kernel = c("optimal", "biweight", "cos", "epanechnikov",
                                 "gaussian", "inv", "rank", "rectangular",
                                 "triangular", "triweight")) {
+  
   kernel <- match.arg(kernel)
   
   MLModel(
@@ -39,14 +40,19 @@ KNNModel <- function(k = 7, distance = 2, scale = TRUE,
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
-      list(formula = formula, ...)
+      list(formula = formula, train = data, ...)
     },
     predict = function(object, newdata, ...) {
-      args <- unMLModelFit(object)
-      args$train <- preprocess(fitbit(object, "x"))
-      args$test <- newdata
-      pred <- do.call(kknn::kknn, args)
+      attachment(list(
+        contr.dummy = kknn::contr.dummy,
+        contr.ordinal = kknn::contr.ordinal,
+        contr.metrics = kknn::contr.metric
+      ), name = "kknn_exports")
+
+      object$test <- newdata
+      pred <- do.call(kknn::kknn, object)
       if (pred$response == "continuous") pred$fitted.values else pred$prob
     }
   )
+  
 }

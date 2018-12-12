@@ -7,37 +7,58 @@ importClassesFrom(party, RandomForest)
 importFrom(abind, abind, adrop)
 importFrom(foreach, "%dopar%", foreach, registerDoSEQ)
 importFrom(graphics, plot)
-importFrom(Hmisc, rcorr.cens)
-importFrom(irr, kappa2)
 importFrom(magrittr, "%>%")
-importFrom(MLmetrics, PRAUC)
-importFrom(ModelMetrics, auc, brier, ce, kappa, mae, rmse, sensitivity,
-           specificity)
 importFrom(recipes, bake, juice, prep, prepper)
 importFrom(rsample, assessment, bootstraps, initial_split, rsample2caret,
            testing, vfold_cv)
-importFrom(Rsolnp, solnp)
-importFrom(stats, aggregate, approx, coef, complete.cases, cor, formula,
-           get_all_vars, median, model.frame, model.matrix, model.response,
-           model.weights, na.fail, na.omit, na.pass, p.adjust, pchisq, predict,
-           quantile, reformulate, reshape, sd, t.test, terms, vcov)
+importFrom(stats, aggregate, approx, coef, complete.cases, contr.helmert, cor,
+           formula, get_all_vars, median, model.frame, model.matrix,
+           model.response, model.weights, na.fail, na.omit, na.pass, p.adjust,
+           pchisq, predict, quantile, reformulate, reshape, sd, t.test, terms,
+           vcov)
 importFrom(survival, is.Surv, Surv, survfit)
-importFrom(survivalROC, survivalROC)
-importFrom(utils, combn, head, stack, tail)
+importFrom(utils, combn, head, relist, stack, tail)
 
 
 export(.,
        calibration,
+       Calibration,
        confusion,
+       Confusion,
        dependence,
        fit,
        lift,
+       Lift,
+       metricinfo,
        ModelFrame,
+       modelinfo,
+       modelmetrics,
        resample,
        Resamples,
        response,
        tune,
        varimp)
+
+export(accuracy,
+       brier,
+       cindex,
+       cross_entropy,
+       f_score,
+       kappa2,
+       mae,
+       mse,
+       npv,
+       ppv,
+       pr_auc,
+       precision,
+       r2,
+       recall,
+       rmse,
+       roc_auc,
+       roc_index,
+       sensitivity,
+       specificity,
+       weighted_kappa2)
 
 export(BootControl,
        CVControl,
@@ -45,25 +66,36 @@ export(BootControl,
        SplitControl,
        TrainControl)
 
-exportClasses(MLControl)
-
-export(MLModel,
+export(MLControl,
+       MLModel,
+       AdaBagModel,
+       AdaBoostModel,
+       BlackBoostModel,
        C50Model,
        CForestModel,
        CoxModel,
        CoxStepAICModel,
+       EarthModel,
+       FDAModel,
+       GAMBoostModel,
        GBMModel,
+       GLMBoostModel,
        GLMModel,
        GLMStepAICModel,
        GLMNetModel,
        KNNModel,
        LDAModel,
        LMModel,
+       MDAModel,
+       NaiveBayesModel,
        NNetModel,
+       PDAModel,
        PLSModel,
        POLRModel,
        QDAModel,
        RandomForestModel,
+       RangerModel,
+       RPartModel,
        StackedModel,
        SuperModel,
        SurvRegModel,
@@ -77,12 +109,11 @@ export(MLModel,
        SVMRadialModel,
        SVMSplineModel,
        SVMTanhModel,
+       TreeModel,
        XGBModel,
        XGBDARTModel,
        XGBLinearModel,
        XGBTreeModel)
-
-exportMethods(modelmetrics)
 
 S3method(diff, MLModelTune)
 S3method(diff, Resamples)
@@ -91,22 +122,35 @@ S3method(fit, formula)
 S3method(fit, recipe)
 S3method(ModelFrame, formula)
 S3method(ModelFrame, matrix)
+S3method(modelmetrics, factor)
+S3method(modelmetrics, matrix)
+S3method(modelmetrics, numeric)
+S3method(modelmetrics, Resamples)
+S3method(modelmetrics, Surv)
 S3method(print, MLModelFit)
+S3method(print, Resamples)
 S3method(plot, MLModelTune)
 S3method(plot, PartialDependence)
 S3method(plot, Resamples)
-S3method(plot, ResamplesCalibration)
-S3method(plot, ResamplesLift)
+S3method(plot, Calibration)
+S3method(plot, Confusion)
+S3method(plot, ConfusionMatrix)
+S3method(plot, Lift)
+S3method(plot, ModelMetrics)
 S3method(plot, VarImp)
 S3method(predict, MLModelFit)
 S3method(resample, ModelFrame)
 S3method(resample, formula)
 S3method(resample, recipe)
 S3method(response, formula)
+S3method(response, recipe)
+S3method(summary, Confusion)
+S3method(summary, ConfusionMatrix)
 S3method(summary, MLModelFit)
 S3method(summary, MLModelTune)
+S3method(summary, ModelMetrics)
 S3method(summary, Resamples)
-S3method(t.test, ResamplesDiff)
+S3method(t.test, ModelMetricsDiff)
 S3method(tune, ModelFrame)
 S3method(tune, formula)
 S3method(tune, recipe)

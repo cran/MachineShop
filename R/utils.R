@@ -1,6 +1,7 @@
 utils::globalVariables(c("Found", "group", "i", "Lower", "Mean", "Midpoint",
-                         "model", "Model", "Predictor", "Response", "Tested",
-                         "Upper", "Value", "values", "variables", "y", "..y.."))
+                         "model", "Model", "Observed", "Predicted", "Predictor",
+                         "Response", "Tested", "Upper", "Value", "values",
+                         "variables", "y", "..y.."))
 
 
 .onLoad <- function(libname, pkgname) {
@@ -22,8 +23,7 @@ utils::globalVariables(c("Found", "group", "i", "Lower", "Mean", "Midpoint",
 #' @return 
 #' The quoted (unevaluated) expression.
 #' 
-#' @seealso
-#' \code{\link{quote}}
+#' @seealso \code{\link{quote}}
 #' 
 #' @examples
 #' ## Stepwise variable selection with BIC
@@ -37,10 +37,75 @@ utils::globalVariables(c("Found", "group", "i", "Lower", "Mean", "Midpoint",
 }
 
 
+append <- function(...) {
+  Reduce(.append, list(...))
+}
+
+
+setGeneric(".append", function(x, y, ...) standardGeneric(".append"))
+
+
+setMethod(".append", c("ANY", "missing"),
+  function(x, y) x
+)
+
+
+setMethod(".append", c("data.frame", "data.frame"),
+  function(x, y) {
+    stopifnot(names(x) == names(y))
+    df <- data.frame(matrix(nrow = nrow(x) + nrow(y), ncol = 0))
+    for (varname in names(x)) {
+      df[[varname]] <- .append(x[[varname]], y[[varname]])
+    }
+    df
+  }
+)
+
+
+setMethod(".append", c("factor", "factor"),
+  function(x, y) unlist(list(x, y))
+)
+
+
+setMethod(".append", c("matrix", "matrix"),
+  function(x, y) rbind(x, y)
+)
+
+
+setMethod(".append", c("ordered", "ordered"),
+  function(x, y) {
+    xy <- unlist(list(x, y))
+    if (all(levels(x) == levels(y))) as.ordered(xy) else xy
+  }
+)
+
+
+setMethod(".append", c("Surv", "Surv"),
+  function(x, y) {
+    df <- as.data.frame(rbind(x, y))
+    names(df) <- NULL
+    do.call(Surv, df)
+  }
+)
+
+
+setMethod(".append", c("vector", "vector"),
+  function(x, y) c(x, y)
+)
+
+
 assert_equal_weights <- function(weights) {
   if (any(diff(weights) != 0)) {
     warn("model weights are not supported and will be ignored")
   }
+}
+
+
+attachment <- function(what, pos = 2L,
+                       name = deparse(substitute(what), backtick = FALSE)) {
+  make_attach <- attach
+  make_attach(what, pos, name, warn.conflicts = FALSE)
+  do.call(on.exit, list(substitute(detach(name))), envir = parent.frame())
 }
 
 
@@ -55,53 +120,23 @@ basehaz <- function(y, risk, times) {
 }
 
 
-setGeneric("append", function(x, y, ...) standardGeneric("append"))
-
-
-setMethod("append", c("data.frame", "data.frame"),
-  function(x, y) {
-    stopifnot(names(x) == names(y))
-    df <- data.frame(matrix(nrow = nrow(x) + nrow(y), ncol = 0))
-    for (varname in names(x)) {
-      df[[varname]] <- append(x[[varname]], y[[varname]])
-    }
-    df
-  }
-)
-
-
-setMethod("append", c("factor", "factor"),
-  function(x, y) unlist(list(x, y))
-)
-
-
-setMethod("append", c("matrix", "matrix"),
-  function(x, y) rbind(x, y)
-)
-
-
-setMethod("append", c("Surv", "Surv"),
-  function(x, y) {
-    df <- as.data.frame(rbind(x, y))
-    names(df) <- NULL
-    do.call(Surv, df)
-  }
-)
-
-
-setMethod("append", c("vector", "vector"),
-  function(x, y) c(x, y)
-)
-
-
-formula.MLModelFit <- function(object) {
-  formula(terms(fitbit(object, "x")))
+field <- function(object, name) {
+  if (isS4(object)) slot(object, name) else object[[name]]
 }
 
 
 fitbit <- function(object, name) {
-  fitbits <- if (isS4(object)) object@fitbits else object$fitbits
-  slot(fitbits, name)
+  slot(field(object, "fitbits"), name)
+}
+
+
+formula.MLFitBits <- function(object) {
+  formula(terms(object@x))
+}
+
+
+formula.MLModelFit <- function(object) {
+  formula(field(object, "fitbits"))
 }
 
 
@@ -134,6 +169,41 @@ is_response <- function(object, class2) {
   } else {
     is(object, class2)
   }
+}
+
+
+list2function <- function(x) {
+  if (is.character(x)) x <- mget(x, mode = "function", inherits = TRUE)
+  if (is.list(x) && all(sapply(x, is.function))) {
+    eval(bquote(
+      function(...) unlist(lapply(.(x), function(x) x(...)))
+    ))
+  } else if (is.function(x)) {
+    x
+  } else {
+    stop("'", deparse(substitute(x)), "' must be a function, ",
+         "one or more function names, or a list of named functions")
+  }
+}
+
+
+make_unique_levels <- function(x, which) {
+  level_names <- list()
+  for (i in seq(x)) {
+    if (is.null(x[[i]][[which]])) x[[i]][[which]] <- which
+    x[[i]][[which]] <- as.factor(x[[i]][[which]])
+    arg_name <- names(x)[i]
+    level_names[[i]] <- if (!is.null(arg_name) && nzchar(arg_name)) {
+      rep(arg_name, nlevels(x[[i]][[which]]))
+    } else {
+      levels(x[[i]][[which]])
+    }
+  }
+  level_names <- level_names %>% unlist %>% make.unique %>% relist(level_names)
+  
+  for (i in seq(x)) levels(x[[i]][[which]]) <- level_names[[i]]
+  
+  x
 }
 
 
@@ -181,7 +251,7 @@ preprocess <- function(x, data = NULL, ...) {
 
 
 preprocess.default <- function(x, data = NULL, ...) {
-  if (is.null(data)) x else data
+  as(if (is.null(data)) x else data, "data.frame")
 }
 
 
@@ -260,4 +330,9 @@ terms.recipe <- function(x, ...) {
 
 warn <- function(...) {
   warning(..., call. = FALSE)
+}
+
+
+depwarn <- function(old, new) {
+  warn(old, "\n", new)
 }

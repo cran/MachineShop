@@ -2,10 +2,10 @@
 #' 
 #' Fit a stacked regression model from multiple base learners.
 #' 
-#' @param ... MLModel objects to serve as base learners.
-#' @param control \code{\linkS4class{MLControl}} object, control function, or
-#' character string naming a control function defining the resampling method to
-#' be employed for the estimation of base learner weights.
+#' @param ... \code{MLModel} objects to serve as base learners.
+#' @param control \code{\link{MLControl}} object, control function, or character
+#' string naming a control function defining the resampling method to be
+#' employed for the estimation of base learner weights.
 #' @param weights optional fixed base learner weights.
 #' 
 #' @details
@@ -15,7 +15,7 @@
 #' }
 #' }
 #' 
-#' @return StackedModel class object that inherits from MLModel.
+#' @return \code{StackedModel} class object that inherits from \code{MLModel}.
 #' 
 #' @references
 #' Breiman, L. (1996) \emph{Stacked Regression.} Machine Learning, 24, 49--64.
@@ -34,8 +34,7 @@ StackedModel <- function(..., control = CVControl, weights = NULL) {
   base_learners <- lapply(list(...), getMLObject, class = "MLModel")
   
   control <- getMLObject(control, "MLControl")
-  control@summary <- function(observed, predicted, ...) NA
-  
+
   if (!is.null(weights)) stopifnot(length(weights) == length(base_learners))
   
   new("StackedModel",
@@ -47,7 +46,8 @@ StackedModel <- function(..., control = CVControl, weights = NULL) {
         predicted <- 0
         for (i in seq(object$base_fits)) {
           predicted <- predicted +
-            object$weights[i] * predict(object$base_fits[[i]], newdata = newdata,
+            object$weights[i] * predict(object$base_fits[[i]],
+                                        newdata = newdata,
                                         times = object$times, type = "prob")
         }
         predicted
@@ -75,23 +75,20 @@ setClass("StackedModel", contains = "MLModel")
     stack <- list()
     complete_responses <- TRUE
     for (i in 1:num_learners) {
-      stack[[i]] <-
-        resample(x, model = base_learners[[i]], control = control)@response
+      stack[[i]] <- resample(x, model = base_learners[[i]], control = control)
       complete_responses <-
         complete_responses & complete.cases(stack[[i]])
     }
     
-    if (control@na.rm) {
-      stack <- lapply(stack, function(response) {
-        response[complete_responses, , drop = FALSE]
-      })
-    }
-    
-    weights <- solnp(rep(1 / num_learners, num_learners),
-                     function(x) eval_stack_loss(x, stack, times),
-                     eqfun = function(x) sum(x), eqB = 1,
-                     LB = rep(0, num_learners),
-                     control = list(trace = FALSE))$pars
+    stack <- lapply(stack, function(response) {
+      response[complete_responses, , drop = FALSE]
+    })
+
+    weights <- Rsolnp::solnp(rep(1 / num_learners, num_learners),
+                             function(x) eval_stack_loss(x, stack, times),
+                             eqfun = function(x) sum(x), eqB = 1,
+                             LB = rep(0, num_learners),
+                             control = list(trace = FALSE))$pars
   }
   
   list(base_fits = lapply(base_learners,
@@ -150,13 +147,13 @@ setMethod("stack_loss", c("numeric", "numeric"),
 
 setMethod("stack_loss", c("Surv", "matrix"),
   function(observed, predicted, times, ...) {
-    mean(Brier.Surv(observed, predicted, times))
+    brier(observed, predicted, times)[1]
   }
 )
 
 
 setMethod("stack_loss", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    -CIndex.Surv(observed, predicted)
+    -cindex(observed, predicted)
   }
 )

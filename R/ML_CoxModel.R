@@ -5,8 +5,7 @@
 #' incorporated using the counting process formulation of Andersen and Gill.
 #' 
 #' @param ties character string specifying the method for tie handling.
-#' @param control object of class \code{\link[survival]{coxph.control}}
-#' specifying iteration limit and other control options.
+#' @param ... arguments passed to \code{\link[survival]{coxph.control}}.
 #' 
 #' @details
 #' \describe{
@@ -16,9 +15,11 @@
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
 #'
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
-#' @seealso \code{\link[rms]{cph}}, \code{\link[survival]{coxph}}
+#' @seealso \code{\link[rms]{cph}}, \code{\link[survival]{coxph}},
+#' \code{\link[survival]{coxph.control}}, \code{\link[MASS]{stepAIC}},
+#' \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
 #' library(survival)
@@ -27,13 +28,20 @@
 #' fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
 #'     data = Melanoma, model = CoxModel())
 #' 
-CoxModel <- function(ties = c("efron", "breslow", "exact"), control = NULL) {
+CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
+  
   ties <- match.arg(ties)
+  
+  args <- params(environment())
+  is_main <- names(args) %in% c("ties", "eps", "iter.max")
+  params <- args[is_main]
+  params$tol <- args$toler.chol
+
   MLModel(
     name = "CoxModel",
     packages = "rms",
     types = "Surv",
-    params = params(environment()),
+    params = params,
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
       environment(formula) <- environment()
@@ -41,18 +49,16 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), control = NULL) {
                surv = TRUE, y = TRUE, ...)
     },
     predict = function(object, newdata, times, ...) {
-      object <- unMLModelFit(object)
       if (length(times)) {
         rms::survest(object, newdata = newdata, times = times,
                      conf.int = FALSE, se.fit = FALSE)$surv %>% as.matrix
       } else {
-        exp(predict(object, newdata = newdata, type = "lp"))
+        -exp(predict(object, newdata = newdata, type = "lp"))
       }
     },
-    varimp = function(object, ...) {
-      pchisq(coef(object)^2 / diag(vcov(object)), 1)
-    }
+    varimp = function(object, ...) varimp_pchisq(object)
   )
+  
 }
 
 
@@ -71,24 +77,24 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), control = NULL) {
 #' \code{stepAIC}. Larger values may give more information on the fitting
 #' process.
 #' @param steps maximum number of steps to be considered.
-#' 
-#' @seealso \code{\link[MASS]{stepAIC}}, \code{\link{fit}},
-#' \code{\link{resample}}, \code{\link{tune}}
 #'
-CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"),
-                            control = NULL,
+CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"), ...,
                             direction = c("both", "backward", "forward"),
-                            scope = NULL, k = 2, trace = FALSE, steps = 1000)
-  {
-  ties <- match.arg(ties)
+                            scope = NULL, k = 2, trace = FALSE, steps = 1000) {
+  
   direction <- match.arg(direction)
+  
   args <- params(environment())
-  stepmodel <- CoxModel(ties = ties, control = control)
+  is_step <- names(args) %in% c("direction", "scope", "k", "trace", "steps")
+  params <- args[is_step]
+
+  stepmodel <- CoxModel(ties = ties, ...)
+  
   MLModel(
     name = "CoxStepAICModel",
-    packages = c("MASS", stepmodel@packages),
+    packages = c(stepmodel@packages, "MASS"),
     types = stepmodel@types,
-    params = args,
+    params = c(stepmodel@params, params),
     nvars = stepmodel@nvars,
     fit = function(formula, data, weights, direction = "both", scope = list(),
                    k = 2, trace = 1, steps = 1000, ...) {
@@ -102,4 +108,5 @@ CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"),
     predict = fitbit(stepmodel, "predict"),
     varimp = fitbit(stepmodel, "varimp")
   )
+  
 }

@@ -5,44 +5,46 @@
 \alias{tune.formula}
 \alias{tune.ModelFrame}
 \alias{tune.recipe}
-\title{Model Tuning}
+\title{Model Tuning and Selection}
 \usage{
 tune(x, ...)
 
 \method{tune}{formula}(x, data, models, grid = data.frame(),
-  control = CVControl, metric = 1, stat = mean, maximize = TRUE,
-  ...)
+  control = CVControl, metrics = NULL, stat = mean,
+  maximize = TRUE, ...)
 
 \method{tune}{ModelFrame}(x, models, grid = data.frame(),
-  control = CVControl, metric = 1, stat = mean, maximize = TRUE,
-  ...)
+  control = CVControl, metrics = NULL, stat = mean,
+  maximize = TRUE, ...)
 
 \method{tune}{recipe}(x, models, grid = data.frame(),
-  control = CVControl, metric = 1, stat = mean, maximize = TRUE,
-  ...)
+  control = CVControl, metrics = NULL, stat = mean,
+  maximize = TRUE, ...)
 }
 \arguments{
 \item{x}{defined relationship between model predictors and an outcome.  May
-be a ModelFrame containing a formula, data, and optionally case weights; a
-formula; or a recipe.}
+be a \code{ModelFrame} containing a formula, data, and optionally case
+weights; a \code{formula}; or a \code{recipe.}}
 
-\item{...}{arguments passed to other methods.}
+\item{...}{arguments passed to the \code{metrics} functions.}
 
-\item{data}{data frame containing observed predictors and outcomes.}
+\item{data}{\code{data.frame} containing observed predictors and outcomes.}
 
-\item{models}{MLModel constructor function or character string or a list of
-MLModel contructors or objects.}
+\item{models}{\code{MLModel} constructor function or character string or a
+list of \code{MLModel} contructors or objects.}
 
-\item{grid}{data frame containing parameter values over which to evaluate 
-\code{models} when a single constructor is specified.  Ignored in the case of
-a list of models.}
+\item{grid}{\code{data.frame} containing parameter values over which to
+evaluate \code{models} when a single constructor is specified.  Ignored in
+the case of a list of models.}
 
-\item{control}{\code{\linkS4class{MLControl}} object, control function, or
-character string naming a control function defining the resampling method to
-be employed.}
+\item{control}{\code{\link{MLControl}} object, control function, or character
+string naming a control function defining the resampling method to be
+employed.}
 
-\item{metric}{numeric index or character name of the performance metric to
-use in selecting the best model.}
+\item{metrics}{function, one or more function names, or list of named
+functions to include in the calculation of performance metrics.  The default
+\code{\link{modelmetrics}} are used unless otherwise specified.  Model
+selection is based on the first specified metric.}
 
 \item{stat}{function to compute a summary statistic on resampled values of
 the metric for model selection.}
@@ -51,11 +53,12 @@ the metric for model selection.}
 maximum or minimum value of the performance metric.}
 }
 \value{
-MLModelTune class object that inherits from MLModel.
+\code{MLModelTune} class object that inherits from \code{MLModel}.
 }
 \description{
-Evaluate a model over a grid of tuning parameters and select the best one
-according to resample estimation of predictive performance.
+Evaluate a model over a grid of tuning parameters or a list of specified
+model objects and select the best one according to resample estimation of
+predictive performance.
 }
 \examples{
 \donttest{
@@ -79,6 +82,6 @@ varimp(gbmfit)
 }
 \seealso{
 \code{\link{ModelFrame}}, \code{\link[recipes]{recipe}},
-\code{\link{fit}}, \code{\link{resample}}, \code{\link{plot}},
-\code{\link{summary}}
+\code{\link{modelinfo}}, \code{\link{MLControl}}, \code{\link{fit}},
+\code{\link{plot}}, \code{\link{summary}}
 }

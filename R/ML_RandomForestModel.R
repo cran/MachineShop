@@ -18,7 +18,7 @@
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[randomForest]{randomForest}}, \code{\link{fit}},
 #' \code{\link{resample}}, \code{\link{tune}}
@@ -34,6 +34,7 @@ RandomForestModel <- function(ntree = 500,
                               replace = TRUE,
                               nodesize = .(if (is.factor(y)) 1 else 5),
                               maxnodes = NULL) {
+  
   MLModel(
     name = "RandomForestModel",
     packages = "randomForest",
@@ -45,12 +46,13 @@ RandomForestModel <- function(ntree = 500,
       environment(formula) <- environment()
       randomForest::randomForest(formula, data = data, ...)
     },
-    predict = function(object, newdata, ...) {
-      predict(unMLModelFit(object), newdata = newdata,
-              type = ifelse(is.factor(response(object)), "prob", "response"))
+    predict = function(object, newdata, fitbits, ...) {
+      predict(object, newdata = newdata,
+              type = ifelse(is.factor(response(fitbits)), "prob", "response"))
     },
     varimp = function(object, ...) {
-      drop(randomForest::importance(object, ...))
+      randomForest::importance(object)
     }
   )
+  
 }

@@ -62,7 +62,7 @@ control <- CVControl(
 )
 
 ## Metrics of interest
-metrics <- c("ROC", "Brier")
+metrics <- c("ROC.mean", "Brier.mean")
 
 ## ------------------------------------------------------------------------
 library(doParallel)
@@ -70,31 +70,31 @@ registerDoParallel(cores = 2)
 
 ## ------------------------------------------------------------------------
 ## Resample estimation
-(perf <- resample(fo, data = Melanoma, model = GBMModel, control = control))
+(res <- resample(fo, data = Melanoma, model = GBMModel, control = control))
 
-summary(perf)
+summary(res)
 
-plot(perf, metrics = metrics)
+plot(res, metrics = metrics)
 
 ## ------------------------------------------------------------------------
 ## Resample estimation
-gbmperf1 <- resample(fo, data = Melanoma, model = GBMModel(n.trees = 25), control = control)
-gbmperf2 <- resample(fo, data = Melanoma, model = GBMModel(n.trees = 50), control = control)
-gbmperf3 <- resample(fo, data = Melanoma, model = GBMModel(n.trees = 100), control = control)
+gbmres1 <- resample(fo, data = Melanoma, model = GBMModel(n.trees = 25), control = control)
+gbmres2 <- resample(fo, data = Melanoma, model = GBMModel(n.trees = 50), control = control)
+gbmres3 <- resample(fo, data = Melanoma, model = GBMModel(n.trees = 100), control = control)
 
 ## Combine resamples for comparison
-(perf <- Resamples(GBM1 = gbmperf1, GBM2 = gbmperf2, GBM3 = gbmperf3))
+(res <- Resamples(GBM1 = gbmres1, GBM2 = gbmres2, GBM3 = gbmres3))
 
-summary(perf)[, , metrics]
+summary(res)[, , metrics]
 
-plot(perf, metrics = metrics)
-plot(perf, metrics = metrics, type = "density")
-plot(perf, metrics = metrics, type = "errorbar")
-plot(perf, metrics = metrics, type = "violin")
+plot(res, metrics = metrics)
+plot(res, metrics = metrics, type = "density")
+plot(res, metrics = metrics, type = "errorbar")
+plot(res, metrics = metrics, type = "violin")
 
 ## ------------------------------------------------------------------------
 ## Pairwise model comparisons
-(perfdiff <- diff(perf))
+(perfdiff <- diff(res))
 
 summary(perfdiff)[, , metrics]
 
@@ -122,21 +122,21 @@ plot(vi)
 
 ## ------------------------------------------------------------------------
 ## Stacked regression
-stackedperf <- resample(fo, data = Melanoma,
-                        model = StackedModel(GBMModel, CForestModel, GLMNetModel(lambda = 0.1)))
-summary(stackedperf)
+stackedres <- resample(fo, data = Melanoma,
+                       model = StackedModel(GBMModel, CForestModel, GLMNetModel(lambda = 0.1)))
+summary(stackedres)
 
 ## Super learner
-superperf <- resample(fo, data = Melanoma,
-                      model = SuperModel(GBMModel, CForestModel, GLMNetModel(lambda = 0.1)))
-summary(superperf)
+superres <- resample(fo, data = Melanoma,
+                     model = SuperModel(GBMModel, CForestModel, GLMNetModel(lambda = 0.1)))
+summary(superres)
 
 ## ----results = "hide"----------------------------------------------------
 pd <- dependence(gbmfit, select = c(thickness, age))
 plot(pd)
 
 ## ----results = "hide"----------------------------------------------------
-cal <- calibration(perf)
+cal <- calibration(res)
 plot(cal, se = TRUE)
 
 ## ------------------------------------------------------------------------
@@ -144,32 +144,32 @@ plot(cal, se = TRUE)
 fo_surv5 <- factor(time > 365 * 5) ~ sex + age + year + thickness + ulcer
 df_surv5 <- subset(Melanoma, status != 2)
 
-perf_surv5 <- resample(fo_surv5, data = df_surv5, model = GBMModel)
-lf <- lift(perf_surv5)
+res_surv5 <- resample(fo_surv5, data = df_surv5, model = GBMModel)
+lf <- lift(res_surv5)
 plot(lf, find = 75)
 
 ## ------------------------------------------------------------------------
 ### Pima Indians diabetes statuses (2 levels)
 library(MASS)
-perf <- resample(factor(type) ~ ., data = Pima.tr, model = GBMModel)
-summary(perf)
+res <- resample(factor(type) ~ ., data = Pima.tr, model = GBMModel)
+summary(res)
 
 ## ------------------------------------------------------------------------
 ### Iris flowers species (3 levels)
-perf <- resample(factor(Species) ~ ., data = iris, model = GBMModel)
-summary(perf)
+res <- resample(factor(Species) ~ ., data = iris, model = GBMModel)
+summary(res)
 
 ## ------------------------------------------------------------------------
 ### Boston housing prices
 library(MASS)
-perf <- resample(medv ~ ., data = Boston, model = GBMModel)
-summary(perf)
+res <- resample(medv ~ ., data = Boston, model = GBMModel)
+summary(res)
 
 ## ------------------------------------------------------------------------
 ## Censored melanoma cancer survival times
 library(survival)
-perf <- resample(Surv(time, status != 2) ~ ., data = Melanoma, model = GBMModel)
-summary(perf)
+res <- resample(Surv(time, status != 2) ~ ., data = Melanoma, model = GBMModel)
+summary(res)
 
 ## ------------------------------------------------------------------------
 ## Formula specification
@@ -202,49 +202,28 @@ gbmfit <- resample(rec, model = GBMModel)
 summary(gbmfit)
 
 ## ----echo = FALSE--------------------------------------------------------
-modelnames <- c("C5.0 Classification" = "C50Model",
-                "Conditional Inference Trees" = "CForestModel",
-                "Cox Regression" = "CoxModel",
-                "Cox Regression (Stepwise)" = "CoxStepAICModel",
-                "Gradient Boosted Models" = "GBMModel",
-                "Generalized Linear Models" = "GLMModel",
-                "Generalized Linear Models (Stepwise)" = "GLMStepAICModel",
-                "Lasso and Elastic-Net" = "GLMNetModel",
-                "K-Nearest Neighbors Model" = "KNNModel",
-                "Linear Discriminant Analysis" = "LDAModel",
-                "Linear Model" = "LMModel",
-                "Feed-Forward Neural Networks" = "NNetModel",
-                "Partial Least Squares" = "PLSModel",
-                "Ordered Logistic Regression" = "POLRModel",
-                "Quadratic Discriminant Analysis" = "QDAModel",
-                "Random Forests" = "RandomForestModel",
-                "Stacked Regression" = "StackedModel",
-                "Super Learner" = "SuperModel",
-                "Survival Regression" = "SurvRegModel",
-                "Survival Regression (Stepwise)" = "SurvRegStepAICModel",
-                "Support Vector Machines" = "SVMModel",
-                "Extreme Gradient Boosting" = "XGBModel")
-
+info <- modelinfo()
 types <- c("binary" = "b", "factor" = "f", "matrix" = "m", "numeric" = "n",
            "ordered" = "o", "Surv" = "S")
-x <- lapply(modelnames, function(modelname) {
-  model <- get(modelname)()
-  structure(c(modelname, ifelse(names(types) %in% model@types, types, NA)),
-            names = c("Constructor", names(types)))
+x <- lapply(names(info), function(modelname) {
+  c(modelname, ifelse(names(types) %in% info[[modelname]]$types, types, NA))
 })
 df <- as.data.frame(do.call(rbind, x), stringsAsFactors = FALSE)
+names(df) <- c("Constructor", names(types))
 
 toString2 <- function(x) toString(na.omit(x))
 df_classes <- data.frame(
+  Method = sapply(info, getElement, name = "label"),
   Constructor = df$Constructor,
   Categorical = apply(df[c("binary", "factor", "ordered")], 1, toString2),
   Continuous = apply(df[c("matrix", "numeric")], 1, toString2),
   Survival = apply(df["Surv"], 1, toString2)
 )
-names(df_classes)[-1] <- paste0(names(df_classes)[-1],
-                                footnote_marker_number(1:3))
+names(df_classes)[-(1:2)] <- paste0(names(df_classes)[-(1:2)],
+                                    footnote_marker_number(1:3))
 
-kable(df_classes, align = "c", escape = FALSE) %>%
+kable(df_classes, align = c("l", "c", "c", "c", "c"), row.names = FALSE,
+      escape = FALSE) %>%
   kable_styling("striped", full_width = FALSE, position = "center") %>%
   add_header_above(c(" " = 1, " " = 1, "Response Variable Types" = 3)) %>%
   footnote(number = c("b = binary, f = factor, o = ordered",

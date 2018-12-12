@@ -26,7 +26,7 @@ nodes.}
 selected to propose the next tree in the expansion.}
 }
 \value{
-MLModel class object.
+\code{MLModel} class object.
 }
 \description{
 Fits generalized boosted regression models.
@@ -40,7 +40,6 @@ Default values for the \code{NULL} arguments and further model details can be
 found in the source link below.
 }
 \examples{
-
 fit(Species ~ ., data = iris, model = GBMModel())
 
 }

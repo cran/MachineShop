@@ -8,20 +8,20 @@ SuperModel(..., model = GBMModel, control = CVControl,
   all_vars = FALSE)
 }
 \arguments{
-\item{...}{MLModel objects to serve as base learners.}
+\item{...}{\code{MLModel} objects to serve as base learners.}
 
-\item{model}{MLModel object, constructor function, or character string
+\item{model}{\code{MLModel} object, constructor function, or character string
 naming a constructor function to serve as the super model.}
 
-\item{control}{\code{\linkS4class{MLControl}} object, control function, or
-character string naming a control function defining the resampling method to
-be employed for the estimation of base learner weights.}
+\item{control}{\code{\link{MLControl}} object, control function, or character
+string naming a control function defining the resampling method to be
+employed for the estimation of base learner weights.}
 
 \item{all_vars}{logical indicating whether to include the original
 predictor variables in the super model.}
 }
 \value{
-SuperModel class object that inherits from MLModel.
+\code{SuperModel} class object that inherits from \code{MLModel}.
 }
 \description{
 Fit a super learner model to predictions from multiple base learners.

@@ -6,12 +6,11 @@
 \title{Parametric Survival Model}
 \usage{
 SurvRegModel(dist = c("weibull", "exponential", "gaussian", "logistic",
-  "lognormal", "logloglogistic"), scale = 0, parms = NULL,
-  control = NULL)
+  "lognormal", "logloglogistic"), scale = NULL, parms = NULL, ...)
 
 SurvRegStepAICModel(dist = c("weibull", "exponential", "gaussian",
-  "logistic", "lognormal", "logloglogistic"), scale = 0, parms = NULL,
-  control = NULL, direction = c("both", "backward", "forward"),
+  "logistic", "lognormal", "logloglogistic"), scale = NULL,
+  parms = NULL, ..., direction = c("both", "backward", "forward"),
   scope = NULL, k = 2, trace = FALSE, steps = 1000)
 }
 \arguments{
@@ -21,8 +20,7 @@ SurvRegStepAICModel(dist = c("weibull", "exponential", "gaussian",
 
 \item{parms}{a list of fixed parameters.}
 
-\item{control}{a list of control values, in the format produced by
-\code{\link[survival]{survreg.control}}.}
+\item{...}{arguments passed to \code{\link[survival]{survreg.control}}.}
 
 \item{direction}{mode of stepwise search, can be one of \code{"both"}
 (default), \code{"backward"}, or \code{"forward"}.}
@@ -42,7 +40,7 @@ process.}
 \item{steps}{maximum number of steps to be considered.}
 }
 \value{
-MLModel class object.
+\code{MLModel} class object.
 }
 \description{
 Fits the accelerated failure time family of parametric survival models.
@@ -64,7 +62,9 @@ fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
 
 }
 \seealso{
-\code{\link[rms]{psm}}, \code{\link[survival]{survreg}}
+\code{\link[rms]{psm}}, \code{\link[survival]{survreg}},
+\code{\link[survival]{survreg.control}}, \code{\link[MASS]{stepAIC}},
+\code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
 
 \code{\link[MASS]{stepAIC}}, \code{\link{fit}},
 \code{\link{resample}}, \code{\link{tune}}

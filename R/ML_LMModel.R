@@ -9,7 +9,7 @@
 #' 
 #' Further model details can be found in the source link below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[stats]{lm}}, \code{\link{fit}}, \code{\link{resample}},
 #' \code{\link{tune}}
@@ -20,6 +20,7 @@
 #' fit(medv ~ ., data = Boston, model = LMModel())
 #'
 LMModel <- function() {
+  
   MLModel(
     name = "LMModel",
     packages = "stats",
@@ -29,28 +30,29 @@ LMModel <- function() {
     fit = function(formula, data, weights, ...) {
       environment(formula) <- environment()
       y <- response(formula, data)
-      if (is_response(y, "binary")) {
-        y <- y == levels(y)[2]
-      } else if (is_response(y, "factor")) {
-        varname <- response(terms(formula))
-        mm <- model.matrix(~ y - 1)
-        colnames(mm) <- levels(y)
-        data[[varname]] <- mm
-        formula[[2]] <- as.symbol(varname)
+      if (is.factor(y)) {
+        y_name <- response(terms(formula))
+        formula[[2]] <- as.symbol(y_name)
+        if (nlevels(y) == 2) {
+          y <- y == levels(y)[2]
+          data[[y_name]] <- y
+        } else {
+          mm <- model.matrix(~ y - 1)
+          colnames(mm) <- levels(y)
+          data[[y_name]] <- mm
+        }
       }
-      args <- list(formula = formula, data = data, ...)
-      if (is_response(y, "numeric")) {
-        args$weights <- weights
+      if (is.numeric(y)) {
+        stats::lm(formula, data = data, weights = weights, ...)
       } else {
         assert_equal_weights(weights)
+        stats::lm(formula, data = data, ...)
       }
-      do.call(stats::lm, args)
     },
     predict = function(object, newdata, ...) {
-      predict(unMLModelFit(object), newdata = newdata)
+      predict(object, newdata = newdata)
     },
-    varimp = function(object, ...) {
-      pchisq(coef(object)^2 / diag(vcov(object)), 1)
-    }
+    varimp = function(object, ...) varimp_pchisq(object)
   )
+  
 }

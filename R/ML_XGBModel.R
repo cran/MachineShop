@@ -22,31 +22,27 @@
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
 #' 
-#' The following variable importance metrics are available for XBMTreeModel:
-#' \enumerate{
-#'   \item \code{Gain} fractional contribution of each predictor to the total
-#'   gain of its splits.
-#'   \item \code{Cover} number of observations related to each predictor.
-#'   \item \code{Frequency} percentage of times each predictor is used in the
-#'   trees.
-#' }
-#' In calls to \code{\link{varimp}} for these tree model fits, the first metric
-#' will be returned by default.  Others may be specified to the \code{metrics}
-#' argument of the function by their names or numeric indices.  Variable
-#' importance is automatically scaled to range from 0 to 100.  To obtain
-#' unscaled importance values, set \code{scale = FALSE}.  See example below.
+#' In calls to \code{\link{varimp}} for \code{XGBTreeModel}, argument
+#' \code{metric} may be spedified as \code{"Gain"} (default) for the fractional
+#' contribution of each predictor to the total gain of its splits, as
+#' \code{"Cover"} for the number of observations related to each predictor, or
+#' as \code{"Frequency"} for the percentage of times each predictor is used in
+#' the trees.  Variable importance is automatically scaled to range from 0 to
+#' 100.  To obtain unscaled importance values, set \code{scale = FALSE}.  See
+#' example below.
 #' 
-#' @return MLModel class object.
+#' @return \code{MLModel} class object.
 #' 
 #' @seealso \code{\link[xgboost:xgb.train]{xgboost}}, \code{\link{fit}},
 #' \code{\link{resample}}, \code{\link{tune}}
 #'
 #' @examples
 #' modelfit <- fit(Species ~ ., data = iris, model = XGBTreeModel())
-#' varimp(modelfit, metrics = 1:3, scale = FALSE)
+#' varimp(modelfit, metric = "Frequency", scale = FALSE)
 #' 
 XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
                      print_every_n = 1) {
+  
   MLModel(
     name = "XGBModel",
     packages = "xgboost",
@@ -57,6 +53,7 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
       mf <- model.frame(formula, data, na.action = na.pass)
       x <- model.matrix(formula, mf)[, -1, drop = FALSE]
       y <- model.response(mf)
+      response_levels <- levels(y)
       if (is.null(params$objective)) params$objective <- 1
       switch_class(y,
                    "factor" = {
@@ -70,36 +67,38 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
                                       "rank:pairwise", "rank:ndcg", "rank:map")
                    })
       params$objective <- match_indices(params$objective, obj_choices)
-      xgboost::xgboost(x, y, weight = weights, params = params, ...)
+      modelfit <- xgboost::xgboost(x, y, weight = weights, params = params, ...)
+      modelfit$levels <- response_levels
+      modelfit
     },
-    predict = function(object, newdata, ...) {
-      fo <- formula(object)[-2]
+    predict = function(object, newdata, fitbits, ...) {
+      fo <- formula(fitbits)[-2]
       newmf <- model.frame(fo, newdata, na.action = na.pass)
       newx <- model.matrix(fo, newmf)[, -1, drop = FALSE]
-      pred <- predict(unMLModelFit(object), newdata = newx)
+      pred <- predict(object, newdata = newx)
       if (object$params$objective == "multi:softprob") {
         pred <- matrix(pred, nrow = nrow(newx), byrow = TRUE)
       }
       pred
     },
-    varimp = function(object, metrics = 1, ...) {
+    varimp = function(object, metric = c("Gain", "Cover", "Frequency"), ...) {
       vi <- xgboost::xgb.importance(model = object, ...)
       if (!is.null(vi$Weight)) {
         if (!is.null(vi$Class)) {
-          y <- fitbit(object, "y")
           vi <- reshape(vi, idvar = "Feature", timevar = "Class",
-                        v.names = "Weight", varying = list(levels(y)),
+                        v.names = "Weight", varying = list(object$levels),
                         direction = "wide")
           data.frame(vi[, -1], row.names = vi$Feature)
         } else {
           structure(vi$Weight, names = vi$Feature)
         }
       } else {
-        metrics <- match_indices(metrics, c("Gain", "Cover", "Frequency"))
-        data.frame(vi[, metrics, drop = FALSE], row.names = vi$Feature)
+        data.frame(vi[, match.arg(metric), drop = FALSE],
+                   row.names = vi$Feature)
       }
     }
   )
+  
 }
 
 
@@ -124,7 +123,7 @@ XGBDARTModel <- function(objective = NULL, base_score = 0.5,
                          grow_policy="depthwise", max_leaves = 0, max_bin = 256,
                          sample_type = "uniform", normalize_type = "tree",
                          rate_drop = 0, one_drop = 0, skip_drop = 0, ...) {
-  .XGBModel("dart", environment(), ...)
+  .XGBModel("XGBDARTModel", "dart", environment(), ...)
 }
 
 
@@ -133,7 +132,7 @@ XGBDARTModel <- function(objective = NULL, base_score = 0.5,
 XGBLinearModel <- function(objective = NULL, base_score = 0.5,
                            lambda = 0, alpha = 0, updater = "shotgun",
                            feature_selector = "cyclic", top_k = 0, ...) {
-  .XGBModel("gblinear", environment(), ...)
+  .XGBModel("XGBLinearModel", "gblinear", environment(), ...)
 }
 
 
@@ -149,12 +148,14 @@ XGBTreeModel <- function(objective = NULL, base_score = 0.5,
                          refresh_leaf = 1, process_type = "default",
                          grow_policy="depthwise", max_leaves = 0, max_bin = 256,
                          ...) {
-  .XGBModel("gbtree", environment(), ...)
+  .XGBModel("XGBTreeModel", "gbtree", environment(), ...)
 }
 
 
-.XGBModel <- function(booster, envir, ...) {
+.XGBModel <- function(name, booster, envir, ...) {
   args <- list(...)
   args$params <- as.call(c(.(list), params(envir), booster = booster))
-  do.call(XGBModel, args, quote = TRUE)
+  model <- do.call(XGBModel, args, quote = TRUE)
+  model@name <- name
+  model
 }

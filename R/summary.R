@@ -6,8 +6,8 @@
 #' @rdname summary-methods
 #' 
 #' @param object object to summarize.
-#' @param stats function or list of named functions to include in the
-#' calculation of summary statistics.
+#' @param stats function, one or more function names, or list of named functions
+#' to include in the calculation of summary statistics.
 #' @param na.rm logical indicating whether to exclude missing values.
 #' @param ... arguments passed to other methods.
 #' 
@@ -15,49 +15,18 @@
 #' the first for single models, and models and metrics in the first and third,
 #' respectively, for multiple models.
 #' 
-#' @seealso \code{\link{diff}}, \code{\link{resample}}, \code{\link{Resamples}},
-#' \code{\link{tune}}
+#' @seealso \code{\link{modelmetrics}}, \code{\link{resample}},
+#' \code{\link{diff}}, \code{\link{tune}}, \code{\link{confusion}}
 #' 
-#' @examples
-#' ## Factor response example
-#' 
-#' fo <- Species ~ .
-#' control <- CVControl()
-#' 
-#' gbmperf1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
-#' gbmperf2 <- resample(fo, iris, GBMModel(n.trees = 50), control)
-#' gbmperf3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
-#' summary(gbmperf3)
-#' 
-#' perf <- Resamples(GBM1 = gbmperf1, GBM2 = gbmperf2, GBM3 = gbmperf3)
-#' summary(perf)
-#' 
-summary.MLModelTune <- function(object,
-                                stats = c("Mean" = mean,
-                                          "Median" = median,
-                                          "SD" = sd,
-                                          "Min" = min,
-                                          "Max" = max),
-                                na.rm = TRUE, ...) {
-  summary(object@resamples, stats = stats, na.rm = na.rm, ...)
-}
+summary.ModelMetrics <- function(object,
+                                 stats = c("Mean" = base::mean,
+                                           "Median" = stats::median,
+                                           "SD" = stats::sd,
+                                           "Min" = base::min,
+                                           "Max" = base::max),
+                                 na.rm = TRUE, ...) {
+  stats <- list2function(stats)
 
-
-#' @rdname summary-methods
-#' 
-summary.Resamples <- function(object,
-                              stats = c("Mean" = mean,
-                                        "Median" = median,
-                                        "SD" = sd,
-                                        "Min" = min,
-                                        "Max" = max),
-                              na.rm = TRUE, ...) {
-  if (is.list(stats)) {
-    stats <- eval(bquote(
-      function(x) sapply(.(stats), function(stat) stat(x))
-    ))
-  }
-  
   f <- function(x) {
     prop_na <- mean(is.na(x))
     if (na.rm) x <- na.omit(x)
@@ -74,17 +43,79 @@ summary.Resamples <- function(object,
 }
 
 
-summary.MLControl <- function(object, observed, predicted, ...) {
-  if (object@na.rm) {
-    df <- data.frame(
-      observed = I(observed),
-      predicted = I(predicted)
-    ) %>% na.omit
-    observed <- unAsIs(df$observed)
-    predicted <- unAsIs(df$predicted)
-  }
-  do.call(object@summary, c(list(observed = observed, predicted = predicted),
-                            as(object, "list")))
+#' @rdname summary-methods
+#' 
+#' @examples
+#' ## Factor response example
+#' 
+#' fo <- Species ~ .
+#' control <- CVControl()
+#' 
+#' gbmres1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
+#' gbmres2 <- resample(fo, iris, GBMModel(n.trees = 50), control)
+#' gbmres3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
+#' summary(gbmres3)
+#' 
+#' res <- Resamples(GBM1 = gbmres1, GBM2 = gbmres2, GBM3 = gbmres3)
+#' summary(res)
+#' 
+summary.Resamples <- function(object,
+                              stats = c("Mean" = base::mean,
+                                        "Median" = stats::median,
+                                        "SD" = stats::sd,
+                                        "Min" = base::min,
+                                        "Max" = base::max),
+                              na.rm = TRUE, ...) {
+  summary(modelmetrics(object), stats = stats, na.rm = na.rm)
+}
+
+
+#' @rdname summary-methods
+#' 
+summary.MLModelTune <- function(object,
+                                stats = c("Mean" = base::mean,
+                                          "Median" = stats::median,
+                                          "SD" = stats::sd,
+                                          "Min" = base::min,
+                                          "Max" = base::max),
+                                na.rm = TRUE, ...) {
+  summary(object@resamples, stats = stats, na.rm = na.rm, ...)
+}
+
+
+#' @rdname summary-methods
+#' 
+summary.Confusion <- function(object, ...) {
+  structure(lapply(object, summary), class = "listof")
+}
+
+
+#' @rdname summary-methods
+#' 
+summary.ConfusionMatrix <- function(object, ...) {
+  n <- sum(object)
+  object <- object / n
+  
+  observed <- colSums(object)
+  predicted <- rowSums(object)
+  agreement <- diag(object)
+  
+  metrics <- rbind(
+    Observed = observed,
+    Predicted = predicted,
+    Agreement = agreement,
+    Sensitivity = agreement / observed,
+    Specificity = (1 - observed - predicted + agreement) / (1 - observed),
+    PPV = agreement / predicted,
+    NPV = (1 - observed - predicted + agreement) / (1 - predicted)
+  )
+  
+  SummaryConfusion(metrics,
+                   N = n,
+                   Accuracy = sum(agreement),
+                   Majority = max(observed),
+                   Kappa = 1 - (1 - sum(agreement)) /
+                     (1 - sum(observed * predicted))) 
 }
 
 

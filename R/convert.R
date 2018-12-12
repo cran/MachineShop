@@ -54,7 +54,14 @@ setGeneric("convert_response",
            function(object, x, ...) standardGeneric("convert_response"))
 
 
-setMethod("convert_response", c("ANY", "ANY"), function(object, x, ...) x)
+setMethod("convert_response", c("ANY", "ANY"),
+  function(object, x, ...) x
+)
+
+
+setMethod("convert_response", c("factor", "factor"),
+  function(object, x, ...) x
+)
 
 
 setMethod("convert_response", c("factor", "matrix"),
@@ -76,6 +83,13 @@ setMethod("convert_response", c("integer", "numeric"),
     pm <- sign(x)
     abs_x <- abs(x)
     pm * ifelse(abs_x %% 1 > cutoff, ceiling(abs_x), floor(abs_x))
+  }
+)
+
+
+setMethod("convert_response", c("ordered", "matrix"),
+  function(object, x, ...) {
+    ordered(max.col(x), levels = 1:nlevels(object), labels = levels(object))
   }
 )
 

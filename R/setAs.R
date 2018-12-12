@@ -1,3 +1,11 @@
+setAs("ModelFrame", "data.frame",
+  function(from) {
+    attr(from, "terms") <- NULL
+    structure(from, class = "data.frame")
+  }
+)
+
+
 setAs("data.frame", "VarImp",
   function(from) VarImp(from)
 )
@@ -10,15 +18,6 @@ setAs("matrix", "VarImp",
 
 setAs("vector", "VarImp",
   function(from) as(data.frame(Overall = from), "VarImp")
-)
-
-
-setAs("MLControl", "list",
-  function(from) {
-    list(cutoff = from@cutoff,
-         cutoff_index = from@cutoff_index,
-         times = from@surv_times)
-  }
 )
 
 
@@ -49,7 +48,7 @@ asMLModelFit <- function(object, Class, model, x, y) {
 
 
 unMLModelFit <- function(object) {
-  if (!is(object, "MLModelFit")) stop("object not of class MLModelFit")
+  if (!is(object, "MLModelFit")) return(object)
   if (isS4(object)) {
     classes <- extends(class(object))
     as(object, classes[match("MLModelFit", classes) + 1])

@@ -58,7 +58,7 @@ bias.}
 \item{...}{arguments to be passed to \code{XGBModel}.}
 }
 \value{
-MLModel class object.
+\code{MLModel} class object.
 }
 \description{
 Fits models within an efficient implementation of the gradient boosting
@@ -72,23 +72,18 @@ framework from Chen & Guestrin.
 Default values for the \code{NULL} arguments and further model details can be
 found in the source link below.
 
-The following variable importance metrics are available for XBMTreeModel:
-\enumerate{
-  \item \code{Gain} fractional contribution of each predictor to the total
-  gain of its splits.
-  \item \code{Cover} number of observations related to each predictor.
-  \item \code{Frequency} percentage of times each predictor is used in the
-  trees.
-}
-In calls to \code{\link{varimp}} for these tree model fits, the first metric
-will be returned by default.  Others may be specified to the \code{metrics}
-argument of the function by their names or numeric indices.  Variable
-importance is automatically scaled to range from 0 to 100.  To obtain
-unscaled importance values, set \code{scale = FALSE}.  See example below.
+In calls to \code{\link{varimp}} for \code{XGBTreeModel}, argument
+\code{metric} may be spedified as \code{"Gain"} (default) for the fractional
+contribution of each predictor to the total gain of its splits, as
+\code{"Cover"} for the number of observations related to each predictor, or
+as \code{"Frequency"} for the percentage of times each predictor is used in
+the trees.  Variable importance is automatically scaled to range from 0 to
+100.  To obtain unscaled importance values, set \code{scale = FALSE}.  See
+example below.
 }
 \examples{
 modelfit <- fit(Species ~ ., data = iris, model = XGBTreeModel())
-varimp(modelfit, metrics = 1:3, scale = FALSE)
+varimp(modelfit, metric = "Frequency", scale = FALSE)
 
 }
 \seealso{
