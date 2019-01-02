@@ -45,13 +45,13 @@ SVMModel <- function(scaled = TRUE, type = NULL,
   
   MLModel(
     name = "SVMModel",
+    label = "Support Vector Machines",
     packages = "kernlab",
     types = c("factor", "numeric"),
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
-      environment(formula) <- environment()
       kernlab::ksvm(formula, data = data, prob.model = TRUE, ...)
     },
     predict = function(object, newdata, fitbits, ...) {
@@ -72,7 +72,8 @@ SVMModel <- function(scaled = TRUE, type = NULL,
 #' @param ... arguments to be passed to \code{SVMModel}.
 #' 
 SVMANOVAModel <- function(sigma = 1, degree = 1, ...) {
-  .SVMModel("SVMANOVAModel", "anovadot", environment(), ...)
+  .SVMModel("SVMANOVAModel", "Support Vector Machines (ANOVA)",
+            "anovadot", environment(), ...)
 }
 
 
@@ -81,21 +82,24 @@ SVMANOVAModel <- function(sigma = 1, degree = 1, ...) {
 #' @param order order of the Bessel function to be used as a kernel.
 #' 
 SVMBesselModel <- function(sigma = 1, order = 1, degree = 1, ...) {
-  .SVMModel("SVMBesselModel", "besseldot", environment(), ...)
+  .SVMModel("SVMBesselModel", "Support Vector Machines (Bessel)",
+            "besseldot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMLaplaceModel <- function(sigma = NULL, ...) {
-  .SVMModel("SVMLaplaceModel","laplacedot", environment(), ...)
+  .SVMModel("SVMLaplaceModel", "Support Vector Machines (Laplace)",
+            "laplacedot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMLinearModel <- function(...) {
-  .SVMModel("SVMLinearModel", "vanilladot", environment(), ...)
+  .SVMModel("SVMLinearModel", "Support Vector Machines (Linear)",
+            "vanilladot", environment(), ...)
 }
 
 
@@ -112,32 +116,36 @@ SVMLinearModel <- function(...) {
 #' fit(medv ~ ., data = Boston, model = SVMRadialModel())
 #' 
 SVMPolyModel <- function(degree = 1, scale = 1, offset = 1, ...) {
-  .SVMModel("SVMPolyModel", "polydot", environment(), ...)
+  .SVMModel("SVMPolyModel", "Support Vector Machines (Poly)",
+            "polydot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMRadialModel <- function(sigma = NULL, ...) {
-  .SVMModel("SVMRadialModel", "rbfdot", environment(), ...)
+  .SVMModel("SVMRadialModel", "Support Vector Machines (Radial)",
+            "rbfdot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMSplineModel <- function(...) {
-  .SVMModel("SVMSplineModel", "splinedot", environment(), ...)
+  .SVMModel("SVMSplineModel", "Support Vector Machines (Spline)",
+            "splinedot", environment(), ...)
 }
 
 
 #' @rdname SVMModel
 #' 
 SVMTanhModel <- function(scale = 1, offset = 1, ...) {
-  .SVMModel("SVMTanhModel", "tanhdot", environment(), ...)
+  .SVMModel("SVMTanhModel", "Support Vector Machines (Tanh)",
+            "tanhdot", environment(), ...)
 }
 
 
-.SVMModel <- function(name, kernel, envir, ...) {
+.SVMModel <- function(name, label, kernel, envir, ...) {
   args <- list(...)
   args$kernel <- kernel
   kpar <- params(envir)
@@ -148,5 +156,6 @@ SVMTanhModel <- function(scale = 1, offset = 1, ...) {
   }
   model <- do.call(SVMModel, args, quote = TRUE)
   model@name <- name
+  model@label <- label
   model
 }

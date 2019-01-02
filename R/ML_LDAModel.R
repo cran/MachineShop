@@ -43,13 +43,13 @@ LDAModel <- function(prior = NULL, tol = 1e-4,
   
   MLModel(
     name = "LDAModel",
+    label = "Linear Discriminant Analysis",
     packages = "MASS",
     types = "factor",
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, dimen, use, ...) {
       assert_equal_weights(weights)
-      environment(formula) <- environment()
       modelfit <- MASS::lda(formula, data = data, ...)
       modelfit$dimen <- if (missing(dimen)) length(modelfit$svd) else dimen
       modelfit$use <- use

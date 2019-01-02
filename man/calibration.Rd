@@ -7,7 +7,7 @@
 \usage{
 Calibration(...)
 
-calibration(x, y = NULL, n = 10, times = numeric(), ...)
+calibration(x, y = NULL, breaks = 10, times = numeric(), ...)
 }
 \arguments{
 \item{...}{named or unnamed \code{calibration} output to combine together
@@ -18,8 +18,10 @@ predicted responses.}
 
 \item{y}{predicted responses.}
 
-\item{n}{number of resampled response variable bins within which to
-calculate observed mean values.}
+\item{breaks}{value defining the response variable bins within which to
+calculate observed mean values.  May be specified as a number of bins, a
+vector of breakpoints, or \code{NULL} to fit smooth curves with splines for
+survival responses and loess for others.}
 
 \item{times}{numeric vector of follow-up times if \code{y} contains predicted
 survival events.}

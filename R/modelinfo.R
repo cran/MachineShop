@@ -2,12 +2,12 @@
 #' 
 #' Display information about models provided by the \pkg{MachineShop} package.
 #' 
-#' @param ... \code{MLModel} objects, constructor functions, character
-#' strings naming constructor functions, or supported responses for which to
-#' display information.  If none are specified, information is returned on all
-#' available models by default.
+#' @param ... \code{MLModel} objects, constructor functions, constructor
+#' function names, or supported responses for which to display information.  If
+#' none are specified, information is returned on all available models by
+#' default.
 #' 
-#' @return List of named models containing the \code{"label"}, required
+#' @return List of named models containing a descriptive \code{"label"}, source
 #' \code{"packages"}, supported response variable \code{"types"}, the
 #' constructor \code{"arguments"}, and whether a \code{"varimp"} function is
 #' implemented for each.
@@ -24,115 +24,119 @@
 #' 
 modelinfo <- function(...) {
   args <- list(...)
-  if (length(args) == 0) args <- list(NULL)
-  do.call(.modelinfo, args)
+  if (length(args) == 0) args <- as.list(.model_names)
+  info <- do.call(.modelinfo, args)
+  
+  is_type <- !sapply(info, is, class2 = "list")
+  if (any(is_type)) {
+    info_models <- if (all(is_type)) modelinfo() else info[!is_type]
+    info_types <- do.call(.modelinfo_types, info[is_type])
+    info <- c(info_models, info_types)
+    info <- info[intersect(names(info_models), names(info_types))]
+  }
+  
+  info[unique(names(info))]
 }
 
 
-setGeneric(".modelinfo", function(x, ...) standardGeneric(".modelinfo"))
+.model_names <- c("AdaBagModel",
+                  "AdaBoostModel",
+                  "BARTMachineModel",
+                  "BlackBoostModel",
+                  "C50Model",
+                  "CForestModel",
+                  "CoxModel",
+                  "CoxStepAICModel",
+                  "EarthModel",
+                  "FDAModel",
+                  "GAMBoostModel",
+                  "GBMModel",
+                  "GLMBoostModel",
+                  "GLMModel",
+                  "GLMStepAICModel",
+                  "GLMNetModel",
+                  "KNNModel",
+                  "LARSModel",
+                  "LDAModel",
+                  "LMModel",
+                  "MDAModel",
+                  "NaiveBayesModel",
+                  "NNetModel",
+                  "PDAModel",
+                  "PLSModel",
+                  "POLRModel",
+                  "QDAModel",
+                  "RandomForestModel",
+                  "RangerModel",
+                  "RPartModel",
+                  "StackedModel",
+                  "SuperModel",
+                  "SurvRegModel",
+                  "SurvRegStepAICModel",
+                  "SVMModel",
+                  "SVMANOVAModel",
+                  "SVMBesselModel",
+                  "SVMLaplaceModel",
+                  "SVMLinearModel",
+                  "SVMPolyModel",
+                  "SVMRadialModel",
+                  "SVMSplineModel",
+                  "SVMTanhModel",
+                  "TreeModel",
+                  "XGBModel",
+                  "XGBDARTModel",
+                  "XGBLinearModel",
+                  "XGBTreeModel")
 
 
-setMethod(".modelinfo", "NULL",
-  function(x, ...) {
-    model_labels <- c(
-      "AdaBagModel" = "Bagging with Classification Trees",
-      "AdaBoostModel" = "Boosting with Classification Trees",
-      "BlackBoostModel" = "Gradient Boosting with Regression Trees",
-      "C50Model" = "C5.0 Classification",
-      "CForestModel" = "Conditional Random Forests",
-      "CoxModel" = "Cox Regression",
-      "CoxStepAICModel" = "Cox Regression (Stepwise)",
-      "EarthModel" = "Multivariate Adaptive Regression Splines",
-      "FDAModel" = "Flexible Discriminant Analysis",
-      "GAMBoostModel" = "Gradient Boosting with Additive Models",
-      "GBMModel" = "Generalized Boosted Regression",
-      "GLMBoostModel" = "Gradient Boosting with Linear Models",
-      "GLMModel" = "Generalized Linear Models",
-      "GLMStepAICModel" = "Generalized Linear Models (Stepwise)",
-      "GLMNetModel" = "Lasso and Elastic-Net",
-      "KNNModel" = "K-Nearest Neighbors Model",
-      "LDAModel" = "Linear Discriminant Analysis",
-      "LMModel" = "Linear Model",
-      "MDAModel" = "Mixture Discriminant Analysis",
-      "NaiveBayesModel" = "Naive Bayes Classifier",
-      "NNetModel" = "Feed-Forward Neural Networks",
-      "PDAModel" = "Penalized Discriminant Analysis",
-      "PLSModel" = "Partial Least Squares",
-      "POLRModel" = "Ordered Logistic Regression",
-      "QDAModel" = "Quadratic Discriminant Analysis",
-      "RandomForestModel" = "Random Forests",
-      "RangerModel" = "Fast Random Forests",
-      "RPartModel" = "Recursive Partitioning and Regression Trees",
-      "StackedModel" = "Stacked Regression",
-      "SuperModel" = "Super Learner",
-      "SurvRegModel" = "Parametric Survival",
-      "SurvRegStepAICModel" = "Parametric Survival (Stepwise)",
-      "SVMModel" = "Support Vector Machines",
-      "SVMANOVAModel" = "Support Vector Machines (ANOVA)",
-      "SVMBesselModel" = "Suplport Vector Machines (Bessel)",
-      "SVMLaplaceModel" = "Support Vector Machines (Laplace)",
-      "SVMLinearModel" = "Support Vector Machines (Linear)",
-      "SVMPolyModel" = "Support Vector Machines (Poly)",
-      "SVMRadialModel" = "Support Vector Machines (Radial)",
-      "SVMSplineModel" = "Support Vector Machines (Spline)",
-      "SVMTanhModel" = "Support Vector Machines (Tanh)",
-      "TreeModel" = "Regression and Classification Trees",
-      "XGBModel" = "Extreme Gradient Boosting",
-      "XGBDARTModel" = "Extreme Gradient Boosting (DART)",
-      "XGBLinearModel" = "Extreme Gradient Boosting (Linear)",
-      "XGBTreeModel" = "Extreme Gradient Boosting (Tree)"
-    )
-    
-    info <- list()
-    for (name in names(model_labels)) {
-      model_function <- get(name, mode = "function")
-      model <- model_function()
-      info[[model@name]] <- list(
-        label = model_labels[[model@name]],
-        packages = model@packages,
-        types = model@types,
-        arguments = args(model_function),
-        varimp = !is.null(body(fitbit(model, "varimp")))
-      )
-    }
-    info
-  }
-)
+.modelinfo <- function(x, ...) {
+  UseMethod(".modelinfo")
+}
 
 
-setMethod(".modelinfo", "ANY",
-  function(x, ...) {
-    args <- list(x, ...)
-    info <- modelinfo()
-    is_type <- sapply(info, function(this) {
-      all(sapply(args, function(object) {
-        any(sapply(this$types, function(type) is_response(object, type)))
-      }))
-    })
-    info[is_type]
-  }
-)
+.modelinfo.default <- function(x, ...) {
+  info <- list(x)
+  if (length(list(...))) c(info, .modelinfo(...)) else info
+}
 
 
-setMethod(".modelinfo", "character",
-  function(x, ...) {
-    modelinfo(getMLObject(x, "MLModel"), ...)
-  }
-)
+.modelinfo.character <- function(x, ...) {
+  model <- try(getMLObject(x, "MLModel"), silent = TRUE)
+  if (is(model, "try-error")) model <- list()
+  .modelinfo(model, ...)
+}
 
 
-setMethod(".modelinfo", "function",
-  function(x, ...) {
-    modelinfo(getMLObject(x, "MLModel"), ...)
-  }
-)
+.modelinfo.function <- function(x, ...) {
+  model <- try(getMLObject(x, "MLModel"), silent = TRUE)
+  if (is(model, "try-error")) model <- list()
+  .modelinfo(model, ...)
+}
 
 
-setMethod(".modelinfo", "MLModel",
-  function(x, ...) {
-    model_names <- sapply(list(x, ...), function(object) {
-      getMLObject(object, "MLModel")@name
-    })
-    modelinfo()[unique(model_names)]
-  }
-)
+.modelinfo.list <- function(x, ...) {
+  if (length(list(...))) .modelinfo(...) else list()
+}
+
+
+.modelinfo.MLModel <- function(x, ...) {
+  info <- structure(list(list(
+    label = x@label,
+    packages = x@packages,
+    types = x@types,
+    arguments = args(get(x@name)),
+    varimp = !is.null(body(fitbit(x, "varimp")))
+  )), names = x@name)
+  if (length(list(...))) c(info, .modelinfo(...)) else info
+}
+
+
+.modelinfo_types <- function(...) {
+  info <- modelinfo()
+  is_supported <- sapply(info, function(this) {
+    all(sapply(list(...), function(object) {
+      any(mapply(is_response, list(object), this$types))
+    }))
+  })
+  info[is_supported]
+}

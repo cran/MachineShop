@@ -4,31 +4,88 @@
 \alias{MLModel}
 \title{MLModel Class Constructor}
 \usage{
-MLModel(name = "MLModel", packages = character(0),
+MLModel(name = "MLModel", label = name, packages = character(0),
   types = character(0), params = list(), nvars = function(data) NULL,
   fit = function(formula, data, weights, ...) stop("no fit function"),
   predict = function(object, newdata, times, ...)
   stop("no predict function"), varimp = function(object, ...) NULL)
 }
 \arguments{
-\item{name}{character string name for the instantiated \code{MLModel} object.}
+\item{name}{character string name for the instantiated \code{MLModel} object;
+same name as the object to which the model is assigned.}
 
-\item{packages}{character vector of packages required by the object.}
+\item{label}{descriptive label for the model.}
 
-\item{types}{character vector of response variable types on which the model
-can be fit.}
+\item{packages}{character vector of packages whose namespaces are required by
+the model.}
 
-\item{params}{list of user-specified model parameters.}
+\item{types}{character vector of response variable types to which the model
+can be fit.  Supported types are \code{"binary"}, \code{"factor"},
+\code{"matrix"}, \code{"numeric"}, \code{"ordered"}, and \code{"Surv"}.}
 
-\item{nvars}{function to return the number of predictor variables for a
-given model frame.}
+\item{params}{list of user-specified model parameters to be passed to the
+\code{fit} function.}
 
-\item{fit}{model fitting function.}
+\item{nvars}{function to determine the number of variables included in the
+model from the \code{data} frame used by \code{fit}.}
 
-\item{predict}{model prediction function.}
+\item{fit}{model fitting function whose arguments are a \code{formula}, a
+\code{data} frame, case \code{weights}, and an ellipsis (\code{...}).}
 
-\item{varimp}{variable importance function.}
+\item{predict}{model prediction function whose arguments are the
+\code{object} returned by \code{fit}, a \code{newdata} frame of predictor
+variables, optional vector of \code{times} at which to predict survival,
+and an ellipsis.}
+
+\item{varimp}{variable importance function whose arguments are the
+\code{object} returned by \code{fit}, optional arguments passed from calls
+to \code{\link{varimp}}, and an ellipsis.}
+}
+\value{
+\code{MLModel} class object.
 }
 \description{
-MLModel Class Constructor
+Create a model for use with the \pkg{MachineShop} package.
+}
+\details{
+Values returned by the \code{predict} functions should be formatted according
+to the response variable types below.
+\describe{
+\item{factor}{a vector or column matrix of probabilities for the second level
+of binary factors or a matrix whose columns contain the probabilities for
+factors with more than two levels.}
+\item{matrix}{a matrix of predicted responses.}
+\item{numeric}{a vector or column matrix of predicted responses.}
+\item{Surv}{a matrix whose columns contain survival probabilities at
+\code{times} if supplied or a vector of survival predictions otherwise.}
+}
+
+The \code{varimp} function should return a vector of importance values named
+after the predictor variables or a matrix or data frame whose rows are named
+after the predictors.
+}
+\examples{
+## Logistic regression model
+LogisticModel <- MLModel(
+  name = "LogisticModel",
+  types = "binary",
+  fit = function(formula, data, weights, ...) {
+    glm(formula, data = data, weights = weights, family = binomial, ...)
+  },
+  predict = function(object, newdata, ...) {
+    predict(object, newdata = newdata, type = "response")
+  },
+  varimp = function(object, ...) {
+    pchisq(coef(object)^2 / diag(vcov(object)), 1)
+  }
+)
+
+library(MASS)
+res <- resample(type ~ ., data = Pima.tr, model = LogisticModel)
+summary(res)
+
+}
+\seealso{
+\code{\link{modelinfo}}, \code{\link{fit}}, \code{\link{resample}},
+\code{\link{tune}}
 }

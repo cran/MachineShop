@@ -43,12 +43,12 @@ GLMBoostModel <- function(family = NULL, mstop = 100, nu = 0.1,
 
   MLModel(
     name = "GLMBoostModel",
+    label = "Gradient Boosting with Linear Models",
     packages = "mboost",
     types = c("binary", "numeric", "Surv"),
     params = params,
     nvars = function(data) nvars(data, design = "terms"),
     fit = function(formula, data, weights, family = NULL, ...) {
-      environment(formula) <- environment()
       if (is.null(family)) {
         family <- switch_class(response(formula, data),
                                "factor" = mboost::Binomial(),

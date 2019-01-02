@@ -36,12 +36,12 @@ GLMModel <- function(family = NULL, ...) {
   
   MLModel(
     name = "GLMModel",
+    label = "Generalized Linear Models",
     packages = "stats",
     types = c("binary", "numeric"),
     params = params,
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, family = NULL, ...) {
-      environment(formula) <- environment()
       if (is.null(family)) {
         family <- switch_class(response(formula, data),
                                "factor" = "binomial",
@@ -88,6 +88,7 @@ GLMStepAICModel <- function(family = NULL, ...,
   
   MLModel(
     name = "GLMStepAICModel",
+    label = "Generalized Linear Models (Stepwise)",
     packages = c(stepmodel@packages, "MASS"),
     types = stepmodel@types,
     params = c(stepmodel@params, params),

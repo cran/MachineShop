@@ -36,12 +36,12 @@ RPartModel <- function(minsplit = 20, minbucket = round(minsplit / 3),
   
   MLModel(
     name = "RPartModel",
+    label = "Recursive Partitioning and Regression Trees",
     packages = c("rpart", "partykit"),
     types = c("factor", "numeric", "Surv"),
     params = list(control = as.call(c(.(list), params(environment())))),
     nvars = function(data) nvars(data, design = "terms"),
     fit = function(formula, data, weights, ...) {
-      environment(formula) <- environment()
       method <- switch_class(response(formula, data),
                              "factor" = "class",
                              "numeric" = "anova",

@@ -30,8 +30,8 @@ weights; a \code{formula}; or a \code{recipe.}}
 
 \item{data}{\code{data.frame} containing observed predictors and outcomes.}
 
-\item{models}{\code{MLModel} constructor function or character string or a
-list of \code{MLModel} contructors or objects.}
+\item{models}{\code{MLModel} function, function name, object or list of the
+aforementioned elements such as that returned by \code{\link{expand.model}}.}
 
 \item{grid}{\code{data.frame} containing parameter values over which to
 evaluate \code{models} when a single constructor is specified.  Ignored in
@@ -43,22 +43,24 @@ employed.}
 
 \item{metrics}{function, one or more function names, or list of named
 functions to include in the calculation of performance metrics.  The default
-\code{\link{modelmetrics}} are used unless otherwise specified.  Model
+\code{\link{performance}} metrics are used unless otherwise specified.  Model
 selection is based on the first specified metric.}
 
 \item{stat}{function to compute a summary statistic on resampled values of
 the metric for model selection.}
 
 \item{maximize}{logical indicating whether to select the model having the
-maximum or minimum value of the performance metric.}
+maximum or minimum value of the performance metric.  Set automatically if a
+package \code{\link{metrics}} function is explicitly specified for the model
+selection.}
 }
 \value{
 \code{MLModelTune} class object that inherits from \code{MLModel}.
 }
 \description{
 Evaluate a model over a grid of tuning parameters or a list of specified
-model objects and select the best one according to resample estimation of
-predictive performance.
+models and select the best one according to resample estimation of predictive
+performance.
 }
 \examples{
 \donttest{
@@ -82,6 +84,6 @@ varimp(gbmfit)
 }
 \seealso{
 \code{\link{ModelFrame}}, \code{\link[recipes]{recipe}},
-\code{\link{modelinfo}}, \code{\link{MLControl}}, \code{\link{fit}},
-\code{\link{plot}}, \code{\link{summary}}
+\code{\link{modelinfo}}, \code{\link{expand.model}}, \code{\link{MLControl}},
+\code{\link{fit}}, \code{\link{plot}}, \code{\link{summary}}
 }

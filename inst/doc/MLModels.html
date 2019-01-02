@@ -12,7 +12,7 @@
 
 <meta name="author" content="Brian J Smith" />
 
-<meta name="date" content="2018-12-12" />
+<meta name="date" content="2019-01-02" />
 
 <title>Conventions for MLModels Implementation</title>
 
@@ -280,19 +280,23 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Conventions for MLModels Implementation</h1>
 <h4 class="author"><em>Brian J Smith</em></h4>
-<h4 class="date"><em>2018-12-12</em></h4>
+<h4 class="date"><em>2019-01-02</em></h4>
 
 
 
 <div id="model-constructor-components" class="section level2">
 <h2>Model Constructor Components</h2>
+<ul>
+<li><p><code>MLModel</code> is a function supplied by the <strong>MachineShop</strong> package. It allows for the integration of statistical and machine learning models supplied by other R packages with the <strong>MachineShop</strong> model fitting, prediction, and performance assessment tools.</p></li>
+<li><p>The following are guidelines for writing model constructor functions that are wrappers around the <code>MLModel</code> function.</p></li>
+<li><p>In this context, the term “constructor” refers to the wrapper function and “source package” to the package supplying the original model implementation.</p></li>
+</ul>
 <div id="constructor-arguments" class="section level3">
 <h3>Constructor Arguments</h3>
 <ul>
-<li><p>Parameters without defaults are required and will trigger an error message if not supplied values when called.</p></li>
-<li><p>Ideally, the constructor should produce a valid model if called without any arguments; i.e., not have any required arguments.</p></li>
+<li><p>The constructor should produce a valid model if called without any arguments; i.e., not have any required arguments.</p></li>
 <li><p>The source package defaults will be used for parameters with <code>NULL</code> values.</p></li>
-<li><p>Model formula, data, and weights are separate from model parameters and should not be included among the constructor arguments.</p></li>
+<li><p>Model formula, data, and weights are separate from model parameters and should not be defined as constructor arguments.</p></li>
 </ul>
 </div>
 <div id="name-slot" class="section level3">
@@ -311,13 +315,13 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="types-slot" class="section level3">
 <h3>types Slot</h3>
 <ul>
-<li>Include all response variable types (<code>&quot;factor&quot;</code>, <code>&quot;numeric&quot;</code>, <code>&quot;ordered&quot;</code>, and/or <code>&quot;Surv&quot;</code>) that can be analyzed with the model.</li>
+<li>Include all response variable types (<code>&quot;binary&quot;</code>, <code>&quot;factor&quot;</code>, <code>&quot;matrix&quot;</code>, <code>&quot;numeric&quot;</code>, <code>&quot;ordered&quot;</code>, and/or <code>&quot;Surv&quot;</code>) that can be analyzed with the model.</li>
 </ul>
 </div>
 <div id="params-slot" class="section level3">
 <h3>params Slot</h3>
 <ul>
-<li>List of parameter values set by the constructor, typically obtained with <code>params(environment())</code> if all arguments are to be passed to the source package fit function as supplied. Additional steps may be needed to pass the constructor arguments to the source package in a different format; e.g., when some model parameters must be passed in a control structure, as in C50Model and CForestModel.</li>
+<li>List of parameter values set by the constructor, typically obtained with <code>MachineShop:::params(environment())</code> if all arguments are to be passed to the source package fit function as supplied. Additional steps may be needed to pass the constructor arguments to the source package in a different format; e.g., when some model parameters must be passed in a control structure, as in <code>C50Model</code> and <code>CForestModel</code>.</li>
 </ul>
 </div>
 <div id="nvars-function" class="section level3">
@@ -329,28 +333,27 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="fit-function" class="section level3">
 <h3>fit Function</h3>
 <ul>
-<li><p>The first three arguments should be <code>formula</code>, <code>data</code>, and <code>weights</code> followed by a three dot ellipsis.</p></li>
-<li><p>Set <code>environment(formula) &lt;- environment()</code> if the formula will be passed to the source package fit function. Some fit functions expect the formula to be defined in the same environment as the data and weights belong; i.e., the fit formula environment.</p></li>
+<li><p>The first three arguments should be <code>formula</code>, <code>data</code>, and <code>weights</code> followed by an ellipsis (<code>...</code>).</p></li>
 <li><p>If weights are not supported, the following should be included in the function:</p></li>
 </ul>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="cf">if</span>(<span class="op">!</span><span class="kw">all</span>(weights <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)) <span class="kw">warning</span>(<span class="st">&quot;weights are unsupported and will be ignored&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="cf">if</span>(<span class="op">!</span><span class="kw">all</span>(weights <span class="op">==</span><span class="st"> </span><span class="dv">1</span>)) <span class="kw">warning</span>(<span class="st">&quot;weights are not supported and will be ignored&quot;</span>)</a></code></pre></div>
 <ul>
-<li><p>Only add elements to the resulting fit object if they are needed and will be used in the <code>predict</code>, <code>response</code>, or <code>varimp</code> functions.</p></li>
+<li><p>Only add elements to the resulting fit object if they are needed and will be used in the <code>predict</code> or <code>varimp</code> functions.</p></li>
 <li><p>Return the fit object.</p></li>
 </ul>
 </div>
 <div id="predict-function" class="section level3">
 <h3>predict Function</h3>
 <ul>
-<li><p>The arguments are a model fit <code>object</code>, <code>newdata</code> frame, optionally <code>time</code> for prediction at survival time points, and an ellipsis.</p></li>
-<li><p>The predict function should return a vector or matrix of probabilities for 2-level factors, a matrix for factors with more than 2 levels, a vector or matrix of expected responses if numeric, a matrix of survival probabilities if follow-up times are supplied, or a vector of survival risks if no follow-up times.</p></li>
+<li><p>The arguments are a model fit <code>object</code>, <code>newdata</code> frame, optionally <code>times</code> for prediction at survival time points, and an ellipsis.</p></li>
+<li><p>The predict function should return a vector or column matrix of probabilities for the second level of binary factors, a matrix whose columns contain the probabilities for factors with more than two levels, a matrix of predicted responses if matrix, a vector or column matrix of predicted responses if numeric, a matrix whose columns contain survival probabilities at <code>times</code> if supplied, or a vector of survival predictions if <code>times</code> are not supplied.</p></li>
 </ul>
 </div>
 <div id="varimp-function" class="section level3">
 <h3>varimp Function</h3>
 <ul>
 <li><p>Should have a single model fit <code>object</code> argument followed by an ellipsis.</p></li>
-<li><p>Variable importance results should generally be returned as a vector with elements named after the corresponding predictor variables. The package will take care of conversions to a data frame and VarImp object. If there is more than one set of relevant variable importance measures, they can be returned as a matrix or data frame with predictor variable names as the row names.</p></li>
+<li><p>Variable importance results should generally be returned as a vector with elements named after the corresponding predictor variables. The package will handle conversions to a data frame and <code>VarImp</code> object. If there is more than one set of relevant variable importance measures, they can be returned as a matrix or data frame with predictor variable names as the row names.</p></li>
 </ul>
 </div>
 </div>
@@ -368,7 +371,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="details-section" class="section level3">
 <h3>Details Section</h3>
 <ul>
-<li><p>Include response types (factor, numeric, ordered, and/or Surv).</p></li>
+<li><p>Include response types (binary, factor, matrix, numeric, ordered, and/or Surv).</p></li>
 <li><p>Include the following sentence:</p></li>
 </ul>
 <blockquote>
@@ -396,12 +399,12 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <div id="package-extensions" class="section level2">
 <h2>Package Extensions</h2>
 <ul>
-<li><p>For full compatibility with the <code>MachineShop</code> package, model constructors must belong to its namespace.</p></li>
-<li><p>This can be accomplished by rebuilding the package with source code for a new model added; or by defining a new model constructor, say <code>CustomModel</code>, and manually adding it to the namespace as follows.</p></li>
-</ul>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb3-1" data-line-number="1"><span class="kw">environment</span>(CustomModel) &lt;-<span class="st"> </span><span class="kw">asNamespace</span>(<span class="st">&quot;MachineShop&quot;</span>)</a></code></pre></div>
-<ul>
-<li>If adding a new model to the package, save its source code in a file whose name begins with “ML_” followed by the model name, and ending with a .R extension; e.g., <code>&quot;ML_CustomModel.R&quot;</code>.</li>
+<li><p>If adding a new model to the package, save its source code in a file whose name begins with “ML_” followed by the model name, and ending with a .R extension; e.g., <code>&quot;R/ML_CustomModel.R&quot;</code>.</p></li>
+<li><p>Export the model in <code>NAMESPACE</code>.</p></li>
+<li><p>Add any required packages to the “Suggests” section of <code>DESCRIPTION</code>.</p></li>
+<li><p>Add the model to <code>R/MachineShop-package.R</code>.</p></li>
+<li><p>Add the model to <code>R/modelinfo.R</code>.</p></li>
+<li><p>Add a unit testing file to <code>tests/testthat</code>.</p></li>
 </ul>
 </div>
 

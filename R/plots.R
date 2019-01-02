@@ -13,14 +13,14 @@
 #' @param type type of plot to construct.
 #' @param ... arguments passed to other methods.
 #' 
-#' @seealso \code{\link{modelmetrics}},  \code{\link{resample}},
+#' @seealso \code{\link{performance}},  \code{\link{resample}},
 #' \code{\link{diff}}, \code{\link{tune}}, \code{\link{calibration}},
 #' \code{\link{confusion}}, \code{\link{lift}}, \code{\link{dependence}},
 #' \code{\link{varimp}}
 #' 
-plot.ModelMetrics <- function(x, metrics = NULL, stat = mean,
-                              type = c("boxplot", "density", "errorbar",
-                                       "violin"), ...) {
+plot.Performance <- function(x, metrics = NULL, stat = mean,
+                             type = c("boxplot", "density", "errorbar",
+                                      "violin"), ...) {
   df <- as.data.frame.table(x)
   if (length(dim(x)) <= 2) df$Var3 <- factor("Model")
   orderednames <- match(c("Var1", "Var2", "Var3", "Freq"), names(df))
@@ -84,7 +84,7 @@ plot.ModelMetrics <- function(x, metrics = NULL, stat = mean,
 plot.Resamples <- function(x, metrics = NULL, stat = mean,
                            type = c("boxplot", "density", "errorbar", "violin"),
                            ...) {
-  plot(modelmetrics(x), metrics = metrics, stat = stat, type = type)
+  plot(performance(x), metrics = metrics, stat = stat, type = type)
 }
 
 
@@ -93,7 +93,7 @@ plot.Resamples <- function(x, metrics = NULL, stat = mean,
 plot.MLModelTune <- function(x, metrics = NULL, stat = mean,
                              type = c("boxplot", "density", "errorbar", "line",
                                       "violin"), ...) {
-  perf <- modelmetrics(x@resamples)
+  perf <- x@performance
   type <- match.arg(type)
   if (type == "line") {
     grid <- x@grid
@@ -141,9 +141,9 @@ plot.Calibration <- function(x, type = c("line", "point"), se = FALSE, ...) {
   type <- match.arg(type)
   
   aes_response <- if (nlevels(x$Response) > 1) {
-    aes(x = Midpoint, y = Mean, color = Response)
+    aes(x = Predicted, y = Mean, color = Response)
   } else {
-    aes(x = Midpoint, y = Mean)
+    aes(x = Predicted, y = Mean)
   }
   
   position <- "identity"
@@ -152,19 +152,19 @@ plot.Calibration <- function(x, type = c("line", "point"), se = FALSE, ...) {
     
     df <- data.frame(
       Response = cal$Response,
-      Midpoint = cal$Midpoint,
+      Predicted = cal$Predicted,
       cal$Observed
     )
-    Midpoint_width <- diff(range(df$Midpoint))
+    Predicted_width <- diff(range(df$Predicted, na.rm = TRUE))
   
     p <- ggplot(df, aes_response) +
       geom_abline(intercept = 0, slope = 1, color = "gray") +
-      labs(title = cal$Model[1], x = "Bin Midpoints", y = "Observed Mean")
+      labs(title = cal$Model[1], x = "Predicted", y = "Observed Mean")
     
     if (se) {
-      position <- position_dodge(width = 0.025 * Midpoint_width)
+      position <- position_dodge(width = 0.025 * Predicted_width)
       p <- p + geom_errorbar(aes(ymin = Lower, ymax = Upper),
-                             width = 0.05 * Midpoint_width,
+                             width = 0.05 * Predicted_width,
                              position = position)
     }
   

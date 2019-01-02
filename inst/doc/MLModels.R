@@ -5,8 +5,5 @@ knitr::opts_chunk$set(
 )
 
 ## ----eval = FALSE--------------------------------------------------------
-#  if(!all(weights == 1)) warning("weights are unsupported and will be ignored")
-
-## ----eval = FALSE--------------------------------------------------------
-#  environment(CustomModel) <- asNamespace("MachineShop")
+#  if(!all(weights == 1)) warning("weights are not supported and will be ignored")
 

@@ -48,12 +48,12 @@ FDAModel <- function(theta = NULL, dimension = NULL, eps = .Machine$double.eps,
   
   MLModel(
     name = "FDAModel",
+    label = "Flexible Discriminant Analysis",
     packages = "mda",
     types = "factor",
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
-      environment(formula) <- environment()
       mda::fda(formula, data = data, weights = weights, ...)
     },
     predict = function(object, newdata, prior = object$prior, ...) {
@@ -78,5 +78,6 @@ PDAModel <- function(lambda = 1, df = NULL, ...) {
   args$method <- .(mda::gen.ridge)
   model <- do.call(FDAModel, args, quote = TRUE)
   model@name <- "PDAModel"
+  model@label <- "Penalized Discriminant Analysis"
   model
 }

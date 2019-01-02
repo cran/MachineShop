@@ -51,7 +51,7 @@ predict(gbmfit, newdata = test, times = times) %>% head
 ## Model performance metrics
 obs <- response(fo, test)
 pred <- predict(gbmfit, newdata = test, times = times, type = "prob")
-modelmetrics(obs, pred, times = times)
+performance(obs, pred, times = times)
 
 ## ------------------------------------------------------------------------
 ## Control parameters for repeated K-fold cross-validation

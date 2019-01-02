@@ -31,12 +31,12 @@ POLRModel <- function(method = c("logistic", "probit", "loglog", "cloglog",
   
   MLModel(
     name = "POLRModel",
+    label = "Ordered Logistic Regression",
     packages = "MASS",
     types = "ordered",
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
-      environment(formula) <- environment()
       MASS::polr(formula, data = data, weights = weights, Hess = TRUE, ...)
     },
     predict = function(object, newdata, ...) {

@@ -39,12 +39,12 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
 
   MLModel(
     name = "CoxModel",
+    label = "Cox Regression",
     packages = "rms",
     types = "Surv",
     params = params,
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
-      environment(formula) <- environment()
       rms::cph(formula, data = data, weights = weights, singular.ok = TRUE,
                surv = TRUE, y = TRUE, ...)
     },
@@ -92,6 +92,7 @@ CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"), ...,
   
   MLModel(
     name = "CoxStepAICModel",
+    label = "Cox Regression (Stepwise)",
     packages = c(stepmodel@packages, "MASS"),
     types = stepmodel@types,
     params = c(stepmodel@params, params),

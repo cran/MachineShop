@@ -1,9 +1,7 @@
-setAs("ModelFrame", "data.frame",
-  function(from) {
-    attr(from, "terms") <- NULL
-    structure(from, class = "data.frame")
-  }
-)
+as.data.frame.ModelFrame <- function(x, ...) {
+  attr(x, "terms") <- NULL
+  structure(x, class = "data.frame")
+}
 
 
 setAs("data.frame", "VarImp",
@@ -58,11 +56,4 @@ unMLModelFit <- function(object) {
     pos <- match("MLModelFit", classes)
     structure(object, class = classes[-c(pos - 1, pos)])
   }
-}
-
-
-unAsIs <- function(object) {
-  classes <- class(object)
-  if ("AsIs" %in% classes) class(object) <- classes[-match("AsIs", classes)]
-  object
 }

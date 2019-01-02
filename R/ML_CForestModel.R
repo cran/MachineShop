@@ -47,12 +47,12 @@ CForestModel <- function(teststat = c("quad", "max"),
   
   MLModel(
     name = "CForestModel",
+    label = "Conditional Random Forests",
     packages = "party",
     types = c("factor", "numeric", "Surv"),
     params = list(controls = as.call(c(.(party::cforest_control), args))),
     nvars = function(data) nvars(data, design = "terms"),
     fit = function(formula, data, weights, ...) {
-      environment(formula) <- environment()
       party::cforest(formula, data = data, weights = weights, ...)
     },
     predict = function(object, newdata, fitbits, times, ...) {

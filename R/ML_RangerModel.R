@@ -55,12 +55,12 @@ RangerModel <- function(num.trees = 500, mtry = NULL,
   
   MLModel(
     name = "RangerModel",
+    label = "Fast Random Forests",
     packages = "ranger",
     types = c("factor", "numeric", "Surv"),
     params = params(environment()),
     nvars = function(data) nvars(data, design = "terms"),
     fit = function(formula, data, weights, ...) {
-      environment(formula) <- environment()
       ranger::ranger(formula, data = data, case.weights = weights, 
                      probability = is(response(formula, data), "factor"), ...)
     },

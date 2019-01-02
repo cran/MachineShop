@@ -24,13 +24,13 @@ NaiveBayesModel <- function(laplace = 0) {
   
   MLModel(
     name = "NaiveBayesModel",
+    label = "Naive Bayes Classifier",
     packages = "e1071",
     types = "factor",
     params = params(environment()),
     nvars = function(data) nvars(data, design = "terms"),
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
-      environment(formula) <- environment()
       e1071::naiveBayes(formula, data = data, ...)
     },
     predict = function(object, newdata, ...) {

@@ -10,18 +10,20 @@
 #'   \tab \strong{Survival} \cr
 #'   \code{\link{AdaBagModel}}         \tab f   \tab     \tab   \cr
 #'   \code{\link{AdaBoostModel}}       \tab f   \tab     \tab   \cr
-#'   \code{\link{BlackBoostModel}}     \tab f   \tab n   \tab S \cr
+#'   \code{\link{BARTMachineModel}}    \tab b   \tab n   \tab   \cr
+#'   \code{\link{BlackBoostModel}}     \tab b   \tab n   \tab S \cr
 #'   \code{\link{C50Model}}            \tab f   \tab     \tab   \cr
 #'   \code{\link{CForestModel}}        \tab f   \tab n   \tab S \cr
 #'   \code{\link{CoxModel}}            \tab     \tab     \tab S \cr
 #'   \code{\link{EarthModel}}          \tab f   \tab n   \tab   \cr
 #'   \code{\link{FDAModel}}            \tab f   \tab     \tab   \cr
-#'   \code{\link{GAMBoostModel}}       \tab f   \tab n   \tab S \cr
+#'   \code{\link{GAMBoostModel}}       \tab b   \tab n   \tab S \cr
 #'   \code{\link{GBMModel}}            \tab f   \tab n   \tab S \cr
-#'   \code{\link{GLMBoostModel}}       \tab f   \tab n   \tab S \cr
+#'   \code{\link{GLMBoostModel}}       \tab b   \tab n   \tab S \cr
 #'   \code{\link{GLMModel}}            \tab b   \tab n   \tab   \cr
 #'   \code{\link{GLMNetModel}}         \tab f   \tab m,n \tab S \cr
 #'   \code{\link{KNNModel}}            \tab f,o \tab n   \tab   \cr
+#'   \code{\link{LARSModel}}           \tab     \tab n   \tab   \cr
 #'   \code{\link{LDAModel}}            \tab f   \tab     \tab   \cr
 #'   \code{\link{LMModel}}             \tab f   \tab m,n \tab   \cr
 #'   \code{\link{MDAModel}}            \tab f   \tab     \tab   \cr
@@ -68,7 +70,7 @@
 #'   \code{\link{dependence}} \tab Parital Dependence \cr
 #'   \code{\link{diff}} \tab Model Performance Differences \cr
 #'   \code{\link{lift}} \tab Lift Curves \cr
-#'   \code{\link{modelmetrics}} \tab Model Performance Metrics \cr
+#'   \code{\link{performance}} \tab Model Performance Metrics \cr
 #'   \code{\link{varimp}} \tab Variable Importance \cr
 #' }
 #' 
@@ -86,5 +88,8 @@
 #' 
 #' \code{\link{summary}} \cr 
 #' \code{\link{plot}}
+#' 
+#' Custom metrics and models can be created with the \code{\link{MLMetric}} and
+#' \code{\link{MLModel}} constructors.
 #' 
 "_PACKAGE"

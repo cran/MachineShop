@@ -43,6 +43,7 @@ SuperModel <- function(..., model = GBMModel, control = CVControl,
 
   new("SuperModel",
     name = "SuperModel",
+    label = "Super Learner",
     types = c("factor", "matrix", "numeric", "ordered", "Surv"),
     params = as.list(environment()),
     fitbits = MLFitBits(
@@ -99,7 +100,7 @@ make_super_df <- function(y, predictors, row.names) {
   predictors <- do.call(cbind, predictors)
   colnames(predictors) <- make.names(1:ncol(predictors))
   df <- data.frame(matrix(nrow = nrow(predictors), ncol = 0),
-                   row.names = paste(seq(row.names), row.names, sep = "."))
+                   row.names = paste0(seq_along(row.names), ".", row.names))
   df$y <- y
   cbind(df, predictors)
 }

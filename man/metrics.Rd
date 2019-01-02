@@ -7,9 +7,11 @@
 \alias{cindex}
 \alias{cross_entropy}
 \alias{f_score}
+\alias{gini}
 \alias{kappa2}
 \alias{mae}
 \alias{mse}
+\alias{msle}
 \alias{npv}
 \alias{ppv}
 \alias{pr_auc}
@@ -17,6 +19,7 @@
 \alias{r2}
 \alias{recall}
 \alias{rmse}
+\alias{rmsle}
 \alias{roc_auc}
 \alias{roc_index}
 \alias{sensitivity}
@@ -34,11 +37,15 @@ cross_entropy(observed, predicted, ...)
 
 f_score(observed, predicted, cutoff = 0.5, beta = 1, ...)
 
+gini(observed, predicted, ...)
+
 kappa2(observed, predicted, cutoff = 0.5, ...)
 
 mae(observed, predicted, ...)
 
 mse(observed, predicted, ...)
+
+msle(observed, predicted, ...)
 
 npv(observed, predicted, cutoff = 0.5, ...)
 
@@ -53,6 +60,8 @@ r2(observed, predicted, ...)
 recall(observed, predicted, cutoff = 0.5, ...)
 
 rmse(observed, predicted, ...)
+
+rmsle(observed, predicted, ...)
 
 roc_auc(observed, predicted, times = numeric(), ...)
 
@@ -91,5 +100,5 @@ main diagonal in confusion matrices are raised to calculate
 Compute measures of agreement between observed and predicted responses.
 }
 \seealso{
-\code{\link{metricinfo}}, \code{\link{modelmetrics}}
+\code{\link{metricinfo}}, \code{\link{performance}}
 }

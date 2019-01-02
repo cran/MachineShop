@@ -54,6 +54,7 @@ GAMBoostModel <- function(family = NULL,
 
   MLModel(
     name = "GAMBoostModel",
+    label = "Gradient Boosting with Additive Models",
     packages = "mboost",
     types = c("binary", "numeric", "Surv"),
     params = params,
@@ -66,7 +67,7 @@ GAMBoostModel <- function(family = NULL,
         bbs = mboost::bbs,
         bns = mboost::bns
       ), name = "mboost_exports")
-      environment(formula) <- environment()
+      
       if (is.null(family)) {
         family <- switch_class(response(formula, data),
                                "factor" = mboost::Binomial(),

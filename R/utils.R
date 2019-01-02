@@ -114,9 +114,16 @@ basehaz <- function(y, risk, times) {
   nrisk <- rowsum(risk, y[, "time"]) %>% rev %>% cumsum %>% rev
   nevent <- rowsum(y[, "status"], y[, "time"])[, 1]
   cumhaz <- cumsum(nevent / nrisk) %>% structure(names = NULL)
-  idx <- approx(y_times, seq(y_times), times, method = "constant",
+  idx <- approx(y_times, seq_along(y_times), times, method = "constant",
                 f = 0, yleft = 0, yright = length(y_times))$y
   c(0, cumhaz)[idx + 1]
+}
+
+
+extract <- function(formula, data, na.action = na.pass) {
+  mf <- model.frame(formula, data, na.action = na.action)
+  list(x = model.matrix(formula, mf)[, -1, drop = FALSE],
+       y = model.response(mf))
 }
 
 
@@ -156,7 +163,7 @@ getdata.recipe <- function(x, ...) {
 
 
 getMLObject <- function(x, class) {
-  if (is.character(x)) x <- get(x, mode = "function")
+  if (is.character(x)) x <- get(x)
   if (is.function(x)) x <- x()
   if (!is(x, class)) stop("object not of class ", class)
   x
@@ -173,16 +180,33 @@ is_response <- function(object, class2) {
 
 
 list2function <- function(x) {
-  if (is.character(x)) x <- mget(x, mode = "function", inherits = TRUE)
-  if (is.list(x) && all(sapply(x, is.function))) {
-    eval(bquote(
-      function(...) unlist(lapply(.(x), function(x) x(...)))
-    ))
-  } else if (is.function(x)) {
+  error_msg <- paste0("'", deparse(substitute(x)), "' must be a function, ",
+                      "one or more function names, or a list of functions")
+  if (is(x, "MLMetric")) x <- list(x)
+  if (is(x, "vector")) {
+    x <- as.list(x)
+    metric_names <- character()
+    for (i in seq(x)) {
+      if (is(x[[i]], "character")) {
+        metric_name <- x[[i]]
+        x[[i]] <- get(metric_name, mode = "function")
+      } else if (is(x[[i]], "MLMetric")) {
+        metric_name <- x[[i]]@name
+      } else if (is(x[[i]], "function")) {
+        metric_name <- "metric"
+      } else {
+        stop(error_msg)
+      }
+      name <- names(x)[i]
+      metric_names[i] <-
+        if (is.null(name) || !nzchar(name)) metric_name else name
+    }
+    names(x) <- make.unique(metric_names)
+    eval(bquote(function(...) unlist(lapply(.(x), function(x) x(...)))))
+  } else if (is(x, "function")) {
     x
   } else {
-    stop("'", deparse(substitute(x)), "' must be a function, ",
-         "one or more function names, or a list of named functions")
+    stop(error_msg)
   }
 }
 
@@ -208,7 +232,7 @@ make_unique_levels <- function(x, which) {
 
 
 match_indices <- function(indices, choices) {
-  lookup <- structure(seq(choices), names = choices)
+  lookup <- structure(seq_along(choices), names = choices)
   indices <- na.omit(names(lookup)[lookup[indices]])
   if (length(indices) == 0) {
     indices <- names(lookup)[1]
@@ -251,7 +275,7 @@ preprocess <- function(x, data = NULL, ...) {
 
 
 preprocess.default <- function(x, data = NULL, ...) {
-  as(if (is.null(data)) x else data, "data.frame")
+  as.data.frame(if (is.null(data)) x else data)
 }
 
 

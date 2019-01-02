@@ -45,16 +45,16 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
   
   MLModel(
     name = "XGBModel",
+    label = "Extreme Gradient Boosting",
     packages = "xgboost",
     types = c("factor", "numeric"),
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, params, ...) {
-      mf <- model.frame(formula, data, na.action = na.pass)
-      x <- model.matrix(formula, mf)[, -1, drop = FALSE]
-      y <- model.response(mf)
+      terms <- extract(formula, data)
+      x <- terms$x
+      y <- terms$y
       response_levels <- levels(y)
-      if (is.null(params$objective)) params$objective <- 1
       switch_class(y,
                    "factor" = {
                      params$num_class <- nlevels(y)
@@ -66,15 +66,13 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
                                       "reg:tweedie", "count:poisson",
                                       "rank:pairwise", "rank:ndcg", "rank:map")
                    })
-      params$objective <- match_indices(params$objective, obj_choices)
+      params$objective <- match.arg(params$objective, obj_choices)
       modelfit <- xgboost::xgboost(x, y, weight = weights, params = params, ...)
       modelfit$levels <- response_levels
       modelfit
     },
     predict = function(object, newdata, fitbits, ...) {
-      fo <- formula(fitbits)[-2]
-      newmf <- model.frame(fo, newdata, na.action = na.pass)
-      newx <- model.matrix(fo, newmf)[, -1, drop = FALSE]
+      newx <- extract(formula(fitbits)[-2], newdata)$x
       pred <- predict(object, newdata = newx)
       if (object$params$objective == "multi:softprob") {
         pred <- matrix(pred, nrow = nrow(newx), byrow = TRUE)
@@ -123,7 +121,8 @@ XGBDARTModel <- function(objective = NULL, base_score = 0.5,
                          grow_policy="depthwise", max_leaves = 0, max_bin = 256,
                          sample_type = "uniform", normalize_type = "tree",
                          rate_drop = 0, one_drop = 0, skip_drop = 0, ...) {
-  .XGBModel("XGBDARTModel", "dart", environment(), ...)
+  .XGBModel("XGBDARTModel", "Extreme Gradient Boosting (DART)",
+            "dart", environment(), ...)
 }
 
 
@@ -132,7 +131,8 @@ XGBDARTModel <- function(objective = NULL, base_score = 0.5,
 XGBLinearModel <- function(objective = NULL, base_score = 0.5,
                            lambda = 0, alpha = 0, updater = "shotgun",
                            feature_selector = "cyclic", top_k = 0, ...) {
-  .XGBModel("XGBLinearModel", "gblinear", environment(), ...)
+  .XGBModel("XGBLinearModel", "Extreme Gradient Boosting (Linear)",
+            "gblinear", environment(), ...)
 }
 
 
@@ -148,14 +148,16 @@ XGBTreeModel <- function(objective = NULL, base_score = 0.5,
                          refresh_leaf = 1, process_type = "default",
                          grow_policy="depthwise", max_leaves = 0, max_bin = 256,
                          ...) {
-  .XGBModel("XGBTreeModel", "gbtree", environment(), ...)
+  .XGBModel("XGBTreeModel", "Extreme Gradient Boosting (Tree)",
+            "gbtree", environment(), ...)
 }
 
 
-.XGBModel <- function(name, booster, envir, ...) {
+.XGBModel <- function(name, label, booster, envir, ...) {
   args <- list(...)
   args$params <- as.call(c(.(list), params(envir), booster = booster))
   model <- do.call(XGBModel, args, quote = TRUE)
   model@name <- name
+  model@label <- label
   model
 }

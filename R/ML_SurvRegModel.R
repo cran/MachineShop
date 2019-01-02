@@ -34,12 +34,12 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
   
   MLModel(
     name = "SurvRegModel",
+    label = "Parametric Survival",
     packages = "rms",
     types = "Surv",
     params = params,
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
-      environment(formula) <- environment()
       rms::psm(formula, data = data, weights = weights, ...)
     },
     predict = function(object, newdata, times, ...) {
@@ -101,6 +101,7 @@ SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
 
   MLModel(
     name = "SurvRegStepAICModel",
+    label = "Parametric Survival (Stepwise)",
     packages = c(stepmodel@packages, "MASS"),
     types = stepmodel@types,
     params = c(stepmodel@params, params),

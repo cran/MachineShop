@@ -23,12 +23,12 @@ LMModel <- function() {
   
   MLModel(
     name = "LMModel",
+    label = "Linear Model",
     packages = "stats",
     types = c("factor", "matrix", "numeric"),
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, ...) {
-      environment(formula) <- environment()
       y <- response(formula, data)
       if (is.factor(y)) {
         y_name <- response(terms(formula))

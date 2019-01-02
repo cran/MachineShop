@@ -40,13 +40,13 @@ QDAModel <- function(prior = NULL, method = c("moment", "mle", "mve", "t"),
   
   MLModel(
     name = "QDAModel",
+    label = "Quadratic Discriminant Analysis",
     packages = "MASS",
     types = "factor",
     params = params(environment()),
     nvars = function(data) nvars(data, design = "model.matrix"),
     fit = function(formula, data, weights, use, ...) {
       assert_equal_weights(weights)
-      environment(formula) <- environment()
       modelfit <- MASS::qda(formula, data = data, ...)
       modelfit$use <- use
       modelfit

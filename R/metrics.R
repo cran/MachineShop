@@ -19,11 +19,13 @@
 #' were predicted.
 #' @param ... arguments passed to or from other methods.
 #' 
-#' @seealso \code{\link{metricinfo}}, \code{\link{modelmetrics}}
+#' @seealso \code{\link{metricinfo}}, \code{\link{performance}}
 #' 
 accuracy <- function(observed, predicted, cutoff = 0.5, ...) {
   .accuracy(observed, predicted, cutoff = cutoff)
 }
+
+MLMetric(accuracy) <- list("accuracy", "Accuracy", TRUE)
 
 
 setGeneric(".accuracy",
@@ -64,6 +66,8 @@ brier <- function(observed, predicted, times = numeric(), ...) {
   .brier(observed, predicted, times = times)
 }
 
+MLMetric(brier) <- list("brier", "Brier Score", FALSE)
+
 
 setGeneric(".brier",
            function(observed, predicted, ...) standardGeneric(".brier"))
@@ -97,7 +101,7 @@ setMethod(".brier", c("Surv", "matrix"),
     obs_events <- observed[, "status"]
     fitcens <- survfit(Surv(obs_times, 1 - obs_events) ~ 1)
   
-    metrics <- sapply(seq(times), function(i) {
+    metrics <- sapply(seq_along(times), function(i) {
       time <- times[i]
       is_obs_after <- obs_times > time
       weights <- (obs_events == 1 | is_obs_after) /
@@ -119,6 +123,8 @@ setMethod(".brier", c("Surv", "matrix"),
 cindex <- function(observed, predicted, ...) {
   .cindex(observed, predicted)
 }
+
+MLMetric(cindex) <- list("cindex", "Concordance Index", TRUE)
 
 
 setGeneric(".cindex",
@@ -149,6 +155,8 @@ setMethod(".cindex", c("Surv", "numeric"),
 cross_entropy <- function(observed, predicted, ...) {
   .cross_entropy(observed, predicted)
 }
+
+MLMetric(cross_entropy) <- list("cross_entropy", "Cross Entropy", FALSE)
 
 
 setGeneric(".cross_entropy",
@@ -182,6 +190,8 @@ f_score <- function(observed, predicted, cutoff = 0.5, beta = 1, ...) {
   .f_score(observed, predicted, cutoff = cutoff, beta = beta)
 }
 
+MLMetric(f_score) <- list("f_score", "F Score", TRUE)
+
 
 setGeneric(".f_score",
            function(observed, predicted, ...) standardGeneric(".f_score"))
@@ -203,9 +213,46 @@ setMethod(".f_score", c("factor", "numeric"),
 
 #' @rdname metrics
 #' 
+gini <- function(observed, predicted, ...) {
+  .gini(observed, predicted)
+}
+
+MLMetric(gini) <- list("gini", "Gini Coefficient", FALSE)
+
+
+setGeneric(".gini",
+           function(observed, predicted, ...) standardGeneric(".gini"))
+
+
+setMethod(".gini", c("ANY", "ANY"),
+  function(observed, predicted, ...) numeric()
+)
+
+
+setMethod(".gini", c("matrix", "matrix"),
+  function(observed, predicted, ...) {
+    .metric.matrix(observed, predicted, gini)
+  }
+)
+
+
+setMethod(".gini", c("numeric", "numeric"),
+  function(observed, predicted, ...) {
+    y_predicted <- observed[order(predicted, decreasing = TRUE)]
+    y_observed <- observed[order(observed, decreasing = TRUE)]
+    gini_sum <- function(y) sum(cumsum(y / sum(y) - 1 / length(y)))
+    gini_sum(y_predicted) / gini_sum(y_observed)
+  }
+)
+
+
+#' @rdname metrics
+#' 
 kappa2 <- function(observed, predicted, cutoff = 0.5, ...) {
   .kappa2(observed, predicted, cutoff = cutoff)
 }
+
+MLMetric(kappa2) <- list("kappa2", "Cohen's Kappa", TRUE)
 
 
 setGeneric(".kappa2",
@@ -247,12 +294,22 @@ mae <- function(observed, predicted, ...) {
   .mae(observed, predicted)
 }
 
+MLMetric(mae) <- list("mae", "Mean Absolute Error", FALSE)
+
+
 setGeneric(".mae",
            function(observed, predicted, ...) standardGeneric(".mae"))
 
 
 setMethod(".mae", c("ANY", "ANY"),
   function(observed, predicted, ...) numeric()
+)
+
+
+setMethod(".mae", c("matrix", "matrix"),
+  function(observed, predicted, ...) {
+    .metric.matrix(observed, predicted, mae)
+  }
 )
 
 
@@ -263,25 +320,13 @@ setMethod(".mae", c("numeric", "numeric"),
 )
 
 
-setMethod(".mae", c("matrix", "matrix"),
-  function(observed, predicted, ...) {
-    n <- ncol(observed)
-    sapply(1:n, function(i) mae(observed[, i], predicted[, i])) / n
-  }
-)
-
-
-mean.SurvMetrics <- function(x, times) {
-  weights <- diff(c(0, times)) / tail(times, 1)
-  sum(weights * x)
-}
-
-
 #' @rdname metrics
 #' 
 mse <- function(observed, predicted, ...) {
   .mse(observed, predicted)
 }
+
+MLMetric(mse) <- list("mse", "Mean Squared Error", FALSE)
 
 
 setGeneric(".mse",
@@ -293,6 +338,13 @@ setMethod(".mse", c("ANY", "ANY"),
 )
 
 
+setMethod(".mse", c("matrix", "matrix"),
+  function(observed, predicted, ...) {
+    .metric.matrix(observed, predicted, mse)
+  }
+)
+
+
 setMethod(".mse", c("numeric", "numeric"),
   function(observed, predicted, ...) {
     mean((observed - predicted)^2)
@@ -300,10 +352,34 @@ setMethod(".mse", c("numeric", "numeric"),
 )
 
 
-setMethod(".mse", c("matrix", "matrix"),
+#' @rdname metrics
+#' 
+msle <- function(observed, predicted, ...) {
+  .msle(observed, predicted)
+}
+
+MLMetric(msle) <- list("msle", "Mean Squared Log Error", FALSE)
+
+
+setGeneric(".msle",
+           function(observed, predicted, ...) standardGeneric(".msle"))
+
+
+setMethod(".msle", c("ANY", "ANY"),
+  function(observed, predicted, ...) numeric()
+)
+
+
+setMethod(".msle", c("matrix", "matrix"),
   function(observed, predicted, ...) {
-    n <- ncol(observed)
-    sapply(1:n, function(i) mse(observed[, i], predicted[, i])) / n
+    .metric.matrix(observed, predicted, msle)
+  }
+)
+
+
+setMethod(".msle", c("numeric", "numeric"),
+  function(observed, predicted, ...) {
+    mean((log(1 + observed) - log(1 + predicted))^2)
   }
 )
 
@@ -313,6 +389,8 @@ setMethod(".mse", c("matrix", "matrix"),
 npv <- function(observed, predicted, cutoff = 0.5, ...) {
   .npv(observed, predicted, cutoff = cutoff)
 }
+
+MLMetric(npv) <- list("npv", "Negative Predictive Value", TRUE)
 
 
 setGeneric(".npv",
@@ -338,6 +416,8 @@ ppv <- function(observed, predicted, cutoff = 0.5, ...) {
   .ppv(observed, predicted, cutoff = cutoff)
 }
 
+MLMetric(ppv) <- list("ppv", "Positive Predictive Value", TRUE)
+
 
 setGeneric(".ppv",
            function(observed, predicted, ...) standardGeneric(".ppv"))
@@ -362,12 +442,22 @@ pr_auc <- function(observed, predicted, ...) {
   .pr_auc(observed, predicted)
 }
 
+MLMetric(pr_auc) <- list("pr_auc", "Area Under Precision-Recall Curve", TRUE)
+
+
 setGeneric(".pr_auc",
            function(observed, predicted, ...) standardGeneric(".pr_auc"))
 
 
 setMethod(".pr_auc", c("ANY", "ANY"),
   function(observed, predicted, ...) numeric()
+)
+
+
+setMethod(".pr_auc", c("factor", "matrix"), 
+  function(observed, predicted, ...) {
+    .metric.factor(observed, predicted, pr_auc)
+  }
 )
 
 
@@ -394,6 +484,8 @@ precision <- function(observed, predicted, cutoff = 0.5, ...) {
   .precision(observed, predicted, cutoff = cutoff)
 }
 
+MLMetric(precision) <- list("precision", "Precision", TRUE)
+
 
 setGeneric(".precision",
            function(observed, predicted, ...) standardGeneric(".precision"))
@@ -417,6 +509,8 @@ r2 <- function(observed, predicted, ...) {
   .r2(observed, predicted)
 }
 
+MLMetric(r2) <- list("r2", "Coefficient of Determination", TRUE)
+
 
 setGeneric(".r2",
            function(observed, predicted, ...) standardGeneric(".r2"))
@@ -427,17 +521,16 @@ setMethod(".r2", c("ANY", "ANY"),
 )
 
 
-setMethod(".r2", c("numeric", "numeric"),
+setMethod(".r2", c("matrix", "matrix"),
   function(observed, predicted, ...) {
-    1 - sum((observed - predicted)^2) / sum((observed - mean(observed))^2)
+    .metric.matrix(observed, predicted, r2)
   }
 )
 
 
-setMethod(".r2", c("matrix", "matrix"),
+setMethod(".r2", c("numeric", "numeric"),
   function(observed, predicted, ...) {
-    n <- ncol(observed)
-    sapply(1:n, function(i) r2(observed[, i], predicted[, i])) / n
+    1 - sum((observed - predicted)^2) / sum((observed - mean(observed))^2)
   }
 )
 
@@ -447,6 +540,8 @@ setMethod(".r2", c("matrix", "matrix"),
 recall <- function(observed, predicted, cutoff = 0.5, ...) {
   .recall(observed, predicted, cutoff = cutoff)
 }
+
+MLMetric(recall) <- list("recall", "Recall", TRUE)
 
 
 setGeneric(".recall",
@@ -471,6 +566,8 @@ rmse <- function(observed, predicted, ...) {
   .rmse(observed, predicted)
 }
 
+MLMetric(rmse) <- list("rmse", "Root Mean Squared Error", FALSE)
+
 
 setGeneric(".rmse",
            function(observed, predicted, ...) standardGeneric(".rmse"))
@@ -478,6 +575,13 @@ setGeneric(".rmse",
 
 setMethod(".rmse", c("ANY", "ANY"),
   function(observed, predicted, ...) numeric()
+)
+
+
+setMethod(".rmse", c("matrix", "matrix"),
+  function(observed, predicted, ...) {
+    .metric.matrix(observed, predicted, rmse)
+  }
 )
 
 
@@ -490,9 +594,43 @@ setMethod(".rmse", c("numeric", "numeric"),
 
 #' @rdname metrics
 #' 
+rmsle <- function(observed, predicted, ...) {
+  .rmsle(observed, predicted)
+}
+
+MLMetric(rmsle) <- list("rmsle", "Root Mean Squared Log Error", FALSE)
+
+
+setGeneric(".rmsle",
+           function(observed, predicted, ...) standardGeneric(".rmsle"))
+
+
+setMethod(".rmsle", c("ANY", "ANY"),
+  function(observed, predicted, ...) numeric()
+)
+
+
+setMethod(".rmsle", c("matrix", "matrix"),
+  function(observed, predicted, ...) {
+    .metric.matrix(observed, predicted, rmsle)
+  }
+)
+
+
+setMethod(".rmsle", c("numeric", "numeric"),
+  function(observed, predicted, ...) {
+    sqrt(msle(observed, predicted))
+  }
+)
+
+
+#' @rdname metrics
+#' 
 roc_auc <- function(observed, predicted, times = numeric(), ...) {
   .roc_auc(observed, predicted, times = times)
 }
+
+MLMetric(roc_auc) <- list("roc_auc", "Area Under ROC Curve", TRUE)
 
 
 setGeneric(".roc_auc",
@@ -501,6 +639,13 @@ setGeneric(".roc_auc",
 
 setMethod(".roc_auc", c("ANY", "ANY"),
   function(observed, predicted, ...) numeric()
+)
+
+
+setMethod(".roc_auc", c("factor", "matrix"), 
+  function(observed, predicted, ...) {
+    .metric.factor(observed, predicted, roc_auc)
+  }
 )
 
 
@@ -519,7 +664,7 @@ setMethod(".roc_auc", c("Surv", "matrix"),
   function(observed, predicted, times, ...) {
     stopifnot(ncol(predicted) == length(times))
     
-    metrics <- sapply(seq(times), function(i) {
+    metrics <- sapply(seq_along(times), function(i) {
       survivalROC::survivalROC(observed[, "time"], observed[, "status"],
                                1 - predicted[, i], predict.time = times[i],
                                method = "KM")$AUC
@@ -540,6 +685,8 @@ roc_index <- function(observed, predicted, cutoff = 0.5,
                       f = function(sens, spec) sens + spec, ...) {
   .roc_index(observed, predicted, cutoff = cutoff, f = f)
 }
+
+MLMetric(roc_index) <- list("roc_index", "ROC Index", TRUE)
 
 
 setGeneric(".roc_index",
@@ -566,6 +713,8 @@ sensitivity <- function(observed, predicted, cutoff = 0.5, ...) {
   .sensitivity(observed, predicted, cutoff = cutoff)
 }
 
+MLMetric(sensitivity) <- list("sensitivity", "Sensitivity", TRUE)
+
 
 setGeneric(".sensitivity",
            function(observed, predicted, ...) standardGeneric(".sensitivity"))
@@ -590,6 +739,8 @@ specificity <- function(observed, predicted, cutoff = 0.5, ...) {
   .specificity(observed, predicted, cutoff = cutoff)
 }
 
+MLMetric(specificity) <- list("specificity", "Specificity", TRUE)
+
 
 setGeneric(".specificity",
            function(observed, predicted, ...) standardGeneric(".specificity"))
@@ -613,6 +764,9 @@ setMethod(".specificity", c("factor", "numeric"),
 weighted_kappa2 <- function(observed, predicted, power = 1, ...) {
   .weighted_kappa2(observed, predicted, power = power)
 }
+
+MLMetric(weighted_kappa2) <- list("weighted_kappa2", "Weighted Cohen's Kappa",
+                                  TRUE)
 
 
 setGeneric(".weighted_kappa2", function(observed, predicted, ...)
@@ -640,3 +794,23 @@ setMethod(".weighted_kappa2", c("ordered", "matrix"),
     weighted_kappa2(observed, predicted, power = power)
   }
 )
+
+
+.metric.factor <- function(observed, predicted, f, ...) {
+  mean(sapply(1:ncol(predicted), function(i) {
+    f(factor(observed == levels(observed)[i]), predicted[, i], ...)
+  }))
+}
+
+
+.metric.matrix <- function(observed, predicted, f, ...) {
+  mean(sapply(1:ncol(observed), function(i) {
+    f(observed[, i], predicted[, i], ...)
+  }))
+}
+
+
+mean.SurvMetrics <- function(x, times) {
+  weights <- diff(c(0, times)) / tail(times, 1)
+  sum(weights * x)
+}
