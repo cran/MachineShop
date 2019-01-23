@@ -9,6 +9,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{ncomp}
+#' }
 #' }
 #' 
 #' Further model details can be found in the source link below.
@@ -31,7 +34,12 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
     packages = "pls",
     types = c("factor", "numeric"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    grid = function(x, length, ...) {
+      list(
+        ncomp = 1:min(nrow(x), nvars(x, PLSModel) - 1, length)
+      )
+    },
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       y <- response(formula, data)

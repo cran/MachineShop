@@ -17,7 +17,12 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{n.trees}, \code{interaction.depth}, \code{shrinkage}*,
+#'   \code{n.minobsinnode}*
 #' }
+#' }
+#' * included only in randomly sampled grid points
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -40,7 +45,18 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
     packages = "gbm",
     types = c("factor", "numeric", "Surv"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "terms"),
+    grid = function(x, length, random, ...) {
+      params <- list(
+        n.trees = round(seq_range(0, 50, c(1, 1000), length + 1)),
+        interaction.depth = 1:min(length, 10)
+      )
+      if (random) {
+        params$shrinkage <- seq(0.001, 0.1, length = length)
+        params$n.minobsinnode <- 1:min(nrow(x), 20)
+      }
+      params
+    },
+    design = "terms",
     fit = function(formula, data, weights, distribution = NULL, ...) {
       if (is.null(distribution)) {
         distribution <- switch_class(response(formula, data),
@@ -53,16 +69,16 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
     },
     predict = function(object, newdata, fitbits, times, ...) {
       if (object$distribution$name == "coxph") {
-        new_neg_risk <- -exp(predict(object, newdata = newdata,
-                                     n.trees = object$n.trees, type = "link"))
-        if (length(times)) {
-          y <- response(fitbits)
-          risk <- exp(predict(object, n.trees = object$n.trees, type = "link"))
-          cumhaz <- basehaz(y, risk, times)
-          exp(new_neg_risk %o% cumhaz)
-        } else {
-          new_neg_risk
-        }
+        y <- response(fitbits)
+        risk <- exp(predict(object, n.trees = object$n.trees, type = "link"))
+        new_risk <- exp(predict(object, newdata = newdata,
+                                n.trees = object$n.trees, type = "link"))
+
+        n <- length(times)
+        if (n == 0) times <- surv_times(y)
+        
+        pred <- exp(new_risk %o% -basehaz(y, risk, times))
+        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
       } else {
         predict(object, newdata = newdata, n.trees = object$n.trees,
                 type = "response")

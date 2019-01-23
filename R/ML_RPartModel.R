@@ -17,6 +17,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#' \code{cp}
+#' }
 #' }
 #' 
 #' Further model details can be found in the source link below.
@@ -40,7 +43,13 @@ RPartModel <- function(minsplit = 20, minbucket = round(minsplit / 3),
     packages = c("rpart", "partykit"),
     types = c("factor", "numeric", "Surv"),
     params = list(control = as.call(c(.(list), params(environment())))),
-    nvars = function(data) nvars(data, design = "terms"),
+    grid = function(x, length, ...) {
+      cptable <- fit(x, model = RPartModel(cp = 0))$cptable[, "CP"]
+      list(
+        cp = seq(min(cptable), max(cptable), length = length)
+      )
+    },
+    design = "terms",
     fit = function(formula, data, weights, ...) {
       method <- switch_class(response(formula, data),
                              "factor" = "class",
@@ -50,13 +59,17 @@ RPartModel <- function(minsplit = 20, minbucket = round(minsplit / 3),
                    method = method, ...)
     },
     predict = function(object, newdata, fitbits, times, ...) {
-      if (is.Surv(response(fitbits)) && length(times)) {
-        predict(partykit::as.party(object), newdata = newdata,
-                type = "prob") %>%
-          lapply(function(fit) predict(fit, times)) %>%
-          (function(args) do.call(rbind, args))
+      y <- response(fitbits)
+      if (is.Surv(y)) {
+        n <- length(times)
+        if (n == 0) times <- surv_times(y)
+        
+        pred <- partykit::as.party(object) %>%
+          predict(newdata = newdata, type = "prob") %>%
+          sapply(function(fit) predict(fit, times)) %>% t
+        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
       } else {
-        -predict(object, newdata = newdata)
+        predict(object, newdata = newdata)
       }
     },
     varimp = function(object, ...) {

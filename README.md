@@ -6,13 +6,46 @@
 ## Overview
 
 `MachineShop` is a meta-package for statistical and machine learning
-with a common interface for model fitting, prediction, performance
+with a unified interface for model fitting, prediction, performance
 assessment, and presentation of results. Support is provided for
 predictive modeling of numerical, categorical, and censored
 time-to-event outcomes, including those listed in the table below, and
 for resample (bootstrap, cross-validation, and split training-test sets)
-estimation of model
-performance.
+estimation of model performance.
+
+## Features
+
+  - Unified and concise interface for model fitting, prediction, and
+    performance assessment.
+  - Currently supports 49 established models from 25 **R** packages.
+  - Ensemble modeling with stacked regression and super learners.
+  - Modeling of response variables types: binary factors, multi-class
+    nominal and ordinal factors, numeric vectors and matrices, and
+    censored time-to-event survival.
+  - Model specification with traditional formulas and with flexible
+    pre-processing
+    [recipes](https://cran.r-project.org/package=recipes).
+  - Resample estimation of predictive performance, including
+    cross-validation, bootstrap resampling, and split training-test set
+    validation.
+  - Parallel execution of resampling algorithms.
+  - Choices of performance metrics: accuracy, areas under ROC and
+    precision-recall curves, Brier score, coefficient of determination
+    (R squared), concordance index, cross entropy, F-score, Gini
+    coefficient, unweighted and weighted Cohen’s kappa, mean absolute
+    error, mean squared error, mean squared log error, positive and
+    negative predictive values, and precision and recall.
+  - Tabular and graphical performance summaries: calibration curves,
+    confusion matrices, partial dependence plots, lift curves, and
+    variable importance.
+  - Model tuning over automatically generated grids of parameter values
+    and random sampling of grid points.
+  - Model selection and comparisons for any combination of models and
+    model parameter values.
+  - User-definable models and performance
+metrics.
+
+## Models
 
 <div>
 
@@ -135,6 +168,40 @@ f
 </td>
 
 <td style="text-align:center;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+Bayesian Additive Regression Trees
+
+</td>
+
+<td style="text-align:center;">
+
+BARTModel
+
+</td>
+
+<td style="text-align:center;">
+
+f
+
+</td>
+
+<td style="text-align:center;">
+
+n
+
+</td>
+
+<td style="text-align:center;">
+
+S
 
 </td>
 
@@ -1719,18 +1786,19 @@ fo <- Species ~ .
 
 ## Models by response type
 modelinfo(factor(0)) %>% names
-#>  [1] "AdaBagModel"       "AdaBoostModel"     "C50Model"         
-#>  [4] "CForestModel"      "EarthModel"        "FDAModel"         
-#>  [7] "GBMModel"          "GLMNetModel"       "KNNModel"         
-#> [10] "LDAModel"          "LMModel"           "MDAModel"         
-#> [13] "NaiveBayesModel"   "NNetModel"         "PDAModel"         
-#> [16] "PLSModel"          "QDAModel"          "RandomForestModel"
-#> [19] "RangerModel"       "RPartModel"        "StackedModel"     
-#> [22] "SuperModel"        "SVMModel"          "SVMANOVAModel"    
-#> [25] "SVMBesselModel"    "SVMLaplaceModel"   "SVMLinearModel"   
-#> [28] "SVMPolyModel"      "SVMRadialModel"    "SVMSplineModel"   
-#> [31] "SVMTanhModel"      "TreeModel"         "XGBModel"         
-#> [34] "XGBDARTModel"      "XGBLinearModel"    "XGBTreeModel"
+#>  [1] "AdaBagModel"       "AdaBoostModel"     "BARTModel"        
+#>  [4] "C50Model"          "CForestModel"      "EarthModel"       
+#>  [7] "FDAModel"          "GBMModel"          "GLMNetModel"      
+#> [10] "KNNModel"          "LDAModel"          "LMModel"          
+#> [13] "MDAModel"          "NaiveBayesModel"   "NNetModel"        
+#> [16] "PDAModel"          "PLSModel"          "QDAModel"         
+#> [19] "RandomForestModel" "RangerModel"       "RPartModel"       
+#> [22] "StackedModel"      "SuperModel"        "SVMModel"         
+#> [25] "SVMANOVAModel"     "SVMBesselModel"    "SVMLaplaceModel"  
+#> [28] "SVMLinearModel"    "SVMPolyModel"      "SVMRadialModel"   
+#> [31] "SVMSplineModel"    "SVMTanhModel"      "TreeModel"        
+#> [34] "XGBModel"          "XGBDARTModel"      "XGBLinearModel"   
+#> [37] "XGBTreeModel"
 
 ## Model-specific information
 modelinfo(GBMModel)
@@ -1748,6 +1816,9 @@ modelinfo(GBMModel)
 #> function (distribution = NULL, n.trees = 100, interaction.depth = 1, 
 #>     n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5) 
 #> NULL
+#> 
+#> $GBMModel$grid
+#> [1] TRUE
 #> 
 #> $GBMModel$varimp
 #> [1] TRUE

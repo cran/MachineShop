@@ -9,7 +9,7 @@
 Meta-package for statistical and machine learning with a common interface for model fitting, prediction, performance assessment, and presentation of results.  Supports predictive modeling of numerical, categorical, and censored time-to-event outcomes and resample (bootstrap and cross-validation) estimation of model performance.
 }
 \details{
-\pkg{MachineShop} provides a common interface to machine learning and
+\pkg{MachineShop} provides a unified interface to machine learning and
 statistical models provided by other packages.  Supported models are
 summarized in the table below according to the types of response variables
 with which each can be used.  Additional model information can be obtained
@@ -20,6 +20,7 @@ with the \code{\link{modelinfo}} function.
   \tab \strong{Survival} \cr
   \code{\link{AdaBagModel}}         \tab f   \tab     \tab   \cr
   \code{\link{AdaBoostModel}}       \tab f   \tab     \tab   \cr
+  \code{\link{BARTModel}}           \tab f   \tab n   \tab S \cr
   \code{\link{BARTMachineModel}}    \tab b   \tab n   \tab   \cr
   \code{\link{BlackBoostModel}}     \tab b   \tab n   \tab S \cr
   \code{\link{C50Model}}            \tab f   \tab     \tab   \cr

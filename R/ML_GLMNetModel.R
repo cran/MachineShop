@@ -26,10 +26,13 @@
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{matrix}, \code{numeric},
 #' \code{Surv}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{lambda}, \code{alpha}
+#' }
 #' }
 #' 
-#' Default values for the \code{NULL} arguments and further model
-#' details can be found in the source link below.
+#' Default values for the \code{NULL} arguments and further model details can be
+#' found in the source link below.
 #' 
 #' @return \code{MLModel} class object.
 #' 
@@ -60,8 +63,19 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
     packages = "glmnet",
     types = c("factor", "matrix", "numeric", "Surv"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
-    fit = function(formula, data, weights, family = NULL, ...) {
+    grid = function(x, length, ...) {
+      model <- GLMNetModel(lambda = NULL)
+      model@params$nlambda <- 3
+      modelfit <- fit(x, model = model)
+      list(
+        lambda = exp(seq(log(min(modelfit$lambda)),
+                         log(max(modelfit$lambda)),
+                         length = length)),
+        alpha = seq(0.1, 1, length = length)
+      )
+    },
+    design = "model.matrix",
+    fit = function(formula, data, weights, family = NULL, nlambda = 1, ...) {
       terms <- extract(formula, data)
       x <- terms$x
       y <- terms$y
@@ -74,7 +88,7 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
                                "Surv" = "cox")
       }
       modelfit <- glmnet::glmnet(x, y, weights = weights, family = family,
-                                 nlambda = 1, ...)
+                                 nlambda = nlambda, ...)
       modelfit$x <- x
       modelfit
     },
@@ -82,17 +96,16 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
       y <- response(fitbits)
       newx <- extract(formula(fitbits)[-2], newdata)$x
       if (is.Surv(y)) {
-        new_neg_risk <-
-          -exp(predict(object, newx = newx, type = "link")) %>% drop
-        if (length(times)) {
-          risk <- exp(predict(object, newx = object$x, type = "link")) %>% drop
-          cumhaz <- basehaz(y, risk, times)
-          exp(new_neg_risk %o% cumhaz)
-        } else {
-          new_neg_risk
-        }
+        risk <- exp(predict(object, newx = object$x, type = "link"))[, 1]
+        new_risk <- exp(predict(object, newx = newx, type = "link"))[, 1]
+
+        n <- length(times)
+        if (n == 0) times <- surv_times(y)
+        
+        pred <- exp(new_risk %o% -basehaz(y, risk, times))
+        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
       } else {
-        predict(object, newx = newx, type = "response")
+        predict(object, newx = newx, s = object$lambda[1], type = "response")
       }
     },
     varimp = function(object, ...) {

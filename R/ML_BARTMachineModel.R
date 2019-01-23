@@ -1,4 +1,4 @@
-#' Bayesian Addivitive Regression Trees Model
+#' Bayesian Additive Regression Trees Model
 #'
 #' Builds a BART model for regression or classification.
 #'
@@ -23,6 +23,9 @@
 #' @details 
 #' \describe{
 #' \item{Response Types:}{\code{binary}, \code{numeric}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{alpha}, \code{beta}, \code{k}, \code{nu}
+#' }
 #' }
 #' 
 #' Further model details can be found in the source link below.
@@ -61,7 +64,15 @@ BARTMachineModel <- function(num_trees = 50, num_burn = 250, num_iter = 1000,
     packages = "bartMachine",
     types = c("binary", "numeric"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    grid = function(x, length, ...) {
+      list(
+        alpha = seq(0.9, 0.99, length = length),
+        beta = seq(1, 3, length = length),
+        k = 1:min(length, 10) + 1,
+        nu = 1:min(length, 10) + 1
+      )
+    },
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       terms <- extract(formula, data)

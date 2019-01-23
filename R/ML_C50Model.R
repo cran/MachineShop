@@ -27,6 +27,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{trials}, \code{rules}, \code{winnow}
+#' }
 #' }
 #' 
 #' Latter arguments are passed to \code{\link[C50]{C5.0Control}}.
@@ -65,7 +68,14 @@ C50Model <- function(trials = 1, rules = FALSE, subset = TRUE, bands = 0,
     packages = "C50",
     types = "factor",
     params = params,
-    nvars = function(data) nvars(data, design = "terms"),
+    grid = function(x, length, ...) {
+      list(
+        trials = c(1, round(seq_range(0, 10, c(2, 100), length))),
+        rules = c(FALSE, TRUE),
+        winnow = c(FALSE, TRUE)
+      )
+    },
+    design = "terms",
     fit = function(formula, data, weights, ...) {
       C50::C5.0(formula, data = data, weights = weights, ...)
     },

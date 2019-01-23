@@ -43,18 +43,20 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
     packages = "rms",
     types = "Surv",
     params = params,
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       rms::cph(formula, data = data, weights = weights, singular.ok = TRUE,
                surv = TRUE, y = TRUE, ...)
     },
     predict = function(object, newdata, times, ...) {
-      if (length(times)) {
-        rms::survest(object, newdata = newdata, times = times,
-                     conf.int = FALSE, se.fit = FALSE)$surv %>% as.matrix
-      } else {
-        -exp(predict(object, newdata = newdata, type = "lp"))
-      }
+      y <- object$y
+      
+      n <- length(times)
+      if (n == 0) times <- surv_times(y)
+      
+      pred <- rms::survest(object, newdata = newdata, times = times,
+                           conf.int = FALSE, se.fit = FALSE)$surv %>% as.matrix
+      if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
     },
     varimp = function(object, ...) varimp_pchisq(object)
   )
@@ -96,7 +98,7 @@ CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"), ...,
     packages = c(stepmodel@packages, "MASS"),
     types = stepmodel@types,
     params = c(stepmodel@params, params),
-    nvars = stepmodel@nvars,
+    design = stepmodel@design,
     fit = function(formula, data, weights, direction = "both", scope = list(),
                    k = 2, trace = 1, steps = 1000, ...) {
       environment(formula) <- environment()

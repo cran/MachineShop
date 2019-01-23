@@ -27,7 +27,11 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{mtry}, \code{min.node.size}*, \code{splitrule}*
 #' }
+#' }
+#' * included only in randomly sampled grid points
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -59,7 +63,21 @@ RangerModel <- function(num.trees = 500, mtry = NULL,
     packages = "ranger",
     types = c("factor", "numeric", "Surv"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "terms"),
+    grid = function(x, length, random, ...) {
+      params <- list(
+        mtry = seq_nvars(x, RangerModel, length)
+      )
+      if (random) {
+        params$min.node.size <- 1:min(nrow(x), 20)
+        params$splitrule <- if (is.factor(response(x))) {
+          c("gini", "extratrees")
+        } else {
+          c("variance", "extratrees", "maxstat")
+        }
+      }
+      params
+    },
+    design = "terms",
     fit = function(formula, data, weights, ...) {
       ranger::ranger(formula, data = data, case.weights = weights, 
                      probability = is(response(formula, data), "factor"), ...)
@@ -71,10 +89,7 @@ RangerModel <- function(num.trees = 500, mtry = NULL,
           indices <- findInterval(times, pred$unique.death.times)
           pred$survival[, indices, drop = FALSE]
         } else {
-          x <- cbind(1, pred$survival)
-          x[, ncol(x)] <- 0
-          fx <- pred$unique.death.times
-          -drop(fx %*% diff(t(x)))
+          surv_mean(pred$unique.death.times, pred$survival)
         }
       } else {
         pred$predictions

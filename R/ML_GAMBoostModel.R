@@ -22,6 +22,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{binary}, \code{numeric}, \code{Surv}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{mstop}
+#' }
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -58,7 +61,12 @@ GAMBoostModel <- function(family = NULL,
     packages = "mboost",
     types = c("binary", "numeric", "Surv"),
     params = params,
-    nvars = function(data) nvars(data, design = "terms"),
+    grid = function(x, length, ...) {
+      list(
+        mstop = round(seq_range(0, 50, c(1, 1000), length + 1))
+      )
+    },
+    design = "terms",
     fit = function(formula, data, weights, family = NULL, ...) {
       attachment(list(
         bbs = mboost::bbs,
@@ -79,16 +87,15 @@ GAMBoostModel <- function(family = NULL,
     },
     predict = function(object, newdata, times, ...) {
       if (object$family@name == "Cox Partial Likelihood") {
-        new_neg_risk <-
-          -exp(predict(object, newdata = newdata, type = "link")) %>% drop
-        if (length(times)) {
-          y <- object$response
-          risk <- exp(predict(object, type = "link")) %>% drop
-          cumhaz <- basehaz(y, risk, times)
-          exp(new_neg_risk %o% cumhaz)
-        } else {
-          new_neg_risk
-        }
+        y <- object$response
+        risk <- drop(exp(predict(object, type = "link")))
+        new_risk <- drop(exp(predict(object, newdata = newdata, type = "link")))
+        
+        n <- length(times)
+        if (n == 0) times <- surv_times(y)
+        
+        pred <- exp(new_risk %o% -basehaz(y, risk, times))
+        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
       } else {
         predict(object, newdata = newdata, type = "response")
       }

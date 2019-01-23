@@ -62,7 +62,7 @@ control <- CVControl(
 )
 
 ## Metrics of interest
-metrics <- c("ROC.mean", "Brier.mean")
+metrics <- c("ROCAUC.mean", "Brier.mean")
 
 ## ------------------------------------------------------------------------
 library(doParallel)

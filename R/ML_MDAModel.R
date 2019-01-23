@@ -24,6 +24,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{subclasses}
+#' }
 #' }
 #' 
 #' The \code{\link{predict}} function for this model additionally accepts the
@@ -54,7 +57,12 @@ MDAModel <- function(subclasses = 3, sub.df = NULL, tot.df = NULL,
     packages = "mda",
     types = "factor",
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    grid = function(x, length, ...) {
+      list(
+        subclasses = 1:min(length, 10) + 1
+      )
+    },
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       mda::mda(formula, data = data, ...)

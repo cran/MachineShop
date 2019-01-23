@@ -29,6 +29,7 @@ export(.,
        expand.model,
        fit,
        lift,
+       Grid,
        Lift,
        metricinfo,
        ModelFrame,
@@ -77,6 +78,7 @@ export(MLControl,
        MLModel,
        AdaBagModel,
        AdaBoostModel,
+       BARTModel,
        BARTMachineModel,
        BlackBoostModel,
        C50Model,
@@ -132,6 +134,7 @@ S3method(fit, formula)
 S3method(fit, recipe)
 S3method(ModelFrame, formula)
 S3method(ModelFrame, matrix)
+S3method(performance, ConfusionMatrix)
 S3method(performance, factor)
 S3method(performance, matrix)
 S3method(performance, numeric)

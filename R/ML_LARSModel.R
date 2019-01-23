@@ -18,6 +18,9 @@
 #' @details 
 #' \describe{
 #' \item{Response Types:}{\code{numeric}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{step}
+#' }
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -45,7 +48,12 @@ LARSModel <- function(type = c("lasso", "lar", "forward.stagewise", "stepwise"),
     packages = "lars",
     types = "numeric",
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    grid = function(x, length, ...) {
+      list(
+        step = seq_nvars(x, LARSModel, length)
+      )
+    },
+    design = "model.matrix",
     fit = function(formula, data, weights, step = NULL, ...) {
       assert_equal_weights(weights)
       terms <- extract(formula, data)

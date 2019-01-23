@@ -17,7 +17,19 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters}{
+#' \itemize{
+#'   \item XGBDARTModel: \code{nrounds}, \code{max_depth}, \code{eta},
+#'   \code{gamma}*, \code{min_child_weight}*, \code{subsample},
+#'   \code{colsample_bytree}, \code{rate_drop}, \code{skip_drop}
+#'   \item XGBLinearModel: \code{nrounds}, \code{lambda}, \code{alpha}
+#'   \item XGBTreeModel: \code{nrounds}, \code{max_depth}, \code{eta},
+#'   \code{gamma}*, \code{min_child_weight}*, \code{subsample},
+#'   \code{colsample_bytree}
 #' }
+#' }
+#' }
+#' * included only in randomly sampled grid points
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -49,7 +61,7 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
     packages = "xgboost",
     types = c("factor", "numeric"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    design = "model.matrix",
     fit = function(formula, data, weights, params, ...) {
       terms <- extract(formula, data)
       x <- terms$x
@@ -159,5 +171,61 @@ XGBTreeModel <- function(objective = NULL, base_score = 0.5,
   model <- do.call(XGBModel, args, quote = TRUE)
   model@name <- name
   model@label <- label
+  
+  params <- switch(booster,
+                   "dart" = list(
+                     nrounds = NULL,
+                     max_depth = NULL,
+                     eta = NULL,
+                     gamma = NULL,
+                     min_child_weight = NULL,
+                     subsample = NULL,
+                     colsample_bytree = NULL,
+                     rate_drop = NULL,
+                     skip_drop = NULL
+                   ),
+                   "gblinear" = list(
+                     nrounds = NULL,
+                     lambda = NULL,
+                     alpha = NULL
+                   ),
+                   "gbtree" = list(
+                     nrounds = NULL,
+                     max_depth = NULL,
+                     eta = NULL,
+                     gamma = NULL,
+                     min_child_weight = NULL,
+                     subsample = NULL,
+                     colsample_bytree = NULL
+                   ))
+  
+  if (length(params)) {
+    model@grid <- function(x, length, random, ...) {
+      params <- params %>%
+        set_param("nrounds",
+                  round(seq_range(0, 50, c(1, 1000), length + 1))) %>%
+        set_param("max_depth", 1:min(length, 10)) %>%
+        set_param("eta", c(0.3, 0.4)) %>%
+        set_param("subsample", seq(0.25, 1, length = length)) %>%
+        set_param("colsample_bytree", c(0.6, 0.8)) %>%
+        set_param("rate_drop", c(0.01, 0.50)) %>%
+        set_param("skip_drop", c(0.05, 0.95)) %>%
+        set_param("lambda", c(10^-seq_inner(0, 5, length - 1), 0)) %>%
+        set_param("alpha", c(10^-seq_inner(0, 5, length - 1), 0))
+      
+      if (random) {
+        params <- params %>%
+          set_param("eta", seq(0.001, 0.6, length = length)) %>%
+          set_param("gamma", seq(0, 10, length = length)) %>%
+          set_param("min_child_weight", 0:20) %>%
+          set_param("colsample_bytree", seq(0.3, 0.8, length = length)) %>%
+          set_param("rate_drop", seq(0.01, 0.50, length = length)) %>%
+          set_param("skip_drop", seq(0.05, 0.95, length = length))
+      }
+      
+      params
+    }
+  }
+  
   model
 }

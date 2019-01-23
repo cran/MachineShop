@@ -19,6 +19,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{mfinal}, \code{maxdepth}
+#' }
 #' }
 #' 
 #' Further model details can be found in the source link below.
@@ -47,7 +50,13 @@ AdaBagModel <- function(mfinal = 100, minsplit = 20,
     packages = "adabag",
     types = "factor",
     params = params,
-    nvars = function(data) nvars(data, design = "terms"),
+    grid = function(x, length, ...) {
+      list(
+        mfinal = round(seq_range(0, 25, c(1, 200), length + 1)),
+        maxdepth = 1:min(length, 30)
+      )
+    },
+    design = "terms",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       data <- model.frame(formula, data)

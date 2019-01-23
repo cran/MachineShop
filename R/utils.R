@@ -109,17 +109,6 @@ attachment <- function(what, pos = 2L,
 }
 
 
-basehaz <- function(y, risk, times) {
-  y_times <- unique(y[, "time"]) %>% sort
-  nrisk <- rowsum(risk, y[, "time"]) %>% rev %>% cumsum %>% rev
-  nevent <- rowsum(y[, "status"], y[, "time"])[, 1]
-  cumhaz <- cumsum(nevent / nrisk) %>% structure(names = NULL)
-  idx <- approx(y_times, seq_along(y_times), times, method = "constant",
-                f = 0, yleft = 0, yright = length(y_times))$y
-  c(0, cumhaz)[idx + 1]
-}
-
-
 extract <- function(formula, data, na.action = na.pass) {
   mf <- model.frame(formula, data, na.action = na.action)
   list(x = model.matrix(formula, mf)[, -1, drop = FALSE],
@@ -242,15 +231,16 @@ match_indices <- function(indices, choices) {
 }
 
 
-nvars <- function(data, design = c("terms", "model.matrix")) {
-  modelterms <- terms(data)
-  switch(match.arg(design),
-         "terms" = length(labels(modelterms)),
+nvars <- function(x, model) {
+  model <- getMLObject(model, "MLModel")
+  model_terms <- terms(x)
+  switch(model@design,
          "model.matrix" = {
-           fo <- formula(modelterms)
-           mf <- model.frame(fo, data)
-           ncol(model.matrix(fo, mf)) - attr(modelterms, "intercept")
-         }
+           fo <- formula(model_terms)
+           mf <- model.frame(fo, x[1, , drop = FALSE])
+           ncol(model.matrix(fo, mf)) - attr(model_terms, "intercept")
+         },
+         "terms" = length(labels(model_terms))
   )
 }
 
@@ -288,6 +278,45 @@ requireModelNamespaces <- function(packages) {
   pass <- sapply(packages, requireNamespace)
   if (!all(pass)) stop("install required packages: ", toString(packages[!pass]))
   invisible(pass)
+}
+
+
+seq_inner <- function(from, to, length) {
+  x <- seq(from, to, length = length + 2)
+  x[-c(1, length + 2)]
+}
+
+
+seq_range <- function(from, by, lim, length) {
+  if (length > 0) {
+    to <- min(from + by * (length - 1), lim[2])
+    x <- seq(from, to, length = length)
+    x[x >= lim[1]]
+  } else {
+    seq(from, length = length)
+  }
+}
+
+
+seq_nvars <- function(x, model, length) {
+  nvars <- nvars(x, model)
+  length <- min(length, nvars)
+  vals <- if (length > 1) {
+    if (nvars < 500) {
+      seq(2, nvars, length = length)
+    } else {
+      2^seq(1, log2(nvars), length = length)
+    }
+  } else {
+    numeric()
+  }
+  round(vals)
+}
+
+    
+set_param <- function(params, name, value) {
+  if (name %in% names(params)) params[[name]] <- value
+  params
 }
 
 

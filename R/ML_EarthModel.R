@@ -16,7 +16,11 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{nprune}, \code{degree}*
 #' }
+#' }
+#' * included only in randomly sampled grid points
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -52,7 +56,16 @@ EarthModel <- function(pmethod = c("backward", "none", "exhaustive", "forward",
     packages = "earth",
     types = c("factor", "numeric"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    grid = function(x, length, random, ...) {
+      modelfit <- fit(x, model = EarthModel(pmethod = "none"))
+      max_terms <- min(2 + 0.75 * nrow(modelfit$dirs), 200)
+      params <- list(
+        nprune = round(seq(2, max_terms, length = length))
+      )
+      if (random) params$degree <- 1:2
+      params
+    },
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       attachment(list(
         contr.earth.response = earth::contr.earth.response

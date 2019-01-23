@@ -13,7 +13,11 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordinal}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{k}, \code{distance}*, \code{kernel}*
 #' }
+#' }
+#' * included only in randomly sampled grid points
 #' 
 #' Further model details can be found in the source link below.
 #' 
@@ -38,7 +42,19 @@ KNNModel <- function(k = 7, distance = 2, scale = TRUE,
     packages = "kknn",
     types = c("factor", "numeric", "ordered"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    grid = function(x, length, random, ...) {
+      params <- list(
+        k = round(seq_range(0, 5, c(1, nrow(x) / 3), length + 1))
+      )
+      if (random) {
+        params$distance <- seq(0, 3, length = length)
+        params$kernel <- c("optimal", "biweight", "cos", "epanechnikov",
+                           "gaussian", "inv", "rank", "rectangular",
+                           "triangular", "triweight")
+      }
+      params
+    },
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       list(formula = formula, train = data, ...)

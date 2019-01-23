@@ -13,6 +13,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{dimen}
+#' }
 #' }
 #' 
 #' The \code{\link{predict}} function for this model additionally accepts the
@@ -47,7 +50,12 @@ LDAModel <- function(prior = NULL, tol = 1e-4,
     packages = "MASS",
     types = "factor",
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    grid = function(x, length, ...) {
+      list(
+        dimen = 1:min(nlevels(response(x)) - 1, nvars(x, LDAModel), length)
+      )
+    },
+    design = "model.matrix",
     fit = function(formula, data, weights, dimen, use, ...) {
       assert_equal_weights(weights)
       modelfit <- MASS::lda(formula, data = data, ...)

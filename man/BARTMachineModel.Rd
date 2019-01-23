@@ -2,7 +2,7 @@
 % Please edit documentation in R/ML_BARTMachineModel.R
 \name{BARTMachineModel}
 \alias{BARTMachineModel}
-\title{Bayesian Addivitive Regression Trees Model}
+\title{Bayesian Additive Regression Trees Model}
 \usage{
 BARTMachineModel(num_trees = 50, num_burn = 250, num_iter = 1000,
   alpha = 0.95, beta = 2, k = 2, q = 0.9, nu = 3,
@@ -45,6 +45,9 @@ Builds a BART model for regression or classification.
 \details{
 \describe{
 \item{Response Types:}{\code{binary}, \code{numeric}}
+\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+  \code{alpha}, \code{beta}, \code{k}, \code{nu}
+}
 }
 
 Further model details can be found in the source link below.

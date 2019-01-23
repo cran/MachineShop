@@ -20,6 +20,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{mtry}
+#' }
 #' }
 #' 
 #' Supplied arguments are passed to \code{\link[party]{cforest_control}}.
@@ -51,24 +54,25 @@ CForestModel <- function(teststat = c("quad", "max"),
     packages = "party",
     types = c("factor", "numeric", "Surv"),
     params = list(controls = as.call(c(.(party::cforest_control), args))),
-    nvars = function(data) nvars(data, design = "terms"),
+    grid = function(x, length, ...) {
+      list(
+        mtry = seq_nvars(x, CForestModel, length)
+      )
+    },
+    design = "terms",
     fit = function(formula, data, weights, ...) {
       party::cforest(formula, data = data, weights = weights, ...)
     },
     predict = function(object, newdata, fitbits, times, ...) {
       if (object@responses@is_censored) {
-        pred <- predict(object, newdata = newdata, type = "prob")
-        if (length(times)) {
-          pred_list <- lapply(pred, function(fit) predict(fit, times))
-          do.call(rbind, pred_list)
-        } else {
-          max_time <- max(response(fitbits)[, "time"])
-          sapply(pred, function(fit) {
-            x <- c(1, fit$surv, 0)
-            fx <- c(fit$time, max_time)
-            -sum(fx * diff(x))
-          })
-        }
+        y <- response(fitbits)
+        
+        n <- length(times)
+        if (n == 0) times <- surv_times(y)
+        
+        pred <- predict(object, newdata = newdata, type = "prob") %>%
+          sapply(function(fit) predict(fit, times)) %>% t
+        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
       } else {
         predict(object, newdata = newdata, type = "prob") %>%
           unlist %>%

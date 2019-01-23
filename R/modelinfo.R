@@ -9,8 +9,9 @@
 #' 
 #' @return List of named models containing a descriptive \code{"label"}, source
 #' \code{"packages"}, supported response variable \code{"types"}, the
-#' constructor \code{"arguments"}, and whether a \code{"varimp"} function is
-#' implemented for each.
+#' constructor \code{"arguments"}, whether there is a pre-defined \code{"grid"}
+#' of tuning parameters, and whether a \code{"varimp"} function is implemented
+#' for each.
 #' 
 #' @seealso \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
 #' 
@@ -27,7 +28,7 @@ modelinfo <- function(...) {
   if (length(args) == 0) args <- as.list(.model_names)
   info <- do.call(.modelinfo, args)
   
-  is_type <- !sapply(info, is, class2 = "list")
+  is_type <- !mapply(is, info, "list")
   if (any(is_type)) {
     info_models <- if (all(is_type)) modelinfo() else info[!is_type]
     info_types <- do.call(.modelinfo_types, info[is_type])
@@ -41,6 +42,7 @@ modelinfo <- function(...) {
 
 .model_names <- c("AdaBagModel",
                   "AdaBoostModel",
+                  "BARTModel",
                   "BARTMachineModel",
                   "BlackBoostModel",
                   "C50Model",
@@ -125,6 +127,7 @@ modelinfo <- function(...) {
     packages = x@packages,
     types = x@types,
     arguments = args(get(x@name)),
+    grid = !is.null(body(x@grid)),
     varimp = !is.null(body(fitbit(x, "varimp")))
   )), names = x@name)
   if (length(list(...))) c(info, .modelinfo(...)) else info

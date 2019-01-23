@@ -45,8 +45,8 @@ fit.formula <- function(x, data, model, ...) {
 #' 
 #' @details
 #' User-specified case weights may be specified for
-#' \code{\link[MachineShop:ModelFrame-methods]{ModelFrames}} upon
-#' creation with the \code{weights} argument in its constructor.
+#' \code{\link[=ModelFrame]{ModelFrames}} upon creation with the \code{weights}
+#' argument in its constructor.
 #' 
 fit.ModelFrame <- function(x, model, ...) {
   .fit(getMLObject(model, "MLModel"), x)
@@ -86,7 +86,7 @@ fit.recipe <- function(x, model, ...) {
     if (is.null(weights)) weights <- rep(1, nrow(mf))
     y <- y
     nobs <- nrow(mf)
-    nvars <- model@nvars(mf[1, , drop = FALSE])
+    nvars <- nvars(mf, model)
   }), parent = globalenv())
   environment(envir$formula) <- envir
   

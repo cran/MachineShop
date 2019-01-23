@@ -35,10 +35,10 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
   MLModel(
     name = "SurvRegModel",
     label = "Parametric Survival",
-    packages = "rms",
+    packages = c("rms", "Hmisc"),
     types = "Surv",
     params = params,
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       rms::psm(formula, data = data, weights = weights, ...)
     },
@@ -48,7 +48,7 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
                              conf.int = FALSE)
         if (is(pred, "survest.psm")) as.matrix(pred$surv) else pred
       } else {
-        exp(predict(object, newdata = newdata, type = "lp"))
+        Hmisc::Mean(object)(predict(object, newdata = newdata, type = "lp"))
       }
     },
     varimp = function(object, ...) varimp_pchisq(object)
@@ -105,7 +105,7 @@ SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
     packages = c(stepmodel@packages, "MASS"),
     types = stepmodel@types,
     params = c(stepmodel@params, params),
-    nvars = stepmodel@nvars,
+    design = stepmodel@design,
     fit = function(formula, data, weights, direction = "both", scope = list(),
                    k = 2, trace = 1, steps = 1000, ...) {
       environment(formula) <- environment()

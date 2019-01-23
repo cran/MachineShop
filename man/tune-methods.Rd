@@ -9,15 +9,15 @@
 \usage{
 tune(x, ...)
 
-\method{tune}{formula}(x, data, models, grid = data.frame(),
+\method{tune}{formula}(x, data, models, grid = 3, fixed = NULL,
   control = CVControl, metrics = NULL, stat = mean,
   maximize = TRUE, ...)
 
-\method{tune}{ModelFrame}(x, models, grid = data.frame(),
+\method{tune}{ModelFrame}(x, models, grid = 3, fixed = NULL,
   control = CVControl, metrics = NULL, stat = mean,
   maximize = TRUE, ...)
 
-\method{tune}{recipe}(x, models, grid = data.frame(),
+\method{tune}{recipe}(x, models, grid = 3, fixed = NULL,
   control = CVControl, metrics = NULL, stat = mean,
   maximize = TRUE, ...)
 }
@@ -31,11 +31,16 @@ weights; a \code{formula}; or a \code{recipe.}}
 \item{data}{\code{data.frame} containing observed predictors and outcomes.}
 
 \item{models}{\code{MLModel} function, function name, object or list of the
-aforementioned elements such as that returned by \code{\link{expand.model}}.}
+aforementioned elements, such as that returned by \code{\link{expand.model}}.}
 
-\item{grid}{\code{data.frame} containing parameter values over which to
-evaluate \code{models} when a single constructor is specified.  Ignored in
-the case of a list of models.}
+\item{grid}{\code{data.frame} containing parameter values at which to
+evaluate a single model supplied to \code{models}, the number of
+parameter-specific values to generate automatically if the model has a
+pre-defined grid, or a call to \code{\link{Grid}}.  Ignored in the case of a
+list of models.}
+
+\item{fixed}{list of fixed parameter values to combine with those in
+\code{grid}.}
 
 \item{control}{\code{\link{MLControl}} object, control function, or character
 string naming a control function defining the resampling method to be
@@ -69,21 +74,33 @@ library(MASS)
 
 fo <- medv ~ .
 
-(gbmtune <- tune(fo, data = Boston, model = GBMModel,
-                 grid = expand.grid(n.trees = c(25, 50, 100),
-                                    interaction.depth = 1:3,
-                                    n.minobsinnode = c(5, 10)),
-                 control = CVControl(folds = 10, repeats = 5)))
-summary(gbmtune)
-plot(gbmtune, type = "line")
+# User-specified grid
+(gbmtune1 <- tune(fo, data = Boston, model = GBMModel,
+                  grid = expand.grid(n.trees = c(25, 50, 100),
+                                     interaction.depth = 1:3,
+                                     n.minobsinnode = c(5, 10)),
+                  control = CVControl(folds = 10, repeats = 5)))
 
-gbmfit <- fit(fo, data = Boston, model = gbmtune)
+# Automatically generated grid
+(gbmtune2 <- tune(fo, data = Boston, model = GBMModel, grid = 3,
+                  control = CVControl(folds = 10, repeats = 5)))
+
+# Randomly sampled grid points
+(gbmtune3 <- tune(fo, data = Boston, model = GBMModel,
+                  grid = Grid(length = 1000, random = 10),
+                  control = CVControl(folds = 10, repeats = 5)))
+
+summary(gbmtune3)
+plot(gbmtune3, type = "line")
+
+gbmfit <- fit(fo, data = Boston, model = gbmtune3)
 varimp(gbmfit)
 }
 
 }
 \seealso{
 \code{\link{ModelFrame}}, \code{\link[recipes]{recipe}},
-\code{\link{modelinfo}}, \code{\link{expand.model}}, \code{\link{MLControl}},
-\code{\link{fit}}, \code{\link{plot}}, \code{\link{summary}}
+\code{\link{modelinfo}}, \code{\link{expand.model}}, \code{\link{Grid}},
+\code{\link{MLControl}}, \code{\link{fit}}, \code{\link{plot}},
+\code{\link{summary}}
 }

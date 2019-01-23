@@ -127,15 +127,23 @@ setMethod("show", "MLModelTune",
   function(object) {
     callNextMethod(object)
     cat("Grid:\n")
-    print(object@grid)
+    print(object@tune_grid)
     cat("\n")
     print(object@performance)
-    model_names <- dimnames(object@performance)[[3]]
-    if (length(model_names) > 1) {
+    if (!is.na(dim(object@performance)[3])) {
+      model_names <- dimnames(object@performance)[[3]]
       cat("Selected (", names(object@selected), "): ",
           model_names[object@selected], "\n\n",
           sep = "")
     }
+  }
+)
+
+
+setMethod("show", "ConfusionMatrix",
+  function(object) {
+    cat("An object of class \"", class(object), "\"\n\n", sep = "")
+    print(object@.Data)
   }
 )
 

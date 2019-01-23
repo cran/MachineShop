@@ -13,7 +13,11 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{mtry}, \code{nodesize}*
 #' }
+#' }
+#' * included only in randomly sampled grid points
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -41,7 +45,14 @@ RandomForestModel <- function(ntree = 500,
     packages = "randomForest",
     types = c("factor", "numeric"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "terms"),
+    grid = function(x, length, random, ...) {
+      params <- list(
+        mtry = seq_nvars(x, RandomForestModel, length)
+      )
+      if (random) params$nodesize <- 1:min(nrow(x), 20)
+      params
+    },
+    design = "terms",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       randomForest::randomForest(formula, data = data, ...)

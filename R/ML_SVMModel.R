@@ -22,6 +22,16 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters}{
+#' \itemize{
+#'   \item SVMANOVAModel: \code{C}, \code{degree}
+#'   \item SVMBesselModel: \code{C}, \code{order}, \code{degree}
+#'   \item SVMLaplaceModel: \code{C}, \code{sigma}
+#'   \item SVMLinearModel: \code{C}
+#'   \item SVMPolyModel: \code{C}, \code{degree}, \code{scale}
+#'   \item SVMRadialModel: \code{C}, \code{sigma}
+#' }
+#' }
 #' }
 #' 
 #' Arguments \code{kernel} and \code{kpar} are automatically set by the
@@ -49,7 +59,7 @@ SVMModel <- function(scaled = TRUE, type = NULL,
     packages = "kernlab",
     types = c("factor", "numeric"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       kernlab::ksvm(formula, data = data, prob.model = TRUE, ...)
@@ -157,5 +167,33 @@ SVMTanhModel <- function(scale = 1, offset = 1, ...) {
   model <- do.call(SVMModel, args, quote = TRUE)
   model@name <- name
   model@label <- label
+  
+  scaled <- model@params$scaled
+  if (!is.logical(scaled)) scaled <- TRUE
+  
+  params <- switch(kernel,
+                   "anovadot" = list(C = NULL, degree = NULL),
+                   "besseldot" = list(C = NULL, order = NULL,
+                                      degree = NULL),
+                   "laplacedot" = list(C = NULL, sigma = NULL),
+                   "polydot" = list(C = NULL, degree = NULL, scale = NULL),
+                   "rbfdot" = list(C = NULL, sigma = NULL),
+                   "vanilladot" = list(C = NULL))
+  
+  if (length(params)) {
+    model@grid <- function(x, length, ...) {
+      params %>%
+        set_param("C", 2^seq_range(-4, 2, c(-4, 10), length)) %>%
+        set_param("degree", 1:min(length, 3)) %>%
+        set_param("order", 1:min(length, 3)) %>%
+        set_param("scale", 10^seq_range(-4, 2, c(-4, log10(2)), length)) %>%
+        set_param("sigma", {
+          sigmas <- kernlab::sigest(extract(formula(terms(x)), x)$x,
+                                    scaled = scaled)
+          exp(seq(log(min(sigmas)), log(max(sigmas)), length = length))
+        })
+    }
+  }
+
   model
 }

@@ -23,6 +23,9 @@
 #' @details
 #' \describe{
 #' \item{Response Types:}{\code{factor}, \code{numeric}}
+#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
+#'   \code{size}, \code{decay}
+#' }
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -49,7 +52,13 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
     packages = "nnet",
     types = c("factor", "numeric"),
     params = params(environment()),
-    nvars = function(data) nvars(data, design = "model.matrix"),
+    grid = function(x, length, ...) {
+      list(
+        size = round(seq_range(1, 2, c(1, 20), length = length)),
+        decay = c(0, 10^seq_inner(-5, 1, length - 1))
+      )
+    },
+    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       nnet::nnet(formula, data = data, weights = weights, ...)
     },

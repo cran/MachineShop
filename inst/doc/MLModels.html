@@ -12,7 +12,7 @@
 
 <meta name="author" content="Brian J Smith" />
 
-<meta name="date" content="2019-01-02" />
+<meta name="date" content="2019-01-23" />
 
 <title>Conventions for MLModels Implementation</title>
 
@@ -280,7 +280,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 
 <h1 class="title toc-ignore">Conventions for MLModels Implementation</h1>
 <h4 class="author"><em>Brian J Smith</em></h4>
-<h4 class="date"><em>2019-01-02</em></h4>
+<h4 class="date"><em>2019-01-23</em></h4>
 
 
 
@@ -346,7 +346,7 @@ code > span.fu { color: #900; font-weight: bold; }  code > span.er { color: #a61
 <h3>predict Function</h3>
 <ul>
 <li><p>The arguments are a model fit <code>object</code>, <code>newdata</code> frame, optionally <code>times</code> for prediction at survival time points, and an ellipsis.</p></li>
-<li><p>The predict function should return a vector or column matrix of probabilities for the second level of binary factors, a matrix whose columns contain the probabilities for factors with more than two levels, a matrix of predicted responses if matrix, a vector or column matrix of predicted responses if numeric, a matrix whose columns contain survival probabilities at <code>times</code> if supplied, or a vector of survival predictions if <code>times</code> are not supplied.</p></li>
+<li><p>The predict function should return a vector or column matrix of probabilities for the second level of binary factors, a matrix whose columns contain the probabilities for factors with more than two levels, a matrix of predicted responses if matrix, a vector or column matrix of predicted responses if numeric, a matrix whose columns contain survival probabilities at <code>times</code> if supplied, or a vector of predicted survival means if <code>times</code> are not supplied.</p></li>
 </ul>
 </div>
 <div id="varimp-function" class="section level3">
