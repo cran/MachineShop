@@ -10,8 +10,8 @@ setOldClass("recipe")
 #' 
 #' @rdname MLControl
 #' 
-#' @param surv_times numeric vector of follow-up times at which to predict
-#' survival events.
+#' @param times numeric vector of follow-up times at which to predict survival
+#' probabilities.
 #' @param seed integer to set the seed at the start of resampling.  This is set
 #' to a random integer by default (NULL).
 #' @param ...  arguments to be passed to \code{MLControl}.
@@ -20,39 +20,21 @@ setOldClass("recipe")
 #' 
 #' @seealso \code{\link{resample}}
 #' 
-MLControl <- function(surv_times = numeric(), seed = NULL, ...) {
-  MLControl_stop(...)
+MLControl <- function(times = numeric(), seed = NULL, ...) {
+  args <- list(...)
+  if (!is.null(args$surv_times)) {
+    depwarn("'surv_times' argument to MLControl is deprecated",
+            "use 'times' instead")
+    times <- args$surv_times
+  }
+  
   if (is.null(seed)) seed <- sample.int(.Machine$integer.max, 1)
-  new("MLControl", surv_times = surv_times, seed = seed)
-}
-
-
-MLControl_stop <- function(summary = NULL, cutoff = NULL,
-                           cutoff_index = NULL, na.rm = NULL, ...) {
-  if (!is.null(summary)) {
-    stop("'summary' argument to MLControl is deprecated;\n",
-         "apply the 'performance' function to Resamples output directly")
-  }
-  
-  if (!is.null(cutoff)) {
-    stop("'cutoff' argument to MLContorl is deprecated;\n",
-         "specify in calls to 'performance' instead")
-  }
-  
-  if (!is.null(cutoff_index)) {
-    stop("'cutoff_index' argument to MLControl is deprecated;\n",
-         "specify in calls to 'roc_index' instead")
-  }
-  
-  if (!is.null(na.rm)) {
-    stop("'na.rm' argument to MLControl is deprecated;\n",
-         "specify in calls to 'performance' instead")
-  }
+  new("MLControl", times = times, seed = seed)
 }
 
 
 setClass("MLControl",
-  slots = c(surv_times = "numeric", seed = "numeric")
+  slots = c(times = "numeric", seed = "numeric")
 )
 
 
@@ -340,7 +322,8 @@ MLModel <- function(name = "MLModel", label = name, packages = character(),
 MLModel_depwarn <- function(nvars = NULL, ...) {
   if (!is.null(nvars)) {
     depwarn("'nvars' argument to MLModel is deprecated",
-            "specify the design matrix type with 'design' instead")
+            "specify the design matrix type with 'design' instead",
+            expired = TRUE)
   }
 }
 
@@ -383,26 +366,51 @@ setClass("CForestModelFit", contains = c("MLModelFit", "RandomForest"))
 #' with the \code{Calibration} constructor.
 #' 
 Calibration <- function(...) {
+  .Calibration(...)
+}
+
+
+.Calibration <- function(..., .breaks) {
   args <- list(...)
   
-  if (!all(sapply(args, is.data.frame))) {
-    stop("values to combine must inherit from data.frame")
-  }
+  if (length(args) == 0) stop("no calibration output given")
   
-  var_names <- c("Response", "Predicted", "Observed")
-  for (x in args) {
-    is_missing <- !(var_names %in% names(x))
+  .Data <- args[[1]]
+  if (all(mapply(is, args, "Calibration"))) {
+    
+    smoothed <- .Data@smoothed
+    if (!all(sapply(args, function(x) identical(x@smoothed, smoothed)))) {
+      stop("Calibration arguments are a mix of smoothed and binned curves")
+    }
+
+  } else if (length(args) > 1) {
+    
+    stop("arguments to combine must be Calibration objects")
+    
+  } else if (!is.data.frame(.Data)) {
+    
+    stop("Calibration argument must inherit from data.frame")
+    
+  } else {
+
+    if (missing(.breaks)) stop("missing breaks in Calibration constructor")
+    smoothed <- is.null(.breaks)
+
+    var_names <- c("Response", "Predicted", "Observed")
+    is_missing <- !(var_names %in% names(.Data))
     if (any(is_missing)) {
       stop("missing calibration variables: ", toString(var_names[is_missing]))
     }
+    
   }
 
   args <- make_unique_levels(args, which = "Model")
-  new("Calibration", do.call(append, args))
+  new("Calibration", do.call(append, args), smoothed = smoothed)
 }
 
 
 setClass("Calibration",
+  slots = c("smoothed" = "logical"),
   contains = "data.frame"
 )
 
@@ -441,6 +449,70 @@ ConfusionMatrix <- setClass("ConfusionMatrix",
 )
 
 
+#' @name performance_curve
+#' @rdname performance_curve
+#' 
+#' @param ... named or unnamed \code{performance_curve} output to combine
+#' together with the \code{Curves} constructor.
+#' 
+Curves <- function(...) {
+  .Curves(...)
+}
+
+
+.Curves <- function(..., .metrics = list()) {
+  args <- list(...)
+  
+  if (length(args) == 0) stop("no performance_curve output given")
+  
+  .Data <- args[[1]]
+  if (all(mapply(is, args, "Curves"))) {
+    
+    metrics <- .Data@metrics
+    if (!all(sapply(args, function(x) identical(x@metrics, metrics)))) {
+      stop("Curves arguments have different metrics")
+    }
+
+  } else if (length(args) > 1) {
+    
+    stop("arguments to combine must be Curves objects")
+    
+  } else if (!is.data.frame(.Data)) {
+    
+    stop("Curves argument must inherit from data.frame")
+    
+  } else {
+    
+    if (!all(mapply(is, .metrics[1:2], "MLMetric"))) {
+      stop("missing performance metrics in Curves constructor")
+    }
+    metrics <- c(y = .metrics[[1]], x = .metrics[[2]])
+
+    var_names <- c("Cutoff", "x", "y")
+    is_missing <- !(var_names %in% names(.Data))
+    if (any(is_missing)) {
+      stop("missing performance curve variables: ",
+           toString(var_names[is_missing]))
+    }
+    
+    decreasing <- !xor(metrics$x@maximize, metrics$y@maximize)
+    sort_order <- order(.Data$x, .Data$y, decreasing = c(FALSE, decreasing),
+                        method = "radix")
+    args[[1]] <- .Data[sort_order, , drop = FALSE]
+
+  }
+
+  args <- make_unique_levels(args, which = "Model")
+  new("Curves", do.call(append, args), metrics = metrics)
+}
+
+
+setClass("Curves",
+  slots = c("metrics" = "list"),
+  contains = "data.frame"
+)
+
+
 HTestPerformanceDiff <- setClass("HTestPerformanceDiff",
   slots = c("adjust" = "character"),
   contains = "array"
@@ -454,27 +526,16 @@ HTestPerformanceDiff <- setClass("HTestPerformanceDiff",
 #' \code{Lift} constructor.
 #' 
 Lift <- function(...) {
-  args <- list(...)
-  
-  if (!all(sapply(args, is.data.frame))) {
-    stop("values to combine must inherit from data.frame")
+  object <- as(Curves(...), "Lift")
+  if (!all(mapply(identical, object@metrics, c(tpr, rpp)))) {
+    stop("incorrect lift metrics")
   }
-  
-  var_names <- c("Found", "Tested")
-  for (x in args) {
-    is_missing <- !(var_names %in% names(x))
-    if (any(is_missing)) {
-      stop("missing lift variables: ", toString(var_names[is_missing]))
-    }
-  }
-
-  args <- make_unique_levels(args, which = "Model")
-  new("Lift", do.call(append, args))
+  object
 }
 
 
 setClass("Lift",
-  contains = "data.frame"
+  contains = "Curves"
 )
 
 
@@ -530,38 +591,51 @@ Resamples <- function(...) {
 }
 
 
-.Resamples <- function(..., .control = NULL, .strata = character()) {
+.Resamples <- function(..., .control = NULL, .strata = NULL) {
   args <- list(...)
   
   if (length(args) == 0) stop("no resample output given")
   
   .Data <- args[[1]]
-  if (length(args) > 1) {
-    if (!all(sapply(args, function(x) is(x, "Resamples")))) {
-      stop("values to combine must be Resamples objects")
+  if (all(mapply(is, args, "Resamples"))) {
+    
+    control <- .Data@control
+    if (!all(sapply(args, function(x) identical(x@control, control)))) {
+      stop("Resamples arguments have different control structures")
+    }
+
+    strata <- .Data@strata
+    if (!all(sapply(args, function(x) identical(x@strata, strata)))) {
+      stop("Resamples arguments have different strata variables")
+    }
+
+  } else if (length(args) > 1) {
+    
+    stop("arguments to combine must be Resamples objects")
+    
+  } else if (!is.data.frame(.Data)) {
+    
+    stop("Resamples argument must inherit from data.frame")
+    
+  } else {
+
+    control <- .control
+    if (!is(control, "MLControl")) {
+      stop("missing control structure in Resamples constructor")
     }
     
-    .control <- .Data@control
-    is_equal_control <- function(x) isTRUE(all.equal(x@control, .control))
-    if (!all(sapply(args, is_equal_control))) {
-      stop("resamples have different control structures")
+    strata <- as.character(.strata)
+
+    var_names <- c("Resample", "Case", "Observed", "Predicted")
+    is_missing <- !(var_names %in% names(.Data))
+    if (any(is_missing)) {
+      stop("missing resample variables: ", toString(var_names[is_missing]))
     }
     
-    .strata <- .Data@strata
-    if (!all(sapply(args, function(x) x@strata == .strata))) {
-      stop("resamples have different strata variables")
-    }
-    
-    .Data <- do.call(append, make_unique_levels(args, which = "Model"))
   }
-  
-  var_names <- c("Model", "Resample", "Case", "Observed", "Predicted")
-  is_missing <- !(var_names %in% names(.Data))
-  if (any(is_missing)) {
-    stop("missing resample variables: ", toString(var_names[is_missing]))
-  }
-  
-  new("Resamples", .Data, control = .control, strata = as.character(.strata))
+
+  args <- make_unique_levels(args, which = "Model")
+  new("Resamples", do.call(append, args), control = control, strata = strata)
 }
 
 
@@ -575,6 +649,82 @@ SummaryConfusion <- setClass("SummaryConfusion",
   slots = c("N" = "numeric", "Accuracy" = "numeric", "Majority" = "numeric",
             "Kappa" = "numeric"),
   contains = "matrix"
+)
+
+
+SurvMatrix <- function(object, times = NULL) {
+  object <- as.matrix(object)
+  
+  if (is.null(times)) times <- rep(NA_real_, ncol(object))
+  
+  if (length(times) != ncol(object)) {
+    stop("unequal number of survival times and predictions")
+  }
+  
+  new("SurvMatrix", object, times = times)
+}
+
+
+setClass("SurvMatrix",
+  slots = c("times" = "numeric"),
+  contains = "matrix"
+)
+
+
+#' SurvMatrix Class Constructor
+#' 
+#' Create an object of predicted survival events or probabilites for use with
+#' metrics provided by the \pkg{MachineShop} package.
+#' 
+#' @name SurvMatrix
+#' @rdname SurvMatrix
+#' 
+#' @param object matrix, or object that can be converted to one, of predicted
+#' survival events or probabilities with columns and rows representing
+#' prediction times and cases, respectively.
+#' @param times numeric vector of the survival prediction times.
+#' 
+#' @return Object that is of the same class as the constructor name and inherits
+#' from \code{SurvMatrix}.  Examples of these objects are the predicted survival
+#' events and probabilities returned by the \code{predict} function.
+#' 
+#' @seealso \code{\link{metrics}}, \code{\link{predict}}
+#' 
+SurvEvents <- function(object = numeric(), times = NULL) {
+  as(SurvMatrix(object, times), "SurvEvents")
+}
+
+
+setClass("SurvEvents", contains = "SurvMatrix")
+
+
+#' @rdname SurvMatrix
+#' 
+SurvProbs <- function(object = numeric(), times = NULL) {
+  as(SurvMatrix(object, times), "SurvProbs")
+}
+
+
+setClass("SurvProbs", contains = "SurvMatrix")
+
+
+#' @rdname SurvMatrix
+#' @aliases SurvMatrix,ANY,ANY,ANY
+#' 
+#' @param x object from which to extract elements.
+#' @param i,j,... indices specifying elements to extract.
+#' @param drop logical indicating that the result be returned as a
+#' \code{numeric} coerced to the lowest dimension possible if \code{TRUE} or
+#' as a 2-dimensional \code{SurvMatrix} object otherwise.
+#' 
+setMethod("[", c(x = "SurvMatrix", i = "ANY", j = "ANY", drop = "ANY"),
+  function(x, i, j, ..., drop = FALSE) {
+    if (drop) {
+      x@.Data[i, j, drop = TRUE]
+    } else {
+      as(SurvMatrix(x@.Data[i, j, drop = FALSE], x@times[j]), class(x))
+    }
+  }
 )
 
 

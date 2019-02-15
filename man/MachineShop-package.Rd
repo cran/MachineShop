@@ -82,6 +82,7 @@ Performance Assessment:
   \code{\link{diff}} \tab Model Performance Differences \cr
   \code{\link{lift}} \tab Lift Curves \cr
   \code{\link{performance}} \tab Model Performance Metrics \cr
+  \code{\link{performance_curve}} \tab Model Performance Curves \cr
   \code{\link{varimp}} \tab Variable Importance \cr
 }
 
@@ -106,7 +107,7 @@ Custom metrics and models can be created with the \code{\link{MLMetric}} and
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/brian-j-smith/MachineShop}
+  \item \url{https://brian-j-smith.github.io/MachineShop/}
   \item Report bugs at \url{https://github.com/brian-j-smith/MachineShop/issues}
 }
 

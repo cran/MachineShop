@@ -17,7 +17,7 @@ importFrom(stats, aggregate, approx, coef, complete.cases, contr.helmert, cor,
            pchisq, predict, quantile, reformulate, reshape, sd, t.test, terms,
            vcov)
 importFrom(survival, is.Surv, Surv, survfit)
-importFrom(utils, combn, head, relist, stack, tail)
+importFrom(utils, combn, getS3method, head, relist, stack, tail)
 
 
 export(.,
@@ -25,28 +25,34 @@ export(.,
        Calibration,
        confusion,
        Confusion,
+       Curves,
        dependence,
        expand.model,
        fit,
-       lift,
        Grid,
+       lift,
        Lift,
        metricinfo,
        ModelFrame,
        modelinfo,
-       modelmetrics,
        performance,
+       performance_curve,
        resample,
        Resamples,
        response,
+       SurvEvents,
+       SurvProbs,
        tune,
        varimp)
 
 export(accuracy,
+       auc,
        brier,
        cindex,
        cross_entropy,
        f_score,
+       fnr,
+       fpr,
        gini,
        kappa2,
        mae,
@@ -62,8 +68,11 @@ export(accuracy,
        rmsle,
        roc_auc,
        roc_index,
+       rpp,
        sensitivity,
        specificity,
+       tnr,
+       tpr,
        weighted_kappa2)
 
 export(BootControl,
@@ -134,12 +143,15 @@ S3method(fit, formula)
 S3method(fit, recipe)
 S3method(ModelFrame, formula)
 S3method(ModelFrame, matrix)
+S3method(performance, Confusion)
 S3method(performance, ConfusionMatrix)
 S3method(performance, factor)
 S3method(performance, matrix)
 S3method(performance, numeric)
 S3method(performance, Resamples)
 S3method(performance, Surv)
+S3method(performance_curve, default)
+S3method(performance_curve, Resamples)
 S3method(print, MLModelFit)
 S3method(print, Resamples)
 S3method(plot, MLModelTune)
@@ -148,6 +160,7 @@ S3method(plot, Resamples)
 S3method(plot, Calibration)
 S3method(plot, Confusion)
 S3method(plot, ConfusionMatrix)
+S3method(plot, Curves)
 S3method(plot, Lift)
 S3method(plot, Performance)
 S3method(plot, VarImp)
@@ -159,6 +172,7 @@ S3method(response, formula)
 S3method(response, recipe)
 S3method(summary, Confusion)
 S3method(summary, ConfusionMatrix)
+S3method(summary, Curves)
 S3method(summary, MLModelFit)
 S3method(summary, MLModelTune)
 S3method(summary, Performance)

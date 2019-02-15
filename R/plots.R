@@ -6,10 +6,18 @@
 #' @rdname plot-methods
 #' 
 #' @param x object to plot.
+#' @param diagonal logical indicating whether to include a diagonal reference
+#' line.
 #' @param metrics vector of numeric indexes or character names of performance
 #' metrics to plot.
 #' @param stat function to compute a summary statistic on resampled values for
-#' \code{MLModelTune} line plots and \code{Resamples} model sorting.
+#' \code{MLModelTune} line plots and \code{Resamples} model sorting.  For
+#' \code{Curves} and \code{Lift} classes, plots are of resampled metrics
+#' aggregated by the statistic if given or of resample-specific metrics if
+#' \code{NULL}.
+#' \code{Curves}, or \code{NULL} for resample-specific
+#' metrics.
+
 #' @param type type of plot to construct.
 #' @param ... arguments passed to other methods.
 #' 
@@ -18,7 +26,7 @@
 #' \code{\link{confusion}}, \code{\link{lift}}, \code{\link{dependence}},
 #' \code{\link{varimp}}
 #' 
-plot.Performance <- function(x, metrics = NULL, stat = mean,
+plot.Performance <- function(x, metrics = NULL, stat = base::mean,
                              type = c("boxplot", "density", "errorbar",
                                       "violin"), ...) {
   df <- as.data.frame.table(x)
@@ -81,7 +89,7 @@ plot.Performance <- function(x, metrics = NULL, stat = mean,
 #' res <- Resamples(GBM1 = gbmres1, GBM2 = gbmres2, GBM3 = gbmres3)
 #' plot(res)
 #' 
-plot.Resamples <- function(x, metrics = NULL, stat = mean,
+plot.Resamples <- function(x, metrics = NULL, stat = base::mean,
                            type = c("boxplot", "density", "errorbar", "violin"),
                            ...) {
   plot(performance(x), metrics = metrics, stat = stat, type = type)
@@ -90,7 +98,7 @@ plot.Resamples <- function(x, metrics = NULL, stat = mean,
 
 #' @rdname plot-methods
 #' 
-plot.MLModelTune <- function(x, metrics = NULL, stat = mean,
+plot.MLModelTune <- function(x, metrics = NULL, stat = base::mean,
                              type = c("boxplot", "density", "errorbar", "line",
                                       "violin"), ...) {
   perf <- x@performance
@@ -116,12 +124,13 @@ plot.MLModelTune <- function(x, metrics = NULL, stat = mean,
     df$metric <- factor(df$metric, metrics)
     
     indices <- sapply(grid[-1], function(x) length(unique(x)) > 1)
-    mapping <- if (any(indices)) {
+    args <- list(quote(x), quote(y))
+    if (any(indices)) {
       df$group <- interaction(grid[-1][indices])
-      aes(x, y, color = group, shape = group)
-    } else {
-      aes(x, y)
+      args$color <- args$shape <- quote(group)
     }
+    mapping <- do.call(aes, args)
+    
     ggplot(df, mapping) +
       geom_line() +
       geom_point() +
@@ -141,12 +150,10 @@ plot.MLModelTune <- function(x, metrics = NULL, stat = mean,
 plot.Calibration <- function(x, type = c("line", "point"), se = FALSE, ...) {
   type <- match.arg(type)
   
-  aes_response <- if (nlevels(x$Response) > 1) {
-    aes(x = Predicted, y = Mean, color = Response)
-  } else {
-    aes(x = Predicted, y = Mean)
-  }
-  
+  args <- list(x = quote(Predicted), y = quote(Mean))
+  if (nlevels(x$Response) > 1) args$color <- args$fill <- quote(Response)
+  mapping <- do.call(aes,args)
+
   position <- "identity"
   
   pl <- by(x, x$Model, function(cal) {
@@ -158,17 +165,20 @@ plot.Calibration <- function(x, type = c("line", "point"), se = FALSE, ...) {
     )
     Predicted_width <- diff(range(df$Predicted, na.rm = TRUE))
   
-    p <- ggplot(df, aes_response) +
+    p <- ggplot(df, mapping) +
       geom_abline(intercept = 0, slope = 1, color = "gray") +
       labs(title = cal$Model[1], x = "Predicted", y = "Observed Mean")
     
-    if (se) {
+    if (se) if (x@smoothed) {
+      p <- p + geom_ribbon(aes(ymin = Lower, ymax = Upper),
+                           linetype = "blank", alpha = 0.2)
+    } else {
       position <- position_dodge(width = 0.025 * Predicted_width)
       p <- p + geom_errorbar(aes(ymin = Lower, ymax = Upper),
                              width = 0.05 * Predicted_width,
-                             position = position)
+                             position = position, na.rm = TRUE)
     }
-  
+    
     switch(type,
            "line" = p + geom_line(position = position),
            "point" = p + geom_point(position = position))
@@ -198,41 +208,80 @@ plot.ConfusionMatrix <- function(x, ...) {
   ggplot(df, aes(Observed, Predicted, fill = Value)) +
     geom_raster() +
     labs(fill = "Probability") +
-    scale_fill_gradient(trans = "reverse")
+    scale_fill_gradient(trans = "reverse") +
+    coord_fixed()
 }
 
 
 #' @rdname plot-methods
 #' 
-#' @param find numeric percent of observed events at which to display reference
-#' lines indicating the corresponding percent tested in lift plots.
-#' 
-plot.Lift <- function(x, find = NULL, ...) {
-  aes_model <- if (nlevels(x$Model) > 1) {
-    aes(x = Tested, y = Found, color = Model)
-  } else {
-    aes(x = Tested, y = Found)
-  }
-
-  p <- ggplot(x, aes_model) +
-    geom_step() +
-    geom_abline(intercept = 0, slope = 1, color = "gray") +
-    labs(x = "Positive Test Rate (%)",
-         y = "True Positive Finding (%)")
+plot.Curves <- function(x, type = c("tradeoffs", "cutoffs"), diagonal = FALSE,
+                        stat = base::mean, ...) {
+  x <- summary(x, stat = stat)
   
+  args <- list(x = quote(x), y = quote(y))
+  if (nlevels(x$Model) > 1) args$color <- quote(Model)
+  if (!is.null(x$Resample)) args$group <- quote(interaction(Model, Resample))
+  mapping <- do.call(aes, args)
+  
+  labels <- c(x = x@metrics$x@label, y = x@metrics$y@label)
+  
+  switch(match.arg(type),
+    "tradeoffs" = {
+      x$Cutoff <- NULL
+      p <- ggplot(na.omit(x), mapping) +
+        geom_path() +
+        labs(x = labels["x"], y = labels["y"])
+
+      if (diagonal) {
+        p <- p + geom_abline(intercept = 0, slope = 1, color = "gray")
+      }
+      
+      p
+    },
+    "cutoffs" = {
+      df <- reshape(x, varying = c("x", "y"), v.names = "y",
+                    times = labels, timevar = "Metric",
+                    direction = "long")
+      names(df)[names(df) == "Cutoff"] <- "x"
+      
+      ggplot(na.omit(df), mapping) +
+        geom_line() +
+        labs(x = "Cutoff", y = "Performance") +
+        facet_wrap(~ Metric)
+    }
+  )
+}
+
+
+#' @rdname plot-methods
+#' 
+#' @param find numeric true positive rate at which to display reference lines
+#' identifying the corresponding rates of positive predictions.
+#' 
+plot.Lift <- function(x, find = NULL, diagonal = TRUE, stat = base::mean, ...) {
+  x <- summary(x, stat = stat)
+  p <- plot(Curves(x), diagonal = diagonal, stat = NULL)
+
   if (!is.null(find)) {
-    tested <- by(x, x$Model, function(data) {
-      interval <- nrow(data) - findInterval(-find, -rev(data$Found)) + 1
-      data$Tested[interval]
+    if (find < 0 || find > 1) warning("'find' rate outside of 0 to 1 range")
+
+    indices <- x["Model"]
+    indices$Resample <- x$Resample
+    tested <- by(x, indices, function(data) {
+      approx(data$y, data$x, find, ties = "ordered")$y
     })
+    
     df <- data.frame(
-      Tested = as.numeric(tested),
-      Found = find,
-      Model = names(tested)
+      x = as.numeric(tested),
+      y = find,
+      Model = dimnames(tested)$Model
     )
+    df$Resample <- rep(dimnames(tested)$Resample, each = dim(tested)[1])
+    
     p <- p +
-      geom_segment(aes(x = Tested, y = 0, xend = Tested, yend = Found), df) +
-      geom_segment(aes(x = 0, y = Found, xend = Tested, yend = Found), df)
+      geom_segment(aes(x = x, y = 0, xend = x, yend = y), df) +
+      geom_segment(aes(x = 0, y = y, xend = x, yend = y), df)
   }
   
   p
@@ -255,17 +304,15 @@ plot.PartialDependence <- function(x, stats = NULL, ...) {
   }
 
   df <- x[c("Statistic", "Response", "Value")]
-
-  aes_response <- if (nlevels(x$Response) > 1) {
-    aes(x = Predictor, y = Value, color = Response)
-  } else {
-    aes(x = Predictor, y = Value)
-  } 
-
+  
+  args <- list(x = quote(Predictor), y = quote(Value))
+  if (nlevels(x$Response) > 1) args$color <- quote(Response)
+  mapping <- do.call(aes, args)
+  
   pl <- list()
   for (varname in names(x$Predictors)) {
     df$Predictor <- x$Predictors[[varname]]
-    p <- ggplot(na.omit(df), aes_response)
+    p <- ggplot(na.omit(df), mapping)
     p <- switch_class(df$Predictor,
                       "factor" = p +
                         geom_crossbar(aes(ymin = ..y.., ymax = ..y..)),

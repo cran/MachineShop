@@ -3,59 +3,58 @@
 \name{performance}
 \alias{performance}
 \alias{performance.Resamples}
-\alias{performance.ConfusionMatrix}
 \alias{performance.factor}
 \alias{performance.matrix}
 \alias{performance.numeric}
 \alias{performance.Surv}
-\alias{modelmetrics}
+\alias{performance.Confusion}
+\alias{performance.ConfusionMatrix}
 \title{Model Performance Metrics}
 \usage{
 performance(x, ...)
 
 \method{performance}{Resamples}(x, ..., na.rm = TRUE)
 
-\method{performance}{ConfusionMatrix}(x, metrics = c(Accuracy =
-  MachineShop::accuracy, Kappa = MachineShop::kappa2), ...)
+\method{performance}{factor}(x, y, metrics = c(Brier =
+  MachineShop::brier, Accuracy = MachineShop::accuracy, Kappa =
+  MachineShop::kappa2, `Weighted Kappa` = MachineShop::weighted_kappa2,
+  ROCAUC = MachineShop::roc_auc, Sensitivity = MachineShop::sensitivity,
+  Specificity = MachineShop::specificity), cutoff = 0.5, ...)
 
-\method{performance}{factor}(x, y, metrics = c(Accuracy =
-  MachineShop::accuracy, Kappa = MachineShop::kappa2, ROCAUC =
-  MachineShop::roc_auc, Sensitivity = MachineShop::sensitivity, Specificity
-  = MachineShop::specificity, Brier = MachineShop::brier), cutoff = 0.5,
-  ...)
+\method{performance}{matrix}(x, y, metrics = c(RMSE = MachineShop::rmse,
+  R2 = MachineShop::r2, MAE = MachineShop::mae), ...)
 
-\method{performance}{matrix}(x, y, metrics = c(R2 = MachineShop::r2, RMSE
-  = MachineShop::rmse, MAE = MachineShop::mae), ...)
-
-\method{performance}{numeric}(x, y, metrics = c(R2 = MachineShop::r2,
-  RMSE = MachineShop::rmse, MAE = MachineShop::mae), ...)
+\method{performance}{numeric}(x, y, metrics = c(RMSE = MachineShop::rmse,
+  R2 = MachineShop::r2, MAE = MachineShop::mae), ...)
 
 \method{performance}{Surv}(x, y, metrics = c(CIndex =
-  MachineShop::cindex, ROCAUC = MachineShop::roc_auc, Brier =
-  MachineShop::brier), cutoff = 0.5, times = numeric(), ...)
+  MachineShop::cindex, Brier = MachineShop::brier, ROCAUC =
+  MachineShop::roc_auc, Accuracy = MachineShop::accuracy), cutoff = 0.5,
+  ...)
 
-modelmetrics(...)
+\method{performance}{Confusion}(x, ...)
+
+\method{performance}{ConfusionMatrix}(x, metrics = c(Accuracy =
+  MachineShop::accuracy, Kappa = MachineShop::kappa2), ...)
 }
 \arguments{
 \item{x}{observed responses or class containing observed and predicted
 responses.}
 
-\item{...}{arguments passed from the \code{Resamples} method to the others
-and from deprecated function \code{modelmetrics} to \code{performance}.}
+\item{...}{arguments passed from the \code{Resamples} method to the response
+type-specific methods or from the method for \code{Confusion} to
+\code{ConfusionMatrix}.}
 
 \item{na.rm}{logical indicating whether to remove observed or predicted
 responses that are \code{NA} when calculating metrics.}
 
+\item{y}{predicted responses.}
+
 \item{metrics}{function, one or more function names, or list of named
 functions to include in the calculation of performance metrics.}
 
-\item{y}{predicted responses.}
-
 \item{cutoff}{threshold above which binary factor probabilities are
 classified as events and below which survival probabilities are classified.}
-
-\item{times}{numeric vector of follow-up times at which survival events
-were predicted.}
 }
 \description{
 Compute measures of model performance.
@@ -80,5 +79,6 @@ performance(obs, pred)
 }
 \seealso{
 \code{\link{response}}, \code{\link{predict}},
-\code{\link{resample}}, \code{\link{confusion}}, \code{\link{metrics}}
+\code{\link{resample}}, \code{\link{confusion}}, \code{\link{metrics}},
+\code{\link{plot}}, \code{\link{summary}}
 }

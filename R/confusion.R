@@ -13,8 +13,6 @@
 #' class probabilities, whereas a default cutoff of 0.5 is used for
 #' survival probabilities.  Class probability summations and survival will
 #' appear as decimal numbers that can be interpreted as expected counts.
-#' @param times numeric vector of follow-up times if \code{y} contains predicted
-#' survival events.
 #' 
 #' @return
 #' The return value is a \code{ConfusionMatrix} class object that inherits from
@@ -27,10 +25,11 @@
 #' 
 #' @examples
 #' res <- resample(Species ~ ., data = iris, model = GBMModel)
-#' confusion(res)
+#' (conf <- confusion(res))
+#' plot(conf)
 #' 
-confusion <- function(x, y = NULL, cutoff = 0.5, times = numeric(), ...) {
-  .confusion(x, y, cutoff = cutoff, times = times)
+confusion <- function(x, y = NULL, cutoff = 0.5, ...) {
+  .confusion(x, y, cutoff = cutoff)
 }
 
 
@@ -47,8 +46,7 @@ confusion <- function(x, y = NULL, cutoff = 0.5, times = numeric(), ...) {
 
 .confusion.Resamples <- function(x, cutoff, ...) {
   conf_list <- by(x, list(Model = x$Model), function(data) {
-   confusion(data$Observed, data$Predicted, cutoff = cutoff,
-             times = x@control@surv_times)
+   confusion(data$Observed, data$Predicted, cutoff = cutoff)
   }, simplify = FALSE)
   if (all(mapply(is, conf_list, "Confusion"))) {
     conf_list <- unlist(conf_list, recursive = FALSE)
@@ -57,10 +55,9 @@ confusion <- function(x, y = NULL, cutoff = 0.5, times = numeric(), ...) {
 }
 
 
-.confusion.Surv <- function(x, y, cutoff, times, ...) {
+.confusion.Surv <- function(x, y, cutoff, ...) {
   if (is.null(cutoff)) cutoff <- 0.5
-  y <- convert_response(x, y, cutoff = cutoff)
-  do.call(Confusion, .confusion_matrix(x, y, times = times))
+  do.call(Confusion, .confusion_matrix(x, y, cutoff = cutoff))
 }
 
 
@@ -70,7 +67,7 @@ setGeneric(".confusion_matrix", function(observed, predicted, ...)
 
 setMethod(".confusion_matrix", c("ANY", "ANY"),
   function(observed, predicted, ...) {
-    stop("confusion matrix requires a predicted factor or survival times")
+    stop("confusion requires a predicted factor or survival probabilities")
   }
 )
 
@@ -100,41 +97,42 @@ setMethod(".confusion_matrix", c("factor", "numeric"),
 )
 
 
-setMethod(".confusion_matrix", c("Surv", "matrix"),
-  function(observed, predicted, times, ...) {
-    if (length(times) != ncol(predicted)) {
-      stop("unequal number of survival times and predictions")
-    }
+setMethod(".confusion_matrix", c("Surv", "SurvProbs"),
+  function(observed, predicted, cutoff, ...) {
+    predicted <- convert_response(observed, predicted, cutoff = cutoff)
+    .confusion_matrix(observed, predicted)
+  }
+)
+
+
+setMethod(".confusion_matrix", c("Surv", "SurvEvents"),
+  function(observed, predicted, ...) {
+    times <- predicted@times
+    surv <- predict(survfit(observed ~ 1, se.fit = FALSE), times)
     
-    survfit_all <- survfit(observed ~ 1, se.fit = FALSE)
+    conf_tbl <- table(Predicted = 0:1, Observed = 0:1)
 
     structure(
-      lapply(1:ncol(predicted), function(i) {
-        pred <- predicted[, i]
-        time <- times[i]
-        
-        surv_all <- predict(survfit_all, time)
-    
-        surv_pos <- 1
-        positives <- pred == 1
+      lapply(1:length(times), function(i) {
+        surv_positives <- 1
+        positives <- predicted[, i] == 1
         p <- mean(positives)
         if (p > 0) {
           obs <- observed[positives]
-          valid_events <- obs[, "status"] == 1 & obs[, "time"] <= time
+          valid_events <- obs[, "status"] == 1 & obs[, "time"] <= times[i]
           event_times <- sort(unique(obs[valid_events, "time"]))
           for (event_time in event_times) {
             d <- sum(obs[, "time"] == event_time & obs[, "status"] == 1)
             n <- sum(obs[, "time"] >= event_time)
-            surv_pos <- surv_pos * (1 - d / n)
+            surv_positives <- surv_positives * (1 - d / n)
           }
         }
 
-        conf_tbl <- table(Predicted = 0:1, Observed = 0:1)
-        conf_tbl[1, 1] <- surv_all - surv_pos * p
-        conf_tbl[1, 2] <- (1 - p) - conf_tbl[1, 1]
-        conf_tbl[2, 2] <- (1 - surv_pos) * p
-        conf_tbl[2, 1] <- p - conf_tbl[2, 2]
-        
+        conf_tbl[1, 1] <- surv[i] - surv_positives * p
+        conf_tbl[2, 1] <- surv_positives * p
+        conf_tbl[1, 2] <- 1 - p - conf_tbl[1, 1]
+        conf_tbl[2, 2] <- p - surv_positives * p
+
         ConfusionMatrix(length(observed) * conf_tbl)
       }),
       names = paste0("time", seq_along(times))

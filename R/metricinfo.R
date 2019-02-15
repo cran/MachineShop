@@ -40,10 +40,13 @@ metricinfo <- function(...) {
 
 
 .metric_names = c("accuracy",
+                  "auc",
                   "brier",
                   "cindex",
                   "cross_entropy",
                   "f_score",
+                  "fnr",
+                  "fpr",
                   "gini",
                   "kappa2",
                   "mae",
@@ -59,8 +62,11 @@ metricinfo <- function(...) {
                   "rmsle",
                   "roc_auc",
                   "roc_index",
+                  "rpp",
                   "sensitivity",
                   "specificity",
+                  "tnr",
+                  "tpr",
                   "weighted_kappa2")
 
 

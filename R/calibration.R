@@ -11,8 +11,6 @@
 #' calculate observed mean values.  May be specified as a number of bins, a
 #' vector of breakpoints, or \code{NULL} to fit smooth curves with splines for
 #' survival responses and loess for others.
-#' @param times numeric vector of follow-up times if \code{y} contains predicted
-#' survival events.
 #' 
 #' @return \code{Calibration} class object that inherits from \code{data.frame}.
 #'  
@@ -25,21 +23,12 @@
 #' 
 #' res <- resample(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
 #'                 data = Melanoma, model = GBMModel,
-#'                 control = CVControl(surv_times = 365 * c(2, 5, 10)))
-#' (cal <- calibration(res))
+#'                 control = CVControl(times = 365 * c(2, 5, 10)))
+#' cal <- calibration(res)
 #' plot(cal)
 #' 
-calibration <- function(x, y = NULL, breaks = 10, times = numeric(), ...) {
-  calibration_depwarn(...)
-  .calibration(x, y, breaks = breaks, times = times)
-}
-
-
-calibration_depwarn <- function(n = NULL, ...) {
-  if (!is.null(n)) {
-    depwarn("'n' argument to calibration is deprecated",
-            "use 'breaks' instead")
-  }
+calibration <- function(x, y = NULL, breaks = 10, ...) {
+  .calibration(x, y, breaks = breaks)
 }
 
 
@@ -48,15 +37,14 @@ calibration_depwarn <- function(n = NULL, ...) {
 }
 
 
-.calibration.default <- function(x, y, breaks, times, ...) {
-  Calibration(.calibration_default(x, y, breaks = breaks, times = times))
+.calibration.default <- function(x, y, breaks, ...) {
+  Calibration(.calibration_default(x, y, breaks = breaks), .breaks = breaks)
 }
 
 
 .calibration.Resamples <- function(x, breaks, ...) {
-  times <- x@control@surv_times
   cal_list <- by(x, x$Model, function(data) {
-    calibration(data$Observed, data$Predicted, breaks = breaks, times = times)
+    calibration(data$Observed, data$Predicted, breaks = breaks)
   }, simplify = FALSE)
   do.call(Calibration, cal_list)
 }
@@ -131,12 +119,9 @@ setMethod(".calibration_default", c("numeric", "numeric"),
 )
 
 
-setMethod(".calibration_default", c("Surv", "matrix"),
-  function(observed, predicted, breaks, times, ...) {
-    if (length(times) != ncol(predicted)) {
-      stop("unequal number of survival times and predictions")
-    }
-    
+setMethod(".calibration_default", c("Surv", "SurvProbs"),
+  function(observed, predicted, breaks, ...) {
+    times <- predicted@times
     colnames(predicted) <- paste("Time", 1:length(times))
     df <- data.frame(Response = rep(colnames(predicted),
                                     each = nrow(predicted)))
@@ -162,6 +147,46 @@ setMethod(".calibration_default", c("Surv", "matrix"),
         result$Observed <- cbind(Mean = Mean, SE = SE,
                                  Lower = max(Mean - SE, 0),
                                  Upper = min(Mean + SE, 1))
+        result
+      }, simplify = FALSE)
+      do.call(rbind, by_results)
+    }
+  }
+)
+
+
+setMethod(".calibration_default", c("Surv", "numeric"),
+  function(observed, predicted, breaks, ...) {
+    surv_max <- surv_max(observed)
+    if (is.null(breaks)) {
+      df <- data.frame(
+        Response = "Mean",
+        Predicted = unique(predicted)
+      )
+      metrics_list <- lapply(df$Predicted, function(value) {
+        abs_diff <- abs(predicted - value)
+        weights <- (1 - (abs_diff / diff(range(abs_diff)))^3)^3
+        km <- survfit(observed ~ 1, weights = weights, se.fit = FALSE)
+        c(Mean = surv_mean(km$time, km$surv, max_time = surv_max),
+          SE = NA, Lower = NA, Upper = NA)
+      })
+      df$Observed <- do.call(rbind, metrics_list)
+      df
+    } else {
+      df <- data.frame(
+        Response = "Mean",
+        Predicted = midpoints(predicted, breaks),
+        Observed = observed
+      )
+      by_results <- by(df, df[c("Predicted", "Response")], function(data) {
+        km <- survfit(Observed ~ 1, data = data, se.fit = FALSE)
+        est <- survival:::survmean(km, rmean = surv_max)
+        Mean <- est$matrix["*rmean"]
+        SE <- est$matrix["*se(rmean)"]
+        result <- data[1, c("Response", "Predicted")]
+        result$Observed <- cbind(Mean = Mean, SE = SE,
+                                 Lower = max(Mean - SE, 0),
+                                 Upper = Mean + SE)
         result
       }, simplify = FALSE)
       do.call(rbind, by_results)

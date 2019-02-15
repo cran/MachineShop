@@ -1,7 +1,7 @@
-utils::globalVariables(c("Found", "group", "i", "Lower", "Mean", "Midpoint",
-                         "model", "Model", "Observed", "Predicted", "Predictor",
-                         "Response", "Tested", "Upper", "Value", "values",
-                         "variables", "y", "..y.."))
+utils::globalVariables(c("group", "i", "Lower", "Mean", "Midpoint", "model",
+                         "Model", "Observed", "Predicted", "Predictor",
+                         "Resample", "Response", "Upper", "Value", "values",
+                         "variables", "x", "y", "..y.."))
 
 
 .onLoad <- function(libname, pkgname) {
@@ -35,63 +35,6 @@ utils::globalVariables(c("Found", "group", "i", "Lower", "Mean", "Midpoint",
 . <- function(expr) {
   eval(substitute(quote(expr)))
 }
-
-
-append <- function(...) {
-  Reduce(.append, list(...))
-}
-
-
-setGeneric(".append", function(x, y, ...) standardGeneric(".append"))
-
-
-setMethod(".append", c("ANY", "missing"),
-  function(x, y) x
-)
-
-
-setMethod(".append", c("data.frame", "data.frame"),
-  function(x, y) {
-    stopifnot(names(x) == names(y))
-    df <- data.frame(matrix(nrow = nrow(x) + nrow(y), ncol = 0))
-    for (varname in names(x)) {
-      df[[varname]] <- .append(x[[varname]], y[[varname]])
-    }
-    df
-  }
-)
-
-
-setMethod(".append", c("factor", "factor"),
-  function(x, y) unlist(list(x, y))
-)
-
-
-setMethod(".append", c("matrix", "matrix"),
-  function(x, y) rbind(x, y)
-)
-
-
-setMethod(".append", c("ordered", "ordered"),
-  function(x, y) {
-    xy <- unlist(list(x, y))
-    if (all(levels(x) == levels(y))) as.ordered(xy) else xy
-  }
-)
-
-
-setMethod(".append", c("Surv", "Surv"),
-  function(x, y) {
-    df <- as.data.frame(rbind(x, y))
-    names(df) <- NULL
-    do.call(Surv, df)
-  }
-)
-
-
-setMethod(".append", c("vector", "vector"),
-  function(x, y) c(x, y)
-)
 
 
 assert_equal_weights <- function(weights) {
@@ -203,7 +146,7 @@ list2function <- function(x) {
 make_unique_levels <- function(x, which) {
   level_names <- list()
   for (i in seq(x)) {
-    if (is.null(x[[i]][[which]])) x[[i]][[which]] <- which
+    if (is.null(x[[i]][[which]])) x[[i]][[which]] <- rep(which, nrow(x[[i]]))
     x[[i]][[which]] <- as.factor(x[[i]][[which]])
     arg_name <- names(x)[i]
     level_names[[i]] <- if (!is.null(arg_name) && nzchar(arg_name)) {
@@ -360,9 +303,10 @@ strata_var.ModelFrame <- function(object, ...) {
 
 strata_var.recipe <- function(object, ...) {
   info <- summary(object)
-  strata_index <- which(info$role %in% "case_strata")
-  if (length(strata_index) > 1) stop("multiple strata variables specified")
-  if (length(strata_index) == 1) info$variable[strata_index] else NULL
+  var_name <- info$variable[info$role == "case_strata"]
+  if (length(var_name) == 0) NULL else
+    if (length(var_name) == 1) var_name else
+      stop("multiple strata variables specified")
 }
 
 
@@ -375,9 +319,44 @@ switch_class <- function(EXPR, ...) {
 
 terms.recipe <- function(x, ...) {
   info <- summary(x)
-  lhs <- with(info, variable[role == "outcome"])
-  rhs <- with(info, variable[role == "predictor"])
-  terms(reformulate(rhs, lhs))
+  
+  get_vars <- function(roles = NULL, types = NULL) {
+    is_match <- by(info, info$variable, function(split) {
+      all(roles %in% split$role) && all(types %in% split$type)
+    })
+    names(is_match)[is_match]
+  }
+  
+  outcome_set <- get_vars("outcome")
+
+  surv_time <- get_vars(c("surv_time", "outcome"))
+  surv_event <- get_vars(c("surv_event", "outcome"))
+  numeric_outcomes <- get_vars("outcome", "numeric")  
+  
+  if (length(surv_time) > 1 || length(surv_event) > 1) {
+    stop("multiple instances of outcome role 'surv_time' or 'surv_event'")
+  } else if (length(surv_time)) {
+    outcome <- call("Surv", as.symbol(surv_time))
+    if (length(surv_event)) outcome[[3]] <- as.symbol(surv_event)
+    outcome_set <- setdiff(outcome_set, c(surv_time, surv_event))
+  } else if (length(surv_event)) {
+    stop("outcome role 'surv_event' specified without 'surv_time'")
+  } else if (length(numeric_outcomes) > 1) {
+    outcome <- as.call(c(.(cbind), lapply(numeric_outcomes, as.symbol)))
+    outcome_set <- setdiff(outcome_set, numeric_outcomes)
+  } else if (length(outcome_set) == 1) {
+    outcome <- outcome_set
+    outcome_set <- NULL
+  }
+  
+  if (length(outcome_set)) {
+    stop("recipe outcome must be a single variable, survival variables with ",
+         "roles 'surv_time' and 'surv_event', or multiple numeric variables")
+  }
+
+  predictors <- info$variable[info$role == "predictor"]
+  
+  terms(reformulate(predictors, outcome))
 }
 
 
@@ -386,6 +365,6 @@ warn <- function(...) {
 }
 
 
-depwarn <- function(old, new) {
-  warn(old, "\n", new)
+depwarn <- function(old, new, expired = FALSE) {
+  ifelse(expired, stop, warning)(old, ";\n", new, call. = FALSE)
 }

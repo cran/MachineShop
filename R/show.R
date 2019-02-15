@@ -10,8 +10,8 @@ print.Resamples <- function(x, ...) {
 
 setMethod("show", "MLControl",
   function(object) {
-    if (length(object@surv_times)) {
-      cat("Survival times:", toString(object@surv_times), "\n")
+    if (length(object@times)) {
+      cat("Survival times:", toString(object@times), "\n")
     }
     cat("Seed:", object@seed, "\n\n")
     invisible()
@@ -148,6 +148,18 @@ setMethod("show", "ConfusionMatrix",
 )
 
 
+setMethod("show", "Curves",
+  function(object){
+    cat("An object of class \"", class(object), "\"\n\n",
+        "Metrics: ",
+        "x = ", object@metrics$x@label, ", ",
+        "y = ", object@metrics$y@label, "\n\n",
+        sep = "")
+    print(as.data.frame(object))
+  }
+)
+
+
 setMethod("show", "HTestPerformanceDiff",
   function(object) {
     cat("An object of class \"", class(object), "\"\n\n",
@@ -176,7 +188,7 @@ setMethod("show", "Resamples",
   function(object) {
     cat("An object of class \"", class(object), "\"\n\n",
         "Models: ", toString(levels(object$Model)), "\n", sep = "")
-    if (length(object@strata)) {
+    if (isTRUE(nzchar(object@strata))) {
       cat("Stratification variable:", object@strata, "\n")
     }
     cat("\n")

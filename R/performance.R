@@ -11,15 +11,15 @@
 #' functions to include in the calculation of performance metrics.
 #' @param cutoff threshold above which binary factor probabilities are
 #' classified as events and below which survival probabilities are classified.
-#' @param times numeric vector of follow-up times at which survival events
-#' were predicted.
 #' @param na.rm logical indicating whether to remove observed or predicted
 #' responses that are \code{NA} when calculating metrics.
-#' @param ... arguments passed from the \code{Resamples} method to the others
-#' and from deprecated function \code{modelmetrics} to \code{performance}.
+#' @param ... arguments passed from the \code{Resamples} method to the response
+#' type-specific methods or from the method for \code{Confusion} to
+#' \code{ConfusionMatrix}.
 #' 
 #' @seealso \code{\link{response}}, \code{\link{predict}},
-#' \code{\link{resample}}, \code{\link{confusion}}, \code{\link{metrics}}
+#' \code{\link{resample}}, \code{\link{confusion}}, \code{\link{metrics}},
+#' \code{\link{plot}}, \code{\link{summary}}
 #' 
 performance <- function(x, ...) {
   UseMethod("performance")
@@ -35,17 +35,10 @@ performance <- function(x, ...) {
 #' plot(perf)
 #' 
 performance.Resamples <- function(x, ..., na.rm = TRUE) {
-  args <- list(...)
-  args$time <- x@control@surv_times
-
   if (na.rm) x <- na.omit(x)
   
   perf_by <- by(x, x[c("Model", "Resample")], function(x) {
-    if (nrow(x)) {
-      do.call(performance, c(list(x$Observed, x$Predicted), args))
-    } else {
-      NA
-    }
+    if (nrow(x)) performance(x$Observed, x$Predicted, ...) else NA
   }, simplify = FALSE)
   
   perf_list <- tapply(perf_by, rep(dimnames(perf_by)$Model, dim(perf_by)[2]),
@@ -61,24 +54,15 @@ performance.Resamples <- function(x, ..., na.rm = TRUE) {
 
 #' @rdname performance
 #' 
-performance.ConfusionMatrix <- function(x, metrics =
-                                          c("Accuracy" = MachineShop::accuracy,
-                                            "Kappa" = MachineShop::kappa2),
-                                        ...) {
-  metrics <- list2function(metrics)
-  metrics(x)
-}
-
-
-#' @rdname performance
-#' 
 performance.factor <- function(x, y, metrics =
-                                 c("Accuracy" = MachineShop::accuracy,
+                                 c("Brier" = MachineShop::brier,
+                                   "Accuracy" = MachineShop::accuracy,
                                    "Kappa" = MachineShop::kappa2,
+                                   "Weighted Kappa" =
+                                     MachineShop::weighted_kappa2,
                                    "ROCAUC" = MachineShop::roc_auc,
                                    "Sensitivity" = MachineShop::sensitivity,
-                                   "Specificity" = MachineShop::specificity,
-                                   "Brier" = MachineShop::brier),
+                                   "Specificity" = MachineShop::specificity),
                                 cutoff = 0.5, ...) {
   metrics <- list2function(metrics)
   metrics(x, y, cutoff = cutoff)
@@ -88,8 +72,8 @@ performance.factor <- function(x, y, metrics =
 #' @rdname performance
 #' 
 performance.matrix <- function(x, y, metrics =
-                                 c("R2" = MachineShop::r2,
-                                   "RMSE" = MachineShop::rmse,
+                                 c("RMSE" = MachineShop::rmse,
+                                   "R2" = MachineShop::r2,
                                    "MAE" = MachineShop::mae), ...) {
   metrics <- list2function(metrics)
   metrics(x, y)
@@ -99,9 +83,9 @@ performance.matrix <- function(x, y, metrics =
 #' @rdname performance
 #' 
 performance.numeric <- function(x, y, metrics =
-                                  c("R2" = MachineShop::r2,
-                                   "RMSE" = MachineShop::rmse,
-                                   "MAE" = MachineShop::mae), ...) {
+                                  c("RMSE" = MachineShop::rmse,
+                                    "R2" = MachineShop::r2,
+                                    "MAE" = MachineShop::mae), ...) {
   metrics <- list2function(metrics)
   metrics(x, y)
 }
@@ -123,17 +107,28 @@ performance.numeric <- function(x, y, metrics =
 #' 
 performance.Surv <- function(x, y, metrics =
                                c("CIndex" = MachineShop::cindex,
+                                 "Brier" = MachineShop::brier,
                                  "ROCAUC" = MachineShop::roc_auc,
-                                 "Brier" = MachineShop::brier),
-                              cutoff = 0.5, times = numeric(), ...) {
+                                 "Accuracy" = MachineShop::accuracy),
+                              cutoff = 0.5, ...) {
   metrics <- list2function(metrics)
-  metrics(x, y, cutoff = cutoff, times = times)
+  metrics(x, y, cutoff = cutoff)
 }
 
 
 #' @rdname performance
 #' 
-modelmetrics <- function(...) {
-  depwarn("'modelmetrics' is deprecated", "use 'performance' instead")
-  performance(...)
+performance.Confusion <- function(x, ...) {
+  structure(lapply(x, performance, ...), class = "listof")
+}
+
+
+#' @rdname performance
+#' 
+performance.ConfusionMatrix <- function(x, metrics =
+                                          c("Accuracy" = MachineShop::accuracy,
+                                            "Kappa" = MachineShop::kappa2),
+                                        ...) {
+  metrics <- list2function(metrics)
+  metrics(x)
 }

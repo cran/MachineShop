@@ -19,7 +19,7 @@ predicted responses.}
 \item{y}{predicted responses.}
 }
 \value{
-\code{Lift} class object that inherits from \code{data.frame}.
+\code{Lift} class object that inherits from \code{Curves}.
 }
 \description{
 Calculate lift estimates from observed and predicted responses.
@@ -28,7 +28,7 @@ Calculate lift estimates from observed and predicted responses.
 library(MASS)
 
 res <- resample(type ~ ., data = Pima.tr, model = GBMModel)
-(lf <- lift(res))
+lf <- lift(res)
 plot(lf)
 
 }

@@ -81,7 +81,7 @@ tune <- function(x, ...) {
 #' }
 #' 
 tune.formula <- function(x, data, models, grid = 3, fixed = NULL,
-                         control = CVControl, metrics = NULL, stat = mean,
+                         control = CVControl, metrics = NULL, stat = base::mean,
                          maximize = TRUE, ...) {
   .tune(x, data, models, grid, fixed, control, metrics, stat, maximize, ...)
 }
@@ -90,8 +90,8 @@ tune.formula <- function(x, data, models, grid = 3, fixed = NULL,
 #' @rdname tune-methods
 #' 
 tune.ModelFrame <- function(x, models, grid = 3, fixed = NULL,
-                            control = CVControl, metrics = NULL, stat = mean,
-                            maximize = TRUE, ...) {
+                            control = CVControl, metrics = NULL,
+                            stat = base::mean, maximize = TRUE, ...) {
   .tune(x, NULL, models, grid, fixed, control, metrics, stat, maximize, ...)
 }
 
@@ -99,7 +99,7 @@ tune.ModelFrame <- function(x, models, grid = 3, fixed = NULL,
 #' @rdname tune-methods
 #' 
 tune.recipe <- function(x, models, grid = 3, fixed = NULL, control = CVControl,
-                        metrics = NULL, stat = mean, maximize = TRUE, ...) {
+                        metrics = NULL, stat = base::mean, maximize = TRUE, ...) {
   .tune(x, NULL, models, grid, fixed, control, metrics, stat, maximize, ...)
 }
 
@@ -136,16 +136,21 @@ tune.recipe <- function(x, models, grid = 3, fixed = NULL, control = CVControl,
   
   control <- getMLObject(control, "MLControl")
   
-  performance_tune <-
-    ifelse(is.null(metrics),
-           function(x) performance(x, ...),
-           function(x) performance(x, metrics = metrics, ...))
-
   perf_list <- list()
   perf_stat <- numeric()
   for (name in names(models)) {
     res <- resample(x, data = data, model = models[[name]], control = control)
-    perf_list[[name]] <- performance_tune(res)
+    if (is.null(metrics)) {
+      method <- getS3method("performance", class(res$Observed))
+      metrics <- eval(formals(method)$metrics)
+      is_defined <- sapply(metrics, function(metric) {
+        info <- metricinfo(metric)[[1]]
+        any(mapply(is, list(res$Observed), info$types$observed) &
+              mapply(is, list(res$Predicted), info$types$predicted))
+      })
+      metrics <- metrics[is_defined]
+    }
+    perf_list[[name]] <- performance(res, metrics = metrics, ...)
     perf_stat[name] <- stat(na.omit(perf_list[[name]][, 1]))
   }
   perf <- do.call(Performance, perf_list)

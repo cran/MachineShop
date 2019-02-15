@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 1.1.0
-Date: 2019-01-23
+Version: 1.2.0
+Date: 2019-02-15
 Authors@R: person("Brian J", "Smith",
                   email = "brian-j-smith@uiowa.edu",
                   role = c("aut", "cre"))
@@ -17,11 +17,11 @@ Suggests: adabag, BART, bartMachine, C50, doParallel, e1071, earth,
         nnet, partykit, pls, randomForest, ranger, rmarkdown, rms,
         rpart, testthat, tree, xgboost
 License: GPL-3
-URL: https://github.com/brian-j-smith/MachineShop
+URL: https://brian-j-smith.github.io/MachineShop/
 BugReports: https://github.com/brian-j-smith/MachineShop/issues
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2019-01-23 13:29:16 UTC; bjsmith
+Packaged: 2019-02-15 15:25:12 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2019-01-23 14:10:02 UTC
+Date/Publication: 2019-02-15 16:20:03 UTC
