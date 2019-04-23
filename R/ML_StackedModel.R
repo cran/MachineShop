@@ -23,11 +23,9 @@
 #' @seealso \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
 #' model <- StackedModel(GBMModel, SVMRadialModel, GLMNetModel(lambda = 0.01))
-#' modelfit <- fit(medv ~ ., data = Boston, model = model)
-#' predict(modelfit, newdata = Boston)
+#' modelfit <- fit(sale_amount ~ ., data = ICHomes, model = model)
+#' predict(modelfit, newdata = ICHomes)
 #' 
 StackedModel <- function(..., control = CVControl, weights = NULL) {
   
@@ -64,7 +62,7 @@ setClass("StackedModel", contains = "MLModel")
 
 
 .fit.StackedModel <- function(model, x, ...) {
-  mf <- ModelFrame(x)
+  mf <- ModelFrame(x, na.rm = FALSE)
   
   base_learners <- model@params$base_learners
   weights <- model@params$weights

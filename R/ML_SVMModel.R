@@ -62,9 +62,13 @@ SVMModel <- function(scaled = TRUE, type = NULL,
     design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
-      kernlab::ksvm(formula, data = data, prob.model = TRUE, ...)
+      eval_fit(data,
+               formula = kernlab::ksvm(formula, data = as.data.frame(data),
+                                       prob.model = TRUE, ...),
+               matrix = kernlab::ksvm(x, y, prob.model = TRUE, ...))
     },
     predict = function(object, newdata, fitbits, ...) {
+      newdata <- as.data.frame(newdata)
       kernlab::predict(object, newdata = newdata,
                        type = ifelse(is.factor(response(fitbits)),
                                      "probabilities", "response"))
@@ -79,7 +83,7 @@ SVMModel <- function(scaled = TRUE, type = NULL,
 #' @param sigma inverse kernel width used by the ANOVA, Bessel, and Laplacian
 #' kernels.
 #' @param degree degree of the ANOVA, Bessel, and polynomial kernel functions.
-#' @param ... arguments to be passed to \code{SVMModel}.
+#' @param ... arguments passed to \code{SVMModel}.
 #' 
 SVMANOVAModel <- function(sigma = 1, degree = 1, ...) {
   .SVMModel("SVMANOVAModel", "Support Vector Machines (ANOVA)",
@@ -121,9 +125,7 @@ SVMLinearModel <- function(...) {
 #' @param offset offset used in polynomial and hyperbolic tangent kernels.
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = SVMRadialModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = SVMRadialModel())
 #' 
 SVMPolyModel <- function(degree = 1, scale = 1, offset = 1, ...) {
   .SVMModel("SVMPolyModel", "Support Vector Machines (Poly)",
@@ -188,7 +190,7 @@ SVMTanhModel <- function(scale = 1, offset = 1, ...) {
         set_param("order", 1:min(length, 3)) %>%
         set_param("scale", 10^seq_range(-4, 2, c(-4, log10(2)), length)) %>%
         set_param("sigma", {
-          sigmas <- kernlab::sigest(extract(formula(terms(x)), x)$x,
+          sigmas <- kernlab::sigest(model.matrix(x, intercept = FALSE),
                                     scaled = scaled)
           exp(seq(log(min(sigmas)), log(max(sigmas)), length = length))
         })

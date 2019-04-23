@@ -2,6 +2,40 @@
 #' 
 #' Calculate confusion matrices of predicted and observed responses.
 #' 
+#' @name confusion
+#' @rdname confusion
+#' 
+#' @param ... named or unnamed \code{confusion} output to combine together with
+#' the \code{Confusion} constructor.
+#' 
+Confusion <- function(...) {
+  args <- list(...)
+  
+  conf_list <- list()
+  for (i in seq(args)) {
+    x <- args[[i]]
+    if (is(x, "ConfusionMatrix")) {
+      x <- list("Model" = x)
+    } else if (!is(x, "Confusion")) {
+      stop("values to combine must be Confusion or ConfusionMatrix objects")
+    }
+    arg_name <- names(args)[i]
+    if (!is.null(arg_name) && nzchar(arg_name)) {
+      names(x) <- rep(arg_name, length(x))
+    }
+    conf_list <- c(conf_list, x)
+  }
+  names(conf_list) <- make.unique(names(conf_list))
+
+  structure(conf_list, class = c("Confusion", "listof"))
+}
+
+
+ConfusionMatrix <- function(object) {
+  new("ConfusionMatrix", object)
+}
+
+
 #' @rdname confusion
 #' 
 #' @param x factor of observed responses or \code{Resamples} object of observed
@@ -13,6 +47,8 @@
 #' class probabilities, whereas a default cutoff of 0.5 is used for
 #' survival probabilities.  Class probability summations and survival will
 #' appear as decimal numbers that can be interpreted as expected counts.
+#' @param na.rm logical indicating whether to remove observed or predicted
+#' responses that are \code{NA} when calculating metrics.
 #' 
 #' @return
 #' The return value is a \code{ConfusionMatrix} class object that inherits from
@@ -28,7 +64,12 @@
 #' (conf <- confusion(res))
 #' plot(conf)
 #' 
-confusion <- function(x, y = NULL, cutoff = 0.5, ...) {
+confusion <- function(x, y = NULL, cutoff = 0.5, na.rm = TRUE, ...) {
+  if (na.rm) {
+    complete <- complete_subset(x = x, y = y)
+    x <- complete$x
+    y <- complete$y
+  }
   .confusion(x, y, cutoff = cutoff)
 }
 
@@ -46,7 +87,7 @@ confusion <- function(x, y = NULL, cutoff = 0.5, ...) {
 
 .confusion.Resamples <- function(x, cutoff, ...) {
   conf_list <- by(x, list(Model = x$Model), function(data) {
-   confusion(data$Observed, data$Predicted, cutoff = cutoff)
+   confusion(data$Observed, data$Predicted, cutoff = cutoff, na.rm = FALSE)
   }, simplify = FALSE)
   if (all(mapply(is, conf_list, "Confusion"))) {
     conf_list <- unlist(conf_list, recursive = FALSE)
@@ -107,7 +148,7 @@ setMethod(".confusion_matrix", c("Surv", "SurvProbs"),
 
 setMethod(".confusion_matrix", c("Surv", "SurvEvents"),
   function(observed, predicted, ...) {
-    times <- predicted@times
+    times <- time(predicted)
     surv <- predict(survfit(observed ~ 1, se.fit = FALSE), times)
     
     conf_tbl <- table(Predicted = 0:1, Observed = 0:1)
@@ -115,7 +156,7 @@ setMethod(".confusion_matrix", c("Surv", "SurvEvents"),
     structure(
       lapply(1:length(times), function(i) {
         surv_positives <- 1
-        positives <- predicted[, i] == 1
+        positives <- predicted[, i, drop = TRUE] == 1
         p <- mean(positives)
         if (p > 0) {
           obs <- observed[positives]

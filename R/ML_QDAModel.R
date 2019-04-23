@@ -47,11 +47,15 @@ QDAModel <- function(prior = NULL, method = c("moment", "mle", "mve", "t"),
     design = "model.matrix",
     fit = function(formula, data, weights, use, ...) {
       assert_equal_weights(weights)
-      modelfit <- MASS::qda(formula, data = data, ...)
+      modelfit <- eval_fit(data,
+                           formula = MASS::qda(formula,
+                                               data = as.data.frame(data), ...),
+                           matrix = MASS::qda(x, y, ...))
       modelfit$use <- use
       modelfit
     },
     predict = function(object, newdata, prior = object$prior, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, prior = prior,
               method = object$use)$posterior
     }

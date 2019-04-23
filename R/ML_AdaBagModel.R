@@ -59,11 +59,10 @@ AdaBagModel <- function(mfinal = 100, minsplit = 20,
     design = "terms",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
-      data <- model.frame(formula, data)
-      formula[[2]] <- formula(data)[[2]]
-      adabag::bagging(formula, data = data, ...)
+      adabag::bagging(formula, data = as.data.frame(data), ...)
     },
     predict = function(object, newdata, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata)$prob
     },
     varimp = function(object, ...) {

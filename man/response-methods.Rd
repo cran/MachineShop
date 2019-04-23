@@ -2,23 +2,26 @@
 % Please edit documentation in R/response.R
 \name{response}
 \alias{response}
-\alias{response.formula}
+\alias{response.MLModelFit}
+\alias{response.ModelFrame}
 \alias{response.recipe}
 \title{Extract Response Variable}
 \usage{
 response(object, ...)
 
-\method{response}{formula}(object, data, ...)
+\method{response}{MLModelFit}(object, newdata = NULL, ...)
 
-\method{response}{recipe}(object, data, ...)
+\method{response}{ModelFrame}(object, newdata = NULL, ...)
+
+\method{response}{recipe}(object, newdata = NULL, ...)
 }
 \arguments{
-\item{object}{object containing response variable values.}
+\item{object}{object containing the response variable definition.}
 
 \item{...}{arguments passed to other methods.}
 
-\item{data}{\code{data.frame} containing the values of a response variable
-defined in a formula.}
+\item{newdata}{data frame from which to extract the response
+variable values if given; otherwise, \code{object} is used.}
 }
 \description{
 Extract the response variable from an object.
@@ -28,8 +31,9 @@ Extract the response variable from an object.
 library(survival)
 library(MASS)
 
-fo <- Surv(time, status != 2) ~ sex + age + year + thickness + ulcer
-response(fo, data = Melanoma)
+mf <- ModelFrame(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
+                 data = Melanoma)
+response(mf)
 
 }
 \seealso{

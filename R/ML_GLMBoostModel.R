@@ -58,25 +58,26 @@ GLMBoostModel <- function(family = NULL, mstop = 100, nu = 0.1,
     design = "terms",
     fit = function(formula, data, weights, family = NULL, ...) {
       if (is.null(family)) {
-        family <- switch_class(response(formula, data),
+        family <- switch_class(response(data),
                                "factor" = mboost::Binomial(),
                                "numeric" = mboost::Gaussian(),
                                "Surv" = mboost::CoxPH())
       }
-      mboost::glmboost(formula, data = data, na.action = na.pass,
-                       weights = weights, family = family, ...)
+      eval_fit(data,
+               formula = mboost::glmboost(formula, data = as.data.frame(data),
+                                          na.action = na.pass,
+                                          weights = weights, family = family,
+                                          ...),
+               matrix = mboost::glmboost(x, y, weights = weights,
+                                         family = family, ...))
     },
     predict = function(object, newdata, times, ...) {
+      newdata <- as.data.frame(newdata)
       if (object$family@name == "Cox Partial Likelihood") {
         y <- object$response
-        risk <- drop(exp(predict(object, type = "link")))
-        new_risk <- drop(exp(predict(object, newdata = newdata, type = "link")))
-        
-        n <- length(times)
-        if (n == 0) times <- surv_times(y)
-        
-        pred <- exp(new_risk %o% -basehaz(y, risk, times))
-        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
+        lp <- drop(predict(object, type = "link"))
+        new_lp <- drop(predict(object, newdata = newdata, type = "link"))
+        predict(y, lp, times, new_lp, ...)
       } else {
         predict(object, newdata = newdata, type = "response")
       }

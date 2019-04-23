@@ -1,3 +1,8 @@
+PerformanceDiff <- function(object, model_names) {
+  new("PerformanceDiff", object, model_names = model_names)
+}
+
+
 #' Model Performance Differences
 #' 
 #' Pairwise model differences in resampled performance metrics.
@@ -6,7 +11,7 @@
 #' @rdname diff-methods
 #' 
 #' @param x object containing resampled metrics.
-#' @param ... arguments to be passed to other methods.
+#' @param ... arguments passed to other methods.
 #' 
 #' @return \code{PerformanceDiff} class object that inherits from
 #' \code{Performance}.
@@ -59,6 +64,11 @@ diff.MLModelTune <- function(x, ...) {
 }
 
 
+HTestPerformanceDiff <- function(object, adjust) {
+  new("HTestPerformanceDiff", object, adjust = adjust)
+}
+
+
 #' Paired t-Tests for Model Comparisons
 #' 
 #' Paired t-test comparisons of resampled performance metrics from different
@@ -82,14 +92,12 @@ diff.MLModelTune <- function(x, ...) {
 #' 
 #' @examples
 #' ## Numeric response example
-#' library(MASS)
-#' 
-#' fo <- medv ~ .
+#' fo <- sale_amount ~ .
 #' control <- CVControl()
 #' 
-#' gbmres1 <- resample(fo, Boston, GBMModel(n.trees = 25), control)
-#' gbmres2 <- resample(fo, Boston, GBMModel(n.trees = 50), control)
-#' gbmres3 <- resample(fo, Boston, GBMModel(n.trees = 100), control)
+#' gbmres1 <- resample(fo, ICHomes, GBMModel(n.trees = 25), control)
+#' gbmres2 <- resample(fo, ICHomes, GBMModel(n.trees = 50), control)
+#' gbmres3 <- resample(fo, ICHomes, GBMModel(n.trees = 100), control)
 #' 
 #' res <- Resamples(GBM1 = gbmres1, GBM2 = gbmres2, GBM3 = gbmres3)
 #' perfdiff <- diff(res)

@@ -1,3 +1,9 @@
+MLModelTune <- function(object, tune_grid, performance, selected) {
+  new("MLModelTune", object, tune_grid = tune_grid, performance = performance,
+      selected = selected)
+}
+
+
 #' Model Tuning and Selection
 #' 
 #' Evaluate a model over a grid of tuning parameters or a list of specified
@@ -7,9 +13,9 @@
 #' @name tune
 #' @rdname tune-methods
 #' 
-#' @param x defined relationship between model predictors and an outcome.  May
-#' be a \code{ModelFrame} containing a formula, data, and optionally case
-#' weights; a \code{formula}; or a \code{recipe.}
+#' @param x defines a relationship between model predictor and response
+#' variables.  May be a \code{formula}, design matrix of predictors,
+#' \code{ModelFrame}, or untrained \code{recipe}.
 #' @param ... arguments passed to the \code{metrics} functions.
 #' 
 #' @return \code{MLModelTune} class object that inherits from \code{MLModel}.
@@ -52,31 +58,29 @@ tune <- function(x, ...) {
 #' 
 #' @examples
 #' \donttest{
-#' ## Survival response example
-#' library(MASS)
-#' 
-#' fo <- medv ~ .
+#' ## Numeric response example
+#' fo <- sale_amount ~ .
 #' 
 #' # User-specified grid
-#' (gbmtune1 <- tune(fo, data = Boston, model = GBMModel,
+#' (gbmtune1 <- tune(fo, data = ICHomes, model = GBMModel,
 #'                   grid = expand.grid(n.trees = c(25, 50, 100),
 #'                                      interaction.depth = 1:3,
 #'                                      n.minobsinnode = c(5, 10)),
 #'                   control = CVControl(folds = 10, repeats = 5)))
 #' 
 #' # Automatically generated grid
-#' (gbmtune2 <- tune(fo, data = Boston, model = GBMModel, grid = 3,
+#' (gbmtune2 <- tune(fo, data = ICHomes, model = GBMModel, grid = 3,
 #'                   control = CVControl(folds = 10, repeats = 5)))
 #' 
 #' # Randomly sampled grid points
-#' (gbmtune3 <- tune(fo, data = Boston, model = GBMModel,
+#' (gbmtune3 <- tune(fo, data = ICHomes, model = GBMModel,
 #'                   grid = Grid(length = 1000, random = 10),
 #'                   control = CVControl(folds = 10, repeats = 5)))
 #' 
 #' summary(gbmtune3)
 #' plot(gbmtune3, type = "line")
 #' 
-#' gbmfit <- fit(fo, data = Boston, model = gbmtune3)
+#' gbmfit <- fit(fo, data = ICHomes, model = gbmtune3)
 #' varimp(gbmfit)
 #' }
 #' 
@@ -84,6 +88,17 @@ tune.formula <- function(x, data, models, grid = 3, fixed = NULL,
                          control = CVControl, metrics = NULL, stat = base::mean,
                          maximize = TRUE, ...) {
   .tune(x, data, models, grid, fixed, control, metrics, stat, maximize, ...)
+}
+
+
+#' @rdname tune-methods
+#' 
+#' @param y predictor variable.
+#' 
+tune.matrix <- function(x, y, models, grid = 3, fixed = NULL,
+                        control = CVControl, metrics = NULL, stat = base::mean,
+                        maximize = TRUE, ...) {
+  .tune(x, y, models, grid, fixed, control, metrics, stat, maximize, ...)
 }
 
 
@@ -99,7 +114,8 @@ tune.ModelFrame <- function(x, models, grid = 3, fixed = NULL,
 #' @rdname tune-methods
 #' 
 tune.recipe <- function(x, models, grid = 3, fixed = NULL, control = CVControl,
-                        metrics = NULL, stat = base::mean, maximize = TRUE, ...) {
+                        metrics = NULL, stat = base::mean, maximize = TRUE,
+                        ...) {
   .tune(x, NULL, models, grid, fixed, control, metrics, stat, maximize, ...)
 }
 
@@ -127,8 +143,7 @@ tune.recipe <- function(x, models, grid = 3, fixed = NULL, control = CVControl,
       grid <- grid$length
     }
     if (is(grid, "numeric")) {
-      grid <-
-        grid(x, data = data, model = model, length = grid, random = random)
+      grid <- grid(x, data, model = model, length = grid, random = random)
     }
     grid <- combine_tune_params(grid, fixed)
     models <- expand.model(list(get(model@name, mode = "function"), grid))
@@ -139,9 +154,9 @@ tune.recipe <- function(x, models, grid = 3, fixed = NULL, control = CVControl,
   perf_list <- list()
   perf_stat <- numeric()
   for (name in names(models)) {
-    res <- resample(x, data = data, model = models[[name]], control = control)
+    res <- resample(x, data, model = models[[name]], control = control)
     if (is.null(metrics)) {
-      method <- getS3method("performance", class(res$Observed))
+      method <- get(findMethod(performance, res$Observed))
       metrics <- eval(formals(method)$metrics)
       is_defined <- sapply(metrics, function(metric) {
         info <- metricinfo(metric)[[1]]

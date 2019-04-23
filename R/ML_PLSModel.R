@@ -22,9 +22,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = PLSModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = PLSModel())
 #'
 PLSModel <- function(ncomp = 1, scale = FALSE) {
   
@@ -42,17 +40,20 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
     design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
-      y <- response(formula, data)
+      y <- response(data)
+      data <- as.data.frame(data)
       if (is.factor(y)) {
-        varname <- response(terms(formula))
+        y_name <- deparse(response(formula))
+        formula[[2]] <- as.symbol(y_name)
         mm <- model.matrix(~ y - 1)
         colnames(mm) <- levels(y)
-        data[[varname]] <- mm
-        formula[[2]] <- as.symbol(varname)
+        data[[y_name]] <- mm
+        
       }
       pls::plsr(formula, data = data, ...)
     },
     predict = function(object, newdata, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, ncomp = object$ncomp,
               type = "response")
     },

@@ -63,9 +63,8 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
     params = params(environment()),
     design = "model.matrix",
     fit = function(formula, data, weights, params, ...) {
-      terms <- extract(formula, data)
-      x <- terms$x
-      y <- terms$y
+      x <- model.matrix(data, intercept = FALSE)
+      y <- response(data)
       response_levels <- levels(y)
       switch_class(y,
                    "factor" = {
@@ -83,8 +82,8 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
       modelfit$levels <- response_levels
       modelfit
     },
-    predict = function(object, newdata, fitbits, ...) {
-      newx <- extract(formula(fitbits)[-2], newdata)$x
+    predict = function(object, newdata, ...) {
+      newx <- model.matrix(newdata, intercept = FALSE)
       pred <- predict(object, newdata = newx)
       if (object$params$objective == "multi:softprob") {
         pred <- matrix(pred, nrow = nrow(newx), byrow = TRUE)
@@ -120,7 +119,7 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
 #' bias.
 #' @param eta,gamma,max_depth,min_child_weight,max_delta_step,subsample,colsample_bytree,colsample_bylevel,lambda,alpha,tree_method,sketch_eps,scale_pos_weight,update,refresh_leaf,process_type,grow_policy,max_leaves,max_bin,sample_type,normalize_type,rate_drop,one_drop,skip_drop,updater,feature_selector,top_k
 #' see \code{params} reference.
-#' @param ... arguments to be passed to \code{XGBModel}.
+#' @param ... arguments passed to \code{XGBModel}.
 #' 
 XGBDARTModel <- function(objective = NULL, base_score = 0.5,
                          eta = 0.3, gamma = 0, max_depth = 6,

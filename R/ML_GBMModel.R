@@ -59,29 +59,30 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
     design = "terms",
     fit = function(formula, data, weights, distribution = NULL, ...) {
       if (is.null(distribution)) {
-        distribution <- switch_class(response(formula, data),
+        distribution <- switch_class(response(data),
                                      "factor" = "multinomial",
                                      "numeric" = "gaussian",
                                      "Surv" = "coxph")
       }
-      gbm::gbm(formula, data = data, weights = weights,
-               distribution = distribution, ...)
+      eval_fit(data,
+               formula = gbm::gbm(formula, data = as.data.frame(data),
+                                  weights = weights,
+                                  distribution = distribution, ...),
+               matrix = gbm::gbm.fit(x, y, w = weights,
+                                     distribution = distribution,
+                                     verbose = FALSE, ...))
     },
     predict = function(object, newdata, fitbits, times, ...) {
+      newdata <- as.data.frame(newdata)
+      n <- object$n.trees
       if (object$distribution$name == "coxph") {
         y <- response(fitbits)
-        risk <- exp(predict(object, n.trees = object$n.trees, type = "link"))
-        new_risk <- exp(predict(object, newdata = newdata,
-                                n.trees = object$n.trees, type = "link"))
-
-        n <- length(times)
-        if (n == 0) times <- surv_times(y)
-        
-        pred <- exp(new_risk %o% -basehaz(y, risk, times))
-        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
+        data <- preprocess(fitbits@x)
+        lp <- predict(object, newdata = data, n.trees = n, type = "link")
+        new_lp <- predict(object, newdata = newdata, n.trees = n, type = "link")
+        predict(y, lp, times, new_lp, ...)
       } else {
-        predict(object, newdata = newdata, n.trees = object$n.trees,
-                type = "response")
+        predict(object, newdata = newdata, n.trees = n, type = "response")
       }
     },
     varimp = function(object, ...) {

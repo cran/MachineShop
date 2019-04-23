@@ -20,8 +20,10 @@
 #' @examples
 #' library(MASS)
 #' 
-#' df <- Boston
-#' df$medv <- cut(Boston$medv, breaks = c(0, 15, 20, 25, 50), ordered = TRUE)   
+#' df <- within(Boston,
+#'              medv <- cut(medv,
+#'                          breaks = c(0, 10, 15, 20, 25, 50),
+#'                          ordered = TRUE))
 #' fit(medv ~ ., data = df, model = POLRModel())
 #' 
 POLRModel <- function(method = c("logistic", "probit", "loglog", "cloglog",
@@ -37,9 +39,11 @@ POLRModel <- function(method = c("logistic", "probit", "loglog", "cloglog",
     params = params(environment()),
     design = "model.matrix",
     fit = function(formula, data, weights, ...) {
-      MASS::polr(formula, data = data, weights = weights, Hess = TRUE, ...)
+      MASS::polr(formula, data = as.data.frame(data), weights = weights,
+                 Hess = TRUE, ...)
     },
     predict = function(object, newdata, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "probs")
     },
     varimp = function(object, ...) {

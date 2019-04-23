@@ -56,9 +56,7 @@
 #' 
 #' @examples
 #' \donttest{
-#' library(MASS)
-#' 
-#' modelfit <- fit(medv ~ ., data = Boston, model = BARTModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = BARTModel())
 #' }
 #'
 BARTModel <- function(K = NULL, sparse = FALSE, theta = 0, omega = 1,
@@ -79,9 +77,8 @@ BARTModel <- function(K = NULL, sparse = FALSE, theta = 0, omega = 1,
     design = "model.matrix",
     fit = function(formula, data, weights, K = NULL, sigest = NA, sigdf = 3,
                    sigquant = 0.90, lambda = NA, ...) {
-      terms <- extract(formula, data)
-      x <- terms$x
-      y <- terms$y
+      x <- model.matrix(data, intercept = FALSE)
+      y <- response(data)
       switch_class(y,
                    "factor" = {
                      assert_equal_weights(weights)
@@ -105,8 +102,8 @@ BARTModel <- function(K = NULL, sparse = FALSE, theta = 0, omega = 1,
                                     delta = y[, "status"], K = K, ...)
                    })
     },
-    predict = function(object, newdata, fitbits, times, ...) {
-      newx <- extract(formula(fitbits)[-2], newdata)$x
+    predict = function(object, newdata, times, ...) {
+      newx <- model.matrix(newdata, intercept = FALSE)
       if (is(object, "mbart")) {
         predict(object, newdata = newx)$prob.test.mean %>%
           matrix(nrow = nrow(newx), ncol = object$K, byrow = TRUE)
@@ -118,12 +115,7 @@ BARTModel <- function(K = NULL, sparse = FALSE, theta = 0, omega = 1,
         newx <- cbind(t = object$times, newx[rep(1:N, each = K), ])
         pred <- predict(object, newdata = newx)$surv.test.mean %>%
           matrix(nrow = N, ncol = K, byrow = TRUE)
-        if (length(times)) {
-          surv <- cbind(1, pred)
-          surv[, findInterval(times, c(0, object$times)), drop = FALSE]
-        } else {
-          surv_mean(object$times, pred, surv_max(response(fitbits)))
-        }
+        predict(Surv(object$times), pred, times, ...)
       } else if (is(object, "wbart")) {
         colMeans(predict(object, newdata = newx))
       }

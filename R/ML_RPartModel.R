@@ -51,23 +51,20 @@ RPartModel <- function(minsplit = 20, minbucket = round(minsplit / 3),
     },
     design = "terms",
     fit = function(formula, data, weights, ...) {
-      method <- switch_class(response(formula, data),
+      method <- switch_class(response(data),
                              "factor" = "class",
                              "numeric" = "anova",
                              "Surv" = "exp")
-      rpart::rpart(formula, data = data, weights = weights, na.action = na.pass,
-                   method = method, ...)
+      rpart::rpart(formula, data = as.data.frame(data), weights = weights,
+                   na.action = na.pass, method = method, ...)
     },
     predict = function(object, newdata, fitbits, times, ...) {
       y <- response(fitbits)
+      newdata <- as.data.frame(newdata)
       if (is.Surv(y)) {
-        n <- length(times)
-        if (n == 0) times <- surv_times(y)
-        
-        pred <- partykit::as.party(object) %>%
-          predict(newdata = newdata, type = "prob") %>%
-          sapply(function(fit) predict(fit, times)) %>% t
-        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
+        object <- partykit::as.party(object)
+        fits <- predict(object, newdata = newdata, type = "prob")
+        predict(y, fits, times, ...)
       } else {
         predict(object, newdata = newdata)
       }

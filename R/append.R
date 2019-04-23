@@ -42,21 +42,29 @@ setMethod(".append", c("ordered", "ordered"),
 
 
 setMethod(".append", c("Surv", "Surv"),
-  function(x, y) {
-    df <- as.data.frame(rbind(x, y))
-    names(df) <- NULL
-    do.call(Surv, df)
-  }
+  function(x, y) c(x, y)
+)
+
+
+setMethod(".append", c("SurvEvents", "SurvEvents"),
+  function(x, y) .append.SurvMatrix(x, y)
 )
 
 
 setMethod(".append", c("SurvMatrix", "SurvMatrix"),
-  function(x, y) {
-    stopifnot(class(x) == class(y))
-    stopifnot(identical(x@times, y@times))
-    as(SurvMatrix(rbind(x, y), x@times), class(x))
-  }
+  function(x, y) .append.SurvMatrix(x, y)
 )
+
+
+setMethod(".append", c("SurvProbs", "SurvProbs"),
+  function(x, y) .append.SurvMatrix(x, y)
+)
+
+
+.append.SurvMatrix <- function(x, y) {
+  stopifnot(identical(time(x), time(y)))
+  structure(rbind(x, y), class = class(x), times = time(x))
+}
 
 
 setMethod(".append", c("vector", "vector"),

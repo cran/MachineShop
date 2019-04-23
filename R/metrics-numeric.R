@@ -25,17 +25,19 @@ setMethod(".gini", c("matrix", "matrix"),
 
 setMethod(".gini", c("numeric", "numeric"),
   function(observed, predicted, ...) {
-    y_predicted <- observed[order(predicted, decreasing = TRUE)]
-    y_observed <- observed[order(observed, decreasing = TRUE)]
-    gini_sum <- function(y) sum(cumsum(y / sum(y) - 1 / length(y)))
-    gini_sum(y_predicted) / gini_sum(y_observed)
+    gini_sum <- function(x) {
+      n <- length(x)
+      y <- observed[order(x)]
+      n + 1 - 2 * sum((n:1) * y) / sum(y)
+    }
+    gini_sum(predicted) / gini_sum(observed)
   }
 )
 
 
 setMethod(".gini", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    .metric.Surv_numeric(observed, predicted, gini)
+    .metric.SurvMean(observed, predicted, gini)
   }
 )
 
@@ -74,7 +76,7 @@ setMethod(".mae", c("numeric", "numeric"),
 
 setMethod(".mae", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    .metric.Surv_numeric(observed, predicted, mae)
+    .metric.SurvMean(observed, predicted, mae)
   }
 )
 
@@ -113,7 +115,7 @@ setMethod(".mse", c("numeric", "numeric"),
 
 setMethod(".mse", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    .metric.Surv_numeric(observed, predicted, mse)
+    .metric.SurvMean(observed, predicted, mse)
   }
 )
 
@@ -152,15 +154,15 @@ setMethod(".msle", c("numeric", "numeric"),
 
 setMethod(".msle", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    .metric.Surv_numeric(observed, predicted, msle)
+    .metric.SurvMean(observed, predicted, msle)
   }
 )
 
 
 #' @rdname metrics
 #' 
-r2 <- function(observed, predicted = NULL, ...) {
-  .r2(observed, predicted)
+r2 <- function(observed, predicted = NULL, dist = NULL, ...) {
+  .r2(observed, predicted, dist = dist)
 }
 
 MLMetric(r2) <- list("r2", "Coefficient of Determination", TRUE)
@@ -184,14 +186,24 @@ setMethod(".r2", c("matrix", "matrix"),
 
 setMethod(".r2", c("numeric", "numeric"),
   function(observed, predicted, ...) {
-    1 - sum((observed - predicted)^2) / sum((observed - mean(observed))^2)
+    1 - mse(observed, predicted) / mse(observed, mean(observed))
   }
 )
 
 
 setMethod(".r2", c("Surv", "numeric"),
-  function(observed, predicted, ...) {
-    .metric.Surv_numeric(observed, predicted, r2)
+  function(observed, predicted, dist, ...) {
+    dist <- if (is.null(dist)) "weibull" else
+      match.arg(dist, c("empirical", names(survreg.distributions)))
+    nparams <- if (dist %in% c("exponential", "rayleigh")) 1 else 2
+    observed_mean <- if (dist == "empirical") {
+      rep(mean(survfit(observed ~ 1, se.fit = FALSE)), length(observed))
+    } else if (length(surv_times(observed)) >= nparams) {
+      predict(survreg(observed ~ 1, dist = dist))
+    } else {
+      rep(NA_real_, length(observed))
+    }
+    1 - mse(observed, predicted) / mse(observed, observed_mean)
   }
 )
 
@@ -216,7 +228,7 @@ setMethod(".rmse", c("ANY", "ANY"),
 
 setMethod(".rmse", c("matrix", "matrix"),
   function(observed, predicted, ...) {
-    .metric.matrix(observed, predicted, rmse)
+    sqrt(mse(observed, predicted))
   }
 )
 
@@ -230,7 +242,7 @@ setMethod(".rmse", c("numeric", "numeric"),
 
 setMethod(".rmse", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    .metric.Surv_numeric(observed, predicted, rmse)
+    sqrt(mse(observed, predicted))
   }
 )
 
@@ -255,7 +267,7 @@ setMethod(".rmsle", c("ANY", "ANY"),
 
 setMethod(".rmsle", c("matrix", "matrix"),
   function(observed, predicted, ...) {
-    .metric.matrix(observed, predicted, rmsle)
+    sqrt(msle(observed, predicted))
   }
 )
 
@@ -269,7 +281,7 @@ setMethod(".rmsle", c("numeric", "numeric"),
 
 setMethod(".rmsle", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    .metric.Surv_numeric(observed, predicted, rmsle)
+    sqrt(msle(observed, predicted))
   }
 )
 
@@ -281,7 +293,7 @@ setMethod(".rmsle", c("Surv", "numeric"),
 }
 
 
-.metric.Surv_numeric <- function(observed, predicted, FUN, ...) {
+.metric.SurvMean <- function(observed, predicted, FUN, ...) {
   events <- observed[, "status"] == 1
   FUN(observed[events, "time"], predicted[events], ...)
 }

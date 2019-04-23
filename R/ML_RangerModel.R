@@ -79,18 +79,15 @@ RangerModel <- function(num.trees = 500, mtry = NULL,
     },
     design = "terms",
     fit = function(formula, data, weights, ...) {
-      ranger::ranger(formula, data = data, case.weights = weights, 
-                     probability = is(response(formula, data), "factor"), ...)
+      ranger::ranger(formula, data = as.data.frame(data),
+                     case.weights = weights, 
+                     probability = is(response(data), "factor"), ...)
     },
     predict = function(object, newdata, times, ...) {
+      newdata <- as.data.frame(newdata)
       pred <- predict(object, data = newdata)
       if (!is.null(object$survival)) {
-        if (length(times)) {
-          indices <- findInterval(times, pred$unique.death.times)
-          pred$survival[, indices, drop = FALSE]
-        } else {
-          surv_mean(pred$unique.death.times, pred$survival)
-        }
+        predict(Surv(pred$unique.death.times), pred$survival, times, ...)
       } else {
         pred$predictions
       }

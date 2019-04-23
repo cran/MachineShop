@@ -9,12 +9,34 @@ knitr::opts_chunk$set(
   fig.align = "center"
 )
 
-library(MachineShop)
 library(kableExtra)
 library(ggplot2)
 
+rdoc_url <- function(name) name
+
 ## ----echo=FALSE----------------------------------------------------------
+library("MachineShop")
 info <- modelinfo()
+
+## ----eval = FALSE--------------------------------------------------------
+#  # Current release from CRAN
+#  install.packages("MachineShop")
+#  
+#  # Development version from GitHub
+#  # install.packages("devtools")
+#  devtools::install_github("brian-j-smith/MachineShop")
+#  
+#  # Development version with vignettes
+#  devtools::install_github("brian-j-smith/MachineShop", build_vignettes = TRUE)
+
+## ----eval = FALSE, message = FALSE---------------------------------------
+#  library(MachineShop)
+#  
+#  # Package help summary
+#  ?MachineShop
+#  
+#  # Vignette
+#  RShowDoc("Introduction", package = "MachineShop")
 
 ## ------------------------------------------------------------------------
 ## Analysis libraries
@@ -108,10 +130,23 @@ fit(surv_fo, data = surv_train, model = "GBMModel")
 ## Model function call
 fit(surv_fo, data = surv_train, model = GBMModel(n.trees = 100, interaction.depth = 1))
 
+## ----results="hide"------------------------------------------------------
+## Dynamic model parameter k = log number of observations
+
+## Number of observations: nobs
+fit(surv_fo, data = surv_df, model = CoxStepAICModel(k = .(log(nobs))))
+
+## Response variable: y
+fit (surv_fo, data = surv_df, model = CoxStepAICModel(k = .(log(length(y)))))
+
 ## ------------------------------------------------------------------------
-## Predicted survival means
+## Predicted survival means (default: Weibull distribution)
 predict(surv_fit, newdata = surv_test) %>% head
 
+## Predicted survival means (empirical distribution)
+predict(surv_fit, newdata = surv_test, dist = "empirical") %>% head
+
+## ------------------------------------------------------------------------
 ## Predict survival probabilities and events at specified follow-up times
 surv_times <- 365 * c(5, 10)
 
@@ -127,15 +162,30 @@ library(MASS)
 fit(medv ~ ., data = Boston, model = GBMModel)
 
 ## ----results="hide"------------------------------------------------------
+## Example design matrix and response object
+x <- model.matrix(medv ~ . - 1, data = Boston)
+y <- Boston$medv
+
+## Design matrix specification
+fit(x, y, model = GBMModel)
+
+## ----results="hide"------------------------------------------------------
 ## Model frame specification
+
+## Formula
 mf <- ModelFrame(medv ~ ., data = Boston)
+
+fit(mf, model = GBMModel)
+
+## Design matrix
+mf <- ModelFrame(x, y)
 
 fit(mf, model = GBMModel)
 
 ## ----results="hide"------------------------------------------------------
 ## Model frame specification with case weights
 mf <- ModelFrame(ncases / (ncases + ncontrols) ~ agegp + tobgp + alcgp, data = esoph,
-                 weights = ncases + ncontrols)
+                 weights = with(esoph, ncases + ncontrols))
 
 fit(mf, model = GBMModel)
 
@@ -155,7 +205,8 @@ df <- within(esoph, {
 })
 
 rec <- recipe(y ~ agegp + tobgp + alcgp + weights, data = df) %>%
-  update_role(weights, new_role = "case_weight")
+  update_role(weights, new_role = "case_weight") %>%
+  step_ordinalscore(agegp, tobgp, alcgp)
 
 fit(rec, model = GBMModel)
 
@@ -215,7 +266,7 @@ fit(rec, model = GBMModel)
 ## Survival performance metrics
 
 ## Observed responses
-obs <- response(surv_fo, surv_test)
+obs <- response(surv_fit, newdata = surv_test)
 
 ## Predicted survival means
 pred_means <- predict(surv_fit, newdata = surv_test)
@@ -323,7 +374,7 @@ summary(performance(res_probs, metrics = c(sensitivity, specificity)))
 
 ## ----results="hide"------------------------------------------------------
 ## Model frame with case status stratification
-mf <- ModelFrame(surv_fo, data = surv_df, strata = status)
+mf <- ModelFrame(surv_fo, data = surv_df, strata = surv_df$status)
 
 resample(mf, model = GBMModel)
 
@@ -334,6 +385,10 @@ rec <- recipe(time + status ~ ., data = surv_df) %>%
   add_role(status, new_role = "case_strata")
 
 resample(rec, model = GBMModel)
+
+## ----results="hide"------------------------------------------------------
+## Dynamic model parameter k = log number of training set observations
+resample(surv_fo, data = surv_df, model = CoxStepAICModel(k = .(log(nobs))))
 
 ## ------------------------------------------------------------------------
 ## Resample estimation
@@ -504,6 +559,8 @@ res <- resample(type ~ ., data = Pima.tr, model = LogisticModel)
 summary(performance(res, metric = f2_score))
 
 ## ----echo = FALSE--------------------------------------------------------
+library(MachineShop)
+
 info <- modelinfo()
 types <- c("binary" = "b", "factor" = "f", "matrix" = "m", "numeric" = "n",
            "ordered" = "o", "Surv" = "S")
@@ -515,7 +572,7 @@ names(df) <- c("Function", names(types))
 
 toString2 <- function(x) toString(na.omit(x))
 df_classes <- data.frame(
-  Function = df$Function,
+  Function = rdoc_url(df$Function),
   Label = sapply(info, getElement, name = "label"),
   Categorical = apply(df[c("binary", "factor", "ordered")], 1, toString2),
   Continuous = apply(df[c("matrix", "numeric")], 1, toString2),
@@ -524,7 +581,7 @@ df_classes <- data.frame(
 names(df_classes)[3:5] <- paste0(names(df_classes)[3:5], footnote_marker_number(1:3))
 
 kable(df_classes,
-      caption = "Table A1. Package-supplied model constructor functions and supported response variable types.",
+      caption = "Package-supplied model constructor functions and supported response variable types.",
       align = c("l", "l", "c", "c", "c"), row.names = FALSE,
       escape = FALSE) %>%
   kable_styling(c("striped", "condensed"), full_width = FALSE, position = "center") %>%
@@ -534,6 +591,7 @@ kable(df_classes,
                       "S = Surv"))
 
 ## ----table_metrics, echo=FALSE-------------------------------------------
+library(MachineShop)
 
 f <- function(x) {
   types <- x$types
@@ -564,10 +622,11 @@ f <- function(x) {
 }
 
 info <- metricinfo()
-df <- cbind("Function" = names(info), do.call(rbind, lapply(info, f)))
+df <- cbind("Function" = rdoc_url(names(info)),
+            do.call(rbind, lapply(info, f)))
 names(df)[3:5] <- paste0(names(df)[3:5], footnote_marker_number(1:3))
 
-kable(df, caption = "Table A2. Package-supplied performance metric functions and supported response variable types.",
+kable(df, caption = "Package-supplied performance metric functions and supported response variable types.",
       align = c("l", "l", "c", "c", "c"), row.names = FALSE,
       escape = FALSE) %>%
   kable_styling(c("striped", "condensed"), full_width = FALSE, position = "center") %>%

@@ -15,9 +15,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = LMModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = LMModel())
 #'
 LMModel <- function() {
   
@@ -29,9 +27,10 @@ LMModel <- function() {
     params = params(environment()),
     design = "model.matrix",
     fit = function(formula, data, weights, ...) {
-      y <- response(formula, data)
+      y <- response(data)
+      data <- as.data.frame(data)
       if (is.factor(y)) {
-        y_name <- response(terms(formula))
+        y_name <- deparse(response(formula))
         formula[[2]] <- as.symbol(y_name)
         if (nlevels(y) == 2) {
           y <- y == levels(y)[2]
@@ -50,6 +49,7 @@ LMModel <- function() {
       }
     },
     predict = function(object, newdata, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata)
     },
     varimp = function(object, ...) varimp_pchisq(object)

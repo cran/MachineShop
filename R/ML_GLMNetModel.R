@@ -40,9 +40,7 @@
 #' \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = GLMNetModel(lambda = 0.01))
+#' fit(sale_amount ~ ., data = ICHomes, model = GLMNetModel(lambda = 0.01))
 #'
 GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
                         standardize = TRUE, intercept = NULL,
@@ -76,9 +74,8 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
     },
     design = "model.matrix",
     fit = function(formula, data, weights, family = NULL, nlambda = 1, ...) {
-      terms <- extract(formula, data)
-      x <- terms$x
-      y <- terms$y
+      x <- model.matrix(data, intercept = FALSE)
+      y <- response(data)
       if (is.null(family)) {
         family <- switch_class(y,
                                "factor" = ifelse(nlevels(y) == 2,
@@ -94,16 +91,11 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
     },
     predict = function(object, newdata, fitbits, times, ...) {
       y <- response(fitbits)
-      newx <- extract(formula(fitbits)[-2], newdata)$x
+      newx <- model.matrix(newdata, intercept = FALSE)
       if (is.Surv(y)) {
-        risk <- exp(predict(object, newx = object$x, type = "link"))[, 1]
-        new_risk <- exp(predict(object, newx = newx, type = "link"))[, 1]
-
-        n <- length(times)
-        if (n == 0) times <- surv_times(y)
-        
-        pred <- exp(new_risk %o% -basehaz(y, risk, times))
-        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
+        lp <- predict(object, newx = object$x, type = "link")[, 1]
+        new_lp <- predict(object, newx = newx, type = "link")[, 1]
+        predict(y, lp, times, new_lp, ...)
       } else {
         predict(object, newx = newx, s = object$lambda[1], type = "response")
       }

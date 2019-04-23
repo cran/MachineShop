@@ -3,11 +3,74 @@
 #' Estimation of the predictive performance of a model estimated and evaluated
 #' on training and test samples generated from an observed data set.
 #' 
+#' @name resample
 #' @rdname resample-methods
 #' 
-#' @param x defined relationship between model predictors and an outcome.  May
-#' be a ModelFrame containing a formula, data, and optionally case weights; a
-#' formula; or a recipe.
+#' @param ... named or unnamed \code{resample} output to combine together with
+#' the \code{Resamples} constructor.
+#' 
+#' @details Output being combined from more than one model with the
+#' \code{Resamples} constructor must have been generated with the same
+#' resampling \code{control} object.
+#' 
+Resamples <- function(...) {
+  .Resamples(...)
+}
+
+
+.Resamples <- function(..., .control = NULL, .strata = NULL) {
+  args <- list(...)
+  
+  if (length(args) == 0) stop("no resample output given")
+  
+  .Data <- args[[1]]
+  if (all(mapply(is, args, "Resamples"))) {
+    
+    control <- .Data@control
+    if (!all(sapply(args, function(x) identical(x@control, control)))) {
+      stop("Resamples arguments have different control structures")
+    }
+
+    strata <- .Data@strata
+    if (!all(sapply(args, function(x) identical(x@strata, strata)))) {
+      stop("Resamples arguments have different strata variables")
+    }
+
+  } else if (length(args) > 1) {
+    
+    stop("arguments to combine must be Resamples objects")
+    
+  } else if (!is.data.frame(.Data)) {
+    
+    stop("Resamples argument must inherit from data.frame")
+    
+  } else {
+
+    control <- .control
+    if (!is(control, "MLControl")) {
+      stop("missing control structure in Resamples constructor")
+    }
+    
+    strata <- as.character(.strata)
+
+    var_names <- c("Resample", "Case", "Observed", "Predicted")
+    is_missing <- !(var_names %in% names(.Data))
+    if (any(is_missing)) {
+      stop("missing resample variables: ", toString(var_names[is_missing]))
+    }
+    
+  }
+
+  args <- make_unique_levels(args, which = "Model")
+  new("Resamples", do.call(append, args), control = control, strata = strata)
+}
+
+
+#' @rdname resample-methods
+#' 
+#' @param x defines a relationship between model predictor and response
+#' variables.  May be a \code{formula}, design matrix of predictors,
+#' \code{ModelFrame}, or untrained \code{recipe}.
 #' 
 #' @return \code{Resamples} class object.
 #' 
@@ -52,8 +115,17 @@ resample <- function(x, ...) {
 #' plot(res)
 #' 
 resample.formula <- function(x, data, model, control = CVControl, ...) {
-  resample(ModelFrame(x, data, strata = strata(response(x, data)),
-                      na.action = na.pass), model, control)
+  resample(ModelFrame(x, data, na.rm = FALSE,
+                      strata = strata(response(x, data))), model, control)
+}
+
+
+#' @rdname resample-methods
+#' 
+#' @param y predictor variable.
+#' 
+resample.matrix <- function(x, y, model, control = CVControl, ...) {
+  resample(ModelFrame(x, y, na.rm = FALSE, strata = strata(y)), model, control)
 }
 
 
@@ -78,7 +150,7 @@ resample.ModelFrame <- function(x, model, control = CVControl, ...) {
 #' be unstratified if no variables have that role.
 #' 
 resample.recipe <- function(x, model, control = CVControl, ...) {
-  .resample(getMLObject(control, "MLControl"), x, model)
+  .resample(getMLObject(control, "MLControl"), ModelRecipe(x), model)
 }
 
 
@@ -104,20 +176,20 @@ setMethod(".resample", c("MLControlBoot", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlBoot", "recipe"),
+setMethod(".resample", c("MLControlBoot", "ModelRecipe"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
-    splits <- bootstraps(getdata(x),
+    splits <- bootstraps(as.data.frame(x),
                          times = object@samples,
                          strata = strata)$splits
     seeds <- sample.int(.Machine$integer.max, length(splits))
-    test <- ModelFrame(formula(terms(x)), getdata(x))
+    test <- ModelFrame(formula(terms(x)), x, na.rm = FALSE)
     foreach(i = seq(splits),
             .packages = c("MachineShop", "recipes", "survival")) %dopar% {
       set.seed(seeds[i])
       split <- splits[[i]]
-      train <- prepper(split, recipe = x, retain = TRUE, verbose = FALSE)
+      train <- recipe(x, analysis(split))
       resample_args(train, test, model, object, strata)
     } %>% Resamples.list
   }
@@ -145,11 +217,11 @@ setMethod(".resample", c("MLControlCV", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlCV", "recipe"),
+setMethod(".resample", c("MLControlCV", "ModelRecipe"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
-    splits <- vfold_cv(getdata(x),
+    splits <- vfold_cv(as.data.frame(x),
                        v = object@folds,
                        repeats = object@repeats,
                        strata = strata)$splits
@@ -158,8 +230,8 @@ setMethod(".resample", c("MLControlCV", "recipe"),
             .packages = c("MachineShop", "recipes", "survival")) %dopar% {
       set.seed(seeds[i])
       split <- splits[[i]]
-      train <- prepper(split, recipe = x, retain = TRUE, verbose = FALSE)
-      test <- ModelFrame(formula(terms(x)), assessment(split))
+      train <- recipe(x, analysis(split))
+      test <- ModelFrame(formula(terms(x)), assessment(split), na.rm = FALSE)
       resample_args(train, test, model, object, strata)
     } %>% Resamples.list
   }
@@ -187,11 +259,11 @@ setMethod(".resample", c("MLControlOOB", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlOOB", "recipe"),
+setMethod(".resample", c("MLControlOOB", "ModelRecipe"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
-    splits <- bootstraps(getdata(x),
+    splits <- bootstraps(as.data.frame(x),
                          times = object@samples,
                          strata = strata)$splits
     seeds <- sample.int(.Machine$integer.max, length(splits))
@@ -199,8 +271,8 @@ setMethod(".resample", c("MLControlOOB", "recipe"),
             .packages = c("MachineShop", "recipes", "survival")) %dopar% {
       set.seed(seeds[i])
       split <- splits[[i]]
-      train <- prepper(split, recipe = x, retain = TRUE, verbose = FALSE)
-      test <- ModelFrame(formula(terms(x)), assessment(split))
+      train <- recipe(x, analysis(split))
+      test <- ModelFrame(formula(terms(x)), assessment(split), na.rm = FALSE)
       resample_args(train, test, model, object, strata)
     } %>% Resamples.list
   }
@@ -221,15 +293,15 @@ setMethod(".resample", c("MLControlSplit", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlSplit", "recipe"),
+setMethod(".resample", c("MLControlSplit", "ModelRecipe"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
-    split <- initial_split(getdata(x),
+    split <- initial_split(as.data.frame(x),
                            prop = object@prop,
                            strata = strata)
-    train <- prepper(split, recipe = x, retain = TRUE, verbose = FALSE)
-    test <- ModelFrame(formula(terms(x)), testing(split))
+    train <- recipe(x, analysis(split))
+    test <- ModelFrame(formula(terms(x)), testing(split), na.rm = FALSE)
     do.call(Resamples, resample_args(train, test, model, object, strata))
   }
 )
@@ -243,10 +315,10 @@ setMethod(".resample", c("MLControlTrain", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlTrain", "recipe"),
+setMethod(".resample", c("MLControlTrain", "ModelRecipe"),
   function(object, x, model) {
     set.seed(object@seed)
-    test <- ModelFrame(formula(terms(x)), getdata(x))
+    test <- ModelFrame(formula(terms(x)), x, na.rm = FALSE)
     do.call(Resamples, resample_args(x, test, model, object))
   }
 )
@@ -262,7 +334,8 @@ resample_args <- function(train, test, model, control, strata = character()) {
                    Resample = 1,
                    Case = row.names(test))
   df$Observed <- response(test)
-  df$Predicted <- predict(trainfit, test, type = "prob", times = control@times)
+  df$Predicted <- predict(trainfit, test, type = "prob", times = control@times,
+                          method = control@method, dist = control@dist)
   
   list(df, .control = control, .strata = strata)
 }

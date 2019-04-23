@@ -23,9 +23,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = GLMModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = GLMModel())
 #' 
 GLMModel <- function(family = NULL, ...) {
   
@@ -43,13 +41,15 @@ GLMModel <- function(family = NULL, ...) {
     design = "model.matrix",
     fit = function(formula, data, weights, family = NULL, ...) {
       if (is.null(family)) {
-        family <- switch_class(response(formula, data),
+        family <- switch_class(response(data),
                                "factor" = "binomial",
                                "numeric" = "gaussian")
       }
-      stats::glm(formula, data = data, weights = weights, family = family, ...)
+      stats::glm(formula, data = as.data.frame(data), weights = weights,
+                 family = family, ...)
     },
     predict = function(object, newdata, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "response")
     },
     varimp = function(object, ...) varimp_pchisq(object)
@@ -97,11 +97,12 @@ GLMStepAICModel <- function(family = NULL, ...,
                    scope = list(), k = 2, trace = 1, steps = 1000, ...) {
       environment(formula) <- environment()
       if (is.null(family)) {
-        family <- switch_class(response(formula, data),
+        family <- switch_class(response(data),
                                "factor" = "binomial",
                                "numeric" = "gaussian")
       }
       stepargs <- stepAIC_args(formula, direction, scope)
+      data <- as.data.frame(data)
       stats::glm(stepargs$formula, data = data, weights = weights,
                  family = family, ...) %>%
         MASS::stepAIC(direction = direction, scope = stepargs$scope, k = k,

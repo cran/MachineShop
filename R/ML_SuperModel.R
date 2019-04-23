@@ -28,11 +28,9 @@
 #' @seealso \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
 #' model <- SuperModel(GBMModel, SVMRadialModel, GLMNetModel(lambda = 0.01))
-#' modelfit <- fit(medv ~ ., data = Boston, model = model)
-#' predict(modelfit, newdata = Boston)
+#' modelfit <- fit(sale_amount ~ ., data = ICHomes, model = model)
+#' predict(modelfit, newdata = ICHomes)
 #' 
 SuperModel <- function(..., model = GBMModel, control = CVControl,
                        all_vars = FALSE) {
@@ -47,15 +45,13 @@ SuperModel <- function(..., model = GBMModel, control = CVControl,
     types = c("factor", "matrix", "numeric", "ordered", "Surv"),
     params = as.list(environment()),
     fitbits = MLFitBits(
-      predict = function(object, newdata, fitbits, times, ...) {
-        newdata <- ModelFrame(formula(fitbits), newdata, na.action = na.pass)
-        
+      predict = function(object, newdata, times, ...) {
         learner_predictors <- lapply(object$base_fits, function(fit) {
           predict(fit, newdata = newdata, times = object$times, type = "prob")
         })
         df <- make_super_df(NA, learner_predictors, row.names(newdata))
   
-        mf <- ModelFrame(formula(df), df, na.action = na.pass)
+        mf <- ModelFrame(formula(df), df, na.rm = FALSE)
         if (object$all_vars) mf <- add_predictors(newdata, mf)
         
         predict(object$super_fit, newdata = mf, times = times, type = "prob")
@@ -71,7 +67,7 @@ setClass("SuperModel", contains = "MLModel")
 
 
 .fit.SuperModel <- function(model, x, ...) {
-  mf <- ModelFrame(x)
+  mf <- ModelFrame(x, na.rm = FALSE)
   
   params <- model@params
   base_learners <- params$base_learners
@@ -84,7 +80,7 @@ setClass("SuperModel", contains = "MLModel")
     learner_predictors[[i]] <- response$Predicted
   }
   df <- make_super_df(response$Observed, learner_predictors, response$Case)
-  super_mf <- ModelFrame(formula(df), df, na.action = na.omit)
+  super_mf <- ModelFrame(formula(df), df)
   if (params$all_vars) super_mf <- add_predictors(mf, super_mf)
 
   list(base_fits = lapply(base_learners,
@@ -99,8 +95,7 @@ setClass("SuperModel", contains = "MLModel")
 make_super_df <- function(y, predictors, row.names) {
   predictors <- do.call(cbind, predictors)
   colnames(predictors) <- make.names(1:ncol(predictors))
-  df <- data.frame(matrix(nrow = nrow(predictors), ncol = 0),
-                   row.names = paste0(seq_along(row.names), ".", row.names))
+  df <- data.frame(row.names = paste0(seq_along(row.names), ".", row.names))
   df$y <- y
   cbind(df, predictors)
 }
@@ -108,7 +103,7 @@ make_super_df <- function(y, predictors, row.names) {
 
 add_predictors <- function(from, to) {
   from_terms <- terms(from)
-  from <- get_all_vars(formula(from_terms)[-2], from)
+  from <- predictors(from)
 
   lhs <- names(to)[1]
   rhs <- c(labels(from_terms), names(to)[-1])
@@ -118,5 +113,5 @@ add_predictors <- function(from, to) {
   data <- merge(from, to, by = "(row.names)", sort = FALSE)
   data[["(row.names)"]] <- NULL
 
-  ModelFrame(reformulate(rhs, lhs), data, na.action = na.pass)
+  ModelFrame(reformulate(rhs, lhs), data, na.rm = FALSE)
 }

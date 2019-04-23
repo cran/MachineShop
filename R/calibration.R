@@ -2,6 +2,56 @@
 #' 
 #' Calculate calibration estimates from observed and predicted responses.
 #' 
+#' @name calibration
+#' @rdname calibration
+#' 
+#' @param ... named or unnamed \code{calibration} output to combine together
+#' with the \code{Calibration} constructor.
+#' 
+Calibration <- function(...) {
+  .Calibration(...)
+}
+
+
+.Calibration <- function(..., .breaks) {
+  args <- list(...)
+  
+  if (length(args) == 0) stop("no calibration output given")
+  
+  .Data <- args[[1]]
+  if (all(mapply(is, args, "Calibration"))) {
+    
+    smoothed <- .Data@smoothed
+    if (!all(sapply(args, function(x) identical(x@smoothed, smoothed)))) {
+      stop("Calibration arguments are a mix of smoothed and binned curves")
+    }
+
+  } else if (length(args) > 1) {
+    
+    stop("arguments to combine must be Calibration objects")
+    
+  } else if (!is.data.frame(.Data)) {
+    
+    stop("Calibration argument must inherit from data.frame")
+    
+  } else {
+
+    if (missing(.breaks)) stop("missing breaks in Calibration constructor")
+    smoothed <- is.null(.breaks)
+
+    var_names <- c("Response", "Predicted", "Observed")
+    is_missing <- !(var_names %in% names(.Data))
+    if (any(is_missing)) {
+      stop("missing calibration variables: ", toString(var_names[is_missing]))
+    }
+    
+  }
+
+  args <- make_unique_levels(args, which = "Model")
+  new("Calibration", do.call(append, args), smoothed = smoothed)
+}
+
+
 #' @rdname calibration
 #' 
 #' @param x observed responses or \code{Resamples} object of observed and
@@ -10,7 +60,17 @@
 #' @param breaks value defining the response variable bins within which to
 #' calculate observed mean values.  May be specified as a number of bins, a
 #' vector of breakpoints, or \code{NULL} to fit smooth curves with splines for
-#' survival responses and loess for others.
+#' predicted survival probabilities and with \link[stats:loess]{loess} for
+#' others.
+#' @param span numeric parameter controlling the degree of loess smoothing.
+#' @param dist character string specifying a distribution with which to estimate
+#' observed survival means.  Possible values are \code{"empirical"} for the
+#' Kaplan-Meier estimator, \code{"exponential"}, \code{"extreme"},
+#' \code{"gaussian"}, \code{"loggaussian"}, \code{"logistic"},
+#' \code{"loglogistic"}, \code{"lognormal"}, \code{"rayleigh"}, \code{"t"}, or
+#' \code{"weibull"} (default).
+#' @param na.rm logical indicating whether to remove observed or predicted
+#' responses that are \code{NA} when calculating metrics.
 #' 
 #' @return \code{Calibration} class object that inherits from \code{data.frame}.
 #'  
@@ -27,8 +87,14 @@
 #' cal <- calibration(res)
 #' plot(cal)
 #' 
-calibration <- function(x, y = NULL, breaks = 10, ...) {
-  .calibration(x, y, breaks = breaks)
+calibration <- function(x, y = NULL, breaks = 10, span = 0.75, dist = NULL,
+                        na.rm = TRUE, ...) {
+  if (na.rm) {
+    complete <- complete_subset(x = x, y = y)
+    x <- complete$x
+    y <- complete$y
+  }
+  .calibration(x, y, breaks = breaks, span = span, dist = dist)
 }
 
 
@@ -38,13 +104,14 @@ calibration <- function(x, y = NULL, breaks = 10, ...) {
 
 
 .calibration.default <- function(x, y, breaks, ...) {
-  Calibration(.calibration_default(x, y, breaks = breaks), .breaks = breaks)
+  Calibration(.calibration_default(x, y, breaks = breaks, ...),
+              .breaks = breaks)
 }
 
 
-.calibration.Resamples <- function(x, breaks, ...) {
+.calibration.Resamples <- function(x, ...) {
   cal_list <- by(x, x$Model, function(data) {
-    calibration(data$Observed, data$Predicted, breaks = breaks)
+    calibration(data$Observed, data$Predicted, na.rm = FALSE, ...)
   }, simplify = FALSE)
   do.call(Calibration, cal_list)
 }
@@ -62,8 +129,8 @@ setMethod(".calibration_default", c("ANY", "ANY"),
 
 
 setMethod(".calibration_default", c("factor", "matrix"),
-  function(observed, predicted, breaks, ...) {
-    cal <- calibration(model.matrix(~ observed - 1), predicted, breaks = breaks)
+  function(observed, predicted, ...) {
+    cal <- calibration(model.matrix(~ observed - 1), predicted, ...)
     bounds <- c("Lower", "Upper")
     cal$Observed[, bounds] <- pmin(pmax(cal$Observed[, bounds], 0), 1)
     cal
@@ -72,9 +139,9 @@ setMethod(".calibration_default", c("factor", "matrix"),
 
 
 setMethod(".calibration_default", c("factor", "numeric"),
-  function(observed, predicted, breaks, ...) {
-    cal <- calibration(as.numeric(observed == levels(observed)[2]), predicted,
-                       breaks = breaks)
+  function(observed, predicted, ...) {
+    observed <- as.numeric(observed == levels(observed)[2])
+    cal <- calibration(observed, predicted, ...)
     bounds <- c("Lower", "Upper")
     cal$Observed[, bounds] <- pmin(pmax(cal$Observed[, bounds], 0), 1)
     cal
@@ -83,7 +150,7 @@ setMethod(".calibration_default", c("factor", "numeric"),
 
 
 setMethod(".calibration_default", c("matrix", "matrix"),
-  function(observed, predicted, breaks, ...) {
+  function(observed, predicted, breaks, span, ...) {
     df <- data.frame(Response = rep(colnames(predicted),
                                     each = nrow(predicted)))
     if (is.null(breaks)) {
@@ -91,7 +158,7 @@ setMethod(".calibration_default", c("matrix", "matrix"),
       loessfit_list <- lapply(1:ncol(predicted), function(i) {
         y <- observed[, i]
         x <- predicted[, i]
-        predict(loess(y ~ x), se = TRUE)
+        predict(loess(y ~ x, span = span), se = TRUE)
       })
       Mean <- c(sapply(loessfit_list, getElement, name = "fit"))
       SE <- c(sapply(loessfit_list, getElement, name = "se.fit"))
@@ -113,22 +180,21 @@ setMethod(".calibration_default", c("matrix", "matrix"),
 
 
 setMethod(".calibration_default", c("numeric", "numeric"),
-  function(observed, predicted, breaks, ...) {
-    calibration(cbind(y = observed), cbind(y = predicted), breaks = breaks)
+  function(observed, predicted, ...) {
+    calibration(cbind(y = observed), cbind(y = predicted), ...)
   }
 )
 
 
 setMethod(".calibration_default", c("Surv", "SurvProbs"),
   function(observed, predicted, breaks, ...) {
-    times <- predicted@times
-    colnames(predicted) <- paste("Time", 1:length(times))
+    times <- time(predicted)
     df <- data.frame(Response = rep(colnames(predicted),
                                     each = nrow(predicted)))
     if (is.null(breaks)) {
       df$Predicted <- c(predicted)
       Mean <- c(sapply(1:ncol(predicted), function(i) {
-        x <- predicted[, i, drop = FALSE]
+        x <- predicted[, i]
         harefit <- polspline::hare(observed[, "time"], observed[, "status"], x)
         1 - polspline::phare(times[i], x, harefit)
       }))
@@ -156,19 +222,44 @@ setMethod(".calibration_default", c("Surv", "SurvProbs"),
 
 
 setMethod(".calibration_default", c("Surv", "numeric"),
-  function(observed, predicted, breaks, ...) {
-    surv_max <- surv_max(observed)
+  function(observed, predicted, breaks, dist, span, ...) {
+    max_time <- surv_max(observed)
+    dist <- if (is.null(dist)) "weibull" else
+      match.arg(dist, c("empirical", names(survreg.distributions)))
+    nparams <- if (dist %in% c("exponential", "rayleigh")) 1 else 2
+    
+    f_survfit <- function(observed, weights = NULL) {
+      km <- survfit(observed ~ 1, weights = weights, se.fit = FALSE)
+      est <- survival:::survmean(km, rmean = max_time)
+      list(Mean = est$matrix[["*rmean"]], SE = est$matrix[["*se(rmean)"]])
+    }
+    
+    f_survreg <- function(observed, dist, weights = NULL) {
+      regfit <- survreg(observed ~ 1, weights = weights, dist = dist)
+      est <- predict(regfit, data.frame(row.names = 1), se.fit = TRUE)
+      list(Mean = est$fit[[1]], SE = est$se.fit[[1]])
+    }
+    
     if (is.null(breaks)) {
       df <- data.frame(
         Response = "Mean",
         Predicted = unique(predicted)
       )
+      tricubic <- function(x, span = 1, min_weight = 0) {
+        x <- abs(x)
+        x_range <- span * diff(range(x))
+        (1 - min_weight) * pmax((1 - (x / x_range)^3)^3, 0) + min_weight
+      }
       metrics_list <- lapply(df$Predicted, function(value) {
-        abs_diff <- abs(predicted - value)
-        weights <- (1 - (abs_diff / diff(range(abs_diff)))^3)^3
-        km <- survfit(observed ~ 1, weights = weights, se.fit = FALSE)
-        c(Mean = surv_mean(km$time, km$surv, max_time = surv_max),
-          SE = NA, Lower = NA, Upper = NA)
+        weights <- tricubic(predicted - value, span = span, min_weight = 0.01)
+        est <- if (dist == "empirical") {
+          f_survfit(observed, weights)
+        } else {
+          f_survreg(observed, dist, weights)
+        }
+        with(est, c(Mean = Mean, SE = SE,
+                    Lower = max(Mean - SE, 0),
+                    Upper = Mean + SE))
       })
       df$Observed <- do.call(rbind, metrics_list)
       df
@@ -179,14 +270,18 @@ setMethod(".calibration_default", c("Surv", "numeric"),
         Observed = observed
       )
       by_results <- by(df, df[c("Predicted", "Response")], function(data) {
-        km <- survfit(Observed ~ 1, data = data, se.fit = FALSE)
-        est <- survival:::survmean(km, rmean = surv_max)
-        Mean <- est$matrix["*rmean"]
-        SE <- est$matrix["*se(rmean)"]
+        observed <- data$Observed
+        est <- if (dist == "empirical") {
+          f_survfit(observed)
+        } else if (length(surv_times(observed)) >= nparams) {
+          f_survreg(observed, dist)
+        } else {
+          list(Mean = NA_real_, SE = NA_real_)
+        }
         result <- data[1, c("Response", "Predicted")]
-        result$Observed <- cbind(Mean = Mean, SE = SE,
-                                 Lower = max(Mean - SE, 0),
-                                 Upper = Mean + SE)
+        result$Observed <- with(est, cbind(Mean = Mean, SE = SE,
+                                           Lower = max(Mean - SE, 0),
+                                           Upper = Mean + SE))
         result
       }, simplify = FALSE)
       do.call(rbind, by_results)

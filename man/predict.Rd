@@ -5,8 +5,9 @@
 \alias{predict.MLModelFit}
 \title{Model Prediction}
 \usage{
-\method{predict}{MLModelFit}(object, newdata = NULL, times = numeric(),
-  type = c("response", "prob"), cutoff = 0.5, ...)
+\method{predict}{MLModelFit}(object, newdata = NULL, times = NULL,
+  type = c("response", "prob"), cutoff = 0.5, dist = NULL,
+  method = NULL, ...)
 }
 \arguments{
 \item{object}{\code{MLModelFit} object from a model fit.}
@@ -15,7 +16,7 @@
 If not specified, the training data will be used by default.}
 
 \item{times}{numeric vector of follow-up times at which to predict
-survival events/probabilities.}
+survival events/probabilities or \code{NULL} for predicted survival means.}
 
 \item{type}{specifies prediction on the original outcome scale
 (\code{"response"}) or on a probability distribution scale (\code{"prob"}).}
@@ -23,6 +24,17 @@ survival events/probabilities.}
 \item{cutoff}{threshold above which binary factor probabilities are
 classified as events, below which survival probabilities are classified, and
 at which expected values are rounded for integer outcomes.}
+
+\item{dist}{character string specifying distributional approximations to
+estimated survival curves.  Possible values are \code{"empirical"},
+\code{"exponential"}, \code{"rayleigh"}, or \code{"weibull"}; with defaults
+of \code{"empirical"} for predicted survival events/probabilities and
+\code{"weibull"} for predicted survival means.}
+
+\item{method}{character string specifying the empirical method of estimating
+baseline survival curves for Cox proportional hazards-based models.
+Choices are \code{"breslow"}, \code{"efron"} (default), or
+\code{"fleming-harrington"}.}
 
 \item{...}{arguments passed to model-specific prediction functions.}
 }

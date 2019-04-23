@@ -2,6 +2,46 @@
 
 ## Version Updates
 
+## 1.3.0
+* Improve compatibility with preprocessing recipes.
+* Allow base math functions and operators in `ModelFrame` formulas.
+
+
+## 1.2.5
+* Save `ModelFrame` response in first column.
+* Unexport `response` formula method.
+* Add `ICHomes` dataset.
+* Add `center` and `scale` slot to `VarImp`.
+
+
+## 1.2.4
+* Prohibit in-line functions in `ModelFrame` formulas.
+* Rename `response` function argument from `data` to `newdata`.
+
+
+## 1.2.3
+* Add `fit`, `resample`, and `tune` methods for design matrices.
+* Reduce computational overhead for design matrices and recipes.
+* Rename `ModelFrame()` argument `na.action` to `na.rm`.
+
+
+## 1.2.2
+* Implement parametric (``"exponential"``, ``"rayleigh"``, ``"weibull"``) estimation of baseline survival functions.
+* Set ``"weibull"`` as the default distribution for survival mean estimation.
+* Add extract method for ``Resamples``.
+* Add ``na.rm`` argument to ``calibration()``, ``confusion()``, ``performance()``, and ``performance_curve()``.
+* Add loess ``span`` argument to ``calibration()``.
+* Change ``SurvMatrix`` from S4 to S3 class.
+
+
+## 1.2.1
+* Add ``method`` option to ``predict()`` for Breslow, Efron (default), or Fleming-Harrington estimation of survival curves for Cox proportional hazards-based models.
+* Add ``dist`` option to ``predict()`` for exponential or Weibull approximation to estimated survival curves.
+* Add ``dist`` option to ``calibration()`` for distributional estimation of observed mean survival.
+* Add ``dist`` option to ``r2()`` for distributional estimation of the total sum of squares mean.
+* Handle unnamed arguments in ``metricinfo()`` and ``modelinfo()``.
+
+
 ## 1.2.0
 * Implement metrics: ``auc``, ``fnr``, ``fpr``, ``rpp``, ``tnr``, ``tpr``.
 * Implement performance curves, including ROC and precision recall.

@@ -23,13 +23,14 @@ modeling strategies.
 
   - Unified and concise interface for model fitting, prediction, and
     performance assessment.
-  - Current support for 49 established models from 25 **R** packages.
+  - Current support for 49 established models from 26 **R** packages.
+  - Dynamic model parameters.
   - Ensemble modeling with stacked regression and super learners.
   - Modeling of response variables types: binary factors, multi-class
     nominal and ordinal factors, numeric vectors and matrices, and
     censored time-to-event survival.
-  - Model specification with traditional formulas and with flexible
-    pre-processing
+  - Model specification with traditional formulas, design matrices, and
+    flexible pre-processing
     [recipes](https://cran.r-project.org/package=recipes).
   - Resample estimation of predictive performance, including
     cross-validation, bootstrap resampling, and split training-test set
@@ -51,7 +52,9 @@ modeling strategies.
     model parameter values.
   - User-definable models and performance metrics.
 
-# Installation
+# Getting Started
+
+## Installation
 
 ``` r
 # Current release from CRAN
@@ -59,17 +62,17 @@ install.packages("MachineShop")
 
 # Development version from GitHub
 # install.packages("devtools")
-devtools::install_github("brian-j-smith/MachineShop", ref = "develop")
+devtools::install_github("brian-j-smith/MachineShop")
 
 # Development version with vignettes
-devtools::install_github("brian-j-smith/MachineShop", ref = "develop", build_vignettes = TRUE)
+devtools::install_github("brian-j-smith/MachineShop", build_vignettes = TRUE)
 ```
 
-# Getting Started
+## Documentation
 
-Once installed, the following `R` commands will load the package and
+Once installed, the following **R** commands will load the package and
 display its help system documentation. Online documentation and examples
-are available at the [MachineShop main
+are available at the [MachineShop
 website](https://brian-j-smith.github.io/MachineShop).
 
 ``` r

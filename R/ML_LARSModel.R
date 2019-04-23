@@ -32,9 +32,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = LARSModel)
+#' fit(sale_amount ~ ., data = ICHomes, model = LARSModel)
 #'
 LARSModel <- function(type = c("lasso", "lar", "forward.stagewise", "stepwise"),
                       trace = FALSE, normalize = TRUE, intercept = TRUE,
@@ -56,9 +54,8 @@ LARSModel <- function(type = c("lasso", "lar", "forward.stagewise", "stepwise"),
     design = "model.matrix",
     fit = function(formula, data, weights, step = NULL, ...) {
       assert_equal_weights(weights)
-      terms <- extract(formula, data)
-      x <- terms$x
-      y <- terms$y
+      x <- model.matrix(data, intercept = FALSE)
+      y <- response(data)
       if (is.null(step)) {
         modelfit <- lars::lars(x, y, ...)
         modelfit$step <- length(modelfit$df)
@@ -68,8 +65,8 @@ LARSModel <- function(type = c("lasso", "lar", "forward.stagewise", "stepwise"),
       }
       modelfit
     },
-    predict = function(object, newdata, fitbits, ...) {
-      newx <- extract(formula(fitbits)[-2], newdata)$x
+    predict = function(object, newdata, ...) {
+      newx <- model.matrix(newdata, intercept = FALSE)
       predict(object, newx = newx, s = object$step, type = "fit")$fit
     }
   )

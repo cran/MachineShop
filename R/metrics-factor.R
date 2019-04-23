@@ -13,6 +13,13 @@
 #' \code{f_score} [default: F1 score].
 #' @param cutoff threshold above which binary factor probabilities are
 #' classified as events and below which survival probabilities are classified.
+#' @param dist character string specifying a distribution with which to estimate
+#' the survival mean in the total sum of square component of \code{r2}.
+#' Possible values are \code{"empirical"} for the Kaplan-Meier estimator,
+#' \code{"exponential"}, \code{"extreme"}, \code{"gaussian"},
+#' \code{"loggaussian"}, \code{"logistic"}, \code{"loglogistic"},
+#' \code{"lognormal"}, \code{"rayleigh"}, \code{"t"}, or \code{"weibull"}
+#' (default).
 #' @param f function to calculate a desired sensitivity-specificity tradeoff.
 #' @param metrics list of two performance metrics for the calculation [default:
 #' ROC metrics].
@@ -73,14 +80,14 @@ setMethod(".accuracy", c("factor", "numeric"),
 
 setMethod(".accuracy", c("Surv", "SurvEvents"),
   function(observed, predicted, ...) {
-    .metric.Surv_matrix(observed, predicted, accuracy)
+    .metric.SurvMatrix(observed, predicted, accuracy)
   }
 )
 
 
 setMethod(".accuracy", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, ...) {
-    .metric.Surv_matrix(observed, predicted, accuracy, cutoff)
+    .metric.SurvMatrix(observed, predicted, accuracy, cutoff = cutoff)
   }
 )
 
@@ -136,7 +143,7 @@ setMethod(".auc", c("Curves", "NULL"),
 setMethod(".auc", c("Surv", "SurvProbs"),
   function(observed, predicted, metrics, ...) {
     x <- unname(auc(performance_curve(observed, predicted, metrics = metrics)))
-    times <- predicted@times
+    times <- time(predicted)
     if (length(times) > 1) {
       c("mean" = mean.SurvMetrics(x, times), "time" = x)
     } else {
@@ -181,7 +188,7 @@ setMethod(".brier", c("factor", "numeric"),
 
 setMethod(".brier", c("Surv", "SurvProbs"),
   function(observed, predicted, ...) {
-    times <- predicted@times
+    times <- time(predicted)
     obs_times <- observed[, "time"]
     obs_events <- observed[, "status"]
     
@@ -192,7 +199,7 @@ setMethod(".brier", c("Surv", "SurvProbs"),
       obs_after_time <- obs_times > time
       cens <- predict(cens_fit, pmin(obs_times, time))
       weights <- ifelse(obs_events == 1 | obs_after_time, 1 / cens, 0)
-      mean(weights * (obs_after_time - predicted[, i])^2)
+      mean(weights * (obs_after_time - predicted[, i, drop = TRUE])^2)
     })
     
     if (length(times) > 1) {
@@ -231,7 +238,7 @@ setMethod(".cindex", c("factor", "numeric"),
 
 setMethod(".cindex", c("Surv", "numeric"),
   function(observed, predicted, ...) {
-    Hmisc::rcorr.cens(predicted, observed)[["C Index"]]
+    concordance(observed ~ predicted)$concordance
   }
 )
 
@@ -312,14 +319,15 @@ setMethod(".f_score", c("factor", "numeric"),
 
 setMethod(".f_score", c("Surv", "SurvEvents"),
   function(observed, predicted, beta, ...) {
-    .metric.Surv_matrix(observed, predicted, f_score, beta = beta)
+    .metric.SurvMatrix(observed, predicted, f_score, beta = beta)
   }
 )
 
 
 setMethod(".f_score", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, beta, ...) {
-    .metric.Surv_matrix(observed, predicted, f_score, cutoff, beta = beta)
+    .metric.SurvMatrix(observed, predicted, f_score, cutoff = cutoff,
+                       beta = beta)
   }
 )
 
@@ -463,14 +471,14 @@ setMethod(".kappa2", c("factor", "numeric"),
 
 setMethod(".kappa2", c("Surv", "SurvEvents"),
   function(observed, predicted, ...) {
-    .metric.Surv_matrix(observed, predicted, kappa2)
+    .metric.SurvMatrix(observed, predicted, kappa2)
   }
 )
 
 
 setMethod(".kappa2", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, ...) {
-    .metric.Surv_matrix(observed, predicted, kappa2, cutoff)
+    .metric.SurvMatrix(observed, predicted, kappa2, cutoff = cutoff)
   }
 )
 
@@ -514,14 +522,14 @@ setMethod(".npv", c("factor", "numeric"),
 
 setMethod(".npv", c("Surv", "SurvEvents"),
   function(observed, predicted, ...) {
-    .metric.Surv_matrix(observed, predicted, npv)
+    .metric.SurvMatrix(observed, predicted, npv)
   }
 )
 
 
 setMethod(".npv", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, ...) {
-    .metric.Surv_matrix(observed, predicted, npv, cutoff)
+    .metric.SurvMatrix(observed, predicted, npv, cutoff = cutoff)
   }
 )
 
@@ -565,14 +573,14 @@ setMethod(".ppv", c("factor", "numeric"),
 
 setMethod(".ppv", c("Surv", "SurvEvents"),
   function(observed, predicted, ...) {
-    .metric.Surv_matrix(observed, predicted, ppv)
+    .metric.SurvMatrix(observed, predicted, ppv)
   }
 )
 
 
 setMethod(".ppv", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, ...) {
-    .metric.Surv_matrix(observed, predicted, ppv, cutoff)
+    .metric.SurvMatrix(observed, predicted, ppv, cutoff = cutoff)
   }
 )
 
@@ -769,14 +777,14 @@ setMethod(".roc_index", c("factor", "numeric"),
 
 setMethod(".roc_index", c("Surv", "SurvEvents"),
   function(observed, predicted, f, ...) {
-    .metric.Surv_matrix(observed, predicted, roc_index, f = f)
+    .metric.SurvMatrix(observed, predicted, roc_index, f = f)
   }
 )
 
 
 setMethod(".roc_index", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, f, ...) {
-    .metric.Surv_matrix(observed, predicted, roc_index, cutoff, f = f)
+    .metric.SurvMatrix(observed, predicted, roc_index, cutoff = cutoff, f = f)
   }
 )
 
@@ -819,14 +827,14 @@ setMethod(".rpp", c("factor", "numeric"),
 
 setMethod(".rpp", c("Surv", "SurvEvents"),
   function(observed, predicted, ...) {
-    .metric.Surv_matrix(observed, predicted, rpp)
+    .metric.SurvMatrix(observed, predicted, rpp)
   }
 )
 
 
 setMethod(".rpp", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, ...) {
-    .metric.Surv_matrix(observed, predicted, rpp, cutoff)
+    .metric.SurvMatrix(observed, predicted, rpp, cutoff = cutoff)
   }
 )
 
@@ -961,14 +969,14 @@ setMethod(".tnr", c("factor", "numeric"),
 
 setMethod(".tnr", c("Surv", "SurvEvents"),
   function(observed, predicted, ...) {
-    .metric.Surv_matrix(observed, predicted, tnr)
+    .metric.SurvMatrix(observed, predicted, tnr)
   }
 )
 
 
 setMethod(".tnr", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, ...) {
-    .metric.Surv_matrix(observed, predicted, tnr, cutoff)
+    .metric.SurvMatrix(observed, predicted, tnr, cutoff = cutoff)
   }
 )
 
@@ -1011,14 +1019,14 @@ setMethod(".tpr", c("factor", "numeric"),
 
 setMethod(".tpr", c("Surv", "SurvEvents"),
   function(observed, predicted, ...) {
-    .metric.Surv_matrix(observed, predicted, tpr)
+    .metric.SurvMatrix(observed, predicted, tpr)
   }
 )
 
 
 setMethod(".tpr", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, ...) {
-    .metric.Surv_matrix(observed, predicted, tpr, cutoff)
+    .metric.SurvMatrix(observed, predicted, tpr, cutoff = cutoff)
   }
 )
 
@@ -1065,10 +1073,10 @@ setMethod(".weighted_kappa2", c("ordered", "matrix"),
 )
 
 
-.metric.Surv_matrix <- function(observed, predicted, FUN, cutoff = NULL, ...) {
+.metric.SurvMatrix <- function(observed, predicted, FUN, cutoff = NULL, ...) {
   conf <- confusion(observed, predicted, cutoff = cutoff)
   metrics <- sapply(conf, FUN, ...)
-  times <- predicted@times
+  times <- time(predicted)
   if (length(times) > 1) {
     c("mean" = mean.SurvMetrics(metrics, times), metrics)
   } else {

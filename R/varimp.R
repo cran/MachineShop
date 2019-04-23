@@ -1,3 +1,37 @@
+VarImp <- function(object, ...) {
+  UseMethod("VarImp")
+}
+
+
+VarImp.default <- function(object, scale = TRUE, ...) {
+  stopifnot(nrow(object) == 0 || is.character(rownames(object)))
+
+  idx <- order(rowSums(object), decreasing = TRUE)
+  idx <- idx * (rownames(object)[idx] != "(Intercept)")
+  object <- object[idx, , drop = FALSE]
+  if (scale) {
+    scale_center <- min(object)
+    scale_scale <- diff(range(object)) / 100
+    object <- (object - scale_center) / scale_scale
+  } else {
+    scale_center = 0
+    scale_scale = 1
+  }
+  
+  new("VarImp", object, center = scale_center, scale = scale_scale)
+}
+
+
+VarImp.matrix <- function(object, ...) {
+  VarImp(as.data.frame(object), ...)
+}
+
+
+VarImp.numeric <- function(object, ...) {
+  VarImp(cbind(Overall = object), ...)
+}
+
+
 #' Variable Importance
 #' 
 #' Calculate measures of the relative importance of predictors in a model.
@@ -26,7 +60,7 @@ varimp <- function(object, scale = TRUE, ...) {
   requireModelNamespaces(fitbit(object, "packages"))
   vi <- fitbit(object, "varimp")(unMLModelFit(object), ...)
   if (is.null(vi)) vi <- varimp_undef(object)
-  VarImp(as(vi, "VarImp"), scale = scale)
+  VarImp(vi, scale = scale)
 }
 
 
@@ -38,5 +72,5 @@ varimp_pchisq <- function(object) {
 varimp_undef <- function(object) {
   warn("variable importance not defined for ", class(object)[1])
   varnames <- labels(terms(fitbit(object, "x")))
-  structure(rep(NA_integer_, length(varnames)), names = varnames)
+  structure(rep(NA_real_, length(varnames)), names = varnames)
 }

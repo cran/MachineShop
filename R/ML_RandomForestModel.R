@@ -28,9 +28,7 @@
 #' \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = RandomForestModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = RandomForestModel())
 #' 
 RandomForestModel <- function(ntree = 500,
                               mtry = .(if (is.factor(y)) floor(sqrt(nvars))
@@ -55,9 +53,14 @@ RandomForestModel <- function(ntree = 500,
     design = "terms",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
-      randomForest::randomForest(formula, data = data, ...)
+      eval_fit(data,
+               formula = randomForest::randomForest(formula,
+                                                    data = as.data.frame(data),
+                                                    ...),
+               matrix = randomForest::randomForest(x, y, ...))
     },
     predict = function(object, newdata, fitbits, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata,
               type = ifelse(is.factor(response(fitbits)), "prob", "response"))
     },

@@ -47,9 +47,7 @@
 #' 
 #' @examples
 #' \donttest{
-#' library(MASS)
-#' 
-#' modelfit <- fit(medv ~ ., data = Boston, model = BARTMachineModel())
+#' modelfit <- fit(sale_amount ~ ., data = ICHomes, model = BARTMachineModel())
 #' varimp(modelfit, metric = "splits", num_replicates = 20, scale = FALSE)
 #' }
 #'
@@ -75,11 +73,12 @@ BARTMachineModel <- function(num_trees = 50, num_burn = 250, num_iter = 1000,
     design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
-      terms <- extract(formula, data)
-      bartMachine::bartMachine(as.data.frame(terms$x), terms$y, ...)
+      x <- model.matrix(data, intercept = FALSE)
+      y <- response(data)
+      bartMachine::bartMachine(as.data.frame(x), y, ...)
     },
-    predict = function(object, newdata, fitbits, ...) {
-      newx <- extract(formula(fitbits)[-2], newdata)$x
+    predict = function(object, newdata, ...) {
+      newx <- model.matrix(newdata, intercept = FALSE)
       predict(object, new_data = as.data.frame(newx))
     },
     varimp = function(object, metric = c("splits", "trees"), num_replicates = 5,

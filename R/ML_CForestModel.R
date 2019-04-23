@@ -34,9 +34,7 @@
 #' \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = CForestModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = CForestModel())
 #'
 CForestModel <- function(teststat = c("quad", "max"),
                          testtype = c("Univariate", "Teststatistic",
@@ -61,18 +59,15 @@ CForestModel <- function(teststat = c("quad", "max"),
     },
     design = "terms",
     fit = function(formula, data, weights, ...) {
-      party::cforest(formula, data = data, weights = weights, ...)
+      party::cforest(formula, data = as.data.frame(data), weights = weights,
+                     ...)
     },
     predict = function(object, newdata, fitbits, times, ...) {
+      newdata <- as.data.frame(newdata)
       if (object@responses@is_censored) {
         y <- response(fitbits)
-        
-        n <- length(times)
-        if (n == 0) times <- surv_times(y)
-        
-        pred <- predict(object, newdata = newdata, type = "prob") %>%
-          sapply(function(fit) predict(fit, times)) %>% t
-        if (n == 0) surv_mean(times, pred, surv_max(y)) else pred
+        fits <- predict(object, newdata = newdata, type = "prob")
+        predict(y, fits, times, ...)
       } else {
         predict(object, newdata = newdata, type = "prob") %>%
           unlist %>%

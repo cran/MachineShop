@@ -27,8 +27,10 @@ Further model details can be found in the source link below.
 \examples{
 library(MASS)
 
-df <- Boston
-df$medv <- cut(Boston$medv, breaks = c(0, 15, 20, 25, 50), ordered = TRUE)   
+df <- within(Boston,
+             medv <- cut(medv,
+                         breaks = c(0, 10, 15, 20, 25, 50),
+                         ordered = TRUE))
 fit(medv ~ ., data = df, model = POLRModel())
 
 }

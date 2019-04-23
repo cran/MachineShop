@@ -5,9 +5,9 @@
 #' @name fit
 #' @rdname fit-methods
 #' 
-#' @param x defined relationship between model predictors and an outcome.  May
-#' be a \code{ModelFrame} containing a formula, data, and optionally case
-#' weights; a \code{formula}; or a \code{recipe}.
+#' @param x defines a relationship between model predictor and response
+#' variables.  May be a \code{formula}, design matrix of predictors,
+#' \code{ModelFrame}, or untrained \code{recipe}.
 #' @param ... arguments passed to other methods.
 #' 
 fit <- function(x, ...) {
@@ -37,7 +37,16 @@ fit <- function(x, ...) {
 #' varimp(gbmfit)
 #' 
 fit.formula <- function(x, data, model, ...) {
-  fit(ModelFrame(x, data, na.action = na.pass), model)
+  fit(ModelFrame(x, data, na.rm = FALSE), model)
+}
+
+
+#' @rdname fit-methods
+#' 
+#' @param y predictor variable.
+#' 
+fit.matrix <- function(x, y, model, ...) {
+  fit(ModelFrame(x, y, na.rm = FALSE), model)
 }
 
 
@@ -60,7 +69,7 @@ fit.ModelFrame <- function(x, model, ...) {
 #' "case_weight" \code{\link[recipes:roles]{role}} for them.
 #' 
 fit.recipe <- function(x, model, ...) {
-  .fit(getMLObject(model, "MLModel"), x)
+  .fit(getMLObject(model, "MLModel"), prep(ModelRecipe(x)))
 }
 
 
@@ -70,7 +79,8 @@ fit.recipe <- function(x, model, ...) {
 
 
 .fit.MLModel <- function(model, x, ...) {
-  mf <- ModelFrame(x, na.action = na.pass)
+  mf <- ModelFrame(x, na.rm = FALSE)
+  if (is.null(mf[["(weights)"]])) mf[["(weights)"]] <- 1
   
   y <- response(mf)
   if (!any(sapply(model@types, function(type) is_response(y, type)))) {
@@ -80,10 +90,9 @@ fit.recipe <- function(x, model, ...) {
   requireModelNamespaces(model@packages)
   
   envir <- list2env(within(list(), {
-    formula <- formula(terms(mf))
-    data <- as.data.frame(mf)
+    formula <- formula(mf)
+    data <- mf
     weights <- model.weights(mf)
-    if (is.null(weights)) weights <- rep(1, nrow(mf))
     y <- y
     nobs <- nrow(mf)
     nvars <- nvars(mf, model)
@@ -94,4 +103,21 @@ fit.recipe <- function(x, model, ...) {
   
   do.call(model@fit, args, envir = envir) %>%
     asMLModelFit(paste0(model@name, "Fit"), model, x, y)
+}
+
+
+eval_fit <- function(data, formula, matrix) {
+  use_model_matrix <- if (missing(formula)) TRUE else
+    if (missing(matrix)) FALSE else
+      is(terms(data), "DesignTerms")
+  
+  if (use_model_matrix) {
+    envir <- list(
+      x = model.matrix(data, intercept = FALSE),
+      y = response(data)
+    )
+    eval(substitute(matrix), envir, parent.frame())
+  } else {
+    eval.parent(substitute(formula))
+  }
 }

@@ -1,3 +1,8 @@
+PartialDependence <- function(object) {
+  structure(object, class = c("PartialDependence", "data.frame"))
+}
+
+
 #' Partial Dependence
 #' 
 #' Calculate partial dependence of a response on select predictor variables.
@@ -35,10 +40,11 @@ dependence <- function(object, data = NULL, select = NULL, interaction = FALSE,
   stopifnot(is(object, "MLModelFit"))
 
   x <- fitbit(object, "x")
-  if (is.null(data)) data <- getdata(x)
-
-  x_labels <- labels(terms(x))
-  indices <- structure(match(x_labels, names(data)), names = x_labels)
+  if (is.null(data)) data <- x
+  data <- as.data.frame(data)
+  vars <- all.vars(predictors(terms(x, original = TRUE)))
+  
+  indices <- structure(match(vars, names(data)), names = vars)
   select <- eval(substitute(select), as.list(indices), parent.frame())
   if (is.null(select)) select <- indices
   data_select <- data[, select, drop = FALSE]
@@ -51,9 +57,17 @@ dependence <- function(object, data = NULL, select = NULL, interaction = FALSE,
     if (is.factor(x)) {
       unique(x)
     } else if (is.vector(x)) {
+      x <- sort(x)
+      n <- min(n, length(x))
       switch(intervals,
-             "quantile" = quantile(x, seq(0, 1, length = n)),
-             "uniform" = seq(min(x), max(x), length = n)
+             "quantile" = x[round(seq(1, length(x), length = n))],
+             "uniform" = {
+               y <- seq(x[1], x[length(x)], length = n)
+               indices <- findInterval(y, x, all.inside = TRUE)
+               x_lower <- x[indices]
+               x_upper <- x[indices + 1]
+               unique(ifelse(y - x_lower < x_upper - y, x_lower, x_upper))
+             }
       )
     } else {
       stop("unsupported variable type")
@@ -75,14 +89,17 @@ dependence <- function(object, data = NULL, select = NULL, interaction = FALSE,
   grid_list <- lapply(data_select, select_values)
   
   data_select_grid <- if (interaction) {
-    do.call(expand.grid, grid_list)
+    expand.grid(grid_list)
   } else {
-    grid_list <- lapply(seq_len(length(grid_list)), function(i) {
-      df <- as.data.frame(grid_list[i])
-      df[names(grid_list)[-i]] <- NA
-      df
-    })
-    do.call(rbind, grid_list)
+    df <- data.frame(row.names = 1:sum(sapply(grid_list, length)))
+    pos <- 0
+    for (name in names(grid_list)) {
+      n <- length(grid_list[[name]])
+      df[[name]] <- rep(grid_list[[name]], length.out = nrow(df))
+      df[[name]][-(pos + seq_len(n))] <- NA
+      pos <- pos + n
+    }
+    df
   }
 
   dependence_list <- lapply(seq_len(nrow(data_select_grid)), function(i) {

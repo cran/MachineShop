@@ -1,3 +1,16 @@
+Performance <- function(...) {
+  args <- list(...)
+  
+  perf <- if (length(args) > 1) {
+    abind(args, along = 3)
+  } else {
+    args[[1]]
+  }
+  
+  new("Performance", perf)
+}
+
+
 #' Model Performance Metrics
 #' 
 #' Compute measures of model performance.
@@ -34,11 +47,9 @@ performance <- function(x, ...) {
 #' summary(perf)
 #' plot(perf)
 #' 
-performance.Resamples <- function(x, ..., na.rm = TRUE) {
-  if (na.rm) x <- na.omit(x)
-  
+performance.Resamples <- function(x, ...) {
   perf_by <- by(x, x[c("Model", "Resample")], function(x) {
-    if (nrow(x)) performance(x$Observed, x$Predicted, ...) else NA
+    performance(x$Observed, x$Predicted, ...)
   }, simplify = FALSE)
   
   perf_list <- tapply(perf_by, rep(dimnames(perf_by)$Model, dim(perf_by)[2]),
@@ -63,9 +74,8 @@ performance.factor <- function(x, y, metrics =
                                    "ROCAUC" = MachineShop::roc_auc,
                                    "Sensitivity" = MachineShop::sensitivity,
                                    "Specificity" = MachineShop::specificity),
-                                cutoff = 0.5, ...) {
-  metrics <- list2function(metrics)
-  metrics(x, y, cutoff = cutoff)
+                                cutoff = 0.5, na.rm = TRUE, ...) {
+  .performance(x, y, metrics, na.rm, cutoff)
 }
 
 
@@ -74,9 +84,9 @@ performance.factor <- function(x, y, metrics =
 performance.matrix <- function(x, y, metrics =
                                  c("RMSE" = MachineShop::rmse,
                                    "R2" = MachineShop::r2,
-                                   "MAE" = MachineShop::mae), ...) {
-  metrics <- list2function(metrics)
-  metrics(x, y)
+                                   "MAE" = MachineShop::mae), na.rm = TRUE,
+                               ...) {
+  .performance(x, y, metrics, na.rm)
 }
 
 
@@ -85,9 +95,9 @@ performance.matrix <- function(x, y, metrics =
 performance.numeric <- function(x, y, metrics =
                                   c("RMSE" = MachineShop::rmse,
                                     "R2" = MachineShop::r2,
-                                    "MAE" = MachineShop::mae), ...) {
-  metrics <- list2function(metrics)
-  metrics(x, y)
+                                    "MAE" = MachineShop::mae), na.rm = TRUE,
+                                ...) {
+  .performance(x, y, metrics, na.rm)
 }
 
 
@@ -101,7 +111,7 @@ performance.numeric <- function(x, y, metrics =
 #' fo <- Surv(time, status != 2) ~ sex + age + year + thickness + ulcer
 #' gbmfit <- fit(fo, data = Melanoma, model = GBMModel)
 #' 
-#' obs <- response(fo, data = Melanoma)
+#' obs <- response(gbmfit, newdata = Melanoma)
 #' pred <- predict(gbmfit, newdata = Melanoma, type = "prob")
 #' performance(obs, pred)
 #' 
@@ -110,9 +120,8 @@ performance.Surv <- function(x, y, metrics =
                                  "Brier" = MachineShop::brier,
                                  "ROCAUC" = MachineShop::roc_auc,
                                  "Accuracy" = MachineShop::accuracy),
-                              cutoff = 0.5, ...) {
-  metrics <- list2function(metrics)
-  metrics(x, y, cutoff = cutoff)
+                              cutoff = 0.5, na.rm = TRUE, ...) {
+  .performance(x, y, metrics, na.rm, cutoff)
 }
 
 
@@ -129,6 +138,15 @@ performance.ConfusionMatrix <- function(x, metrics =
                                           c("Accuracy" = MachineShop::accuracy,
                                             "Kappa" = MachineShop::kappa2),
                                         ...) {
-  metrics <- list2function(metrics)
-  metrics(x)
+  list2function(metrics)(x)
+}
+
+
+.performance <- function(x, y, metrics, na.rm, cutoff = 0.5) {
+  if (na.rm) {
+    complete <- complete_subset(x = x, y = y)
+    x <- complete$x
+    y <- complete$y
+  }
+  if (length(x)) list2function(metrics)(x, y, cutoff = cutoff) else NA_real_
 }

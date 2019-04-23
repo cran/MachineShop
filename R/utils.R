@@ -15,8 +15,7 @@ utils::globalVariables(c("group", "i", "Lower", "Mean", "Midpoint", "model",
 #' Shorthand notation for the \code{\link{quote}} function.  The quote operator
 #' simply returns its argument unevaluated and can be applied to any \R
 #' expression.  Useful for calling model constructors with quoted parameter
-#' values that are defined in terms of a model \code{formula}, \code{data},
-#' \code{weights}, \code{nobs}, \code{nvars}, or \code{y}.
+#' values that are defined in terms of \code{nobs}, \code{nvars}, or \code{y}.
 #' 
 #' @param expr any syntactically valid \R expression.
 #' 
@@ -27,9 +26,7 @@ utils::globalVariables(c("group", "i", "Lower", "Mean", "Midpoint", "model",
 #' 
 #' @examples
 #' ## Stepwise variable selection with BIC
-#' library(MASS)
-#' 
-#' glmfit <- fit(medv ~ ., Boston, GLMStepAICModel(k = .(log(nobs))))
+#' glmfit <- fit(sale_amount ~ ., ICHomes, GLMStepAICModel(k = .(log(nobs))))
 #' varimp(glmfit)
 #' 
 . <- function(expr) {
@@ -52,10 +49,9 @@ attachment <- function(what, pos = 2L,
 }
 
 
-extract <- function(formula, data, na.action = na.pass) {
-  mf <- model.frame(formula, data, na.action = na.action)
-  list(x = model.matrix(formula, mf)[, -1, drop = FALSE],
-       y = model.response(mf))
+complete_subset <- function(...) {
+  is_complete <- complete.cases(...)
+  lapply(list(...), function(x) subset(x, is_complete))
 }
 
 
@@ -69,28 +65,14 @@ fitbit <- function(object, name) {
 }
 
 
-formula.MLFitBits <- function(object) {
-  formula(terms(object@x))
-}
-
-
-formula.MLModelFit <- function(object) {
-  formula(field(object, "fitbits"))
-}
-
-
-getdata <- function(x, ...) {
-  UseMethod("getdata")
-}
-
-
-getdata.data.frame <- function(x, ...) {
-  x
-}
-
-
-getdata.recipe <- function(x, ...) {
-  x$template
+findMethod <- function(generic, object) {
+  generic_name <- deparse(substitute(generic))
+  f <- function(x, ...) UseMethod("f")
+  for (method in methods(generic_name)) {
+    assign(sub(generic_name, "f", method, fixed = TRUE),
+           eval(substitute(function(x, ...) method)))
+  }
+  f(object)
 }
 
 
@@ -175,15 +157,12 @@ match_indices <- function(indices, choices) {
 
 
 nvars <- function(x, model) {
+  stopifnot(is(x, "ModelFrame"))
   model <- getMLObject(model, "MLModel")
-  model_terms <- terms(x)
   switch(model@design,
-         "model.matrix" = {
-           fo <- formula(model_terms)
-           mf <- model.frame(fo, x[1, , drop = FALSE])
-           ncol(model.matrix(fo, mf)) - attr(model_terms, "intercept")
-         },
-         "terms" = length(labels(model_terms))
+         "model.matrix" = 
+           ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE)),
+         "terms" = length(labels(terms(x)))
   )
 }
 
@@ -194,26 +173,6 @@ params <- function(envir) {
   if (any(is_missing)) stop("missing values for required argument(s) ",
                             toString(names(args)[is_missing]))
   args[!sapply(args, is.null)]
-}
-
-
-prep.data.frame <- function(x, ...) {
-  x
-}
-
-
-preprocess <- function(x, data = NULL, ...) {
-  UseMethod("preprocess")
-}
-
-
-preprocess.default <- function(x, data = NULL, ...) {
-  as.data.frame(if (is.null(data)) x else data)
-}
-
-
-preprocess.recipe <- function(x, data = NULL, ...) {
-  if (is.null(data)) juice(x) else bake(x, new_data = data)
 }
 
 
@@ -314,49 +273,6 @@ switch_class <- function(EXPR, ...) {
   blocks <- eval(substitute(alist(...)))
   isClass <- sapply(names(blocks), function(class) is(EXPR, class))
   eval.parent(blocks[[match(TRUE, isClass)]])
-}
-
-
-terms.recipe <- function(x, ...) {
-  info <- summary(x)
-  
-  get_vars <- function(roles = NULL, types = NULL) {
-    is_match <- by(info, info$variable, function(split) {
-      all(roles %in% split$role) && all(types %in% split$type)
-    })
-    names(is_match)[is_match]
-  }
-  
-  outcome_set <- get_vars("outcome")
-
-  surv_time <- get_vars(c("surv_time", "outcome"))
-  surv_event <- get_vars(c("surv_event", "outcome"))
-  numeric_outcomes <- get_vars("outcome", "numeric")  
-  
-  if (length(surv_time) > 1 || length(surv_event) > 1) {
-    stop("multiple instances of outcome role 'surv_time' or 'surv_event'")
-  } else if (length(surv_time)) {
-    outcome <- call("Surv", as.symbol(surv_time))
-    if (length(surv_event)) outcome[[3]] <- as.symbol(surv_event)
-    outcome_set <- setdiff(outcome_set, c(surv_time, surv_event))
-  } else if (length(surv_event)) {
-    stop("outcome role 'surv_event' specified without 'surv_time'")
-  } else if (length(numeric_outcomes) > 1) {
-    outcome <- as.call(c(.(cbind), lapply(numeric_outcomes, as.symbol)))
-    outcome_set <- setdiff(outcome_set, numeric_outcomes)
-  } else if (length(outcome_set) == 1) {
-    outcome <- outcome_set
-    outcome_set <- NULL
-  }
-  
-  if (length(outcome_set)) {
-    stop("recipe outcome must be a single variable, survival variables with ",
-         "roles 'surv_time' and 'surv_event', or multiple numeric variables")
-  }
-
-  predictors <- info$variable[info$role == "predictor"]
-  
-  terms(reformulate(predictors, outcome))
 }
 
 

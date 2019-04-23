@@ -61,7 +61,7 @@ kernels.}
 
 \item{degree}{degree of the ANOVA, Bessel, and polynomial kernel functions.}
 
-\item{...}{arguments to be passed to \code{SVMModel}.}
+\item{...}{arguments passed to \code{SVMModel}.}
 
 \item{order}{order of the Bessel function to be used as a kernel.}
 
@@ -100,9 +100,7 @@ Default values for the \code{NULL} arguments and further model details can be
 found in the source link below.
 }
 \examples{
-library(MASS)
-
-fit(medv ~ ., data = Boston, model = SVMRadialModel())
+fit(sale_amount ~ ., data = ICHomes, model = SVMRadialModel())
 
 }
 \seealso{

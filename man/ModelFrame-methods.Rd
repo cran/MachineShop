@@ -8,11 +8,11 @@
 \usage{
 ModelFrame(x, ...)
 
-\method{ModelFrame}{formula}(x, data, weights = NULL, strata = NULL,
-  na.action = NULL, ...)
+\method{ModelFrame}{formula}(x, data, na.rm = TRUE, weights = NULL,
+  strata = NULL, ...)
 
-\method{ModelFrame}{matrix}(x, y, weights = NULL, strata = NULL,
-  na.action = NULL, ...)
+\method{ModelFrame}{matrix}(x, y = NULL, na.rm = TRUE,
+  weights = NULL, strata = NULL, ...)
 }
 \arguments{
 \item{x}{model \code{\link{formula}} or \code{matrix} of predictor variables.}
@@ -21,14 +21,12 @@ ModelFrame(x, ...)
 
 \item{data}{\code{data.frame} or an object that can be converted to one.}
 
+\item{na.rm}{logical indicating whether to remove cases with \code{NA} values}
+
 \item{weights}{vector of case weights.}
 
-\item{strata}{vector of stratification levels.}
-
-\item{na.action}{action to take if cases contain missing values.  The default
-is first any \code{na.action} attribute of \code{data}, second a
-\code{na.action} setting of \code{\link{options}}, and third
-\code{\link{na.fail}} if unset.}
+\item{strata}{vector of stratification levels.
+for any of the model variables.}
 
 \item{y}{response variable.}
 }
@@ -36,17 +34,15 @@ is first any \code{na.action} attribute of \code{data}, second a
 \code{ModelFrame} class object that inherits from \code{data.frame}.
 }
 \description{
-Class for storing a data frame, formula, and optionally weights for fitting
-MLModels.
+Class for storing data, formulas, and other attributes for fitting MLModels.
 }
 \examples{
 mf <- ModelFrame(ncases / (ncases + ncontrols) ~ agegp + tobgp + alcgp,
-                 data = esoph, weights = ncases + ncontrols)
+                 data = esoph, weights = with(esoph, ncases + ncontrols))
 gbmfit <- fit(mf, model = GBMModel)
 varimp(gbmfit)
 
 }
 \seealso{
-\code{\link{formula}}, \code{\link{na.fail}}, \code{\link{na.omit}},
-\code{\link{na.pass}}
+\code{\link{formula}}
 }

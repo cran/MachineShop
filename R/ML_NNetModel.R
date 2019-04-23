@@ -37,9 +37,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' library(MASS)
-#' 
-#' fit(medv ~ ., data = Boston, model = NNetModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = NNetModel())
 #' 
 NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
                       censored = FALSE, skip = FALSE, rang = 0.7, decay = 0,
@@ -60,9 +58,13 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
     },
     design = "model.matrix",
     fit = function(formula, data, weights, ...) {
-      nnet::nnet(formula, data = data, weights = weights, ...)
+      eval_fit(data,
+               formula = nnet::nnet(formula, data = as.data.frame(data),
+                                    weights = weights, ...),
+               matrix = nnet::nnet(x, y, weights = weights, ...))
     },
     predict = function(object, newdata, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "raw")
     },
     varimp = function(object, ...) {

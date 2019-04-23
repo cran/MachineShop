@@ -71,13 +71,16 @@ EarthModel <- function(pmethod = c("backward", "none", "exhaustive", "forward",
         contr.earth.response = earth::contr.earth.response
       ), name = "earth_exports")
       
-      family <- switch_class(response(formula, data),
-                             "factor" = "binomial",
-                             "numeric" = "gaussian")
-      earth::earth(formula, data = data, weights = weights,
-                   glm = list(family = family), ...)
+      glm <- list(family = switch_class(response(data),
+                                        "factor" = "binomial",
+                                        "numeric" = "gaussian"))
+      eval_fit(data,
+               formula = earth::earth(formula, data = as.data.frame(data),
+                                      weights = weights, glm = glm, ...),
+               matrix = earth::earth(x, y, weights = weights, glm = glm, ...))
     },
     predict = function(object, newdata, ...) {
+      newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "response")
     },
     varimp = function(object, metric = c("gcv", "rss", "nsubsets"), ...) {
