@@ -1,7 +1,4 @@
-utils::globalVariables(c("group", "i", "Lower", "Mean", "Midpoint", "model",
-                         "Model", "Observed", "Predicted", "Predictor",
-                         "Resample", "Response", "Upper", "Value", "values",
-                         "variables", "x", "y", "..y.."))
+utils::globalVariables(c("i", "x", "y"))
 
 
 .onLoad <- function(libname, pkgname) {
@@ -180,6 +177,17 @@ requireModelNamespaces <- function(packages) {
   pass <- sapply(packages, requireNamespace)
   if (!all(pass)) stop("install required packages: ", toString(packages[!pass]))
   invisible(pass)
+}
+
+
+seq_boot <- function(src, dest) {
+  indices <- seq_len(nrow(src))
+  pad_size <- nrow(dest) - nrow(src)
+  if (pad_size >= 0) {
+    c(indices, sample(indices, pad_size, replace = TRUE))
+  } else {
+    sample(indices, nrow(dest))
+  }
 }
 
 

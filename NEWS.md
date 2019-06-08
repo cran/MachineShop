@@ -2,6 +2,27 @@
 
 ## Version Updates
 
+## 1.4.0
+* CRAN release.
+
+## 1.3.3
+* Implement optimism-corrected bootstrap resampling (`BootOptimismControl`).
+* Store case names in `ModelFrame` and `ModelRecipe` and save to `Resamples`.
+
+
+## 1.3.2
+* Add `BinaryConfusionMatrix` and `OrderedConfusionMatrix` classes.
+* Export `ConfusionMatrix` constructor.
+* Extend `metricinfo()` to confusion matrices.
+* Refactor performance metrics methods code.
+
+
+## 1.3.1
+* Check and convert ordered factors in response methods.
+* Check consistency of extracted variables in response methods.
+* Add metrics methods for `Resamples`.
+
+
 ## 1.3.0
 * Improve compatibility with preprocessing recipes.
 * Allow base math functions and operators in `ModelFrame` formulas.

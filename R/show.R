@@ -36,7 +36,7 @@ setMethod("show", "MLControl",
 )
 
 
-setMethod("show", "MLControlBoot",
+setMethod("show", "MLBootControl",
   function(object) {
     show_title("MLControl")
     cat("\n",
@@ -44,13 +44,27 @@ setMethod("show", "MLControlBoot",
         "Label: Bootstrap Resampling\n",
         "Samples: ", object@samples, "\n",
         sep = "")
-    callNextMethod(object)
+    getMethod(show, "MLControl")(object)
     invisible()
   }
 )
 
 
-setMethod("show", "MLControlCV",
+setMethod("show", "MLBootOptimismControl",
+  function(object) {
+    show_title("MLControl")
+    cat("\n",
+        "Name: BootOptimismControl\n",
+        "Label: Optimism-Corrected Bootstrap Resampling\n",
+        "Samples: ", object@samples, "\n",
+        sep = "")
+    getMethod(show, "MLControl")(object)
+    invisible()
+  }
+)
+
+
+setMethod("show", "MLCVControl",
   function(object) {
     show_title("MLControl")
     cat("\n",
@@ -59,13 +73,13 @@ setMethod("show", "MLControlCV",
         "Folds: ", object@folds, "\n",
         "Repeats: ", object@repeats, "\n",
         sep = "")
-    callNextMethod(object)
+    getMethod(show, "MLControl")(object)
     invisible()
   }
 )
 
 
-setMethod("show", "MLControlOOB",
+setMethod("show", "MLOOBControl",
   function(object) {
     show_title("MLControl")
     cat("\n",
@@ -73,13 +87,13 @@ setMethod("show", "MLControlOOB",
         "Label: Out-Of-Bootstrap Resampling\n",
         "Samples: ", object@samples, "\n",
         sep = "")
-    callNextMethod(object)
+    getMethod(show, "MLControl")(object)
     invisible()
   }
 )
 
 
-setMethod("show", "MLControlSplit",
+setMethod("show", "MLSplitControl",
   function(object) {
     show_title("MLControl")
     cat("\n",
@@ -87,20 +101,20 @@ setMethod("show", "MLControlSplit",
         "Label: Split Training and Test Samples\n",
         "Training proportion: ", object@prop, "\n",
         sep = "")
-    callNextMethod(object)
+    getMethod(show, "MLControl")(object)
     invisible()
   }
 )
 
 
-setMethod("show", "MLControlTrain",
+setMethod("show", "MLTrainControl",
   function(object) {
     show_title("MLControl")
     cat("\n",
         "Name: TrainControl\n",
         "Label: Training Resubstitution\n",
         sep = "")
-    callNextMethod(object)
+    getMethod(show, "MLControl")(object)
     invisible()
   }
 )
@@ -172,6 +186,20 @@ setMethod("show", "ConfusionMatrix",
 )
 
 
+setMethod("show", "ConfusionSummary",
+  function(object) {
+    n <- object@N
+    acc <- object@Accuracy
+    cat("Number of responses: ", n, "\n",
+        "Accuracy (SE): ", acc, " (", sqrt(acc * (1 - acc) / n), ")\n",
+        "Majority class: ", object@Majority, "\n",
+        "Kappa: ", object@Kappa, "\n\n",
+        sep = "")
+    print(object@.Data)
+  }
+)
+
+
 setMethod("show", "Curves",
   function(object){
     show_title(object)
@@ -181,19 +209,6 @@ setMethod("show", "Curves",
         "y = ", object@metrics$y@label, "\n\n",
         sep = "")
     print(as.data.frame(object))
-  }
-)
-
-
-setMethod("show", "HTestPerformanceDiff",
-  function(object) {
-    show_title(object)
-    cat("\n",
-        "Upper diagonal: mean differences (row - column)\n",
-        "Lower diagonal: p-values\n",
-        "P-value adjustment method: ", object@adjust, "\n\n",
-        sep = "")
-    print(object@.Data)
   }
 )
 
@@ -212,6 +227,19 @@ setMethod("show", "Performance",
 )
 
 
+setMethod("show", "PerformanceDiffTest",
+  function(object) {
+    show_title(object)
+    cat("\n",
+        "Upper diagonal: mean differences (row - column)\n",
+        "Lower diagonal: p-values\n",
+        "P-value adjustment method: ", object@adjust, "\n\n",
+        sep = "")
+    print(object@.Data)
+  }
+)
+
+
 setMethod("show", "Resamples",
   function(object) {
     show_title(object)
@@ -224,20 +252,6 @@ setMethod("show", "Resamples",
     cat("\n")
     show(object@control)
     invisible()
-  }
-)
-
-
-setMethod("show", "SummaryConfusion",
-  function(object) {
-    n <- object@N
-    acc <- object@Accuracy
-    cat("Number of responses: ", n, "\n",
-        "Accuracy (SE): ", acc, " (", sqrt(acc * (1 - acc) / n), ")\n",
-        "Majority class: ", object@Majority, "\n",
-        "Kappa: ", object@Kappa, "\n\n",
-        sep = "")
-    print(object@.Data)
   }
 )
 

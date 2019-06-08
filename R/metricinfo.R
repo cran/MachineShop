@@ -2,15 +2,25 @@
 #' 
 #' Display information about metrics provided by the \pkg{MachineShop} package.
 #' 
-#' @param ... one or more metric functions, function names, observed response,
-#' observed and predicted responses, or a \code{Resamples} object.  If none are
+#' @param ... one or more metric functions; function names; observed response;
+#' observed and predicted responses; or \code{\link{ConfusionMatrix}},
+#' \code{\link{Confusion}}, or \code{\link{Resamples}} object.  If none are
 #' specified, information is returned on all available metrics by default.
 #' 
-#' @return List of named metrics containing a descriptive \code{"label"},
-#' whether to \code{"maximize"} the metric for better performance, the function
-#' \code{"arguments"}, and supported response variable \code{"types"} for each.
+#' @return List of named metric elements each containing the following
+#' components:
+#' \describe{
+#' \item{label}{character descriptor for the metric.}
+#' \item{maximize}{logical indicating whether higher values of the metric
+#' correspond to better predictive performance.}
+#' \item{arguments}{closure with the argument names and corresponding default
+#' values of the metric function.}
+#' \item{types}{data frame of the observed and predicted response variable
+#' types supported by the metric.}
+#' }
 #' 
-#' @seealso \code{\link{metrics}}, \code{\link{resample}}
+#' @seealso \code{\link{metrics}}, \code{\link{confusion}},
+#' \code{\link{resample}}
 #' 
 #' @examples
 #' ## All metrics
@@ -22,12 +32,15 @@
 #' names(metricinfo(factor(0), matrix(0)))
 #' names(metricinfo(factor(0), numeric(0)))
 #' 
+#' ## Metric-specific information
+#' metricinfo(auc)
+#' 
 metricinfo <- function(...) {
   args <- unname(list(...))
   if (length(args) == 0) args <- as.list(.metric_names)
   info <- do.call(.metricinfo, args)
   
-  is_type <- !mapply(is, info, "list")
+  is_type <- if (length(info)) !mapply(is, info, "list") else NULL
   if (any(is_type)) {
     info_metrics <- if (all(is_type)) metricinfo() else info[!is_type]
     info_types <- do.call(.metricinfo_types, info[is_type])
@@ -88,6 +101,16 @@ metricinfo <- function(...) {
 }
 
 
+.metricinfo.Confusion <- function(x, ...) {
+  .metricinfo(x[[1]], ...)
+}
+
+
+.metricinfo.ConfusionMatrix <- function(x, ...) {
+  c(list(x), .metricinfo(NULL, ...))
+}
+
+
 .metricinfo.function <- function(x, ...) {
   .metricinfo(list(), ...)
 }
@@ -129,11 +152,12 @@ metricinfo <- function(...) {
 }
 
 
-.metricinfo_types <- function(x, y = NULL, ...) {
+.metricinfo_types <- function(x, y, ...) {
+  not_missing_y <- !missing(y)
   info <- metricinfo()
   is_supported <- sapply(info, function(this) {
     is_types <- mapply(is, list(x), this$types$observed)
-    if (!is.null(y)) {
+    if (not_missing_y) {
       is_types <- is_types & mapply(is, list(y), this$types$predicted)
     }
     any(is_types)

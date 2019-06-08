@@ -26,9 +26,9 @@ ModelFrame <- function(x, ...) {
 #'
 #' @param data \code{data.frame} or an object that can be converted to one.
 #' @param na.rm logical indicating whether to remove cases with \code{NA} values
-#' @param weights vector of case weights.
-#' @param strata vector of stratification levels.
 #' for any of the model variables.
+#' @param weights vector of case weights [default: equal].
+#' @param strata vector of resampling stratification levels [default: none].
 #' @param ... arguments passed to other methods.
 #' 
 ModelFrame.formula <- function(x, data, na.rm = TRUE, weights = NULL,
@@ -48,7 +48,7 @@ ModelFrame.formula <- function(x, data, na.rm = TRUE, weights = NULL,
   )
   data[deparse(response(model_terms))] <- response(model_terms, data)
   
-  ModelFrame(model_terms, data, na.rm = na.rm,
+  ModelFrame(model_terms, data, na.rm = na.rm, casenames = rownames(data),
              weights = weights, strata = strata, ...)
 }
 
@@ -64,13 +64,13 @@ ModelFrame.matrix <- function(x, y = NULL, na.rm = TRUE,
   model_terms <- terms(x, y)
   data[deparse(response(model_terms))] <- y
   
-  ModelFrame(model_terms, data, na.rm = na.rm,
+  ModelFrame(model_terms, data, na.rm = na.rm, casenames = rownames(data),
              weights = weights, strata = strata, ...)
 }
 
 
 ModelFrame.ModelFrame <- function(x, na.rm = TRUE, na.action = NULL, ...) {
-  vars <- as.data.frame(do.call(cbind, list(...)))
+  vars <- as.data.frame(Filter(length, list(...)), stringsAsFactors = FALSE)
   names(vars) <- sapply(names(vars), function(x) paste0("(", x, ")"))
   x[names(vars)] <- vars
 
@@ -102,8 +102,11 @@ ModelFrame.recipe <- function(x, ...) {
   
   model_terms <- terms(x)
   data[deparse(response(model_terms))] <- response(model_terms, data)
-
-  ModelFrame(model_terms, data, na.rm = FALSE,
+  
+  casenames <- data[["(casenames)"]]
+  if (is.null(casenames)) casenames <- rownames(data)
+  
+  ModelFrame(model_terms, data, na.rm = FALSE, casenames = casenames,
              weights = weights, strata = strata)
 }
 
@@ -165,33 +168,38 @@ valid_predictor_calls <- c(
 
 terms.character <- function(x, y = NULL, intercept = TRUE, all_numeric = FALSE,
                             ...) {
+  x_names <- x
+  x <- lapply(x, as.symbol)
+  
   if (is.character(y)) y <- as.symbol(y)
   y_indicator <- 1L - is.null(y)
   
   fo <- parse(text = paste(
     "y ~",
-    paste(if (length(x)) x else if (intercept) "1", collapse = "+"),
+    if (length(x)) {
+      paste(sapply(x, deparse, backtick = TRUE), collapse = "+")
+    } else if (intercept) "1",
     if (!intercept) "- 1"
   ))[[1]]
   fo[[2]] <- y
   
-  all_vars <- c(if (y_indicator) deparse(y), x)
+  var_names <- c(if (y_indicator) deparse(y), x_names)
   
   if (all_numeric) {
     class <- "DesignTerms"
     factors <- cbind(rep(c(0L, 1L), c(y_indicator, length(x))))
-    rownames(factors) <- all_vars
+    rownames(factors) <- var_names
   } else {
     class <- "FormulaTerms"
     factors <- rbind(rep(0L, y_indicator * length(x)), diag(1L, length(x)))
-    dimnames(factors) <- list(all_vars, x)
+    dimnames(factors) <- list(var_names, x_names)
   }
   
   structure(
     fo,
-    variables = as.call(c(quote(list), y, lapply(x, as.symbol))),
+    variables = as.call(c(quote(list), y, x)),
     factors = factors,
-    term.labels = x,
+    term.labels = x_names,
     order = rep(1L, length(x)),
     intercept = as.integer(intercept),
     response = y_indicator,

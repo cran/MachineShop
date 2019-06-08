@@ -157,7 +157,7 @@ resample.recipe <- function(x, model, control = CVControl, ...) {
 setGeneric(".resample", function(object, x, ...) standardGeneric(".resample"))
 
 
-setMethod(".resample", c("MLControlBoot", "ModelFrame"),
+setMethod(".resample", c("MLBootControl", "ModelFrame"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
@@ -166,17 +166,34 @@ setMethod(".resample", c("MLControlBoot", "ModelFrame"),
                          strata = strata) %>% rsample2caret
     index <- splits$index
     seeds <- sample.int(.Machine$integer.max, length(index))
+    
+    is_optimism_control <- is(object, "MLBootOptimismControl")
+    if (is_optimism_control) {
+      train_pred <- resample_args(x, x, model, object)[[1]]$Predicted
+    }
+    
     foreach(i = seq(index),
             .packages = c("MachineShop", "survival")) %dopar% {
       set.seed(seeds[i])
       train <- x[index[[i]], , drop = FALSE]
-      resample_args(train, x, model, object, strata)
+      if (is_optimism_control) {
+        args <- resample_args(train, list(x, train), model, object, strata)
+        df <- args[[1]][[1]]
+        df_boot <- args[[1]][[2]]
+        df$Boot.Observed <- df_boot$Observed
+        df$Boot.Predicted <- df_boot$Predicted
+        df$Train.Predicted <- train_pred
+        args[[1]] <- df
+        args
+      } else {
+        resample_args(train, x, model, object, strata)
+      }
     } %>% Resamples.list
   }
 )
 
 
-setMethod(".resample", c("MLControlBoot", "ModelRecipe"),
+setMethod(".resample", c("MLBootControl", "ModelRecipe"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
@@ -184,19 +201,38 @@ setMethod(".resample", c("MLControlBoot", "ModelRecipe"),
                          times = object@samples,
                          strata = strata)$splits
     seeds <- sample.int(.Machine$integer.max, length(splits))
-    test <- ModelFrame(formula(terms(x)), x, na.rm = FALSE)
+    
+    test <- prep(x)
+    is_optimism_control <- is(object, "MLBootOptimismControl")
+    if (is_optimism_control) {
+      train_pred <- resample_args(x, test, model, object)[[1]]$Predicted
+    }
+    
     foreach(i = seq(splits),
             .packages = c("MachineShop", "recipes", "survival")) %dopar% {
       set.seed(seeds[i])
       split <- splits[[i]]
       train <- recipe(x, analysis(split))
-      resample_args(train, test, model, object, strata)
+      if (is_optimism_control) {
+        test_list <- list(test, prep(train))
+        args <- resample_args(train, test_list, model, object, strata)
+        df <- args[[1]][[1]]
+        df_boot <- args[[1]][[2]]
+        indices <- seq_boot(df_boot, df)
+        df$Boot.Observed <- df_boot$Observed[indices]
+        df$Boot.Predicted <- df_boot$Predicted[indices]
+        df$Train.Predicted <- train_pred
+        args[[1]] <- df
+        args
+      } else {
+        resample_args(train, test, model, object, strata)
+      }
     } %>% Resamples.list
   }
 )
 
 
-setMethod(".resample", c("MLControlCV", "ModelFrame"),
+setMethod(".resample", c("MLCVControl", "ModelFrame"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
@@ -217,7 +253,7 @@ setMethod(".resample", c("MLControlCV", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlCV", "ModelRecipe"),
+setMethod(".resample", c("MLCVControl", "ModelRecipe"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
@@ -226,19 +262,20 @@ setMethod(".resample", c("MLControlCV", "ModelRecipe"),
                        repeats = object@repeats,
                        strata = strata)$splits
     seeds <- sample.int(.Machine$integer.max, length(splits))
+    fo <- formula(terms(x))
     foreach(i = seq(splits),
             .packages = c("MachineShop", "recipes", "survival")) %dopar% {
       set.seed(seeds[i])
       split <- splits[[i]]
       train <- recipe(x, analysis(split))
-      test <- ModelFrame(formula(terms(x)), assessment(split), na.rm = FALSE)
+      test <- prep(recipe(x, assessment(split)))
       resample_args(train, test, model, object, strata)
     } %>% Resamples.list
   }
 )
 
 
-setMethod(".resample", c("MLControlOOB", "ModelFrame"),
+setMethod(".resample", c("MLOOBControl", "ModelFrame"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
@@ -259,7 +296,7 @@ setMethod(".resample", c("MLControlOOB", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlOOB", "ModelRecipe"),
+setMethod(".resample", c("MLOOBControl", "ModelRecipe"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
@@ -272,14 +309,14 @@ setMethod(".resample", c("MLControlOOB", "ModelRecipe"),
       set.seed(seeds[i])
       split <- splits[[i]]
       train <- recipe(x, analysis(split))
-      test <- ModelFrame(formula(terms(x)), assessment(split), na.rm = FALSE)
+      test <- prep(recipe(x, assessment(split)))
       resample_args(train, test, model, object, strata)
     } %>% Resamples.list
   }
 )
 
 
-setMethod(".resample", c("MLControlSplit", "ModelFrame"),
+setMethod(".resample", c("MLSplitControl", "ModelFrame"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
@@ -293,7 +330,7 @@ setMethod(".resample", c("MLControlSplit", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlSplit", "ModelRecipe"),
+setMethod(".resample", c("MLSplitControl", "ModelRecipe"),
   function(object, x, model) {
     strata <- strata_var(x)
     set.seed(object@seed)
@@ -301,13 +338,13 @@ setMethod(".resample", c("MLControlSplit", "ModelRecipe"),
                            prop = object@prop,
                            strata = strata)
     train <- recipe(x, analysis(split))
-    test <- ModelFrame(formula(terms(x)), testing(split), na.rm = FALSE)
+    test <- prep(recipe(x, testing(split)))
     do.call(Resamples, resample_args(train, test, model, object, strata))
   }
 )
 
 
-setMethod(".resample", c("MLControlTrain", "ModelFrame"),
+setMethod(".resample", c("MLTrainControl", "ModelFrame"),
   function(object, x, model) {
     set.seed(object@seed)
     do.call(Resamples, resample_args(x, x, model, object))
@@ -315,11 +352,11 @@ setMethod(".resample", c("MLControlTrain", "ModelFrame"),
 )
 
 
-setMethod(".resample", c("MLControlTrain", "ModelRecipe"),
+setMethod(".resample", c("MLTrainControl", "ModelRecipe"),
   function(object, x, model) {
     set.seed(object@seed)
-    test <- ModelFrame(formula(terms(x)), x, na.rm = FALSE)
-    do.call(Resamples, resample_args(x, test, model, object))
+    x <- prep(x)
+    do.call(Resamples, resample_args(x, x, model, object))
   }
 )
 
@@ -330,14 +367,20 @@ resample_args <- function(train, test, model, control, strata = character()) {
   trainfit <- fit(train, model)
   if (is(trainfit, "StackedModel")) control@times <- trainfit$times
   
-  df <- data.frame(Model = factor(model@name),
-                   Resample = 1,
-                   Case = row.names(test))
-  df$Observed <- response(test)
-  df$Predicted <- predict(trainfit, test, type = "prob", times = control@times,
-                          method = control@method, dist = control@dist)
+  f <- function(test) {
+    df <- data.frame(Model = factor(model@name),
+                     Resample = 1,
+                     Case = as.data.frame(test, original = FALSE)$"(casenames)",
+                     stringsAsFactors = FALSE)
+    df$Observed <- response(test)
+    df$Predicted <- predict(trainfit, as.data.frame(test), type = "prob",
+                            times = control@times, method = control@method,
+                            dist = control@dist)
+    df
+  }
   
-  list(df, .control = control, .strata = strata)
+  list(if (class(test)[1] == "list") lapply(test, f) else f(test),
+       .control = control, .strata = strata)
 }
 
 

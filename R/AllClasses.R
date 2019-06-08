@@ -1,8 +1,7 @@
 setOldClass("ModelFrame")
 setOldClass("ModelRecipe")
-setOldClass("SurvEvents")
-setOldClass("SurvMatrix")
-setOldClass("SurvProbs")
+setOldClass(c("SurvEvents", "SurvMatrix"))
+setOldClass(c("SurvProbs", "SurvMatrix"))
 
 
 setClass("MLControl",
@@ -13,32 +12,37 @@ setClass("MLControl",
 )
 
 
-setClass("MLControlBoot",
+setClass("MLBootControl",
   slots = c(samples = "numeric"),
   contains = "MLControl"
 )
 
 
-setClass("MLControlCV",
+setClass("MLBootOptimismControl",
+  contains = "MLBootControl"
+)
+
+
+setClass("MLCVControl",
   slots = c(folds = "numeric",
             repeats = "numeric"),
   contains = "MLControl"
 )
 
 
-setClass("MLControlOOB",
+setClass("MLOOBControl",
   slots = c(samples = "numeric"),
   contains = "MLControl"
 )
 
 
-setClass("MLControlSplit",
+setClass("MLSplitControl",
   slots = c(prop = "numeric"),
   contains = "MLControl"
 )
 
 
-setClass("MLControlTrain",
+setClass("MLTrainControl",
   contains = "MLControl"
 )
 
@@ -102,15 +106,33 @@ setClass("ConfusionMatrix",
 )
 
 
-setClass("Curves",
-  slots = c(metrics = "list"),
-  contains = "data.frame"
+setClass("BinaryConfusionMatrix",
+  contains = "ConfusionMatrix"
 )
 
 
-setClass("HTestPerformanceDiff",
-  slots = c(adjust = "character"),
-  contains = "array"
+setClass("OrderedConfusionMatrix",
+  contains = "ConfusionMatrix"
+)
+
+
+setClass("OrderedBinaryConfusionMatrix",
+  contains = c("OrderedConfusionMatrix", "BinaryConfusionMatrix")
+)
+
+
+ConfusionSummary <- setClass("ConfusionSummary",
+  slots = c(N = "numeric",
+            Accuracy = "numeric",
+            Majority = "numeric",
+            Kappa = "numeric"),
+  contains = "matrix"
+)
+
+
+setClass("Curves",
+  slots = c(metrics = "list"),
+  contains = "data.frame"
 )
 
 
@@ -130,6 +152,12 @@ setClass("PerformanceDiff",
 )
 
 
+PerformanceDiffTest <- setClass("PerformanceDiffTest",
+  slots = c(adjust = "character"),
+  contains = "array"
+)
+
+
 setClass("MLModelTune",
   slots = c(tune_grid = "data.frame",
             performance = "Performance",
@@ -142,15 +170,6 @@ setClass("Resamples",
   slots = c(control = "MLControl",
             strata = "character"),
   contains = "data.frame"
-)
-
-
-setClass("SummaryConfusion",
-  slots = c(N = "numeric",
-            Accuracy = "numeric",
-            Majority = "numeric",
-            Kappa = "numeric"),
-  contains = "matrix"
 )
 
 
