@@ -66,7 +66,8 @@ C50Model <- function(trials = 1, rules = FALSE, subset = TRUE, bands = 0,
     name = "C50Model",
     label = "C5.0 Classification",
     packages = "C50",
-    types = "factor",
+    response_types = "factor",
+    predictor_encoding = "terms",
     params = params,
     grid = function(x, length, ...) {
       list(
@@ -75,7 +76,6 @@ C50Model <- function(trials = 1, rules = FALSE, subset = TRUE, bands = 0,
         winnow = c(FALSE, TRUE)
       )
     },
-    design = "terms",
     fit = function(formula, data, weights, ...) {
       eval_fit(data,
                formula = C50::C5.0(formula, data = as.data.frame(data),

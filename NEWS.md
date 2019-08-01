@@ -2,8 +2,29 @@
 
 ## Version Updates
 
+## 1.5.0
+* Implement model: `SelectedModel`.
+* Remove `maximize` argument from `tune()` and `TunedModel`.
+* Support lists as arguments to `StackedModel()` and `SuperModel`.
+
+
+## 1.4.2
+* Revert renaming of `expand.model()`.
+* Exclue 0 distance from `KNNModel` tuning grid.
+* Improve random tuning grid coverage.
+
+
+## 1.4.1
+* Implement model: `TunedModel`.
+* Remove deprecated `na.action` argument from `ModelFrame` methods.
+* Rename `MLModel()` argument `types` to `response_types`.
+* Rename `MLModel()` argument `design` to `predictor_encoding`.
+* Rename `expand.model()` to `expand_model()`.
+
+
 ## 1.4.0
 * CRAN release.
+
 
 ## 1.3.3
 * Implement optimism-corrected bootstrap resampling (`BootOptimismControl`).

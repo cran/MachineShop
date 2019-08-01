@@ -73,10 +73,18 @@ findMethod <- function(generic, object) {
 }
 
 
-getMLObject <- function(x, class) {
+getMLObject <- function(x, class = c("MLControl", "MLModel")) {
+  class <- match.arg(class)
+  
   if (is.character(x)) x <- get(x)
   if (is.function(x)) x <- x()
   if (!is(x, class)) stop("object not of class ", class)
+  
+  if (class == "MLModel") {
+    x <- as(x, class)
+    if (extends(x@name, class)) x <- as(x, x@name)
+  }
+  
   x
 }
 
@@ -156,7 +164,7 @@ match_indices <- function(indices, choices) {
 nvars <- function(x, model) {
   stopifnot(is(x, "ModelFrame"))
   model <- getMLObject(model, "MLModel")
-  switch(model@design,
+  switch(model@predictor_encoding,
          "model.matrix" = 
            ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE)),
          "terms" = length(labels(terms(x)))
@@ -177,6 +185,40 @@ requireModelNamespaces <- function(packages) {
   pass <- sapply(packages, requireNamespace)
   if (!all(pass)) stop("install required packages: ", toString(packages[!pass]))
   invisible(pass)
+}
+
+
+sample.grid <- function(x, size, replace = FALSE, stringsAsFactors = TRUE) {
+  stopifnot(is.list(x))
+  
+  n <- length(x)
+  if (n == 0) return(data.frame())
+  
+  var_names <- paste0("Var", seq(x))
+  x_names <- names(x)
+  if (!is.null(x_names)) {
+    is_nzchar <- nzchar(x_names)
+    var_names[is_nzchar] <- x_names[is_nzchar]
+  }
+  names(x) <- var_names
+
+  if (!replace) size <- min(size, prod(sapply(x, length)))
+  
+  grid <- as.data.frame(matrix(nrow = 0, ncol = n))
+  names(grid) <- names(x)
+  iter <- 0
+  while (nrow(grid) < size && iter < 100) {
+    iter <- iter + 1
+    new_grid <- as.data.frame(
+      lapply(x, sample, size = size, replace = TRUE),
+      stringsAsFactors = stringsAsFactors
+    )
+    grid <- rbind(grid, new_grid)
+    if (!replace) grid <- unique(grid)
+  }
+  rownames(grid) <- NULL
+  
+  head(grid, size)
 }
 
 

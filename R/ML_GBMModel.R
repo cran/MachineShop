@@ -43,7 +43,8 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
     name = "GBMModel",
     label = "Generalized Boosted Regression",
     packages = "gbm",
-    types = c("factor", "numeric", "Surv"),
+    response_types = c("factor", "numeric", "Surv"),
+    predictor_encoding = "terms",
     params = params(environment()),
     grid = function(x, length, random, ...) {
       params <- list(
@@ -56,7 +57,6 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
       }
       params
     },
-    design = "terms",
     fit = function(formula, data, weights, distribution = NULL, ...) {
       if (is.null(distribution)) {
         distribution <- switch_class(response(data),

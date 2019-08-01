@@ -48,7 +48,8 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
     name = "NNetModel",
     label = "Feed-Forward Neural Networks",
     packages = "nnet",
-    types = c("factor", "numeric"),
+    response_types = c("factor", "numeric"),
+    predictor_encoding = "model.matrix",
     params = params(environment()),
     grid = function(x, length, ...) {
       list(
@@ -56,7 +57,6 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
         decay = c(0, 10^seq_inner(-5, 1, length - 1))
       )
     },
-    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       eval_fit(data,
                formula = nnet::nnet(formula, data = as.data.frame(data),

@@ -57,9 +57,9 @@ SVMModel <- function(scaled = TRUE, type = NULL,
     name = "SVMModel",
     label = "Support Vector Machines",
     packages = "kernlab",
-    types = c("factor", "numeric"),
+    response_types = c("factor", "numeric"),
+    predictor_encoding = "model.matrix",
     params = params(environment()),
-    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       eval_fit(data,

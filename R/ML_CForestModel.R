@@ -50,14 +50,14 @@ CForestModel <- function(teststat = c("quad", "max"),
     name = "CForestModel",
     label = "Conditional Random Forests",
     packages = "party",
-    types = c("factor", "numeric", "Surv"),
+    response_types = c("factor", "numeric", "Surv"),
+    predictor_encoding = "terms",
     params = list(controls = as.call(c(.(party::cforest_control), args))),
     grid = function(x, length, ...) {
       list(
         mtry = seq_nvars(x, CForestModel, length)
       )
     },
-    design = "terms",
     fit = function(formula, data, weights, ...) {
       party::cforest(formula, data = as.data.frame(data), weights = weights,
                      ...)

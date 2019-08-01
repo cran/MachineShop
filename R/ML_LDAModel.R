@@ -48,14 +48,14 @@ LDAModel <- function(prior = NULL, tol = 1e-4,
     name = "LDAModel",
     label = "Linear Discriminant Analysis",
     packages = "MASS",
-    types = "factor",
+    response_types = "factor",
+    predictor_encoding = "model.matrix",
     params = params(environment()),
     grid = function(x, length, ...) {
       list(
         dimen = 1:min(nlevels(response(x)) - 1, nvars(x, LDAModel), length)
       )
     },
-    design = "model.matrix",
     fit = function(formula, data, weights, dimen, use, ...) {
       assert_equal_weights(weights)
       modelfit <- MASS::lda(formula, data = as.data.frame(data), ...)

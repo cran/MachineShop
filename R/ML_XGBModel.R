@@ -59,9 +59,9 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
     name = "XGBModel",
     label = "Extreme Gradient Boosting",
     packages = "xgboost",
-    types = c("factor", "numeric"),
+    response_types = c("factor", "numeric"),
+    predictor_encoding = "model.matrix",
     params = params(environment()),
-    design = "model.matrix",
     fit = function(formula, data, weights, params, ...) {
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)

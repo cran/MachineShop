@@ -23,9 +23,9 @@ LMModel <- function() {
     name = "LMModel",
     label = "Linear Model",
     packages = "stats",
-    types = c("factor", "matrix", "numeric"),
+    response_types = c("factor", "matrix", "numeric"),
+    predictor_encoding = "model.matrix",
     params = params(environment()),
-    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       y <- response(data)
       data <- as.data.frame(data)

@@ -2,6 +2,7 @@
 % Please edit documentation in R/modelinfo.R
 \name{modelinfo}
 \alias{modelinfo}
+\alias{models}
 \title{Display Model Information}
 \usage{
 modelinfo(...)
@@ -21,8 +22,8 @@ components:
 model.  These need only be installed with the \code{\link{install.packages}}
 function or by equivalent means; but need not be loaded with, for example,
 the \code{\link{library}} function.}
-\item{types}{character vector of response variable types supported by the
-model.}
+\item{response_types}{character vector of response variable types supported
+by the model.}
 \item{arguments}{closure with the argument names and corresponding default
 values of the model function.}
 \item{grid}{logical indicating whether automatic generation of tuning

@@ -57,7 +57,8 @@ AdaBoostModel <- function(boos = TRUE, mfinal = 100,
     name = "AdaBoostModel",
     label = "Boosting with Classification Trees",
     packages = "adabag",
-    types = "factor",
+    response_types = "factor",
+    predictor_encoding = "terms",
     params = params,
     grid = function(x, length, random, ...) {
       params <- list(
@@ -67,7 +68,6 @@ AdaBoostModel <- function(boos = TRUE, mfinal = 100,
       if (random) params$coeflearn <- c("Breiman", "Freund", "Zhu")
       params
     },
-    design = "terms",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       adabag::boosting(formula, data = as.data.frame(data), ...)

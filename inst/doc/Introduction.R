@@ -571,30 +571,41 @@ plot(tuned_model, type = "line")
 ## ----using_strategies_tune_fit-------------------------------------------
 ## Fit the tuned model
 surv_fit <- fit(surv_fo, data = surv_train, model = tuned_model)
+
+## ----using_strategies_tune_model-----------------------------------------
+## Model interface for grid tuning
+tuned_model <- TunedModel(GBMModel, grid = 3, control = surv_means_control,
+                          metrics = c("CIndex" = cindex, "RMSE" = rmse))
+surv_fit <- fit(surv_fo, data = surv_train, model = tuned_model)
 (vi <- varimp(surv_fit))
 
+## Predictive performance of the tuning process
+res_tuned <- resample(surv_fo, data = surv_train, model = tuned_model,
+                      control = surv_means_control)
+summary(performance(res_tuned))
+
 ## ----using_strategies_selection, results="hide"--------------------------
-## List of candidate models
-candidate_models <- c(
+## Model interface for model selection
+selected_model <- SelectedModel(
   expand.model(GBMModel, n.trees = c(50, 100), interaction.depth = 1:2),
   GLMNetModel(lambda = 0.01),
   CoxModel,
   SurvRegModel
 )
 
-## Select among candidate models
-tune(surv_fo, data = surv_train, models = candidate_models,
-     control = surv_means_control)
+## Fit the selected model
+fit(surv_fo, data = surv_train, model = selected_model)
 
 ## ----using_strategies_selection_tuned, results="hide"--------------------
-## Tuned classes of models
-tuned_models <- lapply(c(GBMModel, GLMNetModel, CoxModel), function(model) {
-  tune(surv_fo, data = surv_train, model = model, control = surv_means_control)
-})
+## Model interface for selection among tuned models
+selected_tuned_model <- SelectedModel(
+  TunedModel(GBMModel, control = surv_means_control),
+  TunedModel(GLMNetModel, control = surv_means_control),
+  TunedModel(CoxModel, control = surv_means_control)
+)
 
-## Select among tuned models
-tune(surv_fo, data = surv_train, models = tuned_models,
-     control = surv_means_control)
+## Fit the selected tuned model
+fit(surv_fo, data = surv_train, model = selected_tuned_model)
 
 ## ----using_strategies_ensembles------------------------------------------
 ## Stacked regression
@@ -613,7 +624,7 @@ summary(res_super)
 LogisticModel <- MLModel(
   name = "LogisticModel",
   label = "Logistic Model",
-  types = "binary",
+  response_types = "binary",
   fit = function(formula, data, weights, ...) {
     glm(formula, data = as.data.frame(data), weights = weights,
         family = binomial, ...)
@@ -650,7 +661,7 @@ info <- modelinfo()
 types <- c("binary" = "b", "factor" = "f", "matrix" = "m", "numeric" = "n",
            "ordered" = "o", "Surv" = "S")
 x <- lapply(names(info), function(modelname) {
-  c(modelname, ifelse(names(types) %in% info[[modelname]]$types, types, NA))
+  c(modelname, ifelse(names(types) %in% info[[modelname]]$response_types, types, NA))
 })
 df <- as.data.frame(do.call(rbind, x), stringsAsFactors = FALSE)
 names(df) <- c("Function", names(types))
@@ -679,7 +690,7 @@ kable(df_classes,
 library(MachineShop)
 
 f <- function(x) {
-  types <- x$types
+  types <- x$response_types
   
   is_type <- function(observed, predicted) {
     any(types$observed == observed & types$predicted == predicted)

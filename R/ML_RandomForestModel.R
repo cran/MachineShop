@@ -41,7 +41,8 @@ RandomForestModel <- function(ntree = 500,
     name = "RandomForestModel",
     label = "Random Forests",
     packages = "randomForest",
-    types = c("factor", "numeric"),
+    response_types = c("factor", "numeric"),
+    predictor_encoding = "terms",
     params = params(environment()),
     grid = function(x, length, random, ...) {
       params <- list(
@@ -50,7 +51,6 @@ RandomForestModel <- function(ntree = 500,
       if (random) params$nodesize <- 1:min(nrow(x), 20)
       params
     },
-    design = "terms",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       eval_fit(data,

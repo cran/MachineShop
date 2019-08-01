@@ -6,7 +6,7 @@
 \alias{MachineShop-package}
 \title{MachineShop: Machine Learning Models and Tools}
 \description{
-Meta-package for statistical and machine learning with a common interface for model fitting, prediction, performance assessment, and presentation of results.  Supports predictive modeling of numerical, categorical, and censored time-to-event outcomes and resample (bootstrap and cross-validation) estimation of model performance.
+Meta-package for statistical and machine learning with a unified interface for model fitting, prediction, performance assessment, and presentation of results.  Approaches for model fitting and prediction of numerical, categorical, or censored time-to-event outcomes include traditional regression models, regularization methods, tree-based methods, support vector machines, neural networks, ensembles, data preprocessing, filtering, and model tuning and selection.  Performance metrics are provided for model assessment and can be estimated with independent test sets, split sampling, cross-validation, or bootstrap resampling.  Resample estimation can be executed in parallel for faster processing and nested in cases of model tuning and selection.  Modeling results can be summarized with descriptive statistics; calibration curves; variable importance; partial dependence plots; confusion matrices; and ROC, lift, and other performance curves.
 }
 \details{
 \pkg{MachineShop} provides a unified interface to machine learning and
@@ -47,11 +47,13 @@ with the \code{\link{modelinfo}} function.
   \code{\link{RandomForestModel}}   \tab f   \tab n   \tab   \cr
   \code{\link{RangerModel}}         \tab f   \tab n   \tab S \cr
   \code{\link{RPartModel}}          \tab f   \tab n   \tab S \cr
+  \code{\link{SelectedModel}}       \tab f,o \tab m,n \tab S \cr
   \code{\link{StackedModel}}        \tab f,o \tab m,n \tab S \cr
   \code{\link{SuperModel}}          \tab f,o \tab m,n \tab S \cr
   \code{\link{SurvRegModel}}        \tab     \tab     \tab S \cr
   \code{\link{SVMModel}}            \tab f   \tab n   \tab   \cr
   \code{\link{TreeModel}}           \tab f   \tab n   \tab   \cr
+  \code{\link{TunedModel}}          \tab f,o \tab m,n \tab S \cr
   \code{\link{XGBModel}}            \tab f   \tab n   \tab   \cr
 }
 
@@ -93,6 +95,7 @@ Methods for resample estimation include
 
 \tabular{ll}{
   \code{\link{BootControl}} \tab Simple Bootstrap \cr
+  \code{\link{BootOptimismControl}} \tab Optimism-Corrected Bootstrap \cr
   \code{\link{CVControl}} \tab Repeated K-Fold Cross-Validation \cr
   \code{\link{OOBControl}} \tab Out-of-Bootstrap \cr
   \code{\link{SplitControl}} \tab Split Training-Testing \cr

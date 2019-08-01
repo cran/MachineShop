@@ -1,5 +1,6 @@
 setOldClass("ModelFrame")
 setOldClass("ModelRecipe")
+setOldClass("Surv")
 setOldClass(c("SurvEvents", "SurvMatrix"))
 setOldClass(c("SurvProbs", "SurvMatrix"))
 
@@ -68,13 +69,19 @@ setClass("MLModel",
   slots = c(name = "character",
             label = "character",
             packages = "character",
-            types = "character",
+            response_types = "character",
+            predictor_encoding = "character",
             params = "list",
             grid = "function",
-            design = "character",
             fit = "function",
             fitbits = "MLFitBits")
 )
+
+
+setClass("SelectedModel", contains = "MLModel")
+setClass("StackedModel", contains = "MLModel")
+setClass("SuperModel", contains = "MLModel")
+setClass("TunedModel", contains = "MLModel")
 
 
 setClass("MLModelFit",

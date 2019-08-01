@@ -2,7 +2,8 @@
 #' 
 #' Fit a stacked regression model from multiple base learners.
 #' 
-#' @param ... \code{MLModel} objects to serve as base learners.
+#' @param ... \code{MLModel} functions, function names, objects, or lists of
+#' these to serve as base learners.
 #' @param control \code{\link{MLControl}} object, control function, or character
 #' string naming a control function defining the resampling method to be
 #' employed for the estimation of base learner weights.
@@ -29,7 +30,7 @@
 #' 
 StackedModel <- function(..., control = CVControl, weights = NULL) {
   
-  base_learners <- lapply(list(...), getMLObject, class = "MLModel")
+  base_learners <- lapply(unlist(list(...)), getMLObject, class = "MLModel")
   
   control <- getMLObject(control, "MLControl")
 
@@ -38,7 +39,8 @@ StackedModel <- function(..., control = CVControl, weights = NULL) {
   new("StackedModel",
     name = "StackedModel",
     label = "Stacked Regression",
-    types = c("factor", "matrix", "numeric", "ordered", "Surv"),
+    response_types = c("factor", "matrix", "numeric", "ordered", "Surv"),
+    predictor_encoding = NA_character_,
     params = as.list(environment()),
     fitbits = MLFitBits(
       predict = function(object, newdata, ...) {
@@ -56,9 +58,6 @@ StackedModel <- function(..., control = CVControl, weights = NULL) {
   )
   
 }
-
-
-setClass("StackedModel", contains = "MLModel")
 
 
 .fit.StackedModel <- function(model, x, ...) {

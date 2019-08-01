@@ -35,9 +35,9 @@ POLRModel <- function(method = c("logistic", "probit", "loglog", "cloglog",
     name = "POLRModel",
     label = "Ordered Logistic Regression",
     packages = "MASS",
-    types = "ordered",
+    response_types = "ordered",
+    predictor_encoding = "model.matrix",
     params = params(environment()),
-    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       MASS::polr(formula, data = as.data.frame(data), weights = weights,
                  Hess = TRUE, ...)

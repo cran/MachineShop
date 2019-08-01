@@ -33,9 +33,9 @@ TreeModel <- function(mincut = 5, minsize = 10, mindev = 0.01,
     name = "TreeModel",
     label = "Regression and Classification Trees",
     packages = "tree",
-    types = c("factor", "numeric"),
+    response_types = c("factor", "numeric"),
+    predictor_encoding = "terms",
     params = params(environment()),
-    design = "terms",
     fit = function(formula, data, weights, split, ...) {
       tree::tree(formula, data = as.data.frame(data), weights = weights,
                  split = split, ...)

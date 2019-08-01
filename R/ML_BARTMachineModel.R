@@ -60,7 +60,8 @@ BARTMachineModel <- function(num_trees = 50, num_burn = 250, num_iter = 1000,
     name = "BARTMachineModel",
     label = "Bayesian Additive Regression Trees",
     packages = "bartMachine",
-    types = c("binary", "numeric"),
+    response_types = c("binary", "numeric"),
+    predictor_encoding = "model.matrix",
     params = params(environment()),
     grid = function(x, length, ...) {
       list(
@@ -70,7 +71,6 @@ BARTMachineModel <- function(num_trees = 50, num_burn = 250, num_iter = 1000,
         nu = 1:min(length, 10) + 1
       )
     },
-    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       assert_equal_weights(weights)
       x <- model.matrix(data, intercept = FALSE)

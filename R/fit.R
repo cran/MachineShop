@@ -24,7 +24,7 @@ fit <- function(x, ...) {
 #' @return \code{MLModelFit} class object.
 #' 
 #' @seealso \code{\link{ModelFrame}}, \code{\link[recipes]{recipe}},
-#' \code{\link{modelinfo}}, \code{\link{tune}}, \code{\link{predict}},
+#' \code{\link{models}}, \code{\link{tune}}, \code{\link{predict}},
 #' \code{\link{varimp}}
 #' 
 #' @examples
@@ -83,7 +83,7 @@ fit.recipe <- function(x, model, ...) {
   if (is.null(mf[["(weights)"]])) mf[["(weights)"]] <- 1
   
   y <- response(mf)
-  if (!any(sapply(model@types, function(type) is_response(y, type)))) {
+  if (!any(sapply(model@response_types, function(type) is_response(y, type)))) {
     stop("invalid response type '", class(y)[1], "' for ", model@name)
   }
   

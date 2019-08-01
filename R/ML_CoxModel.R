@@ -41,9 +41,9 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
     name = "CoxModel",
     label = "Cox Regression",
     packages = "survival",
-    types = "Surv",
+    response_types = "Surv",
+    predictor_encoding = "model.matrix",
     params = params,
-    design = "model.matrix",
     fit = function(formula, data, weights, ...) {
       survival::coxph(formula, data = as.data.frame(data), weights = weights,
                       ...)
@@ -93,9 +93,9 @@ CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"), ...,
     name = "CoxStepAICModel",
     label = "Cox Regression (Stepwise)",
     packages = c(stepmodel@packages, "MASS"),
-    types = stepmodel@types,
+    response_types = stepmodel@response_types,
+    predictor_encoding = stepmodel@predictor_encoding,
     params = c(stepmodel@params, params),
-    design = stepmodel@design,
     fit = function(formula, data, weights, direction = "both", scope = list(),
                    k = 2, trace = 1, steps = 1000, ...) {
       environment(formula) <- environment()
