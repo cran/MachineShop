@@ -1,40 +1,7 @@
-#' Performance Metrics
-#' 
-#' Compute measures of agreement between observed and predicted responses.
-#' 
-#' @name metrics
 #' @rdname metrics
 #' 
-#' @param observed observed responses, \code{\link{Curves}} object, or
-#' \code{\link[=confusion]{ConfusionMatrix}} of observed and predicted
-#' responses.
-#' @param predicted predicted responses.
-#' @param beta relative importance of recall to precision in the calculation of
-#' \code{f_score} [default: F1 score].
-#' @param cutoff threshold above which binary factor probabilities are
-#' classified as events and below which survival probabilities are classified.
-#' @param dist character string specifying a distribution with which to estimate
-#' the survival mean in the total sum of square component of \code{r2}.
-#' Possible values are \code{"empirical"} for the Kaplan-Meier estimator,
-#' \code{"exponential"}, \code{"extreme"}, \code{"gaussian"},
-#' \code{"loggaussian"}, \code{"logistic"}, \code{"loglogistic"},
-#' \code{"lognormal"}, \code{"rayleigh"}, \code{"t"}, or \code{"weibull"}
-#' (default).
-#' @param f function to calculate a desired sensitivity-specificity tradeoff.
-#' @param metrics list of two performance metrics for the calculation [default:
-#' ROC metrics].
-#' @param power power to which positional distances of off-diagonals from the
-#' main diagonal in confusion matrices are raised to calculate
-#' \code{weighted_kappa2}.
-#' @param stat function to compute a summary statistic at each cutoff value of
-#' resampled metrics in \code{Curves}, or \code{NULL} for resample-specific
-#' metrics.
-#' @param ... arguments passed to or from other methods.
-#' 
-#' @seealso \code{\link{metricinfo}}, \code{\link{confusion}},
-#' \code{\link{performance}}, \code{\link{performance_curve}}
-#' 
-accuracy <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+accuracy <- function(observed, predicted = NULL,
+                     cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("accuracy", environment())
 }
 
@@ -52,7 +19,7 @@ setMetric_ConfusionMatrix("accuracy",
 #' 
 auc <- function(observed, predicted = NULL,
                 metrics = c(MachineShop::tpr, MachineShop::fpr),
-                stat = base::mean, ...) {
+                stat = MachineShop::settings("stat.Curves"), ...) {
   call_metric_method("auc", environment())
 }
 
@@ -242,7 +209,8 @@ setMetricMethod_Resamples("cross_entropy")
 
 #' @rdname metrics
 #' 
-f_score <- function(observed, predicted = NULL, cutoff = 0.5, beta = 1, ...) {
+f_score <- function(observed, predicted = NULL,
+                    cutoff = MachineShop::settings("cutoff"), beta = 1, ...) {
   call_metric_method("f_score", environment())
 }
 
@@ -260,7 +228,8 @@ setMetric_BinaryConfusionMatrix("f_score",
 
 #' @rdname metrics
 #' 
-fnr <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+fnr <- function(observed, predicted = NULL,
+                cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("fnr", environment())
 }
 
@@ -276,7 +245,8 @@ setMetric_BinaryConfusionMatrix("fnr",
 
 #' @rdname metrics
 #' 
-fpr <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+fpr <- function(observed, predicted = NULL,
+                cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("fpr", environment())
 }
 
@@ -292,7 +262,8 @@ setMetric_BinaryConfusionMatrix("fpr",
 
 #' @rdname metrics
 #' 
-kappa2 <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+kappa2 <- function(observed, predicted = NULL,
+                   cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("kappa2", environment())
 }
 
@@ -309,7 +280,8 @@ setMetric_ConfusionMatrix("kappa2",
 
 #' @rdname metrics
 #' 
-npv <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+npv <- function(observed, predicted = NULL,
+                cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("npv", environment())
 }
 
@@ -325,7 +297,8 @@ setMetric_BinaryConfusionMatrix("npv",
 
 #' @rdname metrics
 #' 
-ppv <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+ppv <- function(observed, predicted = NULL,
+                cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("ppv", environment())
 }
 
@@ -353,7 +326,8 @@ setMetric_auc("pr_auc", c(precision, recall))
 
 #' @rdname metrics
 #' 
-precision <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+precision <- function(observed, predicted = NULL,
+                      cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("precision", environment())
 }
 
@@ -369,7 +343,8 @@ setMetric_BinaryConfusionMatrix("precision",
 
 #' @rdname metrics
 #' 
-recall <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+recall <- function(observed, predicted = NULL,
+                   cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("recall", environment())
 }
 
@@ -397,7 +372,8 @@ setMetric_auc("roc_auc", c(tpr, fpr))
 
 #' @rdname metrics
 #' 
-roc_index <- function(observed, predicted = NULL, cutoff = 0.5,
+roc_index <- function(observed, predicted = NULL,
+                      cutoff = MachineShop::settings("cutoff"),
                       f = function(sensitivity, specificity)
                         (sensitivity + specificity) / 2, ...) {
   call_metric_method("roc_index", environment())
@@ -415,7 +391,8 @@ setMetric_BinaryConfusionMatrix("roc_index",
 
 #' @rdname metrics
 #' 
-rpp <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+rpp <- function(observed, predicted = NULL,
+                cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("rpp", environment())
 }
 
@@ -431,7 +408,8 @@ setMetric_BinaryConfusionMatrix("rpp",
 
 #' @rdname metrics
 #' 
-sensitivity <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+sensitivity <- function(observed, predicted = NULL,
+                        cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("sensitivity", environment())
 }
 
@@ -447,7 +425,8 @@ setMetric_BinaryConfusionMatrix("sensitivity",
 
 #' @rdname metrics
 #' 
-specificity <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+specificity <- function(observed, predicted = NULL,
+                        cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("specificity", environment())
 }
 
@@ -463,7 +442,8 @@ setMetric_BinaryConfusionMatrix("specificity",
 
 #' @rdname metrics
 #' 
-tnr <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+tnr <- function(observed, predicted = NULL,
+                cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("tnr", environment())
 }
 
@@ -479,7 +459,8 @@ setMetric_BinaryConfusionMatrix("tnr",
 
 #' @rdname metrics
 #' 
-tpr <- function(observed, predicted = NULL, cutoff = 0.5, ...) {
+tpr <- function(observed, predicted = NULL,
+                cutoff = MachineShop::settings("cutoff"), ...) {
   call_metric_method("tpr", environment())
 }
 

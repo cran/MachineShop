@@ -2,18 +2,17 @@
 #' 
 #' Fit a stacked regression model from multiple base learners.
 #' 
-#' @param ... \code{MLModel} functions, function names, objects, or lists of
-#' these to serve as base learners.
-#' @param control \code{\link{MLControl}} object, control function, or character
-#' string naming a control function defining the resampling method to be
-#' employed for the estimation of base learner weights.
+#' @param ... \link[=models]{model} functions, function names, calls, or vector
+#'   of these to serve as base learners.
+#' @param control \link[=controls]{control} function, function name, or call
+#'   defining the resampling method to be employed for the estimation of base
+#'   learner weights.
 #' @param weights optional fixed base learner weights.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
-#' \code{Surv}
-#' }
+#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
+#'     \code{Surv}}
 #' }
 #' 
 #' @return \code{StackedModel} class object that inherits from \code{MLModel}.
@@ -25,10 +24,11 @@
 #' 
 #' @examples
 #' model <- StackedModel(GBMModel, SVMRadialModel, GLMNetModel(lambda = 0.01))
-#' modelfit <- fit(sale_amount ~ ., data = ICHomes, model = model)
-#' predict(modelfit, newdata = ICHomes)
+#' model_fit <- fit(sale_amount ~ ., data = ICHomes, model = model)
+#' predict(model_fit, newdata = ICHomes)
 #' 
-StackedModel <- function(..., control = CVControl, weights = NULL) {
+StackedModel <- function(..., control = MachineShop::settings("control"),
+                         weights = NULL) {
   
   base_learners <- lapply(unlist(list(...)), getMLObject, class = "MLModel")
   
@@ -58,6 +58,8 @@ StackedModel <- function(..., control = CVControl, weights = NULL) {
   )
   
 }
+
+MLModelFunction(StackedModel) <- NULL
 
 
 .fit.StackedModel <- function(model, x, ...) {

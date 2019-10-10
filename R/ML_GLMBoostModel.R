@@ -3,23 +3,23 @@
 #' Gradient boosting for optimizing arbitrary loss functions where
 #' component-wise linear models are utilized as base-learners.
 #' 
-#' @param family \code{\link[mboost]{Family}} object.  Set automatically
-#' according to the class type of the response variable.
+#' @param family optional \code{\link[mboost]{Family}} object.  Set
+#'   automatically according to the class type of the response variable.
 #' @param mstop number of initial boosting iterations.
 #' @param nu step size or shrinkage parameter between 0 and 1.
 #' @param risk method to use in computing the empirical risk for each boosting
-#' iteration.
+#'   iteration.
 #' @param stopintern logical inidicating whether the boosting algorithm stops
-#' internally when the out-of-bag risk increases at a subsequent iteration.
+#'   internally when the out-of-bag risk increases at a subsequent iteration.
 #' @param trace logical indicating whether status information is printed during
-#' the fitting process.
+#'   the fitting process.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{binary}, \code{numeric}, \code{Surv}}
-#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-#'   \code{mstop}
-#' }
+#'   \item{Response Types:}{\code{binary}, \code{numeric}, \code{Surv}}
+#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'     \code{mstop}
+#'   }
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -33,7 +33,7 @@
 #' @examples
 #' library(MASS)
 #' 
-#' fit(type ~ ., data = Pima.tr, model = GLMBoostModel())
+#' fit(type ~ ., data = Pima.tr, model = GLMBoostModel)
 #'
 GLMBoostModel <- function(family = NULL, mstop = 100, nu = 0.1,
                           risk = c("inbag", "oobag", "none"),
@@ -88,3 +88,5 @@ GLMBoostModel <- function(family = NULL, mstop = 100, nu = 0.1,
   )
   
 }
+
+MLModelFunction(GLMBoostModel) <- NULL

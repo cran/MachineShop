@@ -12,8 +12,8 @@ GLMNetModel(family = NULL, alpha = 1, lambda = 0,
   type.multinomial = c("ungrouped", "grouped"))
 }
 \arguments{
-\item{family}{response type.  Set automatically according to the class type
-of the response variable.}
+\item{family}{optional response type.  Set automatically according to the
+class type of the response variable.}
 
 \item{alpha}{elasticnet mixing parameter.}
 
@@ -51,11 +51,11 @@ Fit a generalized linear model via penalized maximum likelihood.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}, \code{matrix}, \code{numeric},
-\code{Surv}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{lambda}, \code{alpha}
-}
+  \item{Response Types:}{\code{factor}, \code{matrix}, \code{numeric},
+    \code{Surv}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{lambda}, \code{alpha}
+  }
 }
 
 Default values for the \code{NULL} arguments and further model details can be

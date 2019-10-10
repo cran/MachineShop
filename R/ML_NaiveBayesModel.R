@@ -7,7 +7,7 @@
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}}
+#'   \item{Response Types:}{\code{factor}}
 #' }
 #' 
 #' Further model details can be found in the source link below.
@@ -18,7 +18,7 @@
 #' \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' fit(Species ~ ., data = iris, model = NaiveBayesModel())
+#' fit(Species ~ ., data = iris, model = NaiveBayesModel)
 #'
 NaiveBayesModel <- function(laplace = 0) {
   
@@ -43,3 +43,5 @@ NaiveBayesModel <- function(laplace = 0) {
   )
   
 }
+
+MLModelFunction(NaiveBayesModel) <- NULL

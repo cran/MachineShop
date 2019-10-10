@@ -7,7 +7,7 @@
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{ordered}}
+#'   \item{Response Types:}{\code{ordered}}
 #' }
 #' 
 #' Further model details can be found in the source link below.
@@ -24,7 +24,7 @@
 #'              medv <- cut(medv,
 #'                          breaks = c(0, 10, 15, 20, 25, 50),
 #'                          ordered = TRUE))
-#' fit(medv ~ ., data = df, model = POLRModel())
+#' fit(medv ~ ., data = df, model = POLRModel)
 #' 
 POLRModel <- function(method = c("logistic", "probit", "loglog", "cloglog",
                                  "cauchit")) {
@@ -54,3 +54,5 @@ POLRModel <- function(method = c("logistic", "probit", "loglog", "cloglog",
   )
   
 }
+
+MLModelFunction(POLRModel) <- NULL

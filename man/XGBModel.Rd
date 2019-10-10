@@ -66,18 +66,18 @@ framework from Chen & Guestrin.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}, \code{numeric}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters}{
-\itemize{
-  \item XGBDARTModel: \code{nrounds}, \code{max_depth}, \code{eta},
-  \code{gamma}*, \code{min_child_weight}*, \code{subsample},
-  \code{colsample_bytree}, \code{rate_drop}, \code{skip_drop}
-  \item XGBLinearModel: \code{nrounds}, \code{lambda}, \code{alpha}
-  \item XGBTreeModel: \code{nrounds}, \code{max_depth}, \code{eta},
-  \code{gamma}*, \code{min_child_weight}*, \code{subsample},
-  \code{colsample_bytree}
-}
-}
+  \item{Response Types:}{\code{factor}, \code{numeric}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters}{
+    \itemize{
+      \item XGBDARTModel: \code{nrounds}, \code{max_depth}, \code{eta},
+        \code{gamma}*, \code{min_child_weight}*, \code{subsample},
+        \code{colsample_bytree}, \code{rate_drop}, \code{skip_drop}
+      \item XGBLinearModel: \code{nrounds}, \code{lambda}, \code{alpha}
+      \item XGBTreeModel: \code{nrounds}, \code{max_depth}, \code{eta},
+        \code{gamma}*, \code{min_child_weight}*, \code{subsample},
+        \code{colsample_bytree}
+    }
+  }
 }
 * included only in randomly sampled grid points
 
@@ -94,8 +94,8 @@ the trees.  Variable importance is automatically scaled to range from 0 to
 example below.
 }
 \examples{
-modelfit <- fit(Species ~ ., data = iris, model = XGBTreeModel())
-varimp(modelfit, metric = "Frequency", scale = FALSE)
+model_fit <- fit(Species ~ ., data = iris, model = XGBTreeModel)
+varimp(model_fit, metric = "Frequency", scale = FALSE)
 
 }
 \seealso{

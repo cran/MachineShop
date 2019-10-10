@@ -3,7 +3,7 @@
 #' Performs linear discriminant analysis.
 #' 
 #' @param prior prior probabilities of class membership if specified or the
-#' class proportions in the training set otherwise.
+#'   class proportions in the training set otherwise.
 #' @param tol tolerance for the determination of singular matrices.
 #' @param method type of mean and variance estimator.
 #' @param nu degrees of freedom for \code{method = "t"}.
@@ -12,17 +12,17 @@
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}}
-#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-#'   \code{dimen}
-#' }
+#'   \item{Response Types:}{\code{factor}}
+#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'     \code{dimen}
+#'   }
 #' }
 #' 
 #' The \code{\link{predict}} function for this model additionally accepts the
 #' following argument.
 #' \describe{
-#' \item{\code{prior}}{prior class membership probabilities for prediction data
-#' if different from the training set.}
+#'   \item{\code{prior}}{prior class membership probabilities for prediction
+#'     data if different from the training set.}
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -34,7 +34,7 @@
 #' \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' fit(Species ~ ., data = iris, model = LDAModel())
+#' fit(Species ~ ., data = iris, model = LDAModel)
 #'
 LDAModel <- function(prior = NULL, tol = 1e-4,
                      method = c("moment", "mle", "mve", "t"), nu = 5,
@@ -71,3 +71,5 @@ LDAModel <- function(prior = NULL, tol = 1e-4,
   )
   
 }
+
+MLModelFunction(LDAModel) <- NULL

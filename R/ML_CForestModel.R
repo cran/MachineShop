@@ -4,25 +4,25 @@
 #' utilizing conditional inference trees as base learners.
 #'
 #' @param teststat character specifying the type of the test statistic to be
-#' applied.
+#'   applied.
 #' @param testtype character specifying how to compute the distribution of the
-#' test statistic.
+#'   test statistic.
 #' @param mincriterion  value of the test statistic that must be exceeded in
-#' order to implement a split.
+#'   order to implement a split.
 #' @param replace logical indicating whether sampling of observations is done
-#' with or without replacement.
+#'   with or without replacement.
 #' @param fraction fraction of number of observations to draw without
-#' replacement (only relevant if \code{replace = FALSE}).
+#'   replacement (only relevant if \code{replace = FALSE}).
 #' @param ntree number of trees to grow in a forest.
 #' @param mtry number of input variables randomly sampled as candidates at each
-#' node for random forest like algorithms.
+#'   node for random forest like algorithms.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
-#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-#'   \code{mtry}
-#' }
+#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'     \code{mtry}
+#'   }
 #' }
 #' 
 #' Supplied arguments are passed to \code{\link[party]{cforest_control}}.
@@ -34,7 +34,7 @@
 #' \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' fit(sale_amount ~ ., data = ICHomes, model = CForestModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = CForestModel)
 #'
 CForestModel <- function(teststat = c("quad", "max"),
                          testtype = c("Univariate", "Teststatistic",
@@ -80,3 +80,5 @@ CForestModel <- function(teststat = c("quad", "max"),
   )
   
 }
+
+MLModelFunction(CForestModel) <- NULL

@@ -19,7 +19,7 @@ Fit a logistic or probit regression model to an ordered factor response.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{ordered}}
+  \item{Response Types:}{\code{ordered}}
 }
 
 Further model details can be found in the source link below.
@@ -31,7 +31,7 @@ df <- within(Boston,
              medv <- cut(medv,
                          breaks = c(0, 10, 15, 20, 25, 50),
                          ordered = TRUE))
-fit(medv ~ ., data = df, model = POLRModel())
+fit(medv ~ ., data = df, model = POLRModel)
 
 }
 \seealso{

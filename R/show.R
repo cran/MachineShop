@@ -140,15 +140,18 @@ setMethod("show", "MLMetric",
 setMethod("show", "MLModel",
   function(object) {
     show_title(object)
+    info <- modelinfo(object)[[1]]
     cat("\n",
         "Model name: ", object@name, "\n",
-        "Label: ", object@label, "\n",
-        "Packages: ", toString(object@packages), "\n",
-        "Response types: ", toString(object@response_types), "\n\n",
+        "Label: ", info$label, "\n",
+        "Packages: ", toString(info$packages), "\n",
+        "Response types: ", toString(info$response_types), "\n",
+        "Tuning grid: ", info$grid, "\n",
+        "Variable importance: ", info$varimp, "\n\n",
         "Parameters:\n",
         sep = "")
     print(object@params)
-    if (length(object@params) == 0) cat("\n")
+    if (!length(object@params)) cat("\n")
     invisible()
   }
 )
@@ -161,19 +164,52 @@ setMethod("show", "MLModelFit",
 )
 
 
+setMethod("show", "MLModelFunction",
+  function(object) {
+    show_title(object)
+    info_list <- modelinfo(object)
+    info <- info_list[[1]]
+    cat("\n",
+        "Model name: ", names(info_list), "\n",
+        "Label: ", info$label, "\n",
+        "Packages: ", toString(info$packages), "\n",
+        "Response types: ", toString(info$response_types), "\n",
+        "Tuning grid: ", info$grid, "\n",
+        "Variable importance: ", info$varimp, "\n\n",
+        "Arguments:\n",
+        sep = "")
+    print(info$arguments)
+    cat("\n")
+  }
+)
+
+
+setMethod("show", "MLModelList",
+  function(object) {
+    show_title(object)
+    cat("\n")
+    print(unclass(object))
+    if (!length(object)) cat("\n")
+    invisible()
+  }
+)
+
+
 setMethod("show", "MLModelTune",
   function(object) {
     callNextMethod(object)
-    cat("Grid:\n")
-    print(object@tune_grid)
-    cat("\n")
+    selected <- object@selected
+    if (length(object@tune_grid)) {
+      cat("Grid (selected = ", selected$index, "):\n", sep = "")
+      print(object@tune_grid)
+      cat("\n")
+    }
     print(object@performance)
     if (!is.na(dim(object@performance)[3])) {
       model_names <- dimnames(object@performance)[[3]]
-      cat("Selected (", names(object@selected), "): ",
-          model_names[object@selected], "\n\n",
-          sep = "")
+      cat("Selected model:", model_names[selected$index], "\n")
     }
+    cat(names(selected$value), "value:", selected$value, "\n\n")
   }
 )
 
@@ -240,6 +276,14 @@ setMethod("show", "PerformanceDiffTest",
 )
 
 
+setMethod("show", "RecipeGrid",
+  function(object) {
+    show_title(object)
+    print(as.data.frame(object))
+  }
+)
+
+
 setMethod("show", "Resamples",
   function(object) {
     show_title(object)
@@ -252,6 +296,17 @@ setMethod("show", "Resamples",
     cat("\n")
     show(object@control)
     invisible()
+  }
+)
+
+
+setMethod("show", "TunedRecipe",
+  function(object) {
+    show_title(object)
+    cat("\n")
+    print(as(object, "ModelRecipe"))
+    cat("\nGrid:\n\n")
+    print(object@grid)
   }
 )
 

@@ -4,12 +4,14 @@
 #' time dependent strata, multiple events per subject, and other extensions are
 #' incorporated using the counting process formulation of Andersen and Gill.
 #' 
+#' @rdname CoxModel
+#' 
 #' @param ties character string specifying the method for tie handling.
 #' @param ... arguments passed to \code{\link[survival]{coxph.control}}.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{Surv}}
+#'   \item{Response Types:}{\code{Surv}}
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -26,7 +28,7 @@
 #' library(MASS)
 #' 
 #' fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
-#'     data = Melanoma, model = CoxModel())
+#'     data = Melanoma, model = CoxModel)
 #' 
 CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
   
@@ -60,21 +62,22 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
   
 }
 
+MLModelFunction(CoxModel) <- NULL
 
-#' @name CoxStepAICModel
+
 #' @rdname CoxModel
 #' 
 #' @param direction mode of stepwise search, can be one of \code{"both"}
-#' (default), \code{"backward"}, or \code{"forward"}.
+#'   (default), \code{"backward"}, or \code{"forward"}.
 #' @param scope defines the range of models examined in the stepwise search.
-#' This should be a list containing components \code{upper} and
-#' \code{lower}, both formulae.
+#'   This should be a list containing components \code{upper} and \code{lower},
+#'   both formulae.
 #' @param k multiple of the number of degrees of freedom used for the penalty.
-#' Only \code{k = 2} gives the genuine AIC: \code{k = log(nobs)} is sometimes
-#' referred to as BIC or SBC.
+#'   Only \code{k = 2} gives the genuine AIC; \code{k = .(log(nobs))} is
+#'   sometimes referred to as BIC or SBC.
 #' @param trace if positive, information is printed during the running of
-#' \code{stepAIC}. Larger values may give more information on the fitting
-#' process.
+#'   \code{stepAIC}. Larger values may give more information on the fitting
+#'   process.
 #' @param steps maximum number of steps to be considered.
 #'
 CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"), ...,
@@ -110,3 +113,5 @@ CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"), ...,
   )
   
 }
+
+MLModelFunction(CoxStepAICModel) <- NULL

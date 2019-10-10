@@ -8,6 +8,7 @@ importFrom(abind, abind, adrop)
 importFrom(foreach, "%dopar%", foreach, registerDoSEQ)
 importFrom(graphics, plot)
 importFrom(magrittr, "%>%")
+importFrom(polspline, hare, phare)
 importFrom(recipes, bake, fully_trained, prep, recipe)
 importFrom(rsample, analysis, assessment, bootstraps, initial_split,
            rsample2caret, testing, vfold_cv)
@@ -15,7 +16,8 @@ importFrom(stats, aggregate, approx, coef, complete.cases, contr.helmert, cor,
            delete.response, formula, get_all_vars, loess, lm, median,
            model.frame, model.matrix, model.matrix.default, model.response,
            model.weights, na.fail, na.omit, na.pass, p.adjust, pchisq, predict,
-           quantile, reformulate, reshape, sd, t.test, terms, time, vcov)
+           quantile, reformulate, reshape, sd, t.test, terms, time, update,
+           vcov)
 importFrom(survival, concordance, is.Surv, Surv, survfit, survreg,
            survreg.distributions)
 importFrom(utils, combn, head, methods, relist, stack, str, tail)
@@ -30,6 +32,9 @@ export(.,
        Curves,
        dependence,
        expand.model,
+       expand_model,
+       expand_params,
+       expand_steps,
        fit,
        Grid,
        lift,
@@ -42,9 +47,11 @@ export(.,
        resample,
        Resamples,
        response,
+       settings,
        SurvEvents,
        SurvProbs,
        tune,
+       TunedRecipe,
        varimp)
 
 export(accuracy,
@@ -88,6 +95,7 @@ export(MLControl,
        MLMetric,
        "MLMetric<-",
        MLModel,
+       ModelList,
        AdaBagModel,
        AdaBoostModel,
        BARTModel,
@@ -145,6 +153,8 @@ S3method(diff, MLModelTune)
 S3method(diff, Resamples)
 S3method(fit, formula)
 S3method(fit, matrix)
+S3method(fit, MLModel)
+S3method(fit, MLModelFunction)
 S3method(fit, ModelFrame)
 S3method(fit, recipe)
 S3method(formula, ModelFrame)
@@ -162,9 +172,6 @@ S3method(performance, Resamples)
 S3method(performance, Surv)
 S3method(performance_curve, default)
 S3method(performance_curve, Resamples)
-S3method(print, MLModelFit)
-S3method(print, Resamples)
-S3method(print, SurvMatrix)
 S3method(plot, Calibration)
 S3method(plot, Confusion)
 S3method(plot, ConfusionMatrix)
@@ -176,8 +183,13 @@ S3method(plot, Performance)
 S3method(plot, Resamples)
 S3method(plot, VarImp)
 S3method(predict, MLModelFit)
+S3method(print, MLModelFit)
+S3method(print, Resamples)
+S3method(print, SurvMatrix)
 S3method(resample, formula)
 S3method(resample, matrix)
+S3method(resample, MLModel)
+S3method(resample, MLModelFunction)
 S3method(resample, ModelFrame)
 S3method(resample, recipe)
 S3method(response, MLModelFit)
@@ -195,6 +207,9 @@ S3method(t.test, PerformanceDiff)
 S3method(terms, ModelFrame)
 S3method(tune, formula)
 S3method(tune, matrix)
+S3method(tune, MLModel)
+S3method(tune, MLModelFunction)
+S3method(tune, MLModelList)
 S3method(tune, ModelFrame)
 S3method(tune, recipe)
 S3method("[", SurvMatrix)

@@ -34,10 +34,10 @@ Build a regression model using the techniques in Friedman's papers
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}, \code{numeric}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{nprune}, \code{degree}*
-}
+  \item{Response Types:}{\code{factor}, \code{numeric}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{nprune}, \code{degree}*
+  }
 }
 * included only in randomly sampled grid points
 
@@ -54,8 +54,8 @@ predictor.  Variable importance is automatically scaled to range from 0 to
 example below.
 }
 \examples{
-modelfit <- fit(Species ~ ., data = iris, model = EarthModel())
-varimp(modelfit, metric = "nsubsets", scale = FALSE)
+model_fit <- fit(Species ~ ., data = iris, model = EarthModel)
+varimp(model_fit, metric = "nsubsets", scale = FALSE)
 
 }
 \seealso{

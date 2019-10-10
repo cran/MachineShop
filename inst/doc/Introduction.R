@@ -464,14 +464,14 @@ plot(res)
 
 ## ----using_resample_diff-------------------------------------------------
 ## Pairwise model comparisons
-(perfdiff <- diff(res))
+(res_diff <- diff(res))
 
-summary(perfdiff)
+summary(res_diff)
 
-plot(perfdiff)
+plot(res_diff)
 
 ## ----using_resample_diff_test--------------------------------------------
-t.test(perfdiff)
+t.test(res_diff)
 
 ## ----using_analyses_vi---------------------------------------------------
 ## Predictor variable importance
@@ -558,8 +558,8 @@ plot(lf, find = 0.75)
 #  
 #  ## Tune over user-specified grid points
 #  tune(surv_fo, data = surv_train, model = GBMModel,
-#       grid = expand.grid(n.trees = c(25, 50, 100),
-#                          interaction.depth = 1:3),
+#       grid = expand_params(n.trees = c(25, 50, 100),
+#                            interaction.depth = 1:3),
 #       control = surv_means_control)
 
 ## ----using_strategies_tune_summary---------------------------------------
@@ -582,12 +582,12 @@ surv_fit <- fit(surv_fo, data = surv_train, model = tuned_model)
 ## Predictive performance of the tuning process
 res_tuned <- resample(surv_fo, data = surv_train, model = tuned_model,
                       control = surv_means_control)
-summary(performance(res_tuned))
+summary(res_tuned)
 
 ## ----using_strategies_selection, results="hide"--------------------------
 ## Model interface for model selection
 selected_model <- SelectedModel(
-  expand.model(GBMModel, n.trees = c(50, 100), interaction.depth = 1:2),
+  expand_model(GBMModel, n.trees = c(50, 100), interaction.depth = 1:2),
   GLMNetModel(lambda = 0.01),
   CoxModel,
   SurvRegModel
@@ -618,6 +618,19 @@ supermodel <- SuperModel(GLMBoostModel, CForestModel, CoxModel,
                          model = GBMModel)
 res_super <- resample(surv_fo, data = surv_train, model = supermodel)
 summary(res_super)
+
+## ----using_settings------------------------------------------------------
+## Change settings
+presets <- settings(control = "BootControl", grid = 10)
+
+## View one setting
+settings("control")
+
+## View multiple settings
+settings("control", "grid")
+
+## Restore the previous settings
+settings(presets)
 
 ## ----using_extensions_mlmodel--------------------------------------------
 ## Logistic regression model extension

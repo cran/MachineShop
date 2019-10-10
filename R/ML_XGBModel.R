@@ -6,28 +6,35 @@
 #' @rdname XGBModel
 #' 
 #' @param params list of model parameters as described in the XBoost
-#' \href{https://xgboost.readthedocs.io/en/latest/parameter.html}{documentation}.
+#'   \href{https://xgboost.readthedocs.io/en/latest/parameter.html}{documentation}.
 #' @param nrounds maximum number of boosting iterations.
 #' @param verbose numeric value controlling the amount of output printed
-#' during model fitting, such that 0 = none, 1 = performance information, and
-#' 2 = additional information.
+#'   during model fitting, such that 0 = none, 1 = performance information, and
+#'   2 = additional information.
 #' @param print_every_n numeric value designating the fitting iterations at
-#' at which to print output when \code{verbose > 0}.
+#'   at which to print output when \code{verbose > 0}.
+#' @param objective character string specifying the learning task and objective.
+#'   Set automatically according to the class type of the response variable.
+#' @param base_score initial numeric prediction score of all instances, global
+#'   bias.
+#' @param eta,gamma,max_depth,min_child_weight,max_delta_step,subsample,colsample_bytree,colsample_bylevel,lambda,alpha,tree_method,sketch_eps,scale_pos_weight,update,refresh_leaf,process_type,grow_policy,max_leaves,max_bin,sample_type,normalize_type,rate_drop,one_drop,skip_drop,updater,feature_selector,top_k
+#'   see \code{params} reference.
+#' @param ... arguments passed to \code{XGBModel}.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{numeric}}
-#' \item{\link[=tune]{Automatic Tuning} Grid Parameters}{
-#' \itemize{
-#'   \item XGBDARTModel: \code{nrounds}, \code{max_depth}, \code{eta},
-#'   \code{gamma}*, \code{min_child_weight}*, \code{subsample},
-#'   \code{colsample_bytree}, \code{rate_drop}, \code{skip_drop}
-#'   \item XGBLinearModel: \code{nrounds}, \code{lambda}, \code{alpha}
-#'   \item XGBTreeModel: \code{nrounds}, \code{max_depth}, \code{eta},
-#'   \code{gamma}*, \code{min_child_weight}*, \code{subsample},
-#'   \code{colsample_bytree}
-#' }
-#' }
+#'   \item{Response Types:}{\code{factor}, \code{numeric}}
+#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters}{
+#'     \itemize{
+#'       \item XGBDARTModel: \code{nrounds}, \code{max_depth}, \code{eta},
+#'         \code{gamma}*, \code{min_child_weight}*, \code{subsample},
+#'         \code{colsample_bytree}, \code{rate_drop}, \code{skip_drop}
+#'       \item XGBLinearModel: \code{nrounds}, \code{lambda}, \code{alpha}
+#'       \item XGBTreeModel: \code{nrounds}, \code{max_depth}, \code{eta},
+#'         \code{gamma}*, \code{min_child_weight}*, \code{subsample},
+#'         \code{colsample_bytree}
+#'     }
+#'   }
 #' }
 #' * included only in randomly sampled grid points
 #' 
@@ -49,8 +56,8 @@
 #' \code{\link{resample}}, \code{\link{tune}}
 #'
 #' @examples
-#' modelfit <- fit(Species ~ ., data = iris, model = XGBTreeModel())
-#' varimp(modelfit, metric = "Frequency", scale = FALSE)
+#' model_fit <- fit(Species ~ ., data = iris, model = XGBTreeModel)
+#' varimp(model_fit, metric = "Frequency", scale = FALSE)
 #' 
 XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
                      print_every_n = 1) {
@@ -110,16 +117,10 @@ XGBModel <- function(params = list(), nrounds = 1, verbose = 0,
   
 }
 
+MLModelFunction(XGBModel) <- NULL
+
 
 #' @rdname XGBModel
-#' 
-#' @param objective character string specifying the learning task and objective.
-#' Set automatically according to the class type of the response variable.
-#' @param base_score initial numeric prediction score of all instances, global
-#' bias.
-#' @param eta,gamma,max_depth,min_child_weight,max_delta_step,subsample,colsample_bytree,colsample_bylevel,lambda,alpha,tree_method,sketch_eps,scale_pos_weight,update,refresh_leaf,process_type,grow_policy,max_leaves,max_bin,sample_type,normalize_type,rate_drop,one_drop,skip_drop,updater,feature_selector,top_k
-#' see \code{params} reference.
-#' @param ... arguments passed to \code{XGBModel}.
 #' 
 XGBDARTModel <- function(objective = NULL, base_score = 0.5,
                          eta = 0.3, gamma = 0, max_depth = 6,
@@ -136,6 +137,8 @@ XGBDARTModel <- function(objective = NULL, base_score = 0.5,
             "dart", environment(), ...)
 }
 
+MLModelFunction(XGBDARTModel) <- NULL
+
 
 #' @rdname XGBModel
 #' 
@@ -145,6 +148,8 @@ XGBLinearModel <- function(objective = NULL, base_score = 0.5,
   .XGBModel("XGBLinearModel", "Extreme Gradient Boosting (Linear)",
             "gblinear", environment(), ...)
 }
+
+MLModelFunction(XGBLinearModel) <- NULL
 
 
 #' @rdname XGBModel
@@ -162,6 +167,8 @@ XGBTreeModel <- function(objective = NULL, base_score = 0.5,
   .XGBModel("XGBTreeModel", "Extreme Gradient Boosting (Tree)",
             "gbtree", environment(), ...)
 }
+
+MLModelFunction(XGBTreeModel) <- NULL
 
 
 .XGBModel <- function(name, label, booster, envir, ...) {

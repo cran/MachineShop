@@ -2,14 +2,16 @@
 #' 
 #' Fits the accelerated failure time family of parametric survival models.
 #' 
+#' @rdname SurvRegModel
+#' 
 #' @param dist assumed distribution for y variable.
 #' @param scale optional fixed value for the scale.
-#' @param parms a list of fixed parameters.
+#' @param parms list of fixed parameters.
 #' @param ... arguments passed to \code{\link[survival]{survreg.control}}.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{Surv}}
+#'   \item{Response Types:}{\code{Surv}}
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -57,21 +59,22 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
   
 }
 
+MLModelFunction(SurvRegModel) <- NULL
 
-#' @name SurvRegStepAICModel
+
 #' @rdname SurvRegModel
 #' 
 #' @param direction mode of stepwise search, can be one of \code{"both"}
-#' (default), \code{"backward"}, or \code{"forward"}.
+#'   (default), \code{"backward"}, or \code{"forward"}.
 #' @param scope defines the range of models examined in the stepwise search.
-#' This should be a list containing components \code{upper} and
-#' \code{lower}, both formulae.
+#'   This should be a list containing components \code{upper} and \code{lower},
+#'   both formulae.
 #' @param k multiple of the number of degrees of freedom used for the penalty.
-#' Only \code{k = 2} gives the genuine AIC: \code{k = log(nobs)} is sometimes
-#' referred to as BIC or SBC.
+#'   Only \code{k = 2} gives the genuine AIC; \code{k = .(log(nobs))} is
+#'   sometimes referred to as BIC or SBC.
 #' @param trace if positive, information is printed during the running of
-#' \code{stepAIC}. Larger values may give more information on the fitting
-#' process.
+#'   \code{stepAIC}. Larger values may give more information on the fitting
+#'   process.
 #' @param steps maximum number of steps to be considered.
 #' 
 #' @seealso \code{\link[MASS]{stepAIC}}, \code{\link{fit}},
@@ -82,7 +85,7 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
 #' library(MASS)
 #' 
 #' fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
-#'     data = Melanoma, model = SurvRegModel())
+#'     data = Melanoma, model = SurvRegModel)
 #'
 SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
                                          "logistic", "lognormal",
@@ -121,3 +124,5 @@ SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
   )
   
 }
+
+MLModelFunction(SurvRegStepAICModel) <- NULL

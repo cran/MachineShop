@@ -8,8 +8,8 @@ GBMModel(distribution = NULL, n.trees = 100, interaction.depth = 1,
   n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5)
 }
 \arguments{
-\item{distribution}{either a character string specifying the name of the
-distribution to use or a list with a component \code{name} specifying the
+\item{distribution}{optional character string specifying the name of the
+distribution to use or list with a component \code{name} specifying the
 distribution and any additional parameters needed.  Set automatically
 according to the class type of the response variable.}
 
@@ -33,11 +33,11 @@ Fits generalized boosted regression models.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{n.trees}, \code{interaction.depth}, \code{shrinkage}*,
-  \code{n.minobsinnode}*
-}
+  \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{n.trees}, \code{interaction.depth}, \code{shrinkage}*,
+    \code{n.minobsinnode}*
+  }
 }
 * included only in randomly sampled grid points
 
@@ -45,7 +45,7 @@ Default values for the \code{NULL} arguments and further model details can be
 found in the source link below.
 }
 \examples{
-fit(Species ~ ., data = iris, model = GBMModel())
+fit(Species ~ ., data = iris, model = GBMModel)
 
 }
 \seealso{

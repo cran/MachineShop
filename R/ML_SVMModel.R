@@ -11,27 +11,36 @@
 #' @param kernel kernel function used in training and predicting.
 #' @param kpar list of hyper-parameters (kernel parameters).
 #' @param C cost of constraints violation defined as the regularization term in
-#' the Lagrange formulation.
+#'   the Lagrange formulation.
 #' @param nu parameter needed for nu-svc, one-svc, and nu-svr.
 #' @param epsilon parameter in the insensitive-loss function used for eps-svr,
-#' nu-svr and eps-bsvm.
+#'   nu-svr and eps-bsvm.
 #' @param cache cache memory in MB.
 #' @param tol tolerance of termination criterion.
 #' @param shrinking whether to use the shrinking-heuristics.
+#' @param sigma inverse kernel width used by the ANOVA, Bessel, and Laplacian
+#'   kernels.
+#' @param degree degree of the ANOVA, Bessel, and polynomial kernel functions.
+#' @param order order of the Bessel function to be used as a kernel.
+#' @param scale scaling parameter of the polynomial and hyperbolic tangent
+#'   kernels as a convenient way of normalizing patterns without the need to
+#'   modify the data itself.
+#' @param offset offset used in polynomial and hyperbolic tangent kernels.
+#' @param ... arguments passed to \code{SVMModel}.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{numeric}}
-#' \item{\link[=tune]{Automatic Tuning} Grid Parameters}{
-#' \itemize{
-#'   \item SVMANOVAModel: \code{C}, \code{degree}
-#'   \item SVMBesselModel: \code{C}, \code{order}, \code{degree}
-#'   \item SVMLaplaceModel: \code{C}, \code{sigma}
-#'   \item SVMLinearModel: \code{C}
-#'   \item SVMPolyModel: \code{C}, \code{degree}, \code{scale}
-#'   \item SVMRadialModel: \code{C}, \code{sigma}
-#' }
-#' }
+#'   \item{Response Types:}{\code{factor}, \code{numeric}}
+#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters}{
+#'     \itemize{
+#'       \item SVMANOVAModel: \code{C}, \code{degree}
+#'       \item SVMBesselModel: \code{C}, \code{order}, \code{degree}
+#'       \item SVMLaplaceModel: \code{C}, \code{sigma}
+#'       \item SVMLinearModel: \code{C}
+#'       \item SVMPolyModel: \code{C}, \code{degree}, \code{scale}
+#'       \item SVMRadialModel: \code{C}, \code{sigma}
+#'     }
+#'   }
 #' }
 #' 
 #' Arguments \code{kernel} and \code{kpar} are automatically set by the
@@ -44,6 +53,9 @@
 #' @seealso \code{\link[kernlab]{ksvm}}, \code{\link{fit}},
 #' \code{\link{resample}}, \code{\link{tune}}
 #'
+#' @examples
+#' fit(sale_amount ~ ., data = ICHomes, model = SVMRadialModel)
+#' 
 SVMModel <- function(scaled = TRUE, type = NULL,
                      kernel = c("rbfdot", "polydot", "vanilladot", "tanhdot",
                                 "laplacedot", "besseldot", "anovadot",
@@ -77,28 +89,27 @@ SVMModel <- function(scaled = TRUE, type = NULL,
   
 }
 
+MLModelFunction(SVMModel) <- NULL
+
 
 #' @rdname SVMModel
-#' 
-#' @param sigma inverse kernel width used by the ANOVA, Bessel, and Laplacian
-#' kernels.
-#' @param degree degree of the ANOVA, Bessel, and polynomial kernel functions.
-#' @param ... arguments passed to \code{SVMModel}.
 #' 
 SVMANOVAModel <- function(sigma = 1, degree = 1, ...) {
   .SVMModel("SVMANOVAModel", "Support Vector Machines (ANOVA)",
             "anovadot", environment(), ...)
 }
 
+MLModelFunction(SVMANOVAModel) <- NULL
+
 
 #' @rdname SVMModel
-#' 
-#' @param order order of the Bessel function to be used as a kernel.
 #' 
 SVMBesselModel <- function(sigma = 1, order = 1, degree = 1, ...) {
   .SVMModel("SVMBesselModel", "Support Vector Machines (Bessel)",
             "besseldot", environment(), ...)
 }
+
+MLModelFunction(SVMBesselModel) <- NULL
 
 
 #' @rdname SVMModel
@@ -108,6 +119,8 @@ SVMLaplaceModel <- function(sigma = NULL, ...) {
             "laplacedot", environment(), ...)
 }
 
+MLModelFunction(SVMLaplaceModel) <- NULL
+
 
 #' @rdname SVMModel
 #' 
@@ -116,21 +129,17 @@ SVMLinearModel <- function(...) {
             "vanilladot", environment(), ...)
 }
 
+MLModelFunction(SVMLinearModel) <- NULL
+
 
 #' @rdname SVMModel
-#' 
-#' @param scale scaling parameter of the polynomial and hyperbolic tangent
-#' kernels as a convenient way of normalizing patterns without the need to
-#' modify the data itself.
-#' @param offset offset used in polynomial and hyperbolic tangent kernels.
-#' 
-#' @examples
-#' fit(sale_amount ~ ., data = ICHomes, model = SVMRadialModel())
 #' 
 SVMPolyModel <- function(degree = 1, scale = 1, offset = 1, ...) {
   .SVMModel("SVMPolyModel", "Support Vector Machines (Poly)",
             "polydot", environment(), ...)
 }
+
+MLModelFunction(SVMPolyModel) <- NULL
 
 
 #' @rdname SVMModel
@@ -140,6 +149,8 @@ SVMRadialModel <- function(sigma = NULL, ...) {
             "rbfdot", environment(), ...)
 }
 
+MLModelFunction(SVMRadialModel) <- NULL
+
 
 #' @rdname SVMModel
 #' 
@@ -148,6 +159,8 @@ SVMSplineModel <- function(...) {
             "splinedot", environment(), ...)
 }
 
+MLModelFunction(SVMSplineModel) <- NULL
+
 
 #' @rdname SVMModel
 #' 
@@ -155,6 +168,8 @@ SVMTanhModel <- function(scale = 1, offset = 1, ...) {
   .SVMModel("SVMTanhModel", "Support Vector Machines (Tanh)",
             "tanhdot", environment(), ...)
 }
+
+MLModelFunction(SVMTanhModel) <- NULL
 
 
 .SVMModel <- function(name, label, kernel, envir, ...) {

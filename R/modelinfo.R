@@ -1,33 +1,29 @@
 #' Display Model Information
 #' 
-#' Display information about models provided by the \pkg{MachineShop} package.
+#' Display information about models supplied by the \pkg{MachineShop} package.
 #' 
-#' @aliases models
-#' 
-#' @param ... \code{MLModel} objects, constructor functions, constructor
-#' function names, or supported responses for which to display information.  If
-#' none are specified, information is returned on all available models by
-#' default.
+#' @param ... \link[=models]{model} functions, function names, or calls;
+#' \link[=response]{observed responses}; or vector of these for which to display
+#' information.  If none are specified, information is returned on all available
+#' models by default.
 #' 
 #' @return List of named model elements each containing the following
 #' components:
 #' \describe{
-#' \item{label}{character descriptor for the model.}
-#' \item{packages}{character vector of source packages required to use the
-#' model.  These need only be installed with the \code{\link{install.packages}}
-#' function or by equivalent means; but need not be loaded with, for example,
-#' the \code{\link{library}} function.}
-#' \item{response_types}{character vector of response variable types supported
-#' by the model.}
-#' \item{arguments}{closure with the argument names and corresponding default
-#' values of the model function.}
-#' \item{grid}{logical indicating whether automatic generation of tuning
-#' parameter grids is implemented for the model.}
-#' \item{varimp}{logical indicating whether variable importance is defined for
-#' the model.}
+#'   \item{label}{character descriptor for the model.}
+#'   \item{packages}{character vector of source packages required to use the
+#'     model.  These need only be installed with the
+#'     \code{\link{install.packages}} function or by equivalent means; but need
+#'     not be loaded with, for example, the \code{\link{library}} function.}
+#'   \item{response_types}{character vector of response variable types supported
+#'     by the model.}
+#'   \item{arguments}{closure with the argument names and corresponding default
+#'     values of the model function.}
+#'   \item{grid}{logical indicating whether automatic generation of tuning
+#'     parameter grids is implemented for the model.}
+#'   \item{varimp}{logical indicating whether variable importance is defined for
+#'     the model.}
 #' }
-#' 
-#' @seealso \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
 #' ## All models
@@ -41,8 +37,9 @@
 #' modelinfo(GBMModel)
 #' 
 modelinfo <- function(...) {
-  args <- unname(list(...))
-  if (length(args) == 0) args <- as.list(.model_names)
+  args <- list(...)
+  if (length(args) == 1 && is.vector(args[[1]])) args <- as.list(args[[1]])
+  args <- if (length(args)) unname(args) else as.list(.model_names)
   info <- do.call(.modelinfo, args)
   
   is_type <- if (length(info)) !mapply(is, info, "list") else NULL
@@ -145,7 +142,7 @@ modelinfo <- function(...) {
     label = x@label,
     packages = x@packages,
     response_types = x@response_types,
-    arguments = args(get(x@name)),
+    arguments = args(fget0(x@name)),
     grid = !is.null(body(x@grid)),
     varimp = !is.null(body(fitbit(x, "varimp")))
   )), names = x@name)

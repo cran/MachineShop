@@ -6,12 +6,12 @@
 #' @param mincut minimum number of observations to include in either child node.
 #' @param minsize smallest allowed node size: a weighted quantity.
 #' @param mindev within-node deviance must be at least this times that of the
-#' root node for the node to be split.
+#'   root node for the node to be split.
 #' @param split splitting criterion to use.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{numeric}}
+#'   \item{Response Types:}{\code{factor}, \code{numeric}}
 #' }
 #' 
 #' Further model details can be found in the source link below.
@@ -22,7 +22,7 @@
 #' \code{\link{resample}}, \code{\link{tune}}
 #' 
 #' @examples
-#' fit(Species ~ ., data = iris, model = TreeModel())
+#' fit(Species ~ ., data = iris, model = TreeModel)
 #'
 TreeModel <- function(mincut = 5, minsize = 10, mindev = 0.01,
                       split = c("deviance", "gini")) {
@@ -47,3 +47,5 @@ TreeModel <- function(mincut = 5, minsize = 10, mindev = 0.01,
   )
   
 }
+
+MLModelFunction(TreeModel) <- NULL

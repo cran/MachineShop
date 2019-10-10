@@ -3,9 +3,9 @@
 #' Defines the control parameters for a tuning grid.
 #' 
 #' @param length number of values to be generated for each model parameter in
-#' the tuning grid.
+#'   the tuning grid.
 #' @param random number of points to be randomly sampled from the tuning grid or
-#' \code{FALSE} if all points are to be used.
+#'   \code{FALSE} if all points are to be used.
 #' 
 #' @seealso \code{\link{tune}}
 #' 
@@ -38,9 +38,9 @@ grid.ModelFrame <- function(x, model, length = 3, random = FALSE, ...) {
   params <- lapply(model@grid(x, length = length, random = random), unique)
   params[sapply(params, length) == 0] <- NULL
   if (random) {
-    sample.grid(params, random, stringsAsFactors = FALSE)
+    sample_params(params, random)
   } else {
-    expand.grid(params, stringsAsFactors = FALSE)
+    expand_params(params)
   }
 }
 

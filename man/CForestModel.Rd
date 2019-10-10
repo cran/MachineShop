@@ -38,17 +38,17 @@ utilizing conditional inference trees as base learners.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{mtry}
-}
+  \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{mtry}
+  }
 }
 
 Supplied arguments are passed to \code{\link[party]{cforest_control}}.
 Further model details can be found in the source link below.
 }
 \examples{
-fit(sale_amount ~ ., data = ICHomes, model = CForestModel())
+fit(sale_amount ~ ., data = ICHomes, model = CForestModel)
 
 }
 \seealso{

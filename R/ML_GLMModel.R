@@ -3,14 +3,16 @@
 #' Fits generalized linear models, specified by giving a symbolic description of
 #' the linear predictor and a description of the error distribution.
 #' 
-#' @param family description of the error distribution and link function to be
-#' used in the model.  Set automatically according to the class type of the
-#' response variable.
+#' @rdname GLMModel
+#' 
+#' @param family optional error distribution and link function to be used in the
+#'   model.  Set automatically according to the class type of the response
+#'   variable.
 #' @param ... arguments passed to \code{\link[stats]{glm.control}}.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{binary factor}, \code{numeric}}
+#'   \item{Response Types:}{\code{binary factor}, \code{numeric}}
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -23,7 +25,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' fit(sale_amount ~ ., data = ICHomes, model = GLMModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = GLMModel)
 #' 
 GLMModel <- function(family = NULL, ...) {
   
@@ -57,21 +59,22 @@ GLMModel <- function(family = NULL, ...) {
   
 }
 
+MLModelFunction(GLMModel) <- NULL
 
-#' @name GLMStepAICModel
+
 #' @rdname GLMModel
 #' 
 #' @param direction mode of stepwise search, can be one of \code{"both"}
-#' (default), \code{"backward"}, or \code{"forward"}.
+#'   (default), \code{"backward"}, or \code{"forward"}.
 #' @param scope defines the range of models examined in the stepwise search.
-#' This should be a list containing components \code{upper} and
-#' \code{lower}, both formulae.
+#'   This should be a list containing components \code{upper} and \code{lower},
+#'   both formulae.
 #' @param k multiple of the number of degrees of freedom used for the penalty.
-#' Only \code{k = 2} gives the genuine AIC: \code{k = log(nobs)} is sometimes
-#' referred to as BIC or SBC.
+#'   Only \code{k = 2} gives the genuine AIC; \code{k = .(log(nobs))} is
+#'   sometimes referred to as BIC or SBC.
 #' @param trace if positive, information is printed during the running of
-#' \code{stepAIC}. Larger values may give more information on the fitting
-#' process.
+#'   \code{stepAIC}. Larger values may give more information on the fitting
+#'   process.
 #' @param steps maximum number of steps to be considered.
 #'
 GLMStepAICModel <- function(family = NULL, ...,
@@ -113,3 +116,5 @@ GLMStepAICModel <- function(family = NULL, ...,
   )
   
 }
+
+MLModelFunction(GLMStepAICModel) <- NULL

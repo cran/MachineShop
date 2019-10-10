@@ -28,17 +28,17 @@ prediction is done via the maximum of summed kernel densities.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}, \code{numeric}, \code{ordinal}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{k}, \code{distance}*, \code{kernel}*
-}
+  \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordinal}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{k}, \code{distance}*, \code{kernel}*
+  }
 }
 * included only in randomly sampled grid points
 
 Further model details can be found in the source link below.
 }
 \examples{
-fit(Species ~ ., data = iris, model = KNNModel())
+fit(Species ~ ., data = iris, model = KNNModel)
 
 }
 \seealso{

@@ -10,8 +10,8 @@ GAMBoostModel(family = NULL, baselearner = c("bbs", "bols", "btree",
   trace = FALSE)
 }
 \arguments{
-\item{family}{\code{\link[mboost]{Family}} object.  Set automatically
-according to the class type of the response variable.}
+\item{family}{optional \code{\link[mboost]{Family}} object.  Set
+automatically according to the class type of the response variable.}
 
 \item{baselearner}{character specifying the component-wise
 \code{\link[mboost:baselearners]{base learner}} to be used.}
@@ -42,10 +42,10 @@ utilized as additive base-learners.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{binary}, \code{numeric}, \code{Surv}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{mstop}
-}
+  \item{Response Types:}{\code{binary}, \code{numeric}, \code{Surv}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{mstop}
+  }
 }
 
 Default values for the \code{NULL} arguments and further model details can be
@@ -54,7 +54,7 @@ found in the source links below.
 \examples{
 library(MASS)
 
-fit(type ~ ., data = Pima.tr, model = GAMBoostModel())
+fit(type ~ ., data = Pima.tr, model = GAMBoostModel)
 
 }
 \seealso{

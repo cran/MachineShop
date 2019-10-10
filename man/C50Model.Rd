@@ -49,10 +49,10 @@ algorithm.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{trials}, \code{rules}, \code{winnow}
-}
+  \item{Response Types:}{\code{factor}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{trials}, \code{rules}, \code{winnow}
+  }
 }
 
 Latter arguments are passed to \code{\link[C50]{C5.0Control}}.
@@ -67,8 +67,8 @@ to 100.  To obtain unscaled importance values, set \code{scale = FALSE}.  See
 example below.
 }
 \examples{
-modelfit <- fit(Species ~ ., data = iris, model = C50Model())
-varimp(modelfit, metric = "splits", scale = FALSE)
+model_fit <- fit(Species ~ ., data = iris, model = C50Model)
+varimp(model_fit, metric = "splits", scale = FALSE)
 
 }
 \seealso{

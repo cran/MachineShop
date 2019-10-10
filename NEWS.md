@@ -2,6 +2,30 @@
 
 ## Version Updates
 
+## 1.6.0
+* Add global setting for default cutoff threshold value.
+* Add option to reset all global settings.
+* Enable recipe tuning with `TunedRecipe()`.
+* Add `expand_model()` for model expansion over tuning parameters.
+* Add `expand_params()` for model parameters expansion.
+* Add `expand_steps()` for recipe step parameters expansion.
+* Implement `MLModelFunction` and `MLModelList` classes.
+* Add fit methods for `MLModel`, `MLModelFunction`, and `MLModelList`.
+* Fix `NNetModel` fit error with binary and factor responses.
+* Fix `modelinfo()` function not found error.
+
+
+## 1.5.2
+* Implement exception handling of `tune()` resampling failures.
+* Remove deprecated `types` and `design` arguments from `MLModel()`.
+
+
+## 1.5.1
+* Implement global settings for default resampling control, performance metrics, summary statistics, and tuning grid.
+* Support vector arguments in `metricinfo()` and `modelinfo()`.
+* Update package documentation.
+
+
 ## 1.5.0
 * Implement model: `SelectedModel`.
 * Remove `maximize` argument from `tune()` and `TunedModel`.
@@ -10,7 +34,7 @@
 
 ## 1.4.2
 * Revert renaming of `expand.model()`.
-* Exclue 0 distance from `KNNModel` tuning grid.
+* Exclude 0 distance from `KNNModel` tuning grid.
 * Improve random tuning grid coverage.
 
 

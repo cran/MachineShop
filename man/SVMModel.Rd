@@ -81,17 +81,17 @@ classification formulations and the bound-constraint SVM formulations.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}, \code{numeric}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters}{
-\itemize{
-  \item SVMANOVAModel: \code{C}, \code{degree}
-  \item SVMBesselModel: \code{C}, \code{order}, \code{degree}
-  \item SVMLaplaceModel: \code{C}, \code{sigma}
-  \item SVMLinearModel: \code{C}
-  \item SVMPolyModel: \code{C}, \code{degree}, \code{scale}
-  \item SVMRadialModel: \code{C}, \code{sigma}
-}
-}
+  \item{Response Types:}{\code{factor}, \code{numeric}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters}{
+    \itemize{
+      \item SVMANOVAModel: \code{C}, \code{degree}
+      \item SVMBesselModel: \code{C}, \code{order}, \code{degree}
+      \item SVMLaplaceModel: \code{C}, \code{sigma}
+      \item SVMLinearModel: \code{C}
+      \item SVMPolyModel: \code{C}, \code{degree}, \code{scale}
+      \item SVMRadialModel: \code{C}, \code{sigma}
+    }
+  }
 }
 
 Arguments \code{kernel} and \code{kpar} are automatically set by the
@@ -100,7 +100,7 @@ Default values for the \code{NULL} arguments and further model details can be
 found in the source link below.
 }
 \examples{
-fit(sale_amount ~ ., data = ICHomes, model = SVMRadialModel())
+fit(sale_amount ~ ., data = ICHomes, model = SVMRadialModel)
 
 }
 \seealso{

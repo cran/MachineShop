@@ -29,10 +29,10 @@ Cutler's original Fortran code) for classification and regression.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{factor}, \code{numeric}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{mtry}, \code{nodesize}*
-}
+  \item{Response Types:}{\code{factor}, \code{numeric}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{mtry}, \code{nodesize}*
+  }
 }
 * included only in randomly sampled grid points
 
@@ -40,7 +40,7 @@ Default values for the \code{NULL} arguments and further model details can be
 found in the source link below.
 }
 \examples{
-fit(sale_amount ~ ., data = ICHomes, model = RandomForestModel())
+fit(sale_amount ~ ., data = ICHomes, model = RandomForestModel)
 
 }
 \seealso{

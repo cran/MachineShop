@@ -7,15 +7,15 @@
 #' @param k numer of neigbors considered.
 #' @param distance Minkowski distance parameter.
 #' @param scale logical indicating whether to scale predictors to have equal
-#' standard deviations.
+#'   standard deviations.
 #' @param kernel kernel to use.
 #'
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordinal}}
-#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-#'   \code{k}, \code{distance}*, \code{kernel}*
-#' }
+#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordinal}}
+#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'     \code{k}, \code{distance}*, \code{kernel}*
+#'   }
 #' }
 #' * included only in randomly sampled grid points
 #' 
@@ -27,7 +27,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' fit(Species ~ ., data = iris, model = KNNModel())
+#' fit(Species ~ ., data = iris, model = KNNModel)
 #'
 KNNModel <- function(k = 7, distance = 2, scale = TRUE,
                      kernel = c("optimal", "biweight", "cos", "epanechnikov",
@@ -73,3 +73,5 @@ KNNModel <- function(k = 7, distance = 2, scale = TRUE,
   )
   
 }
+
+MLModelFunction(KNNModel) <- NULL

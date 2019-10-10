@@ -9,8 +9,8 @@ GLMBoostModel(family = NULL, mstop = 100, nu = 0.1,
   trace = FALSE)
 }
 \arguments{
-\item{family}{\code{\link[mboost]{Family}} object.  Set automatically
-according to the class type of the response variable.}
+\item{family}{optional \code{\link[mboost]{Family}} object.  Set
+automatically according to the class type of the response variable.}
 
 \item{mstop}{number of initial boosting iterations.}
 
@@ -34,10 +34,10 @@ component-wise linear models are utilized as base-learners.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{binary}, \code{numeric}, \code{Surv}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{mstop}
-}
+  \item{Response Types:}{\code{binary}, \code{numeric}, \code{Surv}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{mstop}
+  }
 }
 
 Default values for the \code{NULL} arguments and further model details can be
@@ -46,7 +46,7 @@ found in the source links below.
 \examples{
 library(MASS)
 
-fit(type ~ ., data = Pima.tr, model = GLMBoostModel())
+fit(type ~ ., data = Pima.tr, model = GLMBoostModel)
 
 }
 \seealso{

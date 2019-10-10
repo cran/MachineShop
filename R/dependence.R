@@ -7,35 +7,35 @@ PartialDependence <- function(object) {
 #' 
 #' Calculate partial dependence of a response on select predictor variables.
 #' 
-#' @param object \code{MLModelFit} object.
-#' @param data \code{data.frame} containing all predictor variables.  If not
-#' specified, the training data will be used by default.
+#' @param object model \link{fit} result.
+#' @param data \link[=data.frame]{data frame} containing all predictor
+#'   variables.  If not specified, the training data will be used by default.
 #' @param select expression indicating predictor variables for which to compute
-#' partial dependence (see \code{\link[base]{subset}} for syntax)
-#' [default: all].
+#'   partial dependence (see \code{\link[base]{subset}} for syntax)
+#'   [default: all].
 #' @param interaction logical indicating whether to calculate dependence on the
-#' interacted predictors.
+#'   interacted predictors.
 #' @param n number of predictor values at which to perform calculations.
 #' @param intervals character string specifying whether the \code{n} values are
-#' spaced uniformly (\code{"uniform"}) or according to variable quantiles
-#' (\code{"quantile"}).
-#' @param stats function, one or more function names, or list of named functions
-#' with which to aggregate the response variable over the non-selected predictor
-#' variables.
+#'   spaced uniformly (\code{"uniform"}) or according to variable quantiles
+#'   (\code{"quantile"}).
+#' @param stats function, function name, or vector of these with which to
+#'   compute response variable summary statistics over non-selected predictor
+#'   variables.
 #' 
 #' @return \code{PartialDependence} class object that inherits from
 #' \code{data.frame}.
 #'  
-#' @seealso \code{\link{fit}}, \code{\link{plot}}
+#' @seealso \code{\link{plot}}
 #' 
 #' @examples
-#' gbmfit <- fit(Species ~ ., data = iris, model = GBMModel)
-#' (pd <- dependence(gbmfit, select = c(Petal.Length, Petal.Width)))
+#' gbm_fit <- fit(Species ~ ., data = iris, model = GBMModel)
+#' (pd <- dependence(gbm_fit, select = c(Petal.Length, Petal.Width)))
 #' plot(pd)
 #' 
 dependence <- function(object, data = NULL, select = NULL, interaction = FALSE,
-                       n = 10, intervals = c("uniform", "quantile"),
-                       stats = c("Mean" = base::mean)) {
+                       n = 10, intervals = c("uniform", "quantile"), stats =
+                         MachineShop::settings("stats.PartialDependence")) {
   
   stopifnot(is(object, "MLModelFit"))
 
@@ -89,7 +89,7 @@ dependence <- function(object, data = NULL, select = NULL, interaction = FALSE,
   grid_list <- lapply(data_select, select_values)
   
   data_select_grid <- if (interaction) {
-    expand.grid(grid_list)
+    expand.grid(grid_list, KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
   } else {
     df <- data.frame(row.names = 1:sum(sapply(grid_list, length)))
     pos <- 0

@@ -44,10 +44,10 @@ Builds a BART model for regression or classification.
 }
 \details{
 \describe{
-\item{Response Types:}{\code{binary}, \code{numeric}}
-\item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-  \code{alpha}, \code{beta}, \code{k}, \code{nu}
-}
+  \item{Response Types:}{\code{binary}, \code{numeric}}
+  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+    \code{alpha}, \code{beta}, \code{k}, \code{nu}
+  }
 }
 
 Further model details can be found in the source link below.
@@ -64,8 +64,8 @@ below.
 }
 \examples{
 \donttest{
-modelfit <- fit(sale_amount ~ ., data = ICHomes, model = BARTMachineModel())
-varimp(modelfit, metric = "splits", num_replicates = 20, scale = FALSE)
+model_fit <- fit(sale_amount ~ ., data = ICHomes, model = BARTMachineModel)
+varimp(model_fit, metric = "splits", num_replicates = 20, scale = FALSE)
 }
 
 }

@@ -6,9 +6,9 @@
 #' @param linout switch for linear output units.
 #' @param entropy switch for entropy (= maximum conditional likelihood) fitting.
 #' @param softmax switch for softmax (log-linear model) and maximum conditional
-#' likelihood fitting.
+#'   likelihood fitting.
 #' @param censored a variant on softmax, in which non-zero targets mean possible
-#' classes. 
+#'   classes. 
 #' @param skip switch to add skip-layer connections from input to output.
 #' @param rang Initial random weights on [\code{-rang}, \code{rang}].
 #' @param decay parameter for weight decay.
@@ -16,16 +16,16 @@
 #' @param trace switch for tracing optimization.
 #' @param MaxNWts maximum allowable number of weights.
 #' @param abstol stop if the fit criterion falls below \code{abstol}, indicating
-#' an essentially perfect fit.
+#'   an essentially perfect fit.
 #' @param reltol stop if the optimizer is unable to reduce the fit criterion by
-#' a factor of at least \code{1 - reltol}.
+#'   a factor of at least \code{1 - reltol}.
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{numeric}}
-#' \item{\link[=tune]{Automatic Tuning} Grid Parameters:}{
-#'   \code{size}, \code{decay}
-#' }
+#'   \item{Response Types:}{\code{factor}, \code{numeric}}
+#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'     \code{size}, \code{decay}
+#'   }
 #' }
 #' 
 #' Default values for the \code{NULL} arguments and further model details can be
@@ -37,7 +37,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' fit(sale_amount ~ ., data = ICHomes, model = NNetModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = NNetModel)
 #' 
 NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
                       censored = FALSE, skip = FALSE, rang = 0.7, decay = 0,
@@ -58,10 +58,21 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
       )
     },
     fit = function(formula, data, weights, ...) {
-      eval_fit(data,
-               formula = nnet::nnet(formula, data = as.data.frame(data),
-                                    weights = weights, ...),
-               matrix = nnet::nnet(x, y, weights = weights, ...))
+      if (is(terms(data), "DesignTerms")) {
+        x <- model.matrix(data, intercept = FALSE)
+        y <- response(data)
+        if (is_response(y, "binary")) {
+          y <- as.numeric(y) - 1
+        } else if (is_response(y, "factor")) {
+          y <- structure(
+            model.matrix(~ y - 1),
+            dimnames = list(names(y), levels(y))
+          )
+        }
+        nnet::nnet(x, y, weights = weights, ...)
+      } else {
+        nnet::nnet(formula, data = as.data.frame(data), weights = weights, ...)
+      }
     },
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
@@ -96,3 +107,5 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
   )
   
 }
+
+MLModelFunction(NNetModel) <- NULL

@@ -4,7 +4,7 @@
 #' 
 #' @details
 #' \describe{
-#' \item{Response Types:}{\code{factor}, \code{matrix}, \code{numeric}}
+#'   \item{Response Types:}{\code{factor}, \code{matrix}, \code{numeric}}
 #' }
 #' 
 #' Further model details can be found in the source link below.
@@ -15,7 +15,7 @@
 #' \code{\link{tune}}
 #' 
 #' @examples
-#' fit(sale_amount ~ ., data = ICHomes, model = LMModel())
+#' fit(sale_amount ~ ., data = ICHomes, model = LMModel)
 #'
 LMModel <- function() {
   
@@ -56,3 +56,5 @@ LMModel <- function() {
   )
   
 }
+
+MLModelFunction(LMModel) <- NULL
