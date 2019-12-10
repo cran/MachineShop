@@ -1,13 +1,13 @@
-#' Model Performance Summary
-#' 
+#' Model Performance Summaries
+#'
 #' Summary statistics for resampled model performance metrics.
-#' 
+#'
 #' @name summary
 #' @rdname summary-methods
-#' 
-#' @param object \link{confusion}, \link[=performance_curve]{performance curve},
-#'   \link{lift}, model \link{tune}, \link{performance}, or \link{resample}
-#'   result.
+#'
+#' @param object \link{confusion}, \link[=curves]{performance curve},
+#'   \link{lift}, trained model \link{fit}, \link{performance}, or
+#'   \link{resample} result.
 #' @param stat function or character string naming a function to compute a
 #'   summary statistic at each cutoff value of resampled metrics in
 #'   \code{Curves}, or \code{NULL} for resample-specific metrics.
@@ -15,45 +15,43 @@
 #'   compute summary statistics.
 #' @param na.rm logical indicating whether to exclude missing values.
 #' @param ... arguments passed to other methods.
-#' 
-#' @return array with summmary statistics in the second dimension, metrics in
-#' the first for single models, and models and metrics in the first and third,
-#' respectively, for multiple models.
-#' 
+#'
+#' @return An object of summmary statistics.
+#'
 #' @examples
 #' ## Factor response example
-#' 
+#'
 #' fo <- Species ~ .
 #' control <- CVControl()
-#' 
+#'
 #' gbm_res1 <- resample(fo, iris, GBMModel(n.trees = 25), control)
 #' gbm_res2 <- resample(fo, iris, GBMModel(n.trees = 50), control)
 #' gbm_res3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
 #' summary(gbm_res3)
-#' 
-#' res <- Resamples(GBM1 = gbm_res1, GBM2 = gbm_res2, GBM3 = gbm_res3)
+#'
+#' res <- c(GBM1 = gbm_res1, GBM2 = gbm_res2, GBM3 = gbm_res3)
 #' summary(res)
-#' 
+#'
 NULL
 
 
 #' @rdname summary-methods
-#' 
-summary.Confusion <- function(object, ...) {
-  structure(lapply(object, summary, ...), class = "listof")
+#'
+summary.ConfusionList <- function(object, ...) {
+  ListOf(lapply(object, summary, ...))
 }
 
 
 #' @rdname summary-methods
-#' 
+#'
 summary.ConfusionMatrix <- function(object, ...) {
-  n <- sum(object)
-  object <- object / n
-  
+  total <- sum(object)
+  object <- object / total
+
   observed <- colSums(object)
   predicted <- rowSums(object)
   agreement <- diag(object)
-  
+
   perf <- rbind(
     Observed = observed,
     Predicted = predicted,
@@ -63,27 +61,27 @@ summary.ConfusionMatrix <- function(object, ...) {
     PPV = agreement / predicted,
     NPV = (1 - observed - predicted + agreement) / (1 - predicted)
   )
-  
+
   ConfusionSummary(perf,
-                   N = n,
-                   Accuracy = sum(agreement),
-                   Majority = max(observed),
-                   Kappa = 1 - (1 - sum(agreement)) /
-                     (1 - sum(observed * predicted))) 
+                   total = total,
+                   accuracy = sum(agreement),
+                   majority = max(observed),
+                   kappa2 = 1 - (1 - sum(agreement)) /
+                     (1 - sum(observed * predicted)))
 }
 
 
 #' @rdname summary-methods
-#' 
+#'
 summary.Curves <- function(object, stat = MachineShop::settings("stat.Curves"),
                            ...) {
   if (!(is.null(object$Resample) || is.null(stat))) {
-    
+
     stat <- fget(stat)
-    
+
     object_class <- class(object)
     stat_na_omit <- function(x) stat(na.omit(x))
-    
+
     object_list <- by(object, object$Model, function(curves) {
       cutoffs <- unique(curves$Cutoff)
       curves_split <- split(curves, curves$Resample)
@@ -97,13 +95,13 @@ summary.Curves <- function(object, stat = MachineShop::settings("stat.Curves"),
         data.frame(Cutoff = cutoffs,
                    x = apply(x_all, 1, stat_na_omit),
                    y = apply(y_all, 1, stat_na_omit)),
-        .metrics = object@metrics
+        metrics = object@metrics
       ))
     })
-    
-    object <- do.call(object_class, object_list)
+
+    object <- do.call(c, object_list)
   }
-  
+
   object
 }
 
@@ -117,22 +115,23 @@ summary.Curves <- function(object, stat = MachineShop::settings("stat.Curves"),
 }
 
 
+#' @rdname summary-methods
+#'
+summary.MLModel <- function(object, stats =
+                              MachineShop::settings("stats.Resamples"),
+                            na.rm = TRUE, ...) {
+  if (is.null(object@trainbits)) stop("no training results to summarize")
+  summary(object@trainbits@performance, stats = stats, na.rm = na.rm, ...)
+}
+
+
 summary.MLModelFit <- function(object, ...) {
   summary(unMLModelFit(object))
 }
 
 
 #' @rdname summary-methods
-#' 
-summary.MLModelTune <- function(object, stats =
-                                  MachineShop::settings("stats.Resamples"),
-                                na.rm = TRUE, ...) {
-  summary(object@performance, stats = stats, na.rm = na.rm, ...)
-}
-
-
-#' @rdname summary-methods
-#' 
+#'
 summary.Performance <- function(object, stats =
                                   MachineShop::settings("stats.Resamples"),
                                 na.rm = TRUE, ...) {
@@ -143,19 +142,23 @@ summary.Performance <- function(object, stats =
     if (na.rm) x <- as.numeric(na.omit(x))
     c(stats(x), "NA" = prop_na)
   }
-  
+
   margins <- 2
   perm <- c(2, 1)
-  if (length(dim(object)) > 2) {
+  names <- c("Metric", "Statistic")
+  if (length(dim(object)) == 3) {
     margins <- c(3, margins)
     perm <- c(perm, 3)
+    names <- c("Model", "Statistic", "Metric")
   }
-  aperm(apply(object, margins, f), perm = perm)
+  object_summary <- aperm(apply(object, margins, f), perm = perm)
+  names(dimnames(object_summary)) <- names
+  TabularArray(object_summary)
 }
 
 
 #' @rdname summary-methods
-#' 
+#'
 summary.Resamples <- function(object, stats =
                                 MachineShop::settings("stats.Resamples"),
                               na.rm = TRUE, ...) {

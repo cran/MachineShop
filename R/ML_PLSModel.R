@@ -1,11 +1,11 @@
 #' Partial Least Squares Model
 #'
 #' Function to perform partial least squares regression.
-#' 
+#'
 #' @param ncomp number of components to include in the model.
 #' @param scale logical indicating whether to scale the predictors by the
 #'   sample standard deviation.
-#' 
+#'
 #' @details
 #' \describe{
 #'   \item{Response Types:}{\code{factor}, \code{numeric}}
@@ -13,19 +13,18 @@
 #'     \code{ncomp}
 #'   }
 #' }
-#' 
+#'
 #' Further model details can be found in the source link below.
-#' 
+#'
 #' @return \code{MLModel} class object.
-#' 
-#' @seealso \code{\link[pls]{mvr}}, \code{\link{fit}}, \code{\link{resample}},
-#' \code{\link{tune}}
-#' 
+#'
+#' @seealso \code{\link[pls]{mvr}}, \code{\link{fit}}, \code{\link{resample}}
+#'
 #' @examples
 #' fit(sale_amount ~ ., data = ICHomes, model = PLSModel)
 #'
 PLSModel <- function(ncomp = 1, scale = FALSE) {
-  
+
   MLModel(
     name = "PLSModel",
     label = "Partial Least Squares",
@@ -43,12 +42,10 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
       y <- response(data)
       data <- as.data.frame(data)
       if (is.factor(y)) {
-        y_name <- deparse(response(formula))
-        formula[[2]] <- as.symbol(y_name)
         mm <- model.matrix(~ y - 1)
         colnames(mm) <- levels(y)
-        data[[y_name]] <- mm
-        
+        data[[response(formula)]] <- mm
+
       }
       pls::plsr(formula, data = data, ...)
     },
@@ -69,7 +66,7 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
       vi
     }
   )
-  
+
 }
 
 MLModelFunction(PLSModel) <- NULL

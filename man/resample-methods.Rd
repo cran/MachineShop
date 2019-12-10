@@ -8,40 +8,32 @@
 \alias{resample.recipe}
 \alias{resample.MLModel}
 \alias{resample.MLModelFunction}
-\alias{Resamples}
 \title{Resample Estimation of Model Performance}
 \usage{
 resample(x, ...)
 
-\method{resample}{formula}(x, data, model,
-  control = MachineShop::settings("control"), ...)
+\method{resample}{formula}(x, data, model, control = MachineShop::settings("control"), ...)
 
-\method{resample}{matrix}(x, y, model,
-  control = MachineShop::settings("control"), ...)
+\method{resample}{matrix}(x, y, model, control = MachineShop::settings("control"), ...)
 
-\method{resample}{ModelFrame}(x, model,
-  control = MachineShop::settings("control"), ...)
+\method{resample}{ModelFrame}(x, model, control = MachineShop::settings("control"), ...)
 
-\method{resample}{recipe}(x, model,
-  control = MachineShop::settings("control"), ...)
+\method{resample}{recipe}(x, model, control = MachineShop::settings("control"), ...)
 
 \method{resample}{MLModel}(x, ...)
 
 \method{resample}{MLModelFunction}(x, ...)
-
-Resamples(...)
 }
 \arguments{
 \item{x}{defines a relationship between model predictor and response
 variables.  May be a \code{\link{formula}}, design \code{\link{matrix}} of
-predictors, \code{\link{ModelFrame}}, untrained
-\code{\link[recipes]{recipe}}, or \code{\link{TunedRecipe}} object.
-Alternatively, a \link[=models]{model} function or call may be given first
-followed by objects defining the predictor and response relationship and
-the \code{control} value.}
+predictors, \code{\link{ModelFrame}}, \code{\link{SelectedModelFrame}},
+untrained \code{\link[recipes]{recipe}}, \code{\link{SelectedRecipe}}, or
+\code{\link{TunedRecipe}} object.  Alternatively, a \link[=models]{model}
+function or call may be given first followed by objects defining the
+predictor and response relationship and the \code{control} value.}
 
-\item{...}{named or unnamed \code{resample} output to combine together with
-the \code{Resamples} constructor.}
+\item{...}{arguments passed to other methods.}
 
 \item{data}{\link[=data.frame]{data frame} containing observed predictors and
 outcomes.}
@@ -70,13 +62,9 @@ User-specified stratification variables may be specified for
 argument in its constructor.  Resampling of this class is unstratified by
 default.
 
-Variables in a \code{recipe} may be used for stratification by defining a
-"case_strata" \code{\link[recipes:roles]{role}} for them.  Resampling will
-be unstratified if no variables have that role.
-
-Output being combined from more than one model with the \code{Resamples}
-constructor must have been generated with the same resampling \code{control}
-object.
+Variables in \code{recipe} specifications may be designated as case strata
+with the \code{\link{role_case}} function.  Resampling will be unstratified
+otherwise.
 }
 \examples{
 ## Factor response example
@@ -91,12 +79,12 @@ gbm_res3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
 summary(gbm_res1)
 plot(gbm_res1)
 
-res <- Resamples(GBM1 = gbm_res1, GBM2 = gbm_res2, GBM3 = gbm_res3)
+res <- c(GBM1 = gbm_res1, GBM2 = gbm_res2, GBM3 = gbm_res3)
 summary(res)
 plot(res)
 
 }
 \seealso{
-\code{\link{performance}}, \code{\link{metrics}},
+\code{\link{c}}, \code{\link{metrics}}, \code{\link{performance}},
 \code{\link{plot}}, \code{\link{summary}}
 }

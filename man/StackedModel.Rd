@@ -4,8 +4,7 @@
 \alias{StackedModel}
 \title{Stacked Regression Model}
 \usage{
-StackedModel(..., control = MachineShop::settings("control"),
-  weights = NULL)
+StackedModel(..., control = MachineShop::settings("control"), weights = NULL)
 }
 \arguments{
 \item{...}{\link[=models]{model} functions, function names, calls, or vector
@@ -39,5 +38,5 @@ predict(model_fit, newdata = ICHomes)
 Breiman, L. (1996) \emph{Stacked Regression.} Machine Learning, 24, 49--64.
 }
 \seealso{
-\code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
+\code{\link{fit}}, \code{\link{resample}}
 }

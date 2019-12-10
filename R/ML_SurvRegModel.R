@@ -1,39 +1,39 @@
 #' Parametric Survival Model
-#' 
+#'
 #' Fits the accelerated failure time family of parametric survival models.
-#' 
+#'
 #' @rdname SurvRegModel
-#' 
+#'
 #' @param dist assumed distribution for y variable.
 #' @param scale optional fixed value for the scale.
 #' @param parms list of fixed parameters.
 #' @param ... arguments passed to \code{\link[survival]{survreg.control}}.
-#' 
+#'
 #' @details
 #' \describe{
 #'   \item{Response Types:}{\code{Surv}}
 #' }
-#' 
+#'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
 #'
 #' @return \code{MLModel} class object.
-#' 
+#'
 #' @seealso \code{\link[rms]{psm}}, \code{\link[survival]{survreg}},
 #' \code{\link[survival]{survreg.control}}, \code{\link[MASS]{stepAIC}},
-#' \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
-#' 
+#' \code{\link{fit}}, \code{\link{resample}}
+#'
 SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
                                   "logistic", "lognormal", "logloglogistic"),
                          scale = NULL, parms = NULL, ...) {
-  
+
   dist <- match.arg(dist)
-  
+
   args <- params(environment())
   is_main <- names(args) %in% c("dist", "scale", "parms")
   params <- args[is_main]
   params$control <- as.call(c(.(survival::survreg.control), args[!is_main]))
-  
+
   MLModel(
     name = "SurvRegModel",
     label = "Parametric Survival",
@@ -54,16 +54,18 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
         Hmisc::Mean(object)(predict(object, newdata = newdata, type = "lp"))
       }
     },
-    varimp = function(object, ...) varimp_wald(object)
+    varimp = function(object, base = exp(1), ...) {
+      varimp_pval(object, base = base)
+    }
   )
-  
+
 }
 
 MLModelFunction(SurvRegModel) <- NULL
 
 
 #' @rdname SurvRegModel
-#' 
+#'
 #' @param direction mode of stepwise search, can be one of \code{"both"}
 #'   (default), \code{"backward"}, or \code{"forward"}.
 #' @param scope defines the range of models examined in the stepwise search.
@@ -76,14 +78,14 @@ MLModelFunction(SurvRegModel) <- NULL
 #'   \code{stepAIC}. Larger values may give more information on the fitting
 #'   process.
 #' @param steps maximum number of steps to be considered.
-#' 
+#'
 #' @seealso \code{\link[MASS]{stepAIC}}, \code{\link{fit}},
-#' \code{\link{resample}}, \code{\link{tune}}
-#' 
+#' \code{\link{resample}}
+#'
 #' @examples
 #' library(survival)
 #' library(MASS)
-#' 
+#'
 #' fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
 #'     data = Melanoma, model = SurvRegModel)
 #'
@@ -94,13 +96,13 @@ SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
                                 direction = c("both", "backward", "forward"),
                                 scope = NULL, k = 2, trace = FALSE,
                                 steps = 1000) {
-  
+
   direction <- match.arg(direction)
-  
+
   args <- params(environment())
   is_step <- names(args) %in% c("direction", "scope", "k", "trace", "steps")
   params <- args[is_step]
-  
+
   stepmodel <- SurvRegModel(dist = dist, scale = scale, parms = parms, ...)
 
   MLModel(
@@ -115,14 +117,16 @@ SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
       environment(formula) <- environment()
       stepargs <- stepAIC_args(formula, direction, scope)
       data <- as.data.frame(data)
-      rms::psm(stepargs$formula, data = data, weights = weights, ...) %>%
-        MASS::stepAIC(direction = direction, scope = stepargs$scope, k = k,
-                      trace = trace, steps = steps)
+      MASS::stepAIC(
+        rms::psm(stepargs$formula, data = data, weights = weights, ...),
+        direction = direction, scope = stepargs$scope, k = k, trace = trace,
+        steps = steps
+      )
     },
-    predict = fitbit(stepmodel, "predict"),
-    varimp = fitbit(stepmodel, "varimp")
+    predict = stepmodel@predict,
+    varimp = stepmodel@varimp
   )
-  
+
 }
 
 MLModelFunction(SurvRegStepAICModel) <- NULL

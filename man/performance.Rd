@@ -2,36 +2,63 @@
 % Please edit documentation in R/performance.R
 \name{performance}
 \alias{performance}
+\alias{performance.BinomialVariate}
 \alias{performance.factor}
 \alias{performance.matrix}
 \alias{performance.numeric}
 \alias{performance.Surv}
-\alias{performance.Confusion}
+\alias{performance.ConfusionList}
 \alias{performance.ConfusionMatrix}
 \alias{performance.Resamples}
 \title{Model Performance Metrics}
 \usage{
 performance(x, ...)
 
-\method{performance}{factor}(x, y,
+\method{performance}{BinomialVariate}(
+  x,
+  y,
+  metrics = MachineShop::settings("metrics.numeric"),
+  na.rm = TRUE,
+  ...
+)
+
+\method{performance}{factor}(
+  x,
+  y,
   metrics = MachineShop::settings("metrics.factor"),
-  cutoff = MachineShop::settings("cutoff"), na.rm = TRUE, ...)
+  cutoff = MachineShop::settings("cutoff"),
+  na.rm = TRUE,
+  ...
+)
 
-\method{performance}{matrix}(x, y,
-  metrics = MachineShop::settings("metrics.matrix"), na.rm = TRUE, ...)
+\method{performance}{matrix}(
+  x,
+  y,
+  metrics = MachineShop::settings("metrics.matrix"),
+  na.rm = TRUE,
+  ...
+)
 
-\method{performance}{numeric}(x, y,
-  metrics = MachineShop::settings("metrics.numeric"), na.rm = TRUE,
-  ...)
+\method{performance}{numeric}(
+  x,
+  y,
+  metrics = MachineShop::settings("metrics.numeric"),
+  na.rm = TRUE,
+  ...
+)
 
-\method{performance}{Surv}(x, y,
+\method{performance}{Surv}(
+  x,
+  y,
   metrics = MachineShop::settings("metrics.Surv"),
-  cutoff = MachineShop::settings("cutoff"), na.rm = TRUE, ...)
+  cutoff = MachineShop::settings("cutoff"),
+  na.rm = TRUE,
+  ...
+)
 
-\method{performance}{Confusion}(x, ...)
+\method{performance}{ConfusionList}(x, ...)
 
-\method{performance}{ConfusionMatrix}(x,
-  metrics = MachineShop::settings("metrics.ConfusionMatrix"), ...)
+\method{performance}{ConfusionMatrix}(x, metrics = MachineShop::settings("metrics.ConfusionMatrix"), ...)
 
 \method{performance}{Resamples}(x, ...)
 }
@@ -40,7 +67,7 @@ performance(x, ...)
 \link{resample} result containing observed and predicted responses.}
 
 \item{...}{arguments passed from the \code{Resamples} method to the response
-type-specific methods or from the method for \code{Confusion} to
+type-specific methods or from the method for \code{ConfusionList} to
 \code{ConfusionMatrix}.}
 
 \item{y}{\link[=predict]{predicted responses} if not contained in \code{x}.}
@@ -48,12 +75,12 @@ type-specific methods or from the method for \code{Confusion} to
 \item{metrics}{\link[=metrics]{metric} function, function name, or vector of
 these with which to calculate performance.}
 
+\item{na.rm}{logical indicating whether to remove observed or predicted
+responses that are \code{NA} when calculating metrics.}
+
 \item{cutoff}{numeric (0, 1) threshold above which binary factor
 probabilities are classified as events and below which survival
 probabilities are classified.}
-
-\item{na.rm}{logical indicating whether to remove observed or predicted
-responses that are \code{NA} when calculating metrics.}
 }
 \description{
 Compute measures of model performance.

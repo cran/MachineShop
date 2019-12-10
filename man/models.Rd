@@ -8,7 +8,7 @@
 Model constructor functions supplied by \pkg{MachineShop} are summarized in
 the table below according to the types of response variables with which each
 can be used.
-\tabular{lcccc}{
+\tabular{lccc}{
   \strong{Function} \tab \strong{Categorical} \tab \strong{Continuous}
   \tab \strong{Survival} \cr
   \code{\link{AdaBagModel}}         \tab f   \tab     \tab   \cr
@@ -73,6 +73,5 @@ with the following meta-model functions:
 }
 }
 \seealso{
-\code{\link{modelinfo}}, \code{\link{fit}}, \code{\link{resample}},
-\code{\link{tune}}
+\code{\link{modelinfo}}, \code{\link{fit}}, \code{\link{resample}}
 }

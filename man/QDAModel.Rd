@@ -4,8 +4,12 @@
 \alias{QDAModel}
 \title{Quadratic Discriminant Analysis Model}
 \usage{
-QDAModel(prior = NULL, method = c("moment", "mle", "mve", "t"),
-  nu = 5, use = c("plug-in", "predictive", "debiased", "looCV"))
+QDAModel(
+  prior = NULL,
+  method = c("moment", "mle", "mve", "t"),
+  nu = 5,
+  use = c("plug-in", "predictive", "debiased", "looCV")
+)
 }
 \arguments{
 \item{prior}{prior probabilities of class membership if specified or the
@@ -44,5 +48,5 @@ fit(Species ~ ., data = iris, model = QDAModel)
 }
 \seealso{
 \code{\link[MASS]{qda}}, \code{\link[MASS]{predict.qda}},
-\code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
+\code{\link{fit}}, \code{\link{resample}}
 }

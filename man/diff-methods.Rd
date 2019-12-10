@@ -2,19 +2,19 @@
 % Please edit documentation in R/diff.R
 \name{diff}
 \alias{diff}
-\alias{diff.MLModelTune}
+\alias{diff.MLModel}
 \alias{diff.Performance}
 \alias{diff.Resamples}
 \title{Model Performance Differences}
 \usage{
-\method{diff}{MLModelTune}(x, ...)
+\method{diff}{MLModel}(x, ...)
 
 \method{diff}{Performance}(x, ...)
 
 \method{diff}{Resamples}(x, ...)
 }
 \arguments{
-\item{x}{model \link{tune}, \link{performance}, or \link{resample} result.}
+\item{x}{model \link{performance} or \link{resample} result.}
 
 \item{...}{arguments passed to other methods.}
 }
@@ -37,7 +37,7 @@ gbm_res1 <- resample(fo, Melanoma, GBMModel(n.trees = 25), control)
 gbm_res2 <- resample(fo, Melanoma, GBMModel(n.trees = 50), control)
 gbm_res3 <- resample(fo, Melanoma, GBMModel(n.trees = 100), control)
 
-res <- Resamples(GBM1 = gbm_res1, GBM2 = gbm_res2, GBM3 = gbm_res3)
+res <- c(GBM1 = gbm_res1, GBM2 = gbm_res2, GBM3 = gbm_res3)
 res_diff <- diff(res)
 summary(res_diff)
 plot(res_diff)

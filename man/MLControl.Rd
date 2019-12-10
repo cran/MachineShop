@@ -6,6 +6,7 @@
 \alias{BootControl}
 \alias{BootOptimismControl}
 \alias{CVControl}
+\alias{CVOptimismControl}
 \alias{OOBControl}
 \alias{SplitControl}
 \alias{TrainControl}
@@ -17,14 +18,21 @@ BootOptimismControl(samples = 25, ...)
 
 CVControl(folds = 10, repeats = 1, ...)
 
+CVOptimismControl(folds = 10, repeats = 1, ...)
+
 OOBControl(samples = 25, ...)
 
 SplitControl(prop = 2/3, ...)
 
 TrainControl(...)
 
-MLControl(times = NULL, dist = NULL, method = NULL,
-  seed = sample(.Machine$integer.max, 1), ...)
+MLControl(
+  times = NULL,
+  dist = NULL,
+  method = NULL,
+  seed = sample(.Machine$integer.max, 1),
+  ...
+)
 }
 \arguments{
 \item{samples}{number of bootstrap samples.}
@@ -62,6 +70,10 @@ cross-validation (Kohavi 1995).  In this procedure, the full data set is
 repeatedly partitioned into K-folds.  Within a partitioning, prediction is
 performed on each of the K folds with models fit on all remaining folds.
 
+\code{CVOptimismControl} constructs an \code{MLControl} object for
+optimism-corrected cross-validation resampling (Davison and Hinkley 1997,
+eq. 6.48).
+
 \code{OOBControl} constructs an \code{MLControl} object for out-of-bootstrap
 resampling in which models are fit with bootstrap resampled training sets and
 used to predict the unsampled cases.
@@ -84,6 +96,9 @@ BootOptimismControl(samples = 100)
 
 ## Cross-validation with 5 repeats of 10 folds
 CVControl(folds = 10, repeats = 5)
+
+## Optimism-corrected cross-validation with 5 repeats of 10 folds
+CVOptimismControl(folds = 10, repeats = 5)
 
 ## Out-of-bootstrap validation with 100 samples
 OOBControl(samples = 100)
@@ -112,6 +127,9 @@ Estimation and Model Selection. In Proceedings of the 14th International
 Joint Conference on Artificial Intelligence - Volume 2, 1137-43. IJCAI'95.
 San Francisco, CA, USA: Morgan Kaufmann Publishers Inc.
 
+Davison AC and Hinkley DV (1997). Bootstrap Methods and Their Application.
+New York, NY, USA: Cambridge University Press.
+
 Hastie T, Tibshirani R, and Friedman J (2009). The Elements of Statistical
 Learning: Data Mining, Inference, and Prediction, Second Edition. Springer
 Series in Statistics. New York, NY, USA: Springer.
@@ -120,5 +138,7 @@ Efron B (1986). How biased is the apparent error rate of a prediction rule?
 Journal of the American Statistical Association, 81 (394): 461-70.
 }
 \seealso{
-\code{\link{resample}}, \code{\link{tune}}
+\code{\link{resample}}, \code{\link{SelectedModel}},
+\code{\link{SelectedModelFrame}}, \code{\link{SelectedRecipe}},
+\code{\link{TunedModel}}, \code{\link{TunedRecipe}}
 }

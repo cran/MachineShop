@@ -4,9 +4,19 @@
 \alias{BARTMachineModel}
 \title{Bayesian Additive Regression Trees Model}
 \usage{
-BARTMachineModel(num_trees = 50, num_burn = 250, num_iter = 1000,
-  alpha = 0.95, beta = 2, k = 2, q = 0.9, nu = 3,
-  mh_prob_steps = c(2.5, 2.5, 4)/9, verbose = FALSE, ...)
+BARTMachineModel(
+  num_trees = 50,
+  num_burn = 250,
+  num_iter = 1000,
+  alpha = 0.95,
+  beta = 2,
+  k = 2,
+  q = 0.9,
+  nu = 3,
+  mh_prob_steps = c(2.5, 2.5, 4)/9,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{num_trees}{number of trees to be grown in the sum-of-trees model.}
@@ -71,5 +81,5 @@ varimp(model_fit, metric = "splits", num_replicates = 20, scale = FALSE)
 }
 \seealso{
 \code{\link[bartMachine]{bartMachine}}, \code{\link{fit}},
-\code{\link{resample}}, \code{\link{tune}}
+\code{\link{resample}}
 }

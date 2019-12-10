@@ -2,16 +2,18 @@
 % Please edit documentation in R/confusion.R
 \name{confusion}
 \alias{confusion}
-\alias{Confusion}
 \alias{ConfusionMatrix}
 \title{Confusion Matrix}
 \usage{
-confusion(x, y = NULL, cutoff = MachineShop::settings("cutoff"),
-  na.rm = TRUE, ...)
+confusion(
+  x,
+  y = NULL,
+  cutoff = MachineShop::settings("cutoff"),
+  na.rm = TRUE,
+  ...
+)
 
-Confusion(...)
-
-ConfusionMatrix(object = numeric(), ordered = FALSE)
+ConfusionMatrix(data = NA, ordered = FALSE)
 }
 \arguments{
 \item{x}{factor of \link[=response]{observed responses} or \link{resample}
@@ -30,10 +32,9 @@ interpreted as expected counts.}
 \item{na.rm}{logical indicating whether to remove observed or predicted
 responses that are \code{NA} when calculating metrics.}
 
-\item{...}{named or unnamed \code{confusion} output to combine together with
-the \code{Confusion} constructor.}
+\item{...}{arguments passed to other methods.}
 
-\item{object}{square matrix, or object that can be converted to one, of
+\item{data}{square matrix, or object that can be converted to one, of
 cross-classified predicted and observed values in the rows and columns,
 respectively.}
 
@@ -43,7 +44,7 @@ columns should be regarded as ordered.}
 \value{
 The return value is a \code{ConfusionMatrix} class object that inherits from
 \code{table} if \code{x} and \code{y} responses are specified or a
-\code{Confusion} object that inherits from \code{list} if \code{x} is a
+\code{ConfusionList} object that inherits from \code{list} if \code{x} is a
 \code{Resamples} object.
 }
 \description{
@@ -56,5 +57,5 @@ plot(conf)
 
 }
 \seealso{
-\code{\link{plot}}, \code{\link{summary}}
+\code{\link{c}}, \code{\link{plot}}, \code{\link{summary}}
 }

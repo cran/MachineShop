@@ -1,10 +1,10 @@
 #' Model Calibration
-#' 
+#'
 #' Calculate calibration estimates from observed and predicted responses.
-#' 
+#'
 #' @name calibration
 #' @rdname calibration
-#' 
+#'
 #' @param x \link[=response]{observed responses} or \link{resample} result
 #'   containing observed and predicted responses.
 #' @param y \link[=predict]{predicted responses} if not contained in \code{x}.
@@ -22,23 +22,22 @@
 #'   \code{"weibull"} (default).
 #' @param na.rm logical indicating whether to remove observed or predicted
 #'   responses that are \code{NA} when calculating metrics.
-#' @param ... named or unnamed \code{calibration} output to combine together
-#'   with the \code{Calibration} constructor.
-#' 
+#' @param ... arguments passed to other methods.
+#'
 #' @return \code{Calibration} class object that inherits from \code{data.frame}.
-#'  
-#' @seealso \code{\link{plot}}
-#' 
+#'
+#' @seealso \code{\link{c}}, \code{\link{plot}}
+#'
 #' @examples
 #' library(survival)
 #' library(MASS)
-#' 
+#'
 #' res <- resample(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
 #'                 data = Melanoma, model = GBMModel,
 #'                 control = CVControl(times = 365 * c(2, 5, 10)))
 #' cal <- calibration(res)
 #' plot(cal)
-#' 
+#'
 calibration <- function(x, y = NULL, breaks = 10, span = 0.75, dist = NULL,
                         na.rm = TRUE, ...) {
   if (na.rm) {
@@ -50,49 +49,17 @@ calibration <- function(x, y = NULL, breaks = 10, span = 0.75, dist = NULL,
 }
 
 
-#' @rdname calibration
-#' 
-Calibration <- function(...) {
-  .Calibration(...)
-}
-
-
-.Calibration <- function(..., .breaks) {
-  args <- list(...)
-  
-  if (length(args) == 0) stop("no calibration output given")
-  
-  .Data <- args[[1]]
-  if (all(mapply(is, args, "Calibration"))) {
-    
-    smoothed <- .Data@smoothed
-    if (!all(sapply(args, function(x) identical(x@smoothed, smoothed)))) {
-      stop("Calibration arguments are a mix of smoothed and binned curves")
-    }
-    
-  } else if (length(args) > 1) {
-    
-    stop("arguments to combine must be Calibration objects")
-    
-  } else if (!is.data.frame(.Data)) {
-    
-    stop("Calibration argument must inherit from data.frame")
-    
-  } else {
-    
-    if (missing(.breaks)) stop("missing breaks in Calibration constructor")
-    smoothed <- is.null(.breaks)
-    
-    var_names <- c("Response", "Predicted", "Observed")
-    found <- var_names %in% names(.Data)
-    if (!all(found)) {
-      stop("missing calibration variables: ", toString(var_names[!found]))
-    }
-    
+Calibration <- function(object, ...) {
+  if (is.null(object$Model)) object$Model <- "Model"
+  varnames <- c("Response", "Predicted", "Observed")
+  found <- varnames %in% names(object)
+  if (!all(found)) {
+    missing <- varnames[!found]
+    stop(plural_suffix("missing calibration variable", missing), ": ",
+         toString(missing))
   }
-  
-  args <- make_unique_levels(args, which = "Model")
-  new("Calibration", do.call(append, args), smoothed = smoothed)
+  rownames(object) <- NULL
+  new("Calibration", object, ...)
 }
 
 
@@ -103,7 +70,7 @@ Calibration <- function(...) {
 
 .calibration.default <- function(x, y, breaks, ...) {
   Calibration(.calibration_default(x, y, breaks = breaks, ...),
-              .breaks = breaks)
+              smoothed = is.null(breaks))
 }
 
 
@@ -111,7 +78,7 @@ Calibration <- function(...) {
   cal_list <- by(x, x$Model, function(data) {
     calibration(data$Observed, data$Predicted, na.rm = FALSE, ...)
   }, simplify = FALSE)
-  do.call(Calibration, cal_list)
+  do.call(c, cal_list)
 }
 
 
@@ -150,9 +117,9 @@ setMethod(".calibration_default", c("factor", "numeric"),
 setMethod(".calibration_default", c("matrix", "matrix"),
   function(observed, predicted, breaks, span, ...) {
     df <- data.frame(Response = rep(colnames(predicted),
-                                    each = nrow(predicted)))
+                                    each = nrow(predicted)),
+                     Predicted = as.numeric(predicted))
     if (is.null(breaks)) {
-      df$Predicted <- c(predicted)
       loessfit_list <- lapply(1:ncol(predicted), function(i) {
         y <- observed[, i]
         x <- predicted[, i]
@@ -165,7 +132,7 @@ setMethod(".calibration_default", c("matrix", "matrix"),
                            Upper = Mean + SE)
       df
     } else {
-      df$Predicted <- midpoints(c(predicted), breaks)
+      df$Predicted <- midpoints(df$Predicted, breaks)
       df$Observed <- c(observed)
       aggregate(. ~ Response + Predicted, df, function(x) {
         Mean <- mean(x)
@@ -186,11 +153,11 @@ setMethod(".calibration_default", c("numeric", "numeric"),
 
 setMethod(".calibration_default", c("Surv", "SurvProbs"),
   function(observed, predicted, breaks, ...) {
-    times <- time(predicted)
+    times <- predicted@times
     df <- data.frame(Response = rep(colnames(predicted),
-                                    each = nrow(predicted)))
+                                    each = nrow(predicted)),
+                     Predicted = as.numeric(predicted))
     if (is.null(breaks)) {
-      df$Predicted <- c(predicted)
       Mean <- c(sapply(1:ncol(predicted), function(i) {
         x <- predicted[, i]
         harefit <- polspline::hare(observed[, "time"], observed[, "status"], x)
@@ -199,7 +166,7 @@ setMethod(".calibration_default", c("Surv", "SurvProbs"),
       df$Observed <- cbind(Mean = Mean, SE = NA, Lower = NA, Upper = NA)
       df
     } else {
-      df$Predicted <- midpoints(c(predicted), breaks)
+      df$Predicted <- midpoints(df$Predicted, breaks)
       df$Observed <- rep(observed, times = length(times))
       df$Time <- rep(times, each = nrow(predicted))
       by_results <- by(df, df[c("Predicted", "Response")], function(data) {
@@ -228,19 +195,19 @@ setMethod(".calibration_default", c("Surv", "numeric"),
       match.arg(dist, c("empirical", names(survreg.distributions)))
     }
     nparams <- if (dist %in% c("exponential", "rayleigh")) 1 else 2
-    
+
     f_survfit <- function(observed, weights = NULL) {
       km <- survfit(observed ~ 1, weights = weights, se.fit = FALSE)
       est <- survival:::survmean(km, rmean = max_time)
       list(Mean = est$matrix[["*rmean"]], SE = est$matrix[["*se(rmean)"]])
     }
-    
+
     f_survreg <- function(observed, dist, weights = NULL) {
       regfit <- survreg(observed ~ 1, weights = weights, dist = dist)
       est <- predict(regfit, data.frame(row.names = 1), se.fit = TRUE)
       list(Mean = est$fit[[1]], SE = est$se.fit[[1]])
     }
-    
+
     if (is.null(breaks)) {
       df <- data.frame(
         Response = "Mean",
@@ -297,7 +264,7 @@ midpoints <- function(x, breaks) {
     num_breaks <- max(as.integer(breaks), 1) + 1
     seq(break_range[1], break_range[2], length = num_breaks)
   } else {
-    sort(breaks) 
+    sort(breaks)
   }
   mids <- breaks[-length(breaks)] + diff(breaks) / 2
   mids[.bincode(x, breaks, include.lowest = TRUE)]

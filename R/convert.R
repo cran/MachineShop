@@ -12,6 +12,11 @@ setMethod("convert_prob", c("ANY", "numeric"),
 )
 
 
+setMethod("convert_prob", c("BinomialVariate", "ANY"),
+  function(object, x, ...) unname(drop(x))
+)
+
+
 setMethod("convert_prob", c("factor", "array"),
   function(object, x, ...) {
     convert_prob(object, adrop(x, length(dim(x))))
@@ -79,6 +84,16 @@ setMethod("convert_response", c("ANY", "ANY"),
 )
 
 
+setMethod("convert_response", c("DiscreteVariate", "numeric"),
+  function(object, x, ...) {
+    x <- round(x)
+    if (object@min > -Inf) x <- pmax(x, object@min)
+    if (object@max < Inf) x <- pmin(x, object@max)
+    new(class(object), x, min = object@min, max = object@max)
+  }
+)
+
+
 setMethod("convert_response", c("factor", "factor"),
   function(object, x, ...) x
 )
@@ -121,6 +136,6 @@ setMethod("convert_response", c("Surv", "SurvProbs"),
   function(object, x, cutoff, ...) {
     events <- x <= cutoff
     mode(events) <- "integer"
-    SurvEvents(events, time(x))
+    SurvEvents(events, x@times)
   }
 )

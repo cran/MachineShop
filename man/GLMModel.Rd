@@ -5,15 +5,26 @@
 \alias{GLMStepAICModel}
 \title{Generalized Linear Model}
 \usage{
-GLMModel(family = NULL, ...)
+GLMModel(family = NULL, quasi = FALSE, ...)
 
-GLMStepAICModel(family = NULL, ..., direction = c("both", "backward",
-  "forward"), scope = NULL, k = 2, trace = FALSE, steps = 1000)
+GLMStepAICModel(
+  family = NULL,
+  quasi = FALSE,
+  ...,
+  direction = c("both", "backward", "forward"),
+  scope = NULL,
+  k = 2,
+  trace = FALSE,
+  steps = 1000
+)
 }
 \arguments{
 \item{family}{optional error distribution and link function to be used in the
 model.  Set automatically according to the class type of the response
 variable.}
+
+\item{quasi}{logical indicator for over-dispersion of binomial and Poisson
+families; i.e., dispersion parameters not fixed at one.}
 
 \item{...}{arguments passed to \code{\link[stats]{glm.control}}.}
 
@@ -48,6 +59,13 @@ the linear predictor and a description of the error distribution.
 
 Default values for the \code{NULL} arguments and further model details can be
 found in the source link below.
+
+In calls to \code{\link{varimp}} for \code{GLMModel} and
+\code{GLMStepAICModel}, numeric argument \code{base} may be specified for the
+(negative) logarithmic transformation of p-values [defaul: \code{exp(1)}].
+Transformed p-values are automatically scaled in the calculation of variable
+importance to range from 0 to 100.  To obtain unscaled importance values, set
+\code{scale = FALSE}.
 }
 \examples{
 fit(sale_amount ~ ., data = ICHomes, model = GLMModel)
@@ -55,6 +73,5 @@ fit(sale_amount ~ ., data = ICHomes, model = GLMModel)
 }
 \seealso{
 \code{\link[stats]{glm}}, \code{\link[stats]{glm.control}},
-\code{\link[MASS]{stepAIC}}, \code{\link{fit}}, \code{\link{resample}},
-\code{\link{tune}}
+\code{\link[MASS]{stepAIC}}, \code{\link{fit}}, \code{\link{resample}}
 }

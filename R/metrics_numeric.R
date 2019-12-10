@@ -1,5 +1,5 @@
 #' @rdname metrics
-#' 
+#'
 gini <- function(observed, predicted = NULL, ...) {
   call_metric_method("gini", environment())
 }
@@ -20,7 +20,7 @@ setMetric_numeric("gini",
 
 
 #' @rdname metrics
-#' 
+#'
 mae <- function(observed, predicted = NULL, ...) {
   call_metric_method("mae", environment())
 }
@@ -36,7 +36,7 @@ setMetric_numeric("mae",
 
 
 #' @rdname metrics
-#' 
+#'
 mse <- function(observed, predicted = NULL, ...) {
   call_metric_method("mse", environment())
 }
@@ -52,7 +52,7 @@ setMetric_numeric("mse",
 
 
 #' @rdname metrics
-#' 
+#'
 msle <- function(observed, predicted = NULL, ...) {
   call_metric_method("msle", environment())
 }
@@ -68,7 +68,7 @@ setMetric_numeric("msle",
 
 
 #' @rdname metrics
-#' 
+#'
 r2 <- function(observed, predicted = NULL, dist = NULL, ...) {
   call_metric_method("r2", environment())
 }
@@ -77,6 +77,9 @@ MLMetric(r2) <- list("r2", "Coefficient of Determination", TRUE)
 
 
 setMetricGeneric("r2")
+
+
+setMetricMethod_BinomialMatrix_numeric("r2")
 
 
 setMetricMethod_matrix_matrix("r2")
@@ -113,7 +116,7 @@ setMetricMethod("r2", c("Surv", "numeric"),
 
 
 #' @rdname metrics
-#' 
+#'
 rmse <- function(observed, predicted = NULL, ...) {
   call_metric_method("rmse", environment())
 }
@@ -129,7 +132,7 @@ setMetric_numeric("rmse",
 
 
 #' @rdname metrics
-#' 
+#'
 rmsle <- function(observed, predicted = NULL, ...) {
   call_metric_method("rmsle", environment())
 }

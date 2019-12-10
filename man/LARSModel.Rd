@@ -4,9 +4,14 @@
 \alias{LARSModel}
 \title{Least Angle Regression, Lasso and Infinitesimal Forward Stagewise Models}
 \usage{
-LARSModel(type = c("lasso", "lar", "forward.stagewise", "stepwise"),
-  trace = FALSE, normalize = TRUE, intercept = TRUE, step = NULL,
-  use.Gram = TRUE)
+LARSModel(
+  type = c("lasso", "lar", "forward.stagewise", "stepwise"),
+  trace = FALSE,
+  normalize = TRUE,
+  intercept = TRUE,
+  step = NULL,
+  use.Gram = TRUE
+)
 }
 \arguments{
 \item{type}{model type.}
@@ -49,6 +54,5 @@ fit(sale_amount ~ ., data = ICHomes, model = LARSModel)
 
 }
 \seealso{
-\code{\link[lars]{lars}}, \code{\link{fit}}, \code{\link{resample}},
-\code{\link{tune}}
+\code{\link[lars]{lars}}, \code{\link{fit}}, \code{\link{resample}}
 }

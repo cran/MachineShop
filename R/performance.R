@@ -1,10 +1,10 @@
 #' Model Performance Metrics
-#' 
+#'
 #' Compute measures of model performance.
-#' 
+#'
 #' @name performance
 #' @rdname performance
-#' 
+#'
 #' @param x \link[=response]{observed responses}; or \link{confusion} or
 #'   \link{resample} result containing observed and predicted responses.
 #' @param y \link[=predict]{predicted responses} if not contained in \code{x}.
@@ -16,35 +16,44 @@
 #' @param na.rm logical indicating whether to remove observed or predicted
 #'   responses that are \code{NA} when calculating metrics.
 #' @param ... arguments passed from the \code{Resamples} method to the response
-#'   type-specific methods or from the method for \code{Confusion} to
+#'   type-specific methods or from the method for \code{ConfusionList} to
 #'   \code{ConfusionMatrix}.
-#' 
+#'
 #' @seealso \code{\link{plot}}, \code{\link{summary}}
-#' 
+#'
 #' @examples
 #' res <- resample(Species ~ ., data = iris, model = GBMModel)
 #' (perf <- performance(res))
 #' summary(perf)
 #' plot(perf)
-#' 
+#'
 #' ## Survival response example
 #' library(survival)
 #' library(MASS)
-#' 
+#'
 #' fo <- Surv(time, status != 2) ~ sex + age + year + thickness + ulcer
 #' gbm_fit <- fit(fo, data = Melanoma, model = GBMModel)
-#' 
+#'
 #' obs <- response(gbm_fit, newdata = Melanoma)
 #' pred <- predict(gbm_fit, newdata = Melanoma, type = "prob")
 #' performance(obs, pred)
-#' 
+#'
 performance <- function(x, ...) {
   UseMethod("performance")
 }
 
 
 #' @rdname performance
-#' 
+#'
+performance.BinomialVariate <-
+  function(x, y, metrics = MachineShop::settings("metrics.numeric"),
+           na.rm = TRUE, ...) {
+  .performance(x, y, metrics, na.rm)
+}
+
+
+#' @rdname performance
+#'
 performance.factor <- function(x, y, metrics =
                                  MachineShop::settings("metrics.factor"),
                                cutoff = MachineShop::settings("cutoff"),
@@ -54,7 +63,7 @@ performance.factor <- function(x, y, metrics =
 
 
 #' @rdname performance
-#' 
+#'
 performance.matrix <- function(x, y, metrics =
                                  MachineShop::settings("metrics.matrix"),
                                na.rm = TRUE, ...) {
@@ -63,7 +72,7 @@ performance.matrix <- function(x, y, metrics =
 
 
 #' @rdname performance
-#' 
+#'
 performance.numeric <- function(x, y, metrics =
                                   MachineShop::settings("metrics.numeric"),
                                 na.rm = TRUE, ...) {
@@ -72,7 +81,7 @@ performance.numeric <- function(x, y, metrics =
 
 
 #' @rdname performance
-#' 
+#'
 performance.Surv <- function(x, y, metrics =
                                MachineShop::settings("metrics.Surv"),
                              cutoff = MachineShop::settings("cutoff"),
@@ -92,14 +101,14 @@ performance.Surv <- function(x, y, metrics =
 
 
 #' @rdname performance
-#' 
-performance.Confusion <- function(x, ...) {
-  structure(lapply(x, performance, ...), class = "listof")
+#'
+performance.ConfusionList <- function(x, ...) {
+  ListOf(lapply(x, performance, ...))
 }
 
 
 #' @rdname performance
-#' 
+#'
 performance.ConfusionMatrix <-
   function(x, metrics = MachineShop::settings("metrics.ConfusionMatrix"), ...) {
   list2function(metrics)(x)
@@ -107,13 +116,13 @@ performance.ConfusionMatrix <-
 
 
 #' @rdname performance
-#' 
+#'
 performance.Resamples <- function(x, ...) {
   perf_list <- by(x, x$Model, function(resamples) {
-    performance(x@control, resamples, ...)
+    Performance(performance(x@control, resamples, ...))
   }, simplify = FALSE)
-  
-  do.call(Performance, perf_list)
+
+  do.call(c, perf_list)
 }
 
 
@@ -129,32 +138,56 @@ performance.MLControl <- function(x, resamples, ...) {
 performance.MLBootOptimismControl <- function(x, resamples, ...) {
   vars <- c("Observed", "Predicted", "Boot.Observed", "Boot.Predicted",
             "Train.Predicted")
-  
+
   test_perf_list <- list()
   boot_perf_list <- list()
   resamples_split <- split(resamples[vars], resamples$Resample)
   for (name in names(resamples_split)) {
     resample <- resamples_split[[name]]
-    test_perf_list[[name]] <- performance(resample[[1]], resample[[2]], ...)
-    boot_perf_list[[name]] <- performance(resample[[3]], resample[[4]], ...)
+    test_perf_list[[name]] <- performance(resample$Observed,
+                                          resample$Predicted, ...)
+    boot_perf_list[[name]] <- performance(resample$Boot.Observed,
+                                          resample$Boot.Predicted, ...)
   }
   test_perf <- do.call(rbind, test_perf_list)
   boot_perf <- do.call(rbind, boot_perf_list)
-  train_perf <- performance(resample[[1]], resample[[5]], ...)
-  
+  train_perf <- performance(resample$Observed, resample$Train.Predicted, ...)
+
   pessimism <- test_perf - boot_perf
   sweep(pessimism, 2, train_perf, "+")
 }
 
 
+performance.MLCVOptimismControl <- function(x, resamples, ...) {
+  vars <- c("Observed", "Predicted")
+  vars2 <- c("Resample", "Observed", "Train.Predicted",
+             paste0("CV.Predicted.", seq_len(x@folds)))
+
+  resamples_split <- split(resamples[vars], resamples$Resample)
+  test_perf <- lapply(resamples_split, function(resample) {
+    performance(resample$Observed, resample$Predicted, ...)
+  }) %>% do.call(rbind, .)
+
+  f <- function(p, obs, pred) p * performance(obs, pred, ...)
+  resamples_factor <- ceiling(resamples$Resample / x@folds)
+  resamples_split <- split(resamples[vars2], resamples_factor)
+  cv_perf_list <- lapply(resamples_split, function(resample) {
+    p <- prop.table(table(resample$Resample))
+    Reduce("+", Map(f, p, resample["Observed"], resample[-(1:3)]))
+  })
+  cv_perf <- do.call(rbind, rep(cv_perf_list, each = x@folds))
+  train_perf <- performance(resamples_split[[1]]$Observed,
+                            resamples_split[[1]]$Train.Predicted, ...)
+
+  pessimism <- test_perf - cv_perf
+  sweep(pessimism, 2, train_perf, "+")
+}
+
+
 Performance <- function(...) {
-  args <- list(...)
-  
-  perf <- if (length(args) > 1) {
-    abind(args, along = 3)
-  } else {
-    args[[1]]
-  }
-  
-  new("Performance", perf)
+  object <- new("Performance", ...)
+  names <- c("Resample", "Metric")
+  if (length(dim(object)) == 3) names <- c(names, "Model")
+  names(dimnames(object)) <- names
+  object
 }

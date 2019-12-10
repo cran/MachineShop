@@ -3,37 +3,44 @@
 #' Fits a Cox proportional hazards regression model. Time dependent variables,
 #' time dependent strata, multiple events per subject, and other extensions are
 #' incorporated using the counting process formulation of Andersen and Gill.
-#' 
+#'
 #' @rdname CoxModel
-#' 
+#'
 #' @param ties character string specifying the method for tie handling.
 #' @param ... arguments passed to \code{\link[survival]{coxph.control}}.
-#' 
+#'
 #' @details
 #' \describe{
 #'   \item{Response Types:}{\code{Surv}}
 #' }
-#' 
+#'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
 #'
-#' @return \code{MLModel} class object.
-#' 
+#' In calls to \code{\link{varimp}} for \code{CoxModel} and
+#' \code{CoxStepAICModel}, numeric argument \code{base} may be specified for the
+#' (negative) logarithmic transformation of p-values [defaul: \code{exp(1)}].
+#' Transformed p-values are automatically scaled in the calculation of variable
+#' importance to range from 0 to 100.  To obtain unscaled importance values, set
+#' \code{scale = FALSE}.
+#'
+#' #' @return \code{MLModel} class object.
+#'
 #' @seealso \code{\link[survival]{coxph}},
 #' \code{\link[survival]{coxph.control}}, \code{\link[MASS]{stepAIC}},
-#' \code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
-#' 
+#' \code{\link{fit}}, \code{\link{resample}}
+#'
 #' @examples
 #' library(survival)
 #' library(MASS)
-#' 
+#'
 #' fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
 #'     data = Melanoma, model = CoxModel)
-#' 
+#'
 CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
-  
+
   ties <- match.arg(ties)
-  
+
   args <- params(environment())
   is_main <- names(args) %in% c("ties", "eps", "iter.max")
   params <- args[is_main]
@@ -57,16 +64,18 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
       new_lp <- predict(object, newdata = newdata, type = "lp")
       predict(y, lp, times, new_lp, ...)
     },
-    varimp = function(object, ...) varimp_wald(object)
+    varimp = function(object, base = exp(1), ...) {
+      varimp_pval(object, base = base)
+    }
   )
-  
+
 }
 
 MLModelFunction(CoxModel) <- NULL
 
 
 #' @rdname CoxModel
-#' 
+#'
 #' @param direction mode of stepwise search, can be one of \code{"both"}
 #'   (default), \code{"backward"}, or \code{"forward"}.
 #' @param scope defines the range of models examined in the stepwise search.
@@ -83,15 +92,15 @@ MLModelFunction(CoxModel) <- NULL
 CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"), ...,
                             direction = c("both", "backward", "forward"),
                             scope = NULL, k = 2, trace = FALSE, steps = 1000) {
-  
+
   direction <- match.arg(direction)
-  
+
   args <- params(environment())
   is_step <- names(args) %in% c("direction", "scope", "k", "trace", "steps")
   params <- args[is_step]
 
   stepmodel <- CoxModel(ties = ties, ...)
-  
+
   MLModel(
     name = "CoxStepAICModel",
     label = "Cox Regression (Stepwise)",
@@ -104,14 +113,16 @@ CoxStepAICModel <- function(ties = c("efron", "breslow", "exact"), ...,
       environment(formula) <- environment()
       stepargs <- stepAIC_args(formula, direction, scope)
       data <- as.data.frame(data)
-      survival::coxph(stepargs$formula, data = data, weights = weights, ...) %>%
-        MASS::stepAIC(direction = direction, scope = stepargs$scope, k = k,
-                      trace = trace, steps = steps)
+      MASS::stepAIC(
+        survival::coxph(stepargs$formula, data = data, weights = weights, ...),
+        direction = direction, scope = stepargs$scope, k = k, trace = trace,
+        steps = steps
+      )
     },
-    predict = fitbit(stepmodel, "predict"),
-    varimp = fitbit(stepmodel, "varimp")
+    predict = stepmodel@predict,
+    varimp = stepmodel@varimp
   )
-  
+
 }
 
 MLModelFunction(CoxStepAICModel) <- NULL

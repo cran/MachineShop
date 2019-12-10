@@ -27,10 +27,11 @@ fit(x, ...)
 \arguments{
 \item{x}{defines a relationship between model predictor and response
 variables.  May be a \code{\link{formula}}, design \code{\link{matrix}} of
-predictors, \code{\link{ModelFrame}}, untrained
-\code{\link[recipes]{recipe}}, or \code{\link{TunedRecipe}} object.
-Alternatively, a \link[=models]{model} function or call may be given first
-followed by objects defining the predictor and response relationship.}
+predictors, \code{\link{ModelFrame}}, \code{\link{SelectedModelFrame}},
+untrained \code{\link[recipes]{recipe}}, \code{\link{SelectedRecipe}}, or
+\code{\link{TunedRecipe}} object.  Alternatively, a \link[=models]{model}
+function or call may be given first followed by objects defining the
+predictor and response relationship.}
 
 \item{...}{arguments passed to other methods.}
 
@@ -52,8 +53,8 @@ User-specified case weights may be specified for \code{ModelFrames} upon
 creation with the \code{\link[=ModelFrame]{weights}} argument in its
 constructor.
 
-Variables in a \code{recipe} may be used as case weights by defining a
-"case_weight" \code{\link[recipes:roles]{role}} for them.
+Variables in \code{recipe} specifications may be designated as case weights
+with the \code{\link{role_case}} function.
 }
 \examples{
 ## Survival response example
@@ -66,5 +67,6 @@ varimp(gbm_fit)
 
 }
 \seealso{
-\code{\link{response}}, \code{\link{predict}}, \code{\link{varimp}}
+\code{\link{as.MLModel}}, \code{\link{response}},
+\code{\link{predict}}, \code{\link{varimp}}
 }

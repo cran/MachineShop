@@ -1,9 +1,9 @@
 #' Model Prediction
-#' 
+#'
 #' Predict outcomes with a fitted model.
-#' 
+#'
 #' @name predict
-#' 
+#'
 #' @param object model \link{fit} result.
 #' @param newdata optional \link[=data.frame]{data frame} with which to obtain
 #'   predictions.  If not specified, the training data will be used by default.
@@ -24,30 +24,29 @@
 #'   Choices are \code{"breslow"}, \code{"efron"} (default), or
 #'   \code{"fleming-harrington"}.
 #' @param ... arguments passed to model-specific prediction functions.
-#' 
+#'
 #' @seealso \code{\link{confusion}}, \code{\link{performance}},
 #' \code{\link{metrics}}
-#' 
+#'
 #' @examples
 #' ## Survival response example
 #' library(survival)
 #' library(MASS)
-#' 
+#'
 #' gbm_fit <- fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
 #'                data = Melanoma, model = GBMModel)
 #' predict(gbm_fit, newdata = Melanoma, times = 365 * c(2, 5, 10), type = "prob")
-#' 
+#'
 predict.MLModelFit <- function(object, newdata = NULL, times = NULL,
                                type = c("response", "prob"),
                                cutoff = MachineShop::settings("cutoff"),
                                dist = NULL, method = NULL, ...) {
-  newdata <- preprocess(fitbit(object, "x"), newdata)
-  requireModelNamespaces(fitbit(object, "packages"))
+  model <- as.MLModel(object)
+  newdata <- preprocess(model@x, newdata)
+  requireModelNamespaces(model@packages)
   obs <- response(object)
-  pred <- fitbit(object, "predict")(unMLModelFit(object), newdata,
-                                    fitbits = field(object, "fitbits"),
-                                    times = times, dist = dist, method = method,
-                                    ...)
+  pred <- model@predict(unMLModelFit(object), newdata, model = model,
+                        times = times, dist = dist, method = method, ...)
   pred <- convert_prob(obs, pred, times = times)
   if (match.arg(type) == "response") {
     pred <- convert_response(obs, pred, cutoff = cutoff)

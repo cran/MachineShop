@@ -5,97 +5,68 @@ importClassesFrom(kernlab, ksvm)
 importClassesFrom(party, RandomForest)
 
 importFrom(abind, abind, adrop)
+importFrom(dials, parameters)
 importFrom(foreach, "%dopar%", foreach, registerDoSEQ)
 importFrom(graphics, plot)
 importFrom(magrittr, "%>%")
 importFrom(polspline, hare, phare)
-importFrom(recipes, bake, fully_trained, prep, recipe)
+importFrom(recipes, add_role, bake, fully_trained, prep, recipe, update_role)
 importFrom(rsample, analysis, assessment, bootstraps, initial_split,
            rsample2caret, testing, vfold_cv)
 importFrom(stats, aggregate, approx, coef, complete.cases, contr.helmert, cor,
-           delete.response, formula, get_all_vars, loess, lm, median,
+           delete.response, drop1, formula, get_all_vars, loess, lm, median,
            model.frame, model.matrix, model.matrix.default, model.response,
            model.weights, na.fail, na.omit, na.pass, p.adjust, pchisq, predict,
-           quantile, reformulate, reshape, sd, t.test, terms, time, update,
-           vcov)
+           quantile, reformulate, reshape, sd, t.test, terms, update, vcov)
 importFrom(survival, concordance, is.Surv, Surv, survfit, survreg,
            survreg.distributions)
+importFrom(tibble, as_tibble, tibble)
 importFrom(utils, combn, head, methods, relist, stack, str, tail)
 
 
 export(.,
        calibration,
-       Calibration,
        confusion,
-       Confusion,
        ConfusionMatrix,
-       Curves,
        dependence,
-       expand.model,
-       expand_model,
-       expand_params,
-       expand_steps,
        fit,
-       Grid,
        lift,
-       Lift,
        metricinfo,
-       ModelFrame,
        modelinfo,
+       offset,
        performance,
        performance_curve,
        resample,
-       Resamples,
        response,
+       role_binom,
+       role_case,
+       role_pred,
+       role_surv,
        settings,
-       SurvEvents,
-       SurvProbs,
-       tune,
-       TunedRecipe,
        varimp)
 
-export(accuracy,
-       auc,
-       brier,
-       cindex,
-       cross_entropy,
-       f_score,
-       fnr,
-       fpr,
-       gini,
-       kappa2,
-       mae,
-       mse,
-       msle,
-       npv,
-       ppv,
-       pr_auc,
-       precision,
-       r2,
-       recall,
-       rmse,
-       rmsle,
-       roc_auc,
-       roc_index,
-       rpp,
-       sensitivity,
-       specificity,
-       tnr,
-       tpr,
-       weighted_kappa2)
+export(expand_model,
+       expand_params,
+       expand_steps,
+       Grid,
+       ParameterGrid)
 
-export(BootControl,
-       BootOptimismControl,
-       CVControl,
-       OOBControl,
-       SplitControl,
-       TrainControl)
+export(BinomialVariate,
+       DiscreteVariate,
+       NegBinomialVariate,
+       PoissonVariate,
+       SurvEvents,
+       SurvProbs)
 
-export(MLControl,
-       MLMetric,
-       "MLMetric<-",
+export(ModelFrame,
+       SelectedFormula,
+       SelectedMatrix,
+       SelectedModelFrame,
+       SelectedRecipe,
+       TunedRecipe)
+
+export(as.MLModel,
        MLModel,
-       ModelList,
        AdaBagModel,
        AdaBoostModel,
        BARTModel,
@@ -148,8 +119,72 @@ export(MLControl,
        XGBLinearModel,
        XGBTreeModel)
 
+export(MLControl,
+       BootControl,
+       BootOptimismControl,
+       CVControl,
+       CVOptimismControl,
+       OOBControl,
+       SplitControl,
+       TrainControl)
+
+export(MLMetric,
+       "MLMetric<-",
+       accuracy,
+       auc,
+       brier,
+       cindex,
+       cross_entropy,
+       f_score,
+       fnr,
+       fpr,
+       gini,
+       kappa2,
+       mae,
+       mse,
+       msle,
+       npv,
+       ppv,
+       pr_auc,
+       precision,
+       r2,
+       recall,
+       rmse,
+       rmsle,
+       roc_auc,
+       roc_index,
+       rpp,
+       sensitivity,
+       specificity,
+       tnr,
+       tpr,
+       weighted_kappa2)
+
+export(tune)
+
+S3method(as.data.frame, BinomialVariate)
 S3method(as.data.frame, ModelFrame)
-S3method(diff, MLModelTune)
+S3method(as.data.frame, PerformanceDiffTest)
+S3method(as.data.frame, Resamples)
+S3method(as.data.frame, SelectedModelFrame)
+S3method(as.data.frame, SurvMatrix)
+S3method(as.data.frame, TabularArray)
+S3method(as.double, BinomialVariate)
+S3method(as.MLModel, MLModelFit)
+S3method(bake, ModelRecipe)
+S3method(bake, SelectedRecipe)
+S3method(bake, TunedRecipe)
+S3method(c, BinomialVariate)
+S3method(c, Calibration)
+S3method(c, ConfusionList)
+S3method(c, ConfusionMatrix)
+S3method(c, Curves)
+S3method(c, DiscreteVariate)
+S3method(c, Lift)
+S3method(c, ListOf)
+S3method(c, Resamples)
+S3method(c, SurvMatrix)
+S3method(diff, MLModel)
 S3method(diff, Resamples)
 S3method(fit, formula)
 S3method(fit, matrix)
@@ -157,13 +192,15 @@ S3method(fit, MLModel)
 S3method(fit, MLModelFunction)
 S3method(fit, ModelFrame)
 S3method(fit, recipe)
+S3method(format, SurvMatrix)
 S3method(formula, ModelFrame)
 S3method(model.matrix, DesignTerms)
 S3method(model.matrix, FormulaTerms)
 S3method(model.matrix, ModelFrame)
 S3method(ModelFrame, formula)
 S3method(ModelFrame, matrix)
-S3method(performance, Confusion)
+S3method(performance, BinomialVariate)
+S3method(performance, ConfusionList)
 S3method(performance, ConfusionMatrix)
 S3method(performance, factor)
 S3method(performance, matrix)
@@ -173,19 +210,40 @@ S3method(performance, Surv)
 S3method(performance_curve, default)
 S3method(performance_curve, Resamples)
 S3method(plot, Calibration)
-S3method(plot, Confusion)
+S3method(plot, ConfusionList)
 S3method(plot, ConfusionMatrix)
 S3method(plot, Curves)
 S3method(plot, Lift)
-S3method(plot, MLModelTune)
+S3method(plot, MLModel)
 S3method(plot, PartialDependence)
 S3method(plot, Performance)
 S3method(plot, Resamples)
 S3method(plot, VarImp)
 S3method(predict, MLModelFit)
+S3method(prep, ModelRecipe)
+S3method(prep, SelectedRecipe)
+S3method(prep, TunedRecipe)
+S3method(print, BinomialVariate)
+S3method(print, Calibration)
+S3method(print, ConfusionList)
+S3method(print, ConfusionMatrix)
+S3method(print, Curves)
+S3method(print, ListOf)
+S3method(print, MLMetric)
+S3method(print, MLModel)
 S3method(print, MLModelFit)
+S3method(print, MLModelFunction)
+S3method(print, ModelFrame)
+S3method(print, ModelRecipe)
+S3method(print, ParameterGrid)
+S3method(print, Performance)
+S3method(print, RecipeGrid)
 S3method(print, Resamples)
+S3method(print, SelectedModelFrame)
 S3method(print, SurvMatrix)
+S3method(print, TrainBits)
+S3method(print, TunedRecipe)
+S3method(print, VarImp)
 S3method(resample, formula)
 S3method(resample, matrix)
 S3method(resample, MLModel)
@@ -195,21 +253,13 @@ S3method(resample, recipe)
 S3method(response, MLModelFit)
 S3method(response, ModelFrame)
 S3method(response, recipe)
-S3method(str, SurvMatrix)
-S3method(summary, Confusion)
+S3method(summary, ConfusionList)
 S3method(summary, ConfusionMatrix)
 S3method(summary, Curves)
+S3method(summary, MLModel)
 S3method(summary, MLModelFit)
-S3method(summary, MLModelTune)
 S3method(summary, Performance)
 S3method(summary, Resamples)
 S3method(t.test, PerformanceDiff)
 S3method(terms, ModelFrame)
-S3method(tune, formula)
-S3method(tune, matrix)
-S3method(tune, MLModel)
-S3method(tune, MLModelFunction)
-S3method(tune, MLModelList)
-S3method(tune, ModelFrame)
-S3method(tune, recipe)
-S3method("[", SurvMatrix)
+S3method("[", BinomialVariate)

@@ -4,8 +4,14 @@
 \alias{GBMModel}
 \title{Generalized Boosted Regression Model}
 \usage{
-GBMModel(distribution = NULL, n.trees = 100, interaction.depth = 1,
-  n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5)
+GBMModel(
+  distribution = NULL,
+  n.trees = 100,
+  interaction.depth = 1,
+  n.minobsinnode = 10,
+  shrinkage = 0.1,
+  bag.fraction = 0.5
+)
 }
 \arguments{
 \item{distribution}{optional character string specifying the name of the
@@ -49,6 +55,5 @@ fit(Species ~ ., data = iris, model = GBMModel)
 
 }
 \seealso{
-\code{\link[gbm]{gbm}}, \code{\link{fit}}, \code{\link{resample}},
-\code{\link{tune}}
+\code{\link[gbm]{gbm}}, \code{\link{fit}}, \code{\link{resample}}
 }

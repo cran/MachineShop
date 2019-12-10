@@ -1,44 +1,85 @@
+#' Model Lift
+#'
+#' Calculate lift estimates from observed and predicted responses.
+#'
+#' @name lift
+#' @rdname lift
+#'
+#' @param x \link[=response]{observed responses} or \link{resample} result
+#'   containing observed and predicted responses.
+#' @param y \link[=predict]{predicted responses} if not contained in \code{x}.
+#' @param na.rm logical indicating whether to remove observed or predicted
+#'   responses that are \code{NA} when calculating metrics.
+#' @param ... arguments passed to other methods.
+#'
+#' @return \code{Lift} class object that inherits from \code{Curves}.
+#'
+#' @seealso \code{\link{c}}, \code{\link{plot}}, \code{\link{summary}}
+#'
+#' @examples
+#' library(MASS)
+#'
+#' res <- resample(type ~ ., data = Pima.tr, model = GBMModel)
+#' lf <- lift(res)
+#' plot(lf)
+#'
+lift <- function(x, y = NULL, na.rm = TRUE, ...) {
+  as(performance_curve(x, y = y, metrics = c(tpr, rpp), na.rm = na.rm), "Lift")
+}
+
+
+Lift <- function(...) {
+  object <- as(Curves(...), "Lift")
+  if (!all(mapply(identical, object@metrics, c(tpr, rpp)))) {
+    stop("incorrect Lift metrics")
+  }
+  object
+}
+
+
 #' Performance Curves
-#' 
+#'
 #' Curves for the analysis of tradeoffs between metrics for assessing
 #' performance in classifying binary outcomes over the range of possible
 #' cutoff probabilities.  Available curves include receiver operating
 #' characteristic (ROC) and precision recall.
-#' 
+#'
 #' @name performance_curve
-#' 
+#' @aliases curves
+#'
 #' @param x \link[=response]{observed responses} or \link{resample} result
 #'   containing observed and predicted responses.
 #' @param y \link[=predict]{predicted responses} if not contained in \code{x}.
 #' @param metrics list of two performance \link{metrics} for the analysis
-#'   [default: ROC metrics].  Precision recall curves can be obtained with 
+#'   [default: ROC metrics].  Precision recall curves can be obtained with
 #'   \code{c(precision, recall)}.
 #' @param na.rm logical indicating whether to remove observed or predicted
 #'   responses that are \code{NA} when calculating metrics.
-#' @param ... named or unnamed \code{performance_curve} output to combine
-#'   together with the \code{Curves} constructor.
-#' 
+#' @param ... arguments passed to other methods.
+#'
 #' @return \code{Curves} class object that inherits from \code{data.frame}.
-#'  
-#' @seealso \code{\link{auc}}, \code{\link{plot}}, \code{\link{summary}}
-#' 
+#'
+#' @seealso \code{\link{auc}}, \code{\link{c}}, \code{\link{plot}},
+#' \code{\link{summary}}
+#'
+#'
 #' @examples
 #' library(MASS)
-#' 
+#'
 #' res <- resample(type ~ ., data = Pima.tr, model = GBMModel)
-#' 
+#'
 #' ## ROC curve
 #' roc <- performance_curve(res)
 #' plot(roc)
 #' auc(roc)
-#' 
+#'
 performance_curve <- function(x, ...) {
   UseMethod("performance_curve")
 }
 
 
 #' @rdname performance_curve
-#' 
+#'
 performance_curve.default <- function(x, y, metrics = c(MachineShop::tpr,
                                                         MachineShop::fpr),
                                       na.rm = TRUE, ...) {
@@ -52,14 +93,14 @@ performance_curve.default <- function(x, y, metrics = c(MachineShop::tpr,
 
 
 #' @rdname performance_curve
-#' 
+#'
 performance_curve.Resamples <- function(x, metrics = c(MachineShop::tpr,
                                                        MachineShop::fpr),
                                         na.rm = TRUE, ...) {
   metrics <- .get_curve_metrics(metrics)
 
   if (na.rm) x <- na.omit(x)
-  
+
   curves <- NULL
   for (model in unique(x$Model)) {
     for (resample in unique(x$Resample)) {
@@ -70,13 +111,13 @@ performance_curve.Resamples <- function(x, metrics = c(MachineShop::tpr,
       } else {
         structure(list(curve), names = model)
       }
-      curve <- do.call(Curves, curve)
+      curve <- do.call(c, curve)
       curve$Resample <- resample
       curves <- rbind(curves, curve)
     }
   }
 
-  new("Curves", curves, metrics = curve@metrics)
+  Curves(curves, metrics = curve@metrics)
 }
 
 
@@ -89,56 +130,28 @@ performance_curve.Resamples <- function(x, metrics = c(MachineShop::tpr,
 }
 
 
-#' @rdname performance_curve
-#' 
-Curves <- function(...) {
-  .Curves(...)
-}
-
-
-.Curves <- function(..., .metrics = list()) {
-  args <- list(...)
-  
-  if (length(args) == 0) stop("no performance_curve output given")
-  
-  .Data <- args[[1]]
-  if (all(mapply(is, args, "Curves"))) {
-    
-    metrics <- .Data@metrics
-    if (!all(sapply(args, function(x) identical(x@metrics, metrics)))) {
-      stop("Curves arguments have different metrics")
-    }
-    
-  } else if (length(args) > 1) {
-    
-    stop("arguments to combine must be Curves objects")
-    
-  } else if (!is.data.frame(.Data)) {
-    
-    stop("Curves argument must inherit from data.frame")
-    
-  } else {
-    
-    if (!all(mapply(is, .metrics[1:2], "MLMetric"))) {
-      stop("missing performance metrics in Curves constructor")
-    }
-    metrics <- c(y = .metrics[[1]], x = .metrics[[2]])
-    
-    var_names <- c("Cutoff", "x", "y")
-    found <- var_names %in% names(.Data)
-    if (!all(found)) {
-      stop("missing performance curve variables: ", toString(var_names[!found]))
-    }
-    
-    decreasing <- !xor(metrics$x@maximize, metrics$y@maximize)
-    sort_order <- order(.Data$x, .Data$y, decreasing = c(FALSE, decreasing),
-                        method = "radix")
-    args[[1]] <- .Data[sort_order, , drop = FALSE]
-    
+Curves <- function(object, metrics) {
+  if (is.null(object$Model)) object$Model <- "Model"
+  varnames <- c("Cutoff", "x", "y")
+  found <- varnames %in% names(object)
+  if (!all(found)) {
+    missing <- varnames[!found]
+    stop(plural_suffix("missing performance curve variable", missing), ": ",
+         toString(missing))
   }
-  
-  args <- make_unique_levels(args, which = "Model")
-  new("Curves", do.call(append, args), metrics = metrics)
+
+  if (!all(mapply(is, metrics[1:2], "MLMetric"))) {
+    stop("missing performance metrics in Curves constructor")
+  }
+  metrics <- c(y = metrics[[1]], x = metrics[[2]])
+
+  decreasing <- !xor(metrics$x@maximize, metrics$y@maximize)
+  sort_order <- order(object$x, object$y, decreasing = c(FALSE, decreasing),
+                      method = "radix")
+  object <- object[sort_order, , drop = FALSE]
+
+  rownames(object) <- NULL
+  new("Curves", object, metrics = metrics)
 }
 
 
@@ -147,13 +160,13 @@ Curves <- function(...) {
 }
 
 
-.curve.default <- function(x, y, metrics, stat, ...) {
+.curve.default <- function(x, y, metrics, ...) {
   .curve_default(x, y, metrics = metrics)
 }
 
 
-.curve.Surv <- function(x, y, metrics, stat, ...) {
-  do.call(Curves, .curve_default(x, y, metrics = metrics))
+.curve.Surv <- function(x, y, metrics, ...) {
+  do.call(c, .curve_default(x, y, metrics = metrics))
 }
 
 
@@ -178,25 +191,25 @@ setMethod(".curve_default", c("factor", "numeric"),
       x[i] <- metrics[[2]](conf)
       y[i] <- metrics[[1]](conf)
     }
-    Curves(data.frame(Cutoff = cutoffs, x = x, y = y), .metrics = metrics)
+    Curves(data.frame(Cutoff = cutoffs, x = x, y = y), metrics = metrics)
   }
 )
 
 
 setMethod(".curve_default", c("Surv", "SurvProbs"),
   function(observed, predicted, metrics, ...) {
-    times <- time(predicted)
+    times <- predicted@times
     surv <- predict(survfit(observed ~ 1, se.fit = FALSE), times)
 
     conf <- ConfusionMatrix(table(Predicted = 0:1, Observed = 0:1))
-    
+
     structure(
       lapply(1:length(times), function(i) {
-        
+
         time <- times[i]
         surv_all <- surv[i]
         pred <- predicted[, i, drop = TRUE]
-        
+
         cutoffs <- c(-Inf, unique(pred))
         x <- y <- numeric(length(cutoffs))
         for (j in 1:length(cutoffs)) {
@@ -213,18 +226,18 @@ setMethod(".curve_default", c("Surv", "SurvProbs"),
               surv_positives <- surv_positives * (1 - d / n)
             }
           }
-          
+
           conf[1, 1] <- surv_all - surv_positives * p
           conf[2, 1] <- surv_positives * p
           conf[1, 2] <- 1 - p - conf[1, 1]
           conf[2, 2] <- p - surv_positives * p
-          
+
           x[j] <- metrics[[2]](conf)
           y[j] <- metrics[[1]](conf)
         }
-        
-        Curves(data.frame(Cutoff = cutoffs, x = x, y = y), .metrics = metrics)
-        
+
+        Curves(data.frame(Cutoff = cutoffs, x = x, y = y), metrics = metrics)
+
       }),
       class = "listof",
       names = paste0("time", seq_along(times))

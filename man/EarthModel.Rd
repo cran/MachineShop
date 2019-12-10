@@ -4,9 +4,15 @@
 \alias{EarthModel}
 \title{Multivariate Adaptive Regression Splines Model}
 \usage{
-EarthModel(pmethod = c("backward", "none", "exhaustive", "forward",
-  "seqrep", "cv"), trace = 0, degree = 1, nprune = NULL, nfold = 0,
-  ncross = 1, stratify = TRUE)
+EarthModel(
+  pmethod = c("backward", "none", "exhaustive", "forward", "seqrep", "cv"),
+  trace = 0,
+  degree = 1,
+  nprune = NULL,
+  nfold = 0,
+  ncross = 1,
+  stratify = TRUE
+)
 }
 \arguments{
 \item{pmethod}{pruning method.}
@@ -60,5 +66,5 @@ varimp(model_fit, metric = "nsubsets", scale = FALSE)
 }
 \seealso{
 \code{\link[earth]{earth}}, \code{\link{fit}},
-\code{\link{resample}}, \code{\link{tune}}
+\code{\link{resample}}
 }

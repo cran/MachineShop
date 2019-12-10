@@ -6,17 +6,29 @@
 \alias{MachineShop-package}
 \title{MachineShop: Machine Learning Models and Tools}
 \description{
-Meta-package for statistical and machine learning with a unified interface for model fitting, prediction, performance assessment, and presentation of results.  Approaches for model fitting and prediction of numerical, categorical, or censored time-to-event outcomes include traditional regression models, regularization methods, tree-based methods, support vector machines, neural networks, ensembles, data preprocessing, filtering, and model tuning and selection.  Performance metrics are provided for model assessment and can be estimated with independent test sets, split sampling, cross-validation, or bootstrap resampling.  Resample estimation can be executed in parallel for faster processing and nested in cases of model tuning and selection.  Modeling results can be summarized with descriptive statistics; calibration curves; variable importance; partial dependence plots; confusion matrices; and ROC, lift, and other performance curves.
+Meta-package for statistical and machine learning with a unified
+    interface for model fitting, prediction, performance assessment, and
+    presentation of results.  Approaches for model fitting and prediction of
+    numerical, categorical, or censored time-to-event outcomes include
+    traditional regression models, regularization methods, tree-based methods,
+    support vector machines, neural networks, ensembles, data preprocessing,
+    filtering, and model tuning and selection.  Performance metrics are provided
+    for model assessment and can be estimated with independent test sets, split
+    sampling, cross-validation, or bootstrap resampling.  Resample estimation
+    can be executed in parallel for faster processing and nested in cases of
+    model tuning and selection.  Modeling results can be summarized with
+    descriptive statistics; calibration curves; variable importance; partial
+    dependence plots; confusion matrices; and ROC, lift, and other performance
+    curves.
 }
 \details{
-The following set of model training, prediction, performance assessment, and
-tuning functions are available for \pkg{MachineShop} \link{models}.
+The following set of model fitting, prediction, and performance assessment
+functions are available for \pkg{MachineShop} \link{models}.
 
-Training: 
+Training:
 \tabular{ll}{
   \code{\link{fit}} \tab Model Fitting \cr
   \code{\link{resample}} \tab Resample Estimation of Model Performance \cr
-  \code{\link{tune}} \tab Model Tuning and Selection \cr
 }
 
 Response Values:
@@ -43,14 +55,16 @@ Methods for resample estimation include
   \code{\link{BootControl}} \tab Simple Bootstrap \cr
   \code{\link{BootOptimismControl}} \tab Optimism-Corrected Bootstrap \cr
   \code{\link{CVControl}} \tab Repeated K-Fold Cross-Validation \cr
+  \code{\link{CVOptimismControl}} \tab Optimism-Corrected Cross-Validation \cr
   \code{\link{OOBControl}} \tab Out-of-Bootstrap \cr
   \code{\link{SplitControl}} \tab Split Training-Testing \cr
   \code{\link{TrainControl}} \tab Training Resubstitution \cr
-}  
+}
 
 Graphical and tabular summaries of modeling results can be obtained with
 
 \code{\link{plot}} \cr
+\code{\link{print}} \cr
 \code{\link{summary}}
 
 Further information on package features is available with

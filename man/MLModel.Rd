@@ -4,13 +4,19 @@
 \alias{MLModel}
 \title{MLModel Class Constructor}
 \usage{
-MLModel(name = "MLModel", label = name, packages = character(),
-  response_types = character(), predictor_encoding = c(NA,
-  "model.matrix", "terms"), params = list(), grid = function(x, length,
-  random, ...) NULL, fit = function(formula, data, weights, ...)
-  stop("no fit function"), predict = function(object, newdata, times,
-  ...) stop("no predict function"), varimp = function(object, ...) NULL,
-  ...)
+MLModel(
+  name = "MLModel",
+  label = name,
+  packages = character(),
+  response_types = character(),
+  predictor_encoding = c(NA, "model.matrix", "terms"),
+  params = list(),
+  grid = function(x, length, random, ...) NULL,
+  fit = function(formula, data, weights, ...) stop("no fit function"),
+  predict = function(object, newdata, times, ...) stop("no predict function"),
+  varimp = function(object, ...) NULL,
+  ...
+)
 }
 \arguments{
 \item{name}{character name of the object to which the model is assigned.}
@@ -20,13 +26,15 @@ MLModel(name = "MLModel", label = name, packages = character(),
 \item{packages}{character vector of packages required to use the model.}
 
 \item{response_types}{character vector of response variable types to which
-the model can be fit.  Supported types are \code{"binary"},
-\code{"factor"}, \code{"matrix"}, \code{"numeric"}, \code{"ordered"}, and
-\code{"Surv"}.}
+the model can be fit.  Supported types are \code{"binary"}, =
+\code{"BinomialVariate"}, \code{"DiscreteVariate"}, \code{"factor"},
+\code{"matrix"}, \code{"NegBinomialVariate"}, \code{"numeric"},
+\code{"ordered"}, \code{"PoissonVariate"}, and \code{"Surv"}.}
 
 \item{predictor_encoding}{character string indicating whether the model is
 fit with predictor variables encoded as a \code{"\link{model.matrix}"}, a
-data.frame containing the original \code{"terms"}, or unknown (default).}
+data.frame containing the originally specified model \code{"terms"}, or
+unspecified (default).}
 
 \item{params}{list of user-specified model parameters to be passed to the
 \code{fit} function.}
@@ -105,6 +113,5 @@ summary(res)
 
 }
 \seealso{
-\code{\link{models}}, \code{\link{fit}}, \code{\link{resample}},
-\code{\link{tune}}
+\code{\link{models}}, \code{\link{fit}}, \code{\link{resample}}
 }

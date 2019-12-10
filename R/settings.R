@@ -1,20 +1,20 @@
-#' MachineShop Settings 
-#' 
+#' MachineShop Settings
+#'
 #' Allow the user to view or change global settings which affect default
 #' behaviors of functions in the \pkg{MachineShop} package.
-#' 
+#'
 #' @param ... character names of settings to view, \code{name = value} pairs
 #' giving the values of settings to change, a vector of these, \code{"reset"}
 #' to restore all package defaults, or no arguments to view all settings.
 #' Partial matching of setting names is supported.
-#' 
+#'
 #' @return The setting value if only one is specified to view.  Otherwise, a
 #' list of the values of specified settings as they existed prior to any
 #' requested changes.  Such a list can be passed as an argument to
 #' \code{settings} to restore their values.
-#' 
+#'
 #' @section Settings:
-#' 
+#'
 #' \describe{
 #'   \item{\code{\link[=controls]{control}}}{function, function name, or call
 #'     defining a default resampling method [default: \code{"CVControl"}].}
@@ -30,9 +30,11 @@
 #'     events/probabilities.  Choices are \code{"empirical"} (default) for the
 #'     Kaplan-Meier estimator, \code{"exponential"}, or \code{"weibull"}.}
 #'   \item{\code{grid}}{number of parameter-specific values to generate
-#'     automatically for \link[=tune]{tuning} of models that have pre-defined
-#'     grids or a \code{\link{Grid}} function, function name, or call
-#'     [default: 3].}
+#'     automatically for \link[=TunedModel]{tuning} of models that have
+#'     pre-defined grids or a \code{\link{Grid}} function, function name, or
+#'     call [default: 3].}
+#'   \item{\code{max.print}}{number of models or data rows to show with print
+#'     methods or \code{Inf} to show all [default: 10].}
 #'   \item{\code{method.EmpiricalSurv}}{character string specifying the
 #'     empirical method of estimating baseline survival curves for Cox
 #'     proportional hazards-based models.  Choices are \code{"breslow"},
@@ -57,6 +59,11 @@
 #'     which to calculate \link{performance} \link{metrics} for survival
 #'     responses [default: \code{c(`C-Index` = "cindex", Brier = "brier",
 #'     `ROC AUC` = "roc_auc", Accuracy = "accuracy")}].}
+#'   \item{\code{require}}{names of installed packages to load during parallel
+#'     execution of resampling algorithms [default: \code{c("MachineShop",
+#'     "survival", "recipes")}].}
+#'   \item{\code{reset}}{character names of settings to reset to their default
+#'     values.}
 #'   \item{\code{stat.Curves}}{function or character string naming a function
 #'     to compute one \link{summary} statistic at each cutoff value of resampled
 #'     metrics in performance curves, or \code{NULL} for resample-specific
@@ -64,7 +71,7 @@
 #'   \item{\code{stat.Resamples}}{function or character string naming a function
 #'     to compute one summary statistic to control the ordering of models in
 #'     \link[=plot]{plots} [default: \code{"base::mean"}].}
-#'   \item{\code{stat.Tune}}{function or character string naming a function
+#'   \item{\code{stat.Train}}{function or character string naming a function
 #'     to compute one summary statistic on resampled performance metrics for
 #'     \link[=SelectedModel]{model selection}, \link[=TunedModel]{model tuning},
 #'     and \link[=TunedRecipe]{recipe tuning} [default: \code{"base::mean"}].}
@@ -77,56 +84,56 @@
 #'     SD = "stats::sd", Min = "base::min", Max = "base::max")}].
 #'   }
 #' }
-#' 
+#'
 #' @examples
 #' ## View all current settings
 #' settings()
-#' 
+#'
 #' ## Change settings
 #' presets <- settings(control = "BootControl", grid = 10)
-#' 
+#'
 #' ## View one setting
 #' settings("control")
-#' 
+#'
 #' ## View multiple settings
 #' settings("control", "grid")
-#' 
+#'
 #' ## Restore the previous settings
 #' settings(presets)
-#' 
+#'
 settings <- function(...) {
-  
+
   args <- list(...)
-  if(length(args) == 1 && is.null(names(args)) && is.vector(args[[1]])) {
+  if (length(args) == 1 && is.null(names(args)) && is.vector(args[[1]])) {
     args <- as.list(args[[1]])
   }
-  
+
   global_settings <- MachineShop_global$settings
   global_values <- lapply(global_settings, getElement, name = "value")
   global_checks <- lapply(global_settings, getElement, name = "check")
-  
+
   if (!length(args)) {
     return(global_values)
   } else if (identical(args, list("reset"))) {
-    settings(.global_defaults)
+    settings(reset = names(.global_defaults))
     return(invisible(global_values))
   }
-  
+
   args_names <- names(args)
   if (is.null(args_names)) args_names <- character(length(args))
   args_names_nzchar <- nzchar(args_names)
-  
+
   is_get_args <- !args_names_nzchar & sapply(args, is.character)
   args_names[is_get_args] <- unlist(args[is_get_args])
-  
+
   settings_pmatch <- pmatch(args_names, names(global_settings))
   valid_settings <- !is.na(settings_pmatch)
   for (name in args_names[!valid_settings]) {
     warning("'", name, "' is not a MachineShop setting")
   }
-  
+
   presets <- global_values[settings_pmatch[valid_settings]]
-  
+
   which_set_args <- which(args_names_nzchar & valid_settings)
   for (index in which_set_args) {
     global_name <- names(global_settings)[settings_pmatch[index]]
@@ -193,9 +200,9 @@ check_stats <- function(x) {
 
 
 MachineShop_global <- as.environment(list(
-  
+
   settings = list(
-    
+
     control = list(
       value = "CVControl",
       check = function(x) {
@@ -206,7 +213,7 @@ MachineShop_global <- as.environment(list(
         } else x
       }
     ),
-    
+
     cutoff = list(
       value = 0.5,
       check = function(x) {
@@ -215,37 +222,49 @@ MachineShop_global <- as.environment(list(
         } else x
       }
     ),
-    
+
     dist.Surv = list(
       value = "weibull",
       check = check_match(c("weibull", "exponential", "empirical"))
     ),
-    
+
     dist.SurvProbs = list(
       value = "empirical",
       check = check_match(c("empirical", "weibull", "exponential"))
     ),
-    
+
     grid = list(
       value = 3,
       check = function(x) {
-        result <- try({
-          if (is.character(x)) x <- fget(x)
-          if (is.function(x)) x <- x()
-          stopifnot((is.numeric(x) && length(x) == 1) || is(x, "Grid"))
-        }, silent = TRUE)
-        if (is(result, "try-error")) {
-          DomainError(x, "must be a numeric value or ",
-                         "a Grid function, function name, or call")
-        } else x
+        if (is(x, "Grid")) {
+          x
+        } else if (identical(x, "Grid") || identical(x, Grid)) {
+          Grid()
+        } else {
+          result <- try(Grid(x), silent = TRUE)
+          if (is(result, "try-error")) {
+            DomainError(x, "must be a positive numeric value or ",
+                           "a Grid function, function name, or call")
+          } else result
+        }
       }
     ),
-    
+
+    max.print = list(
+      value = 10,
+      check = function(x) {
+        result <- try(floor(x[[1]]), silent = TRUE)
+        if (is(result, "try-error") || result <= 0) {
+          DomainError(x, "must be a positive number")
+        } else result
+      }
+    ),
+
     method.EmpiricalSurv = list(
       value = "efron",
       check = check_match(c("efron", "breslow", "fleming-harrington"))
     ),
-    
+
     metrics.ConfusionMatrix = list(
       value = c("Accuracy" = "accuracy",
                 "Kappa" = "kappa2",
@@ -254,7 +273,7 @@ MachineShop_global <- as.environment(list(
                 "Specificity" = "specificity"),
       check = check_metrics
     ),
-    
+
     metrics.factor = list(
       value = c("Brier" = "brier",
                 "Accuracy" = "accuracy",
@@ -265,21 +284,21 @@ MachineShop_global <- as.environment(list(
                 "Specificity" = "specificity"),
       check = check_metrics
     ),
-    
+
     metrics.matrix = list(
       value = c("RMSE" = "rmse",
                 "R2" = "r2",
                 "MAE" = "mae"),
       check = check_metrics
     ),
-    
+
     metrics.numeric = list(
       value = c("RMSE" = "rmse",
                 "R2" = "r2",
                 "MAE" = "mae"),
       check = check_metrics
     ),
-    
+
     metrics.Surv = list(
       value = c("C-Index" = "cindex",
                 "Brier" = "brier",
@@ -287,7 +306,40 @@ MachineShop_global <- as.environment(list(
                 "Accuracy" = "accuracy"),
       check = check_metrics
     ),
-    
+
+    require = list(
+      value = c("MachineShop", "survival", "recipes"),
+      check = function(x) {
+        x <- c(setdiff(x, .global_defaults$require), .global_defaults$require)
+        found <- sapply(x, function(pkg) {
+          length(find.package(pkg, quiet = TRUE))
+        })
+        if (!all(found)) {
+          missing <- x[!found]
+          msg <- paste0(plural_suffix("given missing package", missing),
+                        ": ", toString(missing))
+          DomainError(x, msg)
+        } else x
+      }
+    ),
+
+    reset = list(
+      value = character(),
+      check = function(x) {
+        if (is.character(x)) {
+          setting_names <- names(.global_defaults)
+          reset_names <- setting_names[charmatch(x, setting_names, nomatch = 0)]
+          for (name in reset_names) {
+            value <- .global_defaults[[name]]
+            MachineShop_global$settings[[name]]$value <- value
+          }
+          if ("reset" %in% reset_names) .global_defaults$reset else reset_names
+        } else {
+          DomainError(x, "must be a character value or vector")
+        }
+      }
+    ),
+
     stat.Curves = list(
       value = "base::mean",
       check = function(x) {
@@ -297,23 +349,23 @@ MachineShop_global <- as.environment(list(
         } else x
       }
     ),
-    
+
     stat.Resamples = list(
       value = "base::mean",
       check = check_stat
     ),
-    
-    stat.Tune = list(
+
+    stat.Train = list(
       value = "base::mean",
       check = check_stat
     ),
-    
+
     stats.PartialDependence = list(
       value = c("Mean" = "base::mean"),
       check = check_stats
-      
+
     ),
-    
+
     stats.Resamples = list(
       value = c("Mean" = "base::mean",
                 "Median" = "stats::median",
@@ -322,9 +374,9 @@ MachineShop_global <- as.environment(list(
                 "Max" = "base::max"),
       check = check_stats
     )
-    
+
   )
-  
+
 ))
 
 

@@ -1,9 +1,9 @@
 #' Gradient Boosting with Additive Models
-#' 
+#'
 #' Gradient boosting for optimizing arbitrary loss functions, where
 #' component-wise arbitrary base-learners, e.g., smoothing procedures, are
 #' utilized as additive base-learners.
-#' 
+#'
 #' @param family optional \code{\link[mboost]{Family}} object.  Set
 #'   automatically according to the class type of the response variable.
 #' @param baselearner character specifying the component-wise
@@ -18,7 +18,7 @@
 #'   internally when the out-of-bag risk increases at a subsequent iteration.
 #' @param trace logical indicating whether status information is printed during
 #'   the fitting process.
-#' 
+#'
 #' @details
 #' \describe{
 #'   \item{Response Types:}{\code{binary}, \code{numeric}, \code{Surv}}
@@ -26,19 +26,19 @@
 #'     \code{mstop}
 #'   }
 #' }
-#' 
+#'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source links below.
-#' 
+#'
 #' @return \code{MLModel} class object.
-#' 
+#'
 #' @seealso \code{\link[mboost]{gamboost}}, \code{\link[mboost]{Family}},
 #' \code{\link[mboost]{baselearners}}, \code{\link{fit}},
-#' \code{\link{resample}}, \code{\link{tune}}
-#' 
+#' \code{\link{resample}}
+#'
 #' @examples
 #' library(MASS)
-#' 
+#'
 #' fit(type ~ ., data = Pima.tr, model = GAMBoostModel)
 #'
 GAMBoostModel <- function(family = NULL,
@@ -46,10 +46,10 @@ GAMBoostModel <- function(family = NULL,
                           dfbase = 4, mstop = 100, nu = 0.1,
                           risk = c("inbag", "oobag", "none"),
                           stopintern = FALSE, trace = FALSE) {
-  
+
   baselearner <- match.arg(baselearner)
   risk <- match.arg(risk)
-  
+
   args <- params(environment())
   is_main <- names(args) %in% c("family", "baselearner", "dfbase")
   params <- args[is_main]
@@ -59,7 +59,8 @@ GAMBoostModel <- function(family = NULL,
     name = "GAMBoostModel",
     label = "Gradient Boosting with Additive Models",
     packages = "mboost",
-    response_types = c("binary", "numeric", "Surv"),
+    response_types = c("binary", "BinomialVariate", "NegBinomialVariate",
+                       "numeric", "PoissonVariate", "Surv"),
     predictor_encoding = "terms",
     params = params,
     grid = function(x, length, ...) {
@@ -68,19 +69,22 @@ GAMBoostModel <- function(family = NULL,
       )
     },
     fit = function(formula, data, weights, family = NULL, ...) {
-      attachment(list(
+      attach_objects(list(
         bbs = mboost::bbs,
         bols = mboost::bols,
         btree = mboost::btree,
         bbs = mboost::bbs,
         bns = mboost::bns
       ), name = "mboost_exports")
-      
+
       if (is.null(family)) {
         family <- switch_class(response(data),
-                               "factor" = mboost::Binomial(),
-                               "numeric" = mboost::Gaussian(),
-                               "Surv" = mboost::CoxPH())
+                               BinomialVariate = mboost::Binomial(type = "glm"),
+                               factor = mboost::Binomial(),
+                               NegBinomialVariate = mboost::NBinomial(),
+                               numeric = mboost::Gaussian(),
+                               PoissonVariate = mboost::Poisson(),
+                               Surv = mboost::CoxPH())
       }
       mboost::gamboost(formula, data = as.data.frame(data), na.action = na.pass,
                        weights = weights, family = family, ...)
@@ -88,10 +92,9 @@ GAMBoostModel <- function(family = NULL,
     predict = function(object, newdata, times, ...) {
       newdata <- as.data.frame(newdata)
       if (object$family@name == "Cox Partial Likelihood") {
-        y <- object$response
         lp <- drop(predict(object, type = "link"))
         new_lp <- drop(predict(object, newdata = newdata, type = "link"))
-        predict(y, lp, times, new_lp, ...)
+        predict(object$response, lp, times, new_lp, ...)
       } else {
         predict(object, newdata = newdata, type = "response")
       }
@@ -100,7 +103,7 @@ GAMBoostModel <- function(family = NULL,
       structure(mboost::varimp(object), class = "numeric")
     }
   )
-  
+
 }
 
 MLModelFunction(GAMBoostModel) <- NULL

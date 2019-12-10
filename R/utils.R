@@ -8,24 +8,24 @@ utils::globalVariables(c("i", "x", "y"))
 
 
 #' Quote Operator
-#' 
+#'
 #' Shorthand notation for the \code{\link{quote}} function.  The quote operator
 #' simply returns its argument unevaluated and can be applied to any \R
 #' expression.  Useful for calling model constructors with quoted parameter
 #' values that are defined in terms of \code{nobs}, \code{nvars}, or \code{y}.
-#' 
+#'
 #' @param expr any syntactically valid \R expression.
-#' 
-#' @return 
+#'
+#' @return
 #' The quoted (unevaluated) expression.
-#' 
+#'
 #' @seealso \code{\link{quote}}
-#' 
+#'
 #' @examples
 #' ## Stepwise variable selection with BIC
 #' glm_fit <- fit(sale_amount ~ ., ICHomes, GLMStepAICModel(k = .(log(nobs))))
 #' varimp(glm_fit)
-#' 
+#'
 . <- function(expr) {
   eval(substitute(quote(expr)))
 }
@@ -38,11 +38,23 @@ assert_equal_weights <- function(weights) {
 }
 
 
-attachment <- function(what, pos = 2L,
-                       name = deparse(substitute(what), backtick = FALSE)) {
+attach_objects <- function(what, pos = 2L,
+                           name = deparse(substitute(what), backtick = FALSE)) {
   make_attach <- attach
   make_attach(what, pos, name, warn.conflicts = FALSE)
   do.call(on.exit, list(substitute(detach(name))), envir = parent.frame())
+}
+
+
+combine_dataframes <- function(x, y = NULL) {
+  if (is.null(y)) return(x)
+  common_cols <- intersect(names(x), names(y))
+  if (!identical(x[common_cols], y[common_cols])) {
+    stop("common columns in data frames differ")
+  }
+  diff_cols <- setdiff(names(y), common_cols)
+  x[diff_cols] <- y[diff_cols]
+  x
 }
 
 
@@ -84,40 +96,28 @@ fget <- function(x) {
 }
 
 
-field <- function(object, name) {
-  if (isS4(object)) slot(object, name) else object[[name]]
-}
-
-
-fitbit <- function(object, name) {
-  slot(field(object, "fitbits"), name)
-}
-
-
-findMethod <- function(generic, object) {
-  generic_name <- deparse(substitute(generic))
-  f <- function(x, ...) UseMethod("f")
-  for (method in methods(generic_name)) {
-    assign(sub(generic_name, "f", method, fixed = TRUE),
-           eval(substitute(function(x, ...) method)))
+findS3Method <- function(generic, object) {
+  generic_name <- as.character(substitute(generic))[1]
+  classes <- substring(methods(generic_name), nchar(generic_name) + 2)
+  class <- match_class(object, classes)
+  if (is.na(class)) {
+    stop(generic_name, " method not found for '", class(object)[1], "' class")
   }
-  f(object)
+  paste0(generic_name, ".", class)
 }
 
 
 getMLObject <- function(x, class = c("MLControl", "MLMetric", "MLModel")) {
   class <- match.arg(class)
-  
   if (is.character(x)) x <- fget(x)
   if (is.function(x) && class %in% c("MLControl", "MLModel")) x <- x()
   if (!is(x, class)) stop("object not of class ", class)
-  
-  if (class == "MLModel") {
-    x <- as(x, class)
-    if (extends(x@name, class)) x <- as(x, x@name)
-  }
-  
   x
+}
+
+
+is_one_element <- function(x, class) {
+  length(x) == 1 && is(x[[1]], class)
 }
 
 
@@ -162,23 +162,26 @@ list2function <- function(x) {
 }
 
 
-make_unique_levels <- function(x, which) {
-  level_names <- list()
-  for (i in seq(x)) {
-    if (is.null(x[[i]][[which]])) x[[i]][[which]] <- rep(which, nrow(x[[i]]))
-    x[[i]][[which]] <- as.factor(x[[i]][[which]])
-    arg_name <- names(x)[i]
-    level_names[[i]] <- if (!is.null(arg_name) && nzchar(arg_name)) {
-      rep(arg_name, nlevels(x[[i]][[which]]))
-    } else {
-      levels(x[[i]][[which]])
-    }
+make_list_names <- function(x, prefix) {
+  old_names <- names(x)
+  names(x) <- if (length(x)) {
+    if (length(x) > 1) paste0(prefix, ".", seq(x)) else prefix
   }
-  level_names <- level_names %>% unlist %>% make.unique %>% relist(level_names)
-  
-  for (i in seq(x)) levels(x[[i]][[which]]) <- level_names[[i]]
-  
-  x
+  if (!is.null(old_names)) {
+    keep <- nzchar(old_names)
+    names(x)[keep] <- old_names[keep]
+  }
+  names(x)
+}
+
+
+match_class <- function(object, choices) {
+  f <- function(x, ...) UseMethod("f")
+  f.default <- function(x, ...) NA_character_
+  for (choice in choices) {
+    assign(paste0("f.", choice), eval(substitute(function(x, ...) choice)))
+  }
+  f(object)
 }
 
 
@@ -197,59 +200,70 @@ nvars <- function(x, model) {
   stopifnot(is(x, "ModelFrame"))
   model <- getMLObject(model, "MLModel")
   switch(model@predictor_encoding,
-         "model.matrix" = 
+         "model.matrix" =
            ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE)),
-         "terms" = length(labels(terms(x)))
-  )
+         "terms" = {
+           x_terms <- attributes(terms(x))
+           nrow(x_terms$factors) - x_terms$response - length(x_terms$offset)
+         })
 }
 
 
 params <- function(envir) {
   args <- as.list(envir)
   is_missing <- sapply(args, function(x) is.symbol(x) && !nzchar(x))
-  if (any(is_missing)) stop("missing values for required argument(s) ",
-                            toString(names(args)[is_missing]))
+  if (any(is_missing)) {
+    missing <- names(args)[is_missing]
+    stop(plural_suffix("missing values for required argument", missing), ": ",
+         toString(missing))
+  }
   args[!sapply(args, is.null)]
+}
+
+
+plural_suffix <- function(x, subject) {
+  if (length(subject) > 1) paste0(x, "s") else x
 }
 
 
 requireModelNamespaces <- function(packages) {
   pass <- sapply(packages, requireNamespace)
-  if (!all(pass)) stop("install required packages: ", toString(packages[!pass]))
+  if (!all(pass)) {
+    missing <- packages[!pass]
+    stop(plural_suffix("install required package", missing), ": ",
+         toString(missing))
+  }
   invisible(pass)
 }
 
 
-sample_params <- function(x, size, replace = FALSE) {
+sample_params <- function(x, size = NULL, replace = FALSE) {
   stopifnot(is.list(x))
-  
+
   n <- length(x)
-  if (n == 0) return(data.frame())
-  
-  var_names <- paste0("Var", seq(x))
+  if (n == 0) return(tibble())
+
+  varnames <- paste0("Var", seq(x))
   x_names <- names(x)
   if (!is.null(x_names)) {
     is_nzchar <- nzchar(x_names)
-    var_names[is_nzchar] <- x_names[is_nzchar]
+    varnames[is_nzchar] <- x_names[is_nzchar]
   }
-  names(x) <- var_names
+  names(x) <- varnames
 
-  if (!replace) size <- min(size, prod(sapply(x, length)))
-  
-  grid <- as.data.frame(matrix(nrow = 0, ncol = n))
-  names(grid) <- names(x)
+  max_size <- prod(lengths(x))
+  if (is.null(size)) size <- max_size
+  if (!replace) size <- min(size, max_size)
+
+  grid <- as_tibble(matrix(nrow = 0, ncol = n, dimnames = list(NULL, names(x))))
   iter <- 0
   while (nrow(grid) < size && iter < 100) {
     iter <- iter + 1
-    new_grid <- as.data.frame(
-      lapply(x, sample, size = size, replace = TRUE),
-      stringsAsFactors = FALSE
-    )
+    new_grid <- as_tibble(lapply(x, sample, size = size, replace = TRUE))
     grid <- rbind(grid, new_grid)
     if (!replace) grid <- unique(grid)
   }
-  rownames(grid) <- NULL
-  
+
   head(grid, size)
 }
 
@@ -297,7 +311,28 @@ seq_nvars <- function(x, model, length) {
   round(vals)
 }
 
-    
+
+set_model_names <- function(x) {
+  name <- "Model"
+  level_names <- list()
+  for (i in seq(x)) {
+    if (is.null(x[[i]][[name]])) x[[i]][[name]] <- rep(name, nrow(x[[i]]))
+    x[[i]][[name]] <- as.factor(x[[i]][[name]])
+    arg_name <- names(x)[i]
+    level_names[[i]] <- if (!is.null(arg_name) && nzchar(arg_name)) {
+      rep(arg_name, nlevels(x[[i]][[name]]))
+    } else {
+      levels(x[[i]][[name]])
+    }
+  }
+  level_names <- level_names %>% unlist %>% make.unique %>% relist(level_names)
+
+  for (i in seq(x)) levels(x[[i]][[name]]) <- level_names[[i]]
+
+  x
+}
+
+
 set_param <- function(params, name, value) {
   if (name %in% names(params)) params[[name]] <- value
   params
@@ -319,6 +354,11 @@ strata <- function(object, ...) {
 
 strata.default <- function(object, ...) {
   object
+}
+
+
+strata.BinomialVariate <- function(object, ...) {
+  as.numeric(object)
 }
 
 
@@ -344,7 +384,7 @@ strata_var.ModelFrame <- function(object, ...) {
 
 strata_var.recipe <- function(object, ...) {
   info <- summary(object)
-  var_name <- info$variable[info$role == "case_strata"]
+  var_name <- info$variable[info$role == "case_stratum"]
   if (length(var_name) == 0) NULL else
     if (length(var_name) == 1) var_name else
       stop("multiple strata variables specified")
@@ -353,8 +393,22 @@ strata_var.recipe <- function(object, ...) {
 
 switch_class <- function(EXPR, ...) {
   blocks <- eval(substitute(alist(...)))
-  isClass <- sapply(names(blocks), function(class) is(EXPR, class))
-  eval.parent(blocks[[match(TRUE, isClass)]])
+  eval.parent(blocks[[match_class(EXPR, names(blocks))]])
+}
+
+
+unnest <- function(data) {
+  stopifnot(is(data, "data.frame"))
+  df <- data.frame(row.names = seq_len(nrow(data)))
+  for (name in names(data)) {
+    x <- data[[name]]
+    if (length(dim(x)) > 1) {
+      x <- if (is.data.frame(x)) unnest(x) else as.data.frame(as(x, "matrix"))
+      name <- paste0(name, ".", names(x))
+    }
+    df[name] <- x
+  }
+  df
 }
 
 

@@ -4,8 +4,7 @@
 \alias{POLRModel}
 \title{Ordered Logistic or Probit Regression Model}
 \usage{
-POLRModel(method = c("logistic", "probit", "loglog", "cloglog",
-  "cauchit"))
+POLRModel(method = c("logistic", "probit", "loglog", "cloglog", "cauchit"))
 }
 \arguments{
 \item{method}{logistic or probit or (complementary) log-log or cauchit
@@ -23,6 +22,12 @@ Fit a logistic or probit regression model to an ordered factor response.
 }
 
 Further model details can be found in the source link below.
+
+In calls to \code{\link{varimp}} for \code{POLRModel}, numeric argument
+\code{base} may be specified for the (negative) logarithmic transformation of
+p-values [defaul: \code{exp(1)}].  Transformed p-values are automatically
+scaled in the calculation of variable importance to range from 0 to 100.  To
+obtain unscaled importance values, set \code{scale = FALSE}.
 }
 \examples{
 library(MASS)
@@ -35,6 +40,5 @@ fit(medv ~ ., data = df, model = POLRModel)
 
 }
 \seealso{
-\code{\link[MASS]{polr}}, \code{\link{fit}}, \code{\link{resample}},
-\code{\link{tune}}
+\code{\link[MASS]{polr}}, \code{\link{fit}}, \code{\link{resample}}
 }

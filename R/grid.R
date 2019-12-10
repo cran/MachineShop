@@ -1,50 +1,154 @@
 #' Tuning Grid Control
-#' 
-#' Defines the control parameters for a tuning grid.
-#' 
+#'
+#' Defines control parameters for a tuning grid.
+#'
 #' @param length number of values to be generated for each model parameter in
 #'   the tuning grid.
-#' @param random number of points to be randomly sampled from the tuning grid or
-#'   \code{FALSE} if all points are to be used.
-#' 
-#' @seealso \code{\link{tune}}
-#' 
+#' @param random number of unique grid points to sample at random, \code{Inf}
+#'   for all random points, or \code{FALSE} for all fixed points.
+#'
+#' @return \code{Grid} class object.
+#'
+#' @seealso \code{\link{TunedModel}}
+#'
+#' @examples
+#' TunedModel(GBMModel, grid = Grid(10, random = 5))
+#'
 Grid <- function(length = 3, random = FALSE) {
-  structure(
-    list(length = length, random = random),
-    class = "Grid"
-  )
-}
-
-
-grid <- function(x, ...) {
-  UseMethod("grid")
-}
-
-
-grid.formula <- function(x, data, ...) {
-  grid(ModelFrame(x, data, na.rm = FALSE), ...)
-}
-
-
-grid.matrix <- function(x, y, ...) {
-  grid(ModelFrame(x, y, na.rm = FALSE), ...)
-}
-
-
-grid.ModelFrame <- function(x, model, length = 3, random = FALSE, ...) {
-  model <- getMLObject(model, "MLModel")
-  length <- max(as.integer(length), 1L)
-  params <- lapply(model@grid(x, length = length, random = random), unique)
-  params[sapply(params, length) == 0] <- NULL
-  if (random) {
-    sample_params(params, random)
+  if (is.finite(length)) {
+    length <- as.integer(length[[1]])
+    if (length <= 0) stop("grid parameter 'length' must be >= 1")
   } else {
-    expand_params(params)
+    stop("grid parameter 'length' must be numeric")
   }
+
+  if (isTRUE(random) || is.numeric(random)) {
+    random <- floor(random[[1]])
+    if (random <= 0) stop ("number of 'random' grid points must be >= 1")
+  } else if (!isFALSE(random)) {
+    stop("'random' grid value must be logical or numeric")
+  }
+
+  new("Grid", length = length, random = random)
 }
 
 
-grid.recipe <- function(x, ...) {
-  grid(ModelFrame(x, na.rm = FALSE), ...)
+#' Tuning Parameters Grid
+#'
+#' Defines a tuning grid from a set of parameters.
+#'
+#' @rdname ParameterGrid
+#'
+#' @param ... \code{\link[dials]{parameters}} object, named \code{param} objects
+#'   as defined in the \pkg{dials} package, or a list of these.
+#' @param length single number or vector of numbers of parameter values to use
+#'   in constructing a regular grid if \code{random = FALSE}; ignored otherwise.
+#' @param random number of unique grid points to sample at random or
+#'   \code{FALSE} for all points from a regular grid defined by \code{length}.
+#'
+#' @return \code{ParameterGrid} class object that inherits from
+#' \code{parameters} and \code{Grid}.
+#'
+#' @seealso \code{\link{TunedModel}}
+#'
+#' @examples
+#' ## GBMModel tuning parameters
+#' library(dials)
+#'
+#' grid <- ParameterGrid(
+#'   n.trees = trees(),
+#'   interaction.depth = tree_depth(),
+#'   random = 5
+#' )
+#' TunedModel(GBMModel, grid = grid)
+#'
+ParameterGrid <- function(..., length = 3, random = FALSE) {
+  x <- list(...)
+  if (is_one_element(x, "list") && is.null(names(x))) x <- x[[1]]
+  .ParameterGrid(x, length = length, random = random)
+}
+
+
+.ParameterGrid <- function(x, ...) {
+  UseMethod(".ParameterGrid")
+}
+
+
+.ParameterGrid.list <- function(x, ...) {
+  .ParameterGrid(parameters(x), ...)
+}
+
+
+.ParameterGrid.parameters <- function(x, length, random, ...) {
+  if (all(is.finite(length))) {
+    length <- as.integer(length)
+    if (any(length < 0)) stop("grid parameter 'length' must be >= 0")
+  } else {
+    stop("grid parameter 'length' must be numeric")
+  }
+
+  if (isFALSE(random)) {
+    if (length(length) > 1) length <- rep_len(length, nrow(x))
+    keep <- length > 0
+    x <- x[keep, ]
+    length <- length[keep]
+  } else if (is.finite(random)) {
+    random <- as.integer(random[[1]])
+    if (random <= 0) stop ("number of 'random' grid points must be >= 1")
+  } else {
+    stop("'random' grid value must be logical or numeric")
+  }
+
+  new("ParameterGrid", x, length = length, random = random)
+}
+
+
+as.grid <- function(x, ...) {
+  UseMethod("as.grid")
+}
+
+
+as.grid.default <- function(x, ...) {
+  stop("unsupported grid object of class ", class(x)[1])
+}
+
+
+as.grid.tbl_df <- function(x, fixed = tibble(), ...) {
+  x[names(fixed)] <- fixed
+  if (ncol(x)) x[!duplicated(x), ] else x
+}
+
+
+as.grid.Grid <- function(x, ..., model, fixed = tibble()) {
+  mf <- ModelFrame(..., na.rm = FALSE)
+  params_list <- model@grid(mf, length = x@length, random = x@random)
+  params <- lapply(params_list, unique)
+  params[lengths(params) == 0] <- NULL
+  as.grid(expand_params(params, random = x@random), fixed = fixed)
+}
+
+
+as.grid.ParameterGrid <- function(x, ..., model, fixed = tibble()) {
+  grid <- if (nrow(x)) {
+    if (any(sapply(x$object, dials::has_unknowns))) {
+      mf <- ModelFrame(..., na.rm = FALSE)
+      data <- switch(model@predictor_encoding,
+                     "model.matrix" = model.matrix(mf, intercept = FALSE),
+                     "terms" = {
+                       mf_terms <- attributes(terms(mf))
+                       var_list <- eval(mf_terms$variables, mf)
+                       names(var_list) <- rownames(mf_terms$factors)
+                       as.data.frame(var_list[-c(1, mf_terms$offset)])
+                     })
+      x <- dials::finalize(x, x = data)
+    }
+    if (x@random) {
+      dials::grid_random(x, size = x@random)
+    } else {
+      dials::grid_regular(x, levels = x@length)
+    }
+  } else {
+    tibble(.rows = 1)
+  }
+  as.grid(grid, fixed = fixed)
 }

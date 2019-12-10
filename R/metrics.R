@@ -1,12 +1,12 @@
 #' Performance Metrics
-#' 
+#'
 #' Compute measures of agreement between observed and predicted responses.
-#' 
+#'
 #' @name metrics
-#' 
+#'
 #' @param observed \link[=response]{observed responses}; or
-#'   \link{confusion}, \link[=performance_curve]{performance curve}, or
-#'   \link{resample} result containing observed and predicted responses.
+#'   \link{confusion}, \link[=curves]{performance curve}, or \link{resample}
+#'   result containing observed and predicted responses.
 #' @param predicted \link[=predict]{predicted responses} if not contained in
 #'   \code{observed}.
 #' @param beta relative importance of recall to precision in the calculation of
@@ -31,9 +31,9 @@
 #'   summary statistic at each cutoff value of resampled metrics in performance
 #'   curves, or \code{NULL} for resample-specific metrics.
 #' @param ... arguments passed to or from other methods.
-#' 
+#'
 #' @seealso \code{\link{metricinfo}}, \code{\link{performance}}
-#' 
+#'
 NULL
 
 
@@ -55,23 +55,23 @@ setMetric_auc <- function(f, metrics) {
 setMetric_BinaryConfusionMatrix <- function(f, definition) {
   setMetricGeneric(f)
   setMetricMethod(f, c("BinaryConfusionMatrix", "NULL"), definition)
-  setMetricMethod_factor_factor(f)  
+  setMetricMethod_factor_factor(f)
   setMetricMethod_factor_numeric(f)
   setMetricMethod_Resamples(f)
   setMetricMethod_Surv_SurvEvents(f)
-  setMetricMethod_Surv_SurvProbs(f)  
+  setMetricMethod_Surv_SurvProbs(f)
 }
 
 
 setMetric_ConfusionMatrix <- function(f, definition) {
   setMetricGeneric(f)
   setMetricMethod(f, c("ConfusionMatrix", "NULL"), definition)
-  setMetricMethod_factor_factor(f)  
+  setMetricMethod_factor_factor(f)
   setMetricMethod_factor_matrix(f)
   setMetricMethod_factor_numeric(f)
   setMetricMethod_Resamples(f)
   setMetricMethod_Surv_SurvEvents(f)
-  setMetricMethod_Surv_SurvProbs(f)  
+  setMetricMethod_Surv_SurvProbs(f)
 }
 
 
@@ -90,6 +90,7 @@ setMetric_OrderedConfusionMatrix <- function(f, definition) {
 setMetric_numeric <- function(f, definition) {
   setMetricGeneric(f)
   setMetricMethod(f, c("numeric", "numeric"), definition)
+  setMetricMethod_BinomialMatrix_numeric(f)
   setMetricMethod_matrix_matrix(f)
   setMetricMethod_Resamples(f)
   setMetricMethod_Surv_numeric(f)
@@ -97,20 +98,29 @@ setMetric_numeric <- function(f, definition) {
 
 
 setMetricGeneric <- function(f) {
-  
+
   eval(substitute(
     setGeneric(name, function(observed, predicted, ...) standardGeneric(name)),
     list(name = metric_method_name(f))
   ))
-  
+
   setMetricMethod(f, c("ANY", "ANY"))
-  
+
 }
 
 
 setMetricMethod <- function(f, signature, definition =
                               function(observed, predicted, ...) numeric()) {
   setMethod(metric_method_name(f), signature, definition)
+}
+
+
+setMetricMethod_BinomialMatrix_numeric <- function(f) {
+  setMetricMethod(f, c("BinomialVariate", "numeric"),
+    function(observed, predicted, ...) {
+      get(f)(as.numeric(observed), predicted, ...)
+    }
+  )
 }
 
 
@@ -209,7 +219,7 @@ metric_matrix <- function(observed, predicted, FUN, ...) {
 metric_SurvMatrix <- function(observed, predicted, FUN, cutoff = NULL, ...) {
   conf <- confusion(observed, predicted, cutoff = cutoff)
   x <- sapply(conf, FUN, ...)
-  times <- time(predicted)
+  times <- predicted@times
   if (length(times) > 1) c("mean" = surv_metric_mean(x, times), x) else x[[1]]
 }
 

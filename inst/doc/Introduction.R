@@ -1,12 +1,12 @@
-## ----setup, include=FALSE------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------
 source("setup.R")
 rdoc_url <- function(name) name
 
-## ----overview_modelinfo, echo=FALSE--------------------------------------
-library("MachineShop")
+## ----overview_modelinfo, echo=FALSE-------------------------------------------
+library(MachineShop)
 info <- modelinfo()
 
-## ----overview_install, eval = FALSE--------------------------------------
+## ----overview_install, eval = FALSE-------------------------------------------
 #  # Current release from CRAN
 #  install.packages("MachineShop")
 #  
@@ -17,7 +17,7 @@ info <- modelinfo()
 #  # Development version with vignettes
 #  devtools::install_github("brian-j-smith/MachineShop", build_vignettes = TRUE)
 
-## ----overview_docs, eval = FALSE, message = FALSE------------------------
+## ----overview_docs, eval = FALSE, message = FALSE-----------------------------
 #  library(MachineShop)
 #  
 #  # Package help summary
@@ -26,7 +26,7 @@ info <- modelinfo()
 #  # Vignette
 #  RShowDoc("Introduction", package = "MachineShop")
 
-## ----using_example_melanoma----------------------------------------------
+## ----using_example_melanoma---------------------------------------------------
 ## Analysis libraries
 library(MachineShop)
 library(survival)
@@ -36,7 +36,7 @@ library(magrittr)
 ## Malignant melanoma analysis dataset
 surv_df <- within(Melanoma, status <- as.numeric(status != 2))
 
-## ----using_example_summary, echo=FALSE-----------------------------------
+## ----using_example_summary, echo=FALSE----------------------------------------
 surv_stats <- list(
   list("Number of subjects" = ~ length(status)),
   "time" = list("Median (Range)" = ~ median_range(time)),
@@ -53,7 +53,7 @@ surv_stats <- list(
 
 summary_kbl(surv_stats, surv_df)
 
-## ----using_example_survfit, echo=FALSE-----------------------------------
+## ----using_example_survfit, echo=FALSE----------------------------------------
 library(ggplot2)
 
 col <- "#F8766D"
@@ -67,7 +67,7 @@ survfit(Surv(time, status) ~ 1, data = surv_df) %>%
   labs(x = "Follow-Up Time (Days)", y = "Overall Survival Probability",
        title = "Kaplan-Meier survival plot")
 
-## ----using_example_datasets----------------------------------------------
+## ----using_example_datasets---------------------------------------------------
 ## Training and test sets
 set.seed(123)
 train_indices <- sample(nrow(surv_df), nrow(surv_df) * 2 / 3)
@@ -77,25 +77,25 @@ surv_test <- surv_df[-train_indices, ]
 ## Global formula for the analysis
 surv_fo <- Surv(time, status) ~ sex + age + year + thickness + ulcer
 
-## ----using_fit_modelinfo-------------------------------------------------
+## ----using_fit_modelinfo------------------------------------------------------
 ## All available models
 modelinfo() %>% names
 
 ## Model-specific information
 modelinfo(GBMModel)
 
-## ----using_fit_modelinfo_type--------------------------------------------
+## ----using_fit_modelinfo_type-------------------------------------------------
 ## All survival response-specific models
 modelinfo(Surv(0)) %>% names
 
 ## Identify survival response-specific models
 modelinfo(Surv(0), CoxModel, GBMModel, SVMModel) %>% names
 
-## ----using_fit_modelinfo_response----------------------------------------
+## ----using_fit_modelinfo_response---------------------------------------------
 ## Models for a responses variable
 modelinfo(Surv(surv_df$time, surv_df$status)) %>% names
 
-## ----using_fit_function, results="hide"----------------------------------
+## ----using_fit_function, results="hide"---------------------------------------
 ## Generalized boosted regression fit
 
 ## Model function
@@ -107,23 +107,23 @@ fit(surv_fo, data = surv_train, model = "GBMModel")
 ## Model function call
 fit(surv_fo, data = surv_train, model = GBMModel(n.trees = 100, interaction.depth = 1))
 
-## ----using_fit_dynamic, results="hide"-----------------------------------
+## ----using_fit_dynamic, results="hide"----------------------------------------
 ## Dynamic model parameter k = log number of observations
 
 ## Number of observations: nobs
 fit(surv_fo, data = surv_train, model = CoxStepAICModel(k = .(log(nobs))))
 
 ## Response variable: y
-fit (surv_fo, data = surv_train, model = CoxStepAICModel(k = .(log(length(y)))))
+fit(surv_fo, data = surv_train, model = CoxStepAICModel(k = .(log(length(y)))))
 
-## ----using_predict_function----------------------------------------------
+## ----using_predict_function---------------------------------------------------
 ## Predicted survival means (default: Weibull distribution)
 predict(surv_fit, newdata = surv_test) %>% head
 
 ## Predicted survival means (empirical distribution)
 predict(surv_fit, newdata = surv_test, dist = "empirical") %>% head
 
-## ----using_predict_function_times----------------------------------------
+## ----using_predict_function_times---------------------------------------------
 ## Predict survival probabilities and events at specified follow-up times
 surv_times <- 365 * c(5, 10)
 
@@ -131,14 +131,14 @@ predict(surv_fit, newdata = surv_test, times = surv_times, type = "prob") %>% he
 
 predict(surv_fit, newdata = surv_test, times = surv_times, cutoff = 0.5) %>% head
 
-## ----using_variables_formula, results="hide"-----------------------------
+## ----using_variables_formula, results="hide"----------------------------------
 ## Dataset library
 library(MASS)
 
 ## Formula specification
 fit(medv ~ ., data = Boston, model = GBMModel)
 
-## ----using_variables_matrix, results="hide"------------------------------
+## ----using_variables_matrix, results="hide"-----------------------------------
 ## Example design matrix and response object
 x <- model.matrix(medv ~ . - 1, data = Boston)
 y <- Boston$medv
@@ -146,7 +146,7 @@ y <- Boston$medv
 ## Design matrix specification
 fit(x, y, model = GBMModel)
 
-## ----using_variables_modelframe, results="hide"--------------------------
+## ----using_variables_modelframe, results="hide"-------------------------------
 ## Model frame specification
 
 ## Formula
@@ -159,14 +159,14 @@ mf <- ModelFrame(x, y)
 
 fit(mf, model = GBMModel)
 
-## ----using_variables_modelframe_weights, results="hide"------------------
+## ----using_variables_modelframe_weights, results="hide"-----------------------
 ## Model frame specification with case weights
 mf <- ModelFrame(ncases / (ncases + ncontrols) ~ agegp + tobgp + alcgp, data = esoph,
                  weights = with(esoph, ncases + ncontrols))
 
 fit(mf, model = GBMModel)
 
-## ----using_variables_recipe, results="hide"------------------------------
+## ----using_variables_recipe, results="hide"-----------------------------------
 ## Recipe specification
 library(recipes)
 
@@ -174,7 +174,7 @@ rec <- recipe(medv ~ ., data = Boston)
 
 fit(rec, model = GBMModel)
 
-## ----using_variables_recipe_weights, results="hide"----------------------
+## ----using_variables_recipe_weights, results="hide"---------------------------
 ## Recipe specification with case weights
 df <- within(esoph, {
   y <- ncases / (ncases + ncontrols)
@@ -182,12 +182,12 @@ df <- within(esoph, {
 })
 
 rec <- recipe(y ~ agegp + tobgp + alcgp + weights, data = df) %>%
-  update_role(weights, new_role = "case_weight") %>%
+  role_case(weight = weights, replace = TRUE) %>%
   step_ordinalscore(agegp, tobgp, alcgp)
 
 fit(rec, model = GBMModel)
 
-## ----using_variables_summary, echo=FALSE---------------------------------
+## ----using_variables_summary, echo=FALSE--------------------------------------
 df <- data.frame(
   "Specification" = c("Traditional Formula", "Design Matrix",
                       "Traditional Formula", "Design Matrix", "Recipe"),
@@ -217,17 +217,17 @@ kable(df, align = c("l", rep("c", ncol(df) - 1)), escape = FALSE,
   column_spec(1, bold = TRUE) %>%
   kableExtra::group_rows("Model Frame", 3, 4)
 
-## ----using_responses_factor, results="hide"------------------------------
+## ----using_responses_factor, results="hide"-----------------------------------
 ## Iris flowers species (3-level factor)
 fit(Species ~ ., data = iris, model = GBMModel)
 
-## ----using_responses_factor_binary, results="hide"-----------------------
+## ----using_responses_factor_binary, results="hide"----------------------------
 ## Pima Indians diabetes statuses (binary factor)
 library(MASS)
 
 fit(type ~ ., data = Pima.tr, model = GBMModel)
 
-## ----using_responses_ordered, results="hide"-----------------------------
+## ----using_responses_ordered, results="hide"----------------------------------
 ## Boston housing prices (ordered factor)
 library(MASS)
 
@@ -237,39 +237,38 @@ df <- within(Boston, {
 
 fit(medv ~ ., data = df, model = GBMModel)
 
-## ----using_responses_numeric, results="hide"-----------------------------
+## ----using_responses_numeric, results="hide"----------------------------------
 ## Boston housing prices
 library(MASS)
 
 fit(medv ~ ., data = Boston, model = GBMModel)
 
-## ----using_responses_matrix, results="hide"------------------------------
+## ----using_responses_matrix, results="hide"-----------------------------------
 ## Anscombe's multiple regression models dataset
 
 ## Numeric matrix response formula
 fit(cbind(y1, y2, y3) ~ x1, data = anscombe, model = LMModel)
 
-## ----using_responses_matrix_recipe, results="hide"-----------------------
+## ----using_responses_matrix_recipe, results="hide"----------------------------
 ## Numeric matrix response recipe
 rec <- recipe(y1 + y2 + y3 ~ x1, data = anscombe)
 
 fit(rec, model = LMModel)
 
-## ----using_responses_surv, results="hide"--------------------------------
+## ----using_responses_surv, results="hide"-------------------------------------
 ## Survival response formula
 library(survival)
 
 fit(Surv(time, status) ~ ., data = surv_train, model = GBMModel)
 
-## ----using_responses_surv_recipe, results="hide"-------------------------
+## ----using_responses_surv_recipe, results="hide"------------------------------
 ## Survival response recipe
 rec <- recipe(time + status ~ ., data = surv_train) %>%
-  add_role(time, new_role = "surv_time") %>%
-  add_role(status, new_role = "surv_event")
+  role_surv(time = time, event = status)
 
 fit(rec, model = GBMModel)
 
-## ----using_performance_function------------------------------------------
+## ----using_performance_function-----------------------------------------------
 ## Survival performance metrics
 
 ## Observed responses
@@ -287,7 +286,7 @@ performance(obs, pred_probs)
 pred_events <- predict(surv_fit, newdata = surv_test, times = surv_times)
 performance(obs, pred_events)
 
-## ----using_performance_function_metrics, eval=FALSE----------------------
+## ----using_performance_function_metrics, eval=FALSE---------------------------
 #  ## Single metric function
 #  performance(obs, pred_means, metrics = cindex)
 #  
@@ -302,11 +301,11 @@ performance(obs, pred_events)
 #                                           "RMSE" = rmse,
 #                                           "RMSLE" = rmsle))
 
-## ----using_performance_function_cutoff-----------------------------------
+## ----using_performance_function_cutoff----------------------------------------
 ## User-specified survival probability metrics
 performance(obs, pred_probs, metrics = c(sensitivity, specificity), cutoff = 0.5)
 
-## ----using_metrics_functions---------------------------------------------
+## ----using_metrics_functions--------------------------------------------------
 ## Metric functions for survival means
 cindex(obs, pred_means)
 
@@ -319,14 +318,14 @@ sensitivity(obs, pred_probs)
 
 specificity(obs, pred_probs)
 
-## ----using_metrics_metricinfo--------------------------------------------
+## ----using_metrics_metricinfo-------------------------------------------------
 ## All available metrics
 metricinfo() %>% names
 
 ## Metric-specific information
 metricinfo(cindex)
 
-## ----using_metrics_metricinfo_type---------------------------------------
+## ----using_metrics_metricinfo_type--------------------------------------------
 ## Metrics for observed and predicted response variable types
 metricinfo(Surv(0)) %>% names
 
@@ -339,13 +338,13 @@ metricinfo(Surv(0), SurvProbs(0)) %>% names
 ## Identify survival-specific metrics
 metricinfo(Surv(0), auc, cross_entropy, cindex) %>% names
 
-## ----using_metrics_metricinfo_response-----------------------------------
+## ----using_metrics_metricinfo_response----------------------------------------
 ## Metrics for observed and predicted responses from model fits
 metricinfo(obs, pred_means) %>% names
 
 metricinfo(obs, pred_probs) %>% names
 
-## ----using_metrics_conf, echo=FALSE--------------------------------------
+## ----using_metrics_conf, echo=FALSE-------------------------------------------
 conf <- matrix(c("True Negative (TN)", "False Positive (FP)",
                  "False Negative (FN)", "True Positive (TP)"),
                2, 2,
@@ -357,7 +356,7 @@ kable(conf,
   kable_styling(full_width = FALSE, position = "center") %>%
   add_header_above(c("Predicted Response" = 1, "Observed Response" = 2))
 
-## ----using_metrics_conf_surv, echo=FALSE---------------------------------
+## ----using_metrics_conf_surv, echo=FALSE--------------------------------------
 conf <- matrix(c("$TN = \\Pr(\\hat{S}(t) \\gt \\text{cutoff} \\cap T \\ge t)$",
                  "$FP = \\Pr(\\hat{S}(t) \\le \\text{cutoff} \\cap T \\ge t)$",
                  "$FN = \\Pr(\\hat{S}(t) \\gt \\text{cutoff} \\cap T \\lt t)$",
@@ -372,7 +371,7 @@ kable(conf,
   kable_styling(full_width = FALSE, position = "center") %>%
   add_header_above(c("Predicted Response" = 1, "Observed Response" = 2))
 
-## ----using_resample_control----------------------------------------------
+## ----using_resample_control---------------------------------------------------
 ## Control parameters for K-fold cross-validation
 
 ## Prediction of survival means
@@ -381,32 +380,32 @@ surv_means_control <- CVControl(folds = 5, repeats = 3, seed = 123)
 ## Prediction of survival probabilities
 surv_probs_control <- CVControl(folds = 5, repeats = 3, times = surv_times, seed = 123)
 
-## ----using_resample_parallel---------------------------------------------
+## ----using_resample_parallel--------------------------------------------------
 ## Register multiple cores for parallel computations
 library(doParallel)
 registerDoParallel(cores = 2)
 
-## ----using_resample_function---------------------------------------------
+## ----using_resample_function--------------------------------------------------
 ## Resample estimation for survival means and probabilities
 (res_means <- resample(surv_fo, data = surv_train, model = GBMModel, control = surv_means_control))
 
 (res_probs <- resample(surv_fo, data = surv_train, model = GBMModel, control = surv_probs_control))
 
-## ----using_resample_summary----------------------------------------------
+## ----using_resample_summary---------------------------------------------------
 ## Summary of survival means metric
 summary(res_means)
 
 ## Summary of survival probability metrics
 summary(res_probs)
 
-## ----using_resample_summary_performance----------------------------------
+## ----using_resample_summary_performance---------------------------------------
 ## Resample-specific metrics
 metricinfo(res_means) %>% names
 
 ## User-specified survival means metrics
 summary(performance(res_means, metrics = c(cindex, rmse)))
 
-## ----using_resample_summary_stats----------------------------------------
+## ----using_resample_summary_stats---------------------------------------------
 ## User-defined statistics function
 percentiles <- function(x) quantile(x, probs = c(0.25, 0.50, 0.75))
 summary(res_means, stats = percentiles)
@@ -414,7 +413,7 @@ summary(res_means, stats = percentiles)
 ## User-defined list of statistics functions
 summary(res_means, stats = c(Mean = mean, Percentile = percentiles))
 
-## ----using_resample_plots------------------------------------------------
+## ----using_resample_plots-----------------------------------------------------
 ## Libraries for plot annotation and fomatting
 library(ggplot2)
 library(gridExtra)
@@ -428,7 +427,7 @@ p4 <- plot(res_means, type = "violin")
 ## Grid of plots
 grid.arrange(p1, p2, p3, p4, nrow = 2)
 
-## ----using_resample_strata, results="hide"-------------------------------
+## ----using_resample_strata, results="hide"------------------------------------
 ## Model frame with case status stratification
 mf <- ModelFrame(surv_fo, data = surv_train, strata = surv_train$status)
 
@@ -436,17 +435,16 @@ resample(mf, model = GBMModel)
 
 ## Recipe with case status stratification
 rec <- recipe(time + status ~ ., data = surv_train) %>%
-  add_role(time, new_role = "surv_time") %>%
-  add_role(status, new_role = "surv_event") %>%
-  add_role(status, new_role = "case_strata")
+  role_surv(time = time, event = status) %>%
+  role_case(stratum = status)
 
 resample(rec, model = GBMModel)
 
-## ----using_resample_dynamic, results="hide"------------------------------
+## ----using_resample_dynamic, results="hide"-----------------------------------
 ## Dynamic model parameter k = log number of training set observations
 resample(surv_fo, data = surv_train, model = CoxStepAICModel(k = .(log(nobs))))
 
-## ----using_resample_comparisons------------------------------------------
+## ----using_resample_comparisons-----------------------------------------------
 ## Resample estimation
 res1 <- resample(surv_fo, data = surv_train, model = GBMModel(n.trees = 25),
                  control = surv_means_control)
@@ -456,13 +454,13 @@ res3 <- resample(surv_fo, data = surv_train, model = GBMModel(n.trees = 100),
                  control = surv_means_control)
 
 ## Combine resample output for comparison
-(res <- Resamples(GBM1 = res1, GBM2 = res2, GBM3 = res3))
+(res <- c(GBM1 = res1, GBM2 = res2, GBM3 = res3))
 
 summary(res)
 
 plot(res)
 
-## ----using_resample_diff-------------------------------------------------
+## ----using_resample_diff------------------------------------------------------
 ## Pairwise model comparisons
 (res_diff <- diff(res))
 
@@ -470,37 +468,37 @@ summary(res_diff)
 
 plot(res_diff)
 
-## ----using_resample_diff_test--------------------------------------------
+## ----using_resample_diff_test-------------------------------------------------
 t.test(res_diff)
 
-## ----using_analyses_vi---------------------------------------------------
+## ----using_analyses_vi--------------------------------------------------------
 ## Predictor variable importance
 (vi <- varimp(surv_fit))
 
 plot(vi)
 
-## ----using_analyses_cal, results="hide"----------------------------------
+## ----using_analyses_cal, results="hide"---------------------------------------
 ## Binned calibration curves
 cal <- calibration(res_probs, breaks = 10)
 plot(cal, se = TRUE)
 
-## ----using_analyses_cal_smoothed, results="hide"-------------------------
+## ----using_analyses_cal_smoothed, results="hide"------------------------------
 ## Smoothed calibration curves
 cal <- calibration(res_probs, breaks = NULL)
 plot(cal)
 
-## ----using_analyses_conf-------------------------------------------------
+## ----using_analyses_conf------------------------------------------------------
 ## Confusion matrices
 (conf <- confusion(res_probs, cutoff = 0.5))
 
-## ----using_analyses_conf_plot, results="hide"----------------------------
+## ----using_analyses_conf_plot, results="hide"---------------------------------
 plot(conf)
 
-## ----using_analyses_conf_summary-----------------------------------------
+## ----using_analyses_conf_summary----------------------------------------------
 ## Summary performance metrics
 summary(conf)
 
-## ----using_analyses_conf_performance-------------------------------------
+## ----using_analyses_conf_performance------------------------------------------
 ## Confusion matrix-specific metrics
 metricinfo(conf) %>% names
 
@@ -509,82 +507,73 @@ performance(conf, metrics = c("Accuracy" = accuracy,
                               "Sensitivity" = sensitivity,
                               "Specificity" = specificity))
 
-## ----using_analyses_pd, results = "hide"---------------------------------
+## ----using_analyses_pd, results = "hide"--------------------------------------
 ## Partial dependence plots
 pd <- dependence(surv_fit, select = c(thickness, age))
 plot(pd)
 
-## ----using_analyses_pd_data, results = "hide"----------------------------
+## ----using_analyses_pd_data, results = "hide"---------------------------------
 pd <- dependence(surv_fit, data = surv_test, select = thickness, n = 20,
                  intervals = "quantile")
 plot(pd)
 
-## ----using_analyses_roc--------------------------------------------------
+## ----using_analyses_roc-------------------------------------------------------
 ## ROC curves
 roc <- performance_curve(res_probs)
 plot(roc, diagonal = TRUE)
 
-## ----using_analyses_roc_cutoffs------------------------------------------
+## ----using_analyses_roc_cutoffs-----------------------------------------------
 plot(roc, type = "cutoffs")
 
-## ----using_analyses_roc_auc----------------------------------------------
+## ----using_analyses_roc_auc---------------------------------------------------
 auc(roc)
 
-## ----using_analyses_pr---------------------------------------------------
+## ----using_analyses_pr--------------------------------------------------------
 ## Precision recall curves
 pr <- performance_curve(res_probs, metrics = c(precision, recall))
 plot(pr)
 
-## ----using_analyses_pr_auc-----------------------------------------------
+## ----using_analyses_pr_auc----------------------------------------------------
 auc(pr)
 
-## ----using_analyses_lift-------------------------------------------------
+## ----using_analyses_lift------------------------------------------------------
 ## Lift curves
 lf <- lift(res_probs)
 plot(lf, find = 0.75)
 
-## ----using_strategies_tune-----------------------------------------------
+## ----using_strategies_tune----------------------------------------------------
 ## Tune over automatic grid of model parameters
-(tuned_model <- tune(surv_fo, data = surv_train, model = GBMModel,
-                     grid = 3,
-                     control = surv_means_control,
-                     metrics = c("CIndex" = cindex, "RMSE" = rmse)))
+surv_fit <- TunedModel(
+  GBMModel,
+  grid = 3,
+  control = surv_means_control,
+  metrics = c("CIndex" = cindex, "RMSE" = rmse)
+) %>% fit(surv_fo, data = surv_train)
+(tuned_model <- as.MLModel(surv_fit))
 
-## ----using_strategies_tune_grid, eval=FALSE------------------------------
+## ----using_strategies_tune_grid, eval=FALSE-----------------------------------
 #  ## Tune over randomly sampled grid points
-#  tune(surv_fo, data = surv_train, model = GBMModel,
-#       grid = Grid(length = 100, random = 10),
-#       control = surv_means_control)
+#  TunedModel(
+#    GBMModel,
+#    grid = Grid(length = 100, random = 10),
+#    control = surv_means_control
+#  ) %>% fit(surv_fo, data = surv_train)
 #  
 #  ## Tune over user-specified grid points
-#  tune(surv_fo, data = surv_train, model = GBMModel,
-#       grid = expand_params(n.trees = c(25, 50, 100),
-#                            interaction.depth = 1:3),
-#       control = surv_means_control)
+#  TunedModel(
+#    GBMModel,
+#    grid = expand_params(n.trees = c(25, 50, 100),
+#                         interaction.depth = 1:3),
+#    control = surv_means_control
+#  ) %>% fit(surv_fo, data = surv_train)
 
-## ----using_strategies_tune_summary---------------------------------------
+## ----using_strategies_tune_summary--------------------------------------------
 summary(tuned_model)
 
-## ----using_strategies_tune_plot------------------------------------------
+## ----using_strategies_tune_plot-----------------------------------------------
 plot(tuned_model, type = "line")
 
-## ----using_strategies_tune_fit-------------------------------------------
-## Fit the tuned model
-surv_fit <- fit(surv_fo, data = surv_train, model = tuned_model)
-
-## ----using_strategies_tune_model-----------------------------------------
-## Model interface for grid tuning
-tuned_model <- TunedModel(GBMModel, grid = 3, control = surv_means_control,
-                          metrics = c("CIndex" = cindex, "RMSE" = rmse))
-surv_fit <- fit(surv_fo, data = surv_train, model = tuned_model)
-(vi <- varimp(surv_fit))
-
-## Predictive performance of the tuning process
-res_tuned <- resample(surv_fo, data = surv_train, model = tuned_model,
-                      control = surv_means_control)
-summary(res_tuned)
-
-## ----using_strategies_selection, results="hide"--------------------------
+## ----using_strategies_select, results="hide"----------------------------------
 ## Model interface for model selection
 selected_model <- SelectedModel(
   expand_model(GBMModel, n.trees = c(50, 100), interaction.depth = 1:2),
@@ -596,7 +585,7 @@ selected_model <- SelectedModel(
 ## Fit the selected model
 fit(surv_fo, data = surv_train, model = selected_model)
 
-## ----using_strategies_selection_tuned, results="hide"--------------------
+## ----using_strategies_select_tune, results="hide"-----------------------------
 ## Model interface for selection among tuned models
 selected_tuned_model <- SelectedModel(
   TunedModel(GBMModel, control = surv_means_control),
@@ -607,7 +596,7 @@ selected_tuned_model <- SelectedModel(
 ## Fit the selected tuned model
 fit(surv_fo, data = surv_train, model = selected_tuned_model)
 
-## ----using_strategies_ensembles------------------------------------------
+## ----using_strategies_ensembles-----------------------------------------------
 ## Stacked regression
 stackedmodel <- StackedModel(GLMBoostModel, CForestModel, CoxModel)
 res_stacked <- resample(surv_fo, data = surv_train, model = stackedmodel)
@@ -619,7 +608,7 @@ supermodel <- SuperModel(GLMBoostModel, CForestModel, CoxModel,
 res_super <- resample(surv_fo, data = surv_train, model = supermodel)
 summary(res_super)
 
-## ----using_settings------------------------------------------------------
+## ----using_settings-----------------------------------------------------------
 ## Change settings
 presets <- settings(control = "BootControl", grid = 10)
 
@@ -632,7 +621,7 @@ settings("control", "grid")
 ## Restore the previous settings
 settings(presets)
 
-## ----using_extensions_mlmodel--------------------------------------------
+## ----using_extensions_mlmodel-------------------------------------------------
 ## Logistic regression model extension
 LogisticModel <- MLModel(
   name = "LogisticModel",
@@ -650,7 +639,7 @@ LogisticModel <- MLModel(
   }
 )
 
-## ----using_extensions_mlmetric-------------------------------------------
+## ----using_extensions_mlmetric------------------------------------------------
 ## F2 score metric extension
 f2_score <- MLMetric(
   function(observed, predicted, ...) {
@@ -661,13 +650,13 @@ f2_score <- MLMetric(
   maximize = TRUE
 )
 
-## ----using_extensions_usage----------------------------------------------
+## ----using_extensions_usage---------------------------------------------------
 ## Logistic regression analysis
 library(MASS)
 res <- resample(type ~ ., data = Pima.tr, model = LogisticModel)
 summary(performance(res, metric = f2_score))
 
-## ----reference_models, echo = FALSE--------------------------------------
+## ----reference_models, echo = FALSE-------------------------------------------
 library(MachineShop)
 
 info <- modelinfo()
@@ -699,7 +688,7 @@ kable(df_classes,
                       "m = matrix, n = numeric",
                       "S = Surv"))
 
-## ----reference_metrics, table_metrics, echo=FALSE------------------------
+## ----reference_metrics, table_metrics, echo=FALSE-----------------------------
 library(MachineShop)
 
 f <- function(x) {

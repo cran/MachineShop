@@ -1,3 +1,6 @@
+context("Trained Models")
+
+
 models <- c(
   "AdaBagModel",
   "AdaBoostModel",
@@ -34,29 +37,30 @@ models <- c(
 control <- CVControl(folds = 3)
 
 test_tune_grid1 <- function(model) {
-  tune(type ~ ., data = Pima.tr, model = model, grid = 1, control = control)
+  fit(type ~ ., data = Pima.tr,
+      model = TunedModel(model, grid = 1, control = control))
 }
 
 test_tune_grid2 <- function(model) {
-  tune(type ~ ., data = Pima.tr, model = model, grid = 3, control = control)
+  fit(type ~ ., data = Pima.tr,
+      model = TunedModel(model, grid = 3, control = control))
 }
 
 test_tune_grid3 <- function(model) {
-  tune(type ~ ., data = Pima.tr, model = model,
-       grid = Grid(length = 100, random = 25), control = control)
+  fit(type ~ ., data = Pima.tr,
+      model = TunedModel(model, grid = Grid(length = 100, random = 25),
+                         control = control))
 }
 
+
 for (model in models) {
-
-  context(paste("Model Tuning:", model))
-
-  test_that("tune grid", {
-    skip_if_not(TEST_MODEL_TUNING)
+  test_that("grid tuning of models", {
+    skip_if_not(TEST_TRAINING)
+    context(paste("Tuned Model:", model))
     with_parallel({
-      expect_is(test_tune_grid1(model), "MLModelTune")
-      expect_is(test_tune_grid2(model), "MLModelTune")
-      expect_is(test_tune_grid3(model), "MLModelTune")
+      expect_is(test_tune_grid1(model), "MLModelFit")
+      expect_is(test_tune_grid2(model), "MLModelFit")
+      expect_is(test_tune_grid3(model), "MLModelFit")
     })
   })
-  
 }

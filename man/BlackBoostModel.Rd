@@ -4,12 +4,22 @@
 \alias{BlackBoostModel}
 \title{Gradient Boosting with Regression Trees}
 \usage{
-BlackBoostModel(family = NULL, mstop = 100, nu = 0.1,
-  risk = c("inbag", "oobag", "none"), stopintern = FALSE,
-  trace = FALSE, teststat = c("quadratic", "maximum"),
-  testtype = c("Teststatistic", "Univariate", "Bonferroni",
-  "MonteCarlo"), mincriterion = 0, minsplit = 10, minbucket = 4,
-  maxdepth = 2, saveinfo = FALSE, ...)
+BlackBoostModel(
+  family = NULL,
+  mstop = 100,
+  nu = 0.1,
+  risk = c("inbag", "oobag", "none"),
+  stopintern = FALSE,
+  trace = FALSE,
+  teststat = c("quadratic", "maximum"),
+  testtype = c("Teststatistic", "Univariate", "Bonferroni", "MonteCarlo"),
+  mincriterion = 0,
+  minsplit = 10,
+  minbucket = 4,
+  maxdepth = 2,
+  saveinfo = FALSE,
+  ...
+)
 }
 \arguments{
 \item{family}{optional \code{\link[mboost]{Family}} object.  Set
@@ -75,5 +85,5 @@ fit(type ~ ., data = Pima.tr, model = BlackBoostModel)
 \seealso{
 \code{\link[mboost]{blackboost}}, \code{\link[mboost]{Family}},
 \code{\link[partykit]{ctree_control}}, \code{\link{fit}},
-\code{\link{resample}}, \code{\link{tune}}
+\code{\link{resample}}
 }

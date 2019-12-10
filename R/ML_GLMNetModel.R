@@ -21,8 +21,8 @@
 #' @param type.gaussian algorithm type for guassian models.
 #' @param type.logistic algorithm type for logistic models.
 #' @param type.multinomial algorithm type for multinomial models.
-#' 
-#' @details 
+#'
+#' @details
 #' \describe{
 #'   \item{Response Types:}{\code{factor}, \code{matrix}, \code{numeric},
 #'     \code{Surv}}
@@ -30,15 +30,15 @@
 #'     \code{lambda}, \code{alpha}
 #'   }
 #' }
-#' 
+#'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
-#' 
+#'
 #' @return \code{MLModel} class object.
-#' 
+#'
 #' @seealso \code{\link[glmnet]{glmnet}}, \code{\link{fit}},
-#' \code{\link{resample}}, \code{\link{tune}}
-#' 
+#' \code{\link{resample}}
+#'
 #' @examples
 #' fit(sale_amount ~ ., data = ICHomes, model = GLMNetModel(lambda = 0.01))
 #'
@@ -51,15 +51,16 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
                           .(ifelse(nvars < 500, "covariance", "naive")),
                         type.logistic = c("Newton", "modified.Newton"),
                         type.multinomial = c("ungrouped", "grouped")) {
-  
+
   type.logistic <- match.arg(type.logistic)
   type.multinomial <- match.arg(type.multinomial)
-  
+
   MLModel(
     name = "GLMNetModel",
     label = "Lasso and Elastic-Net",
     packages = "glmnet",
-    response_types = c("factor", "matrix", "numeric", "Surv"),
+    response_types = c("BinomialVariate", "factor", "matrix", "numeric",
+                       "PoissonVariate", "Surv"),
     predictor_encoding = "model.matrix",
     params = params(environment()),
     grid = function(x, length, ...) {
@@ -75,29 +76,36 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
     },
     fit = function(formula, data, weights, family = NULL, nlambda = 1, ...) {
       x <- model.matrix(data, intercept = FALSE)
+      x.offset <- model.offset(data)
       y <- response(data)
       if (is.null(family)) {
         family <- switch_class(y,
-                               "factor" = ifelse(nlevels(y) == 2,
-                                                 "binomial", "multinomial"),
-                               "matrix" = "mgaussian",
-                               "numeric" = "gaussian",
-                               "Surv" = "cox")
+                               BinomialVariate = "binomial",
+                               factor = ifelse(nlevels(y) == 2,
+                                               "binomial", "multinomial"),
+                               matrix = "mgaussian",
+                               numeric = "gaussian",
+                               PoissonVariate = "poisson",
+                               Surv = "cox")
       }
-      modelfit <- glmnet::glmnet(x, y, weights = weights, family = family,
-                                 nlambda = nlambda, ...)
+      modelfit <- glmnet::glmnet(x, y, offset = x.offset, weights = weights,
+                                 family = family, nlambda = nlambda, ...)
       modelfit$x <- x
+      modelfit$x.offset <- x.offset
       modelfit
     },
-    predict = function(object, newdata, fitbits, times, ...) {
-      y <- response(fitbits)
+    predict = function(object, newdata, model, times, ...) {
+      y <- response(model)
       newx <- model.matrix(newdata, intercept = FALSE)
       if (is.Surv(y)) {
-        lp <- predict(object, newx = object$x, type = "link")[, 1]
-        new_lp <- predict(object, newx = newx, type = "link")[, 1]
+        lp <- predict(object, newx = object$x, type = "link",
+                      newoffset = object$x.offset)[, 1]
+        new_lp <- predict(object, newx = newx, type = "link",
+                          newoffset = model.offset(newdata))[, 1]
         predict(y, lp, times, new_lp, ...)
       } else {
-        predict(object, newx = newx, s = object$lambda[1], type = "response")
+        predict(object, newx = newx, s = object$lambda[1], type = "response",
+                newoffset = model.offset(newdata))
       }
     },
     varimp = function(object, ...) {
@@ -110,7 +118,7 @@ GLMNetModel <- function(family = NULL, alpha = 1, lambda = 0,
       }
     }
   )
-  
+
 }
 
 MLModelFunction(GLMNetModel) <- NULL

@@ -4,9 +4,15 @@
 \alias{CForestModel}
 \title{Conditional Random Forest Model}
 \usage{
-CForestModel(teststat = c("quad", "max"), testtype = c("Univariate",
-  "Teststatistic", "Bonferroni", "MonteCarlo"), mincriterion = 0,
-  ntree = 500, mtry = 5, replace = TRUE, fraction = 0.632)
+CForestModel(
+  teststat = c("quad", "max"),
+  testtype = c("Univariate", "Teststatistic", "Bonferroni", "MonteCarlo"),
+  mincriterion = 0,
+  ntree = 500,
+  mtry = 5,
+  replace = TRUE,
+  fraction = 0.632
+)
 }
 \arguments{
 \item{teststat}{character specifying the type of the test statistic to be
@@ -53,5 +59,5 @@ fit(sale_amount ~ ., data = ICHomes, model = CForestModel)
 }
 \seealso{
 \code{\link[party]{cforest}}, \code{\link{fit}},
-\code{\link{resample}}, \code{\link{tune}}
+\code{\link{resample}}
 }

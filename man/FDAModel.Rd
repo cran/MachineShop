@@ -5,8 +5,13 @@
 \alias{PDAModel}
 \title{Flexible and Penalized Discriminant Analysis Models}
 \usage{
-FDAModel(theta = NULL, dimension = NULL, eps = .Machine$double.eps,
-  method = .(mda::polyreg), ...)
+FDAModel(
+  theta = NULL,
+  dimension = NULL,
+  eps = .Machine$double.eps,
+  method = .(mda::polyreg),
+  ...
+)
 
 PDAModel(lambda = 1, df = NULL, ...)
 }
@@ -73,5 +78,5 @@ fit(Species ~ ., data = iris, model = PDAModel)
 }
 \seealso{
 \code{\link[mda]{fda}}, \code{\link[mda]{predict.fda}},
-\code{\link{fit}}, \code{\link{resample}}, \code{\link{tune}}
+\code{\link{fit}}, \code{\link{resample}}
 }

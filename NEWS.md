@@ -2,6 +2,64 @@
 
 ## Version Updates
 
+## 2.0.0
+* Rename global setting `stat.Tune` to `stat.Train`.
+* Enable selection of formulas, design matrices, and model frames with `SelectedFormula()`, `SelectedMatrix()`, and `SelectedModelFrame()`.
+* Rename discrete variable classes: `BinomialMatrix` &rarr; `BinomialVariate`, `DiscreteVector` &rarr; `DiscreteVariate`, `NegBinomialVector` &rarr; `NegBinomialVariate`, and `PoissonVector` &rarr; `PoissonVariate`.
+* Add global setting `require` for user-specified packages to load during parallel execution of resampling algorithms.
+* Rename recipe role `case_strata` to `case_stratum`.
+* Rename `object` argument to `data` in `ConfusionMatrix()`, `SurvEvents()`, and `SurvProbs()`.
+* Add `c` methods for `BinomialVariate`, `DiscreteVariate`, `ListOf`, and `SurvMatrix`.
+* Add `role_binom()`, `role_case()`, `role_surv()`, and `role_term()` to set recipe roles.
+* Support `base` argument to `varimp()` for log-transformed p-values.
+* Rename `ParamSet` to `ParameterGrid`.
+* Add option to `reset` global settings individually.
+* Add `as.data.frame` methods for `Performance`, `Performance` summary, `PerformanceDiff`, `PerformanceDiffTest`, and `Resamples`.
+
+
+## 1.99.0
+* Implement `DiscreteVector` class and subclasses `BinomialVector`, `NegBinomialVector`, and `PoissonVector` for discrete response variables.
+* Extend model support to `DiscreteVector` classes as follows.
+  * `DiscreteVector`: all models applicable to numeric responses.
+  * `BinomialVector`/`NegBinomialVector`/`PoissonVector`: `BlackBoostModel`, `GAMBoostModel`, `GLMBoostModel`, `GLMModel`, and `GLMStepAICModel`.
+  * `BinomialVector`/`PoissonVector`: `GLMNetModel`.
+  * `PoissonVector`: `GBMModel` and `XGBModel`
+* Add support for offset terms in formulas, model matrices, and recipes.
+* Add recipe tune information to fitted `MLModel`.
+* Replace `Calibration()`, `Confusion()`, `Curves()`, `Lift()`, and `Resamples()` with `c` methods.
+* Redefine `Confusion` S3 class as `ConfusionList` S4 class.
+* Remove support for one-element list to `metricinfo()` and `modelinfo()`.
+* Remove deprecated `expand.model()`.
+* Expire deprecated `tune()`.
+
+
+## 1.6.4
+* Calculate regression variable importance as negative log p-values.
+* Support empty vectors in `metricinfo()` and `modelinfo()`.
+* Add support for **dials** package parameter sets with `ParamSet()`.
+
+
+## 1.6.3
+* Add `as.MLModel()` for coercing `MLModelFit` to `MLModel`.
+* Deprecate `tune()`; call `fit()` with a `SelectedModel` or `TunedModel` instead.
+
+
+## 1.6.2
+* Implement optimism-corrected cross-validation (`CVOptimismControl`).
+* Fix `BootOptimismControl` error with 2D responses.
+* Add global option `max.print` for the number of models and data frame rows to show with print methods.
+* Enable recipe selection with `SelectedRecipe()`.
+* Refactor `tune()` methods.
+* Replace `MLModelFit` element `fitbits` (`MLFitBits` object) with `mlmodel` (`MLModel` object).
+* Rename `VarImp` slot `center` to `shift`.
+
+
+## 1.6.1
+* Use tibbles for parameter grids.
+* Add random sampling option to `expand_model()`, `expand_params()`, and `expand_steps()`.
+* Display information for model functions and objects more compactly.
+
+
 ## 1.6.0
 * Add global setting for default cutoff threshold value.
 * Add option to reset all global settings.

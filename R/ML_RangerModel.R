@@ -1,7 +1,7 @@
 #' Fast Random Forest Model
-#' 
+#'
 #' Fast implementation of random forests or recursive partitioning.
-#' 
+#'
 #' @param num.trees number of trees.
 #' @param mtry number of variables to possibly split at in each node.
 #' @param importance variable importance mode.
@@ -24,7 +24,7 @@
 #' @param scale.permutation.importance scale permutation importance by
 #'   standard error.
 #' @param verbose show computation status and estimated runtime.
-#' 
+#'
 #' @details
 #' \describe{
 #'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
@@ -33,15 +33,15 @@
 #'   }
 #' }
 #' * included only in randomly sampled grid points
-#' 
+#'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
-#' 
+#'
 #' @return \code{MLModel} class object.
-#' 
+#'
 #' @seealso \code{\link[ranger]{ranger}}, \code{\link{fit}},
-#' \code{\link{resample}}, \code{\link{tune}}
-#' 
+#' \code{\link{resample}}
+#'
 #' @examples
 #' fit(Species ~ ., data = iris, model = RangerModel)
 #'
@@ -55,9 +55,9 @@ RangerModel <- function(num.trees = 500, mtry = NULL,
                         always.split.variables = NULL,
                         respect.unordered.factors = NULL,
                         scale.permutation.importance = FALSE, verbose = FALSE) {
-  
+
   importance <- match.arg(importance)
-  
+
   MLModel(
     name = "RangerModel",
     label = "Fast Random Forests",
@@ -70,18 +70,19 @@ RangerModel <- function(num.trees = 500, mtry = NULL,
         mtry = seq_nvars(x, RangerModel, length)
       )
       if (random) {
-        params$min.node.size <- 1:min(nrow(x), 20)
-        params$splitrule <- if (is.factor(response(x))) {
+        params$min.node.size <- round(seq(1, min(20, nrow(x)), length = length))
+        splitrule <- if (is.factor(response(x))) {
           c("gini", "extratrees")
         } else {
           c("variance", "extratrees", "maxstat")
         }
+        params$splitrule <- head(sample(splitrule), length)
       }
       params
     },
     fit = function(formula, data, weights, ...) {
       ranger::ranger(formula, data = as.data.frame(data),
-                     case.weights = weights, 
+                     case.weights = weights,
                      probability = is(response(data), "factor"), ...)
     },
     predict = function(object, newdata, times, ...) {
@@ -97,7 +98,7 @@ RangerModel <- function(num.trees = 500, mtry = NULL,
       ranger::importance(object)
     }
   )
-  
+
 }
 
 MLModelFunction(RangerModel) <- NULL

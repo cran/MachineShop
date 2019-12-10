@@ -1,5 +1,5 @@
 #' Generalized Boosted Regression Model
-#' 
+#'
 #' Fits generalized boosted regression models.
 #'
 #' @param distribution optional character string specifying the name of the
@@ -13,7 +13,7 @@
 #' @param shrinkage shrinkage parameter applied to each tree in the expansion.
 #' @param bag.fraction fraction of the training set observations randomly
 #'   selected to propose the next tree in the expansion.
-#' 
+#'
 #' @details
 #' \describe{
 #'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
@@ -23,27 +23,26 @@
 #'   }
 #' }
 #' * included only in randomly sampled grid points
-#' 
+#'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
-#' 
+#'
 #' @return \code{MLModel} class object.
-#' 
-#' @seealso \code{\link[gbm]{gbm}}, \code{\link{fit}}, \code{\link{resample}},
-#' \code{\link{tune}}
-#' 
+#'
+#' @seealso \code{\link[gbm]{gbm}}, \code{\link{fit}}, \code{\link{resample}}
+#'
 #' @examples
 #' fit(Species ~ ., data = iris, model = GBMModel)
 #'
 GBMModel <- function(distribution = NULL, n.trees = 100,
                      interaction.depth = 1, n.minobsinnode = 10,
                      shrinkage = 0.1, bag.fraction = 0.5) {
-  
+
   MLModel(
     name = "GBMModel",
     label = "Generalized Boosted Regression",
     packages = "gbm",
-    response_types = c("factor", "numeric", "Surv"),
+    response_types = c("factor", "numeric", "PoissonVariate", "Surv"),
     predictor_encoding = "terms",
     params = params(environment()),
     grid = function(x, length, random, ...) {
@@ -53,31 +52,33 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
       )
       if (random) {
         params$shrinkage <- seq(0.001, 0.1, length = length)
-        params$n.minobsinnode <- 1:min(nrow(x), 20)
+        params$n.minobsinnode <-
+          round(seq(1, min(20, nrow(x)), length = length))
       }
       params
     },
     fit = function(formula, data, weights, distribution = NULL, ...) {
       if (is.null(distribution)) {
         distribution <- switch_class(response(data),
-                                     "factor" = "multinomial",
-                                     "numeric" = "gaussian",
-                                     "Surv" = "coxph")
+                                     factor = "multinomial",
+                                     numeric = "gaussian",
+                                     PoissonVariate = "poisson",
+                                     Surv = "coxph")
       }
       eval_fit(data,
                formula = gbm::gbm(formula, data = as.data.frame(data),
                                   weights = weights,
                                   distribution = distribution, ...),
-               matrix = gbm::gbm.fit(x, y, w = weights,
-                                     distribution = distribution,
+               matrix = gbm::gbm.fit(x, y, offset = model.offset(data),
+                                     w = weights, distribution = distribution,
                                      verbose = FALSE, ...))
     },
-    predict = function(object, newdata, fitbits, times, ...) {
+    predict = function(object, newdata, model, times, ...) {
       newdata <- as.data.frame(newdata)
       n <- object$n.trees
       if (object$distribution$name == "coxph") {
-        y <- response(fitbits)
-        data <- preprocess(fitbits@x)
+        y <- response(model)
+        data <- preprocess(model@x)
         lp <- predict(object, newdata = data, n.trees = n, type = "link")
         new_lp <- predict(object, newdata = newdata, n.trees = n, type = "link")
         predict(y, lp, times, new_lp, ...)
@@ -89,7 +90,7 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
       gbm::relative.influence(object, n.trees = object$n.trees)
     }
   )
-  
+
 }
 
 MLModelFunction(GBMModel) <- NULL

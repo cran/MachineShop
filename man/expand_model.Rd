@@ -4,16 +4,19 @@
 \alias{expand_model}
 \title{Model Expansion Over Tuning Parameters}
 \usage{
-expand_model(x, ...)
+expand_model(x, ..., random = FALSE)
 }
 \arguments{
 \item{x}{\link[=models]{model} function, function name, or call.}
 
 \item{...}{named vectors or factors or a list of these containing the
 parameter values over which to expand \code{x}.}
+
+\item{random}{number of points to be randomly sampled from the parameter grid
+or \code{FALSE} if all points are to be returned.}
 }
 \value{
-\code{MLModelList} class object that inherits from \code{list}.
+\code{list} of expanded models.
 }
 \description{
 Expand a model over all combinations of a grid of tuning parameters.
@@ -28,5 +31,5 @@ fit(medv ~ ., data = Boston, model = SelectedModel(models))
 
 }
 \seealso{
-\code{\link{tune}}
+\code{\link{SelectedModel}}
 }

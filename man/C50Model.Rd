@@ -4,9 +4,19 @@
 \alias{C50Model}
 \title{C5.0 Decision Trees and Rule-Based Model}
 \usage{
-C50Model(trials = 1, rules = FALSE, subset = TRUE, bands = 0,
-  winnow = FALSE, noGlobalPruning = FALSE, CF = 0.25, minCases = 2,
-  fuzzyThreshold = FALSE, sample = 0, earlyStopping = TRUE)
+C50Model(
+  trials = 1,
+  rules = FALSE,
+  subset = TRUE,
+  bands = 0,
+  winnow = FALSE,
+  noGlobalPruning = FALSE,
+  CF = 0.25,
+  minCases = 2,
+  fuzzyThreshold = FALSE,
+  sample = 0,
+  earlyStopping = TRUE
+)
 }
 \arguments{
 \item{trials}{integer number of boosting iterations.}
@@ -17,7 +27,7 @@ rule-based model.}
 \item{subset}{logical indicating whether the model should evaluate groups of
 discrete predictors for splits.}
 
-\item{bands}{integer between 2 and 1000 specifying a number of bands into 
+\item{bands}{integer between 2 and 1000 specifying a number of bands into
 which to group rules ordered by their affect on the error rate.}
 
 \item{winnow}{logical indicating use of predictor winnowing (i.e. feature
@@ -72,6 +82,5 @@ varimp(model_fit, metric = "splits", scale = FALSE)
 
 }
 \seealso{
-\code{\link[C50]{C5.0}}, \code{\link{fit}}, \code{\link{resample}},
-\code{\link{tune}}
+\code{\link[C50]{C5.0}}, \code{\link{fit}}, \code{\link{resample}}
 }

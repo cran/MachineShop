@@ -32,7 +32,7 @@ rdoc_url <- function(name) name
 # Features
 
 ```{r overview_modelinfo, echo=FALSE}
-library("MachineShop")
+library(MachineShop)
 info <- modelinfo()
 ```
 
@@ -255,7 +255,7 @@ In the example below, Bayesian information criterion (BIC) based stepwise variab
 fit(surv_fo, data = surv_train, model = CoxStepAICModel(k = .(log(nobs))))
 
 ## Response variable: y
-fit (surv_fo, data = surv_train, model = CoxStepAICModel(k = .(log(length(y)))))
+fit(surv_fo, data = surv_train, model = CoxStepAICModel(k = .(log(length(y)))))
 ```
 
 
@@ -359,7 +359,7 @@ rec <- recipe(medv ~ ., data = Boston)
 fit(rec, model = GBMModel)
 ```
 
-Case weights and stratified resampling are also supported for recipes via the designations of `"case_weight"` and `"case_strata"` roles, respectively.  As an example, an initial step is included in the recipe below to update (alter) the role of variable `weights` to be case weights.  That is followed by a step to convert three ordinal factors to integer scores.
+Case weights and stratified resampling are also supported for recipes with the `role_case` function.  As an example, an initial step is included in the recipe below to replace the original role of variable `weights` with a designation of case weights.  That is followed by a step to convert three ordinal factors to integer scores.
 
 ```{r using_variables_recipe_weights, results="hide"}
 ## Recipe specification with case weights
@@ -369,7 +369,7 @@ df <- within(esoph, {
 })
 
 rec <- recipe(y ~ agegp + tobgp + alcgp + weights, data = df) %>%
-  update_role(weights, new_role = "case_weight") %>%
+  role_case(weight = weights, replace = TRUE) %>%
   step_ordinalscore(agegp, tobgp, alcgp)
 
 fit(rec, model = GBMModel)
@@ -494,13 +494,12 @@ library(survival)
 fit(Surv(time, status) ~ ., data = surv_train, model = GBMModel)
 ```
 
-For recipes, survival responses should be specified with the individual survival time and event variables given on the left hand side of the formula and with their roles designated as `"surv_time"` and `"surv_event"`.
+For recipes, survival responses should be specified with the individual survival time and event variables given on the left hand side of the formula and with their roles designated with the `role_surv` function.
 
 ```{r using_responses_surv_recipe, results="hide"}
 ## Survival response recipe
 rec <- recipe(time + status ~ ., data = surv_train) %>%
-  add_role(time, new_role = "surv_time") %>%
-  add_role(status, new_role = "surv_event")
+  role_surv(time = time, event = status)
 
 fit(rec, model = GBMModel)
 ```
@@ -799,6 +798,9 @@ BootOptimismControl
 CVControl
   : Repeated K-fold cross-validation [@kohavi:1995:SCB].  The full data set is repeatedly partitioned into K-folds.  For a given partitioning, prediction is performed on each of the K folds with models fit on all remaining folds.  10-fold cross-validation is the package default.
 
+CVOptimismControl
+  :  Optimism-corrected cross-validation [@davison:1997:BMA, eq. 6.48].
+
 OOBControl
   : Out-of-bootstrap resampling.  Models are fit with bootstrap resampled training sets and used to predict the unsampled cases.
   
@@ -900,7 +902,7 @@ grid.arrange(p1, p2, p3, p4, nrow = 2)
 
 ## Stratified Resampling
 
-Stratification of cases for the construction of resampled training and test sets can be employed to help achieve balance across the sets.  Stratified resampling is automatically performed if variable specification is in terms of a traditional formula and will be done according to the response variable if a numeric vector or factor, the event variable if survival, and the first variable if a numeric matrix.  For model frames and recipes, stratification variables must be defined explicitly with the `strata` argument to the `ModelFrame` constructor or with the `"case_strata"` role designation in a recipe step. 
+Stratification of cases for the construction of resampled training and test sets can be employed to help achieve balance across the sets.  Stratified resampling is automatically performed if variable specification is in terms of a traditional formula and will be done according to the response variable if a numeric vector or factor, the event variable if survival, and the first variable if a numeric matrix.  For model frames and recipes, stratification variables must be defined explicitly with the `strata` argument to the `ModelFrame` constructor or with the `role_case` function. 
 
 ```{r using_resample_strata, results="hide"}
 ## Model frame with case status stratification
@@ -910,9 +912,8 @@ resample(mf, model = GBMModel)
 
 ## Recipe with case status stratification
 rec <- recipe(time + status ~ ., data = surv_train) %>%
-  add_role(time, new_role = "surv_time") %>%
-  add_role(status, new_role = "surv_event") %>%
-  add_role(status, new_role = "case_strata")
+  role_surv(time = time, event = status) %>%
+  role_case(stratum = status)
 
 resample(rec, model = GBMModel)
 ```
@@ -942,7 +943,7 @@ res3 <- resample(surv_fo, data = surv_train, model = GBMModel(n.trees = 100),
                  control = surv_means_control)
 
 ## Combine resample output for comparison
-(res <- Resamples(GBM1 = res1, GBM2 = res2, GBM3 = res3))
+(res <- c(GBM1 = res1, GBM2 = res2, GBM3 = res3))
 
 summary(res)
 
@@ -981,7 +982,7 @@ The importance of variables in a model fit is estimated with the `varimp` functi
 plot(vi)
 ```
 
-Alternatively, importance is based on one minus predictor variable p-values for statistical models, like `CoxModel`, that produce them.  For other classes of models, variable importance is generally defined and calculated by their underlying source packages.
+Alternatively, importance is based on negative log-transformed p-values for statistical models, like `CoxModel`, that produce them.  For other classes of models, variable importance is generally defined and calculated by their underlying source packages.
 
 
 ## Calibration Curves
@@ -1123,29 +1124,36 @@ plot(lf, find = 0.75)
 
 ## Model Tuning
 
-Many of the modeling functions have arguments, or tuning parameters, that control aspects of their model fitting algorithms.  For example, `GBMModel` parameters `n.trees` and `interaction.depth` control the number of decision trees to fit and the maximum depth of variable interactions.  The `tune` function performs model fitting over a grid of parameter values and returns the model with the most optimal values.  Optimality is determined based on the first performance metric of the `metrics` argument of `tune` if supplied or the first default metric of the `performance` function otherwise.  Argument `grid` additionally controls the construction of grid values and can be a single numeric value giving the grid length in each parameter dimension.  As shown in the output below, tuning results include the tuning parameter grid values, the names of models fit to each, all calculated metrics, the final model selected, the metric upon which its selection was based, and its tuning parameters.
+Many of the modeling functions have arguments, or tuning parameters, that control aspects of their model fitting algorithms.  For example, `GBMModel` parameters `n.trees` and `interaction.depth` control the number of decision trees to fit and the maximum depth of variable interactions.  When called with a `TunedModel`, the `fit` function performs model fitting over a grid of parameter values and returns the model with the most optimal values.  Optimality is determined based on the first performance metric of the `metrics` argument of `TunedModel` if supplied or the first default metric of the `performance` function otherwise.  Argument `grid` additionally controls the construction of grid values and can be a single numeric value giving the grid length in each parameter dimension.  As shown in the output below, `as.MLModel` will extract a tuned model from fit results for viewing of the tuning parameter grid values, the names of models fit to each, all calculated metrics, the final model selected, the metric upon which its selection was based, and its tuning parameters.
 
 ```{r using_strategies_tune}
 ## Tune over automatic grid of model parameters
-(tuned_model <- tune(surv_fo, data = surv_train, model = GBMModel,
-                     grid = 3,
-                     control = surv_means_control,
-                     metrics = c("CIndex" = cindex, "RMSE" = rmse)))
+surv_fit <- TunedModel(
+  GBMModel,
+  grid = 3,
+  control = surv_means_control,
+  metrics = c("CIndex" = cindex, "RMSE" = rmse)
+) %>% fit(surv_fo, data = surv_train)
+(tuned_model <- as.MLModel(surv_fit))
 ```
 
 Grid values may also be a call to `Grid` with the grid `length` and number of grid points to sample at `random` or a user-specified data frame of grid points.
 
 ```{r using_strategies_tune_grid, eval=FALSE}
 ## Tune over randomly sampled grid points
-tune(surv_fo, data = surv_train, model = GBMModel,
-     grid = Grid(length = 100, random = 10),
-     control = surv_means_control)
+TunedModel(
+  GBMModel,
+  grid = Grid(length = 100, random = 10),
+  control = surv_means_control
+) %>% fit(surv_fo, data = surv_train)
 
 ## Tune over user-specified grid points
-tune(surv_fo, data = surv_train, model = GBMModel,
-     grid = expand_params(n.trees = c(25, 50, 100),
-                          interaction.depth = 1:3),
-     control = surv_means_control)
+TunedModel(
+  GBMModel,
+  grid = expand_params(n.trees = c(25, 50, 100),
+                       interaction.depth = 1:3),
+  control = surv_means_control
+) %>% fit(surv_fo, data = surv_train)
 ```
 
 Statistics summarizing the resampled performance metrics across all tuning parameter combinations can be obtained with the `summary` function.
@@ -1160,34 +1168,12 @@ Line plots of tuning results display the resampled metric means, or another stat
 plot(tuned_model, type = "line")
 ```
 
-The return value of `tune` is a model object with the optimal tuning parameters and not a model fit object.  The returned model can be fit subsequently to a set of data with the `fit` function.  Having the final model allows for fitting to the same dataset on which tuning was performed or to datasets from other case populations.
-
-```{r using_strategies_tune_fit}
-## Fit the tuned model
-surv_fit <- fit(surv_fo, data = surv_train, model = tuned_model)
-```
-
-As illustrated in the examples above, the `tune` function allows for comparisons of all models fit to the parameter grid points and returns the optimal model for subsequent fitting.  For applications in which fitting, performance assessment, and prediction with the optimal model are of primary interest, the `TunedModel` function is provided as a model interface to the `tune` function.  The model interface has the advantage of enabling predictive performance estimation, with the `resample` function, that accounts for the full tuning grid process.
-
-```{r using_strategies_tune_model}
-## Model interface for grid tuning
-tuned_model <- TunedModel(GBMModel, grid = 3, control = surv_means_control,
-                          metrics = c("CIndex" = cindex, "RMSE" = rmse))
-surv_fit <- fit(surv_fo, data = surv_train, model = tuned_model)
-(vi <- varimp(surv_fit))
-
-## Predictive performance of the tuning process
-res_tuned <- resample(surv_fo, data = surv_train, model = tuned_model,
-                      control = surv_means_control)
-summary(res_tuned)
-```
-
 
 ## Model Selection
 
-Model selection can be conducted with the `tune` or `SelectedModel` function to automatically choose from any combination of models and model parameters.  Selection has as a special case the just-discussed tuning of a single model over a grid of parameter values.  Combinations of model functions, function names, or function calls can be supplied as lists to the `models` argument of `tune` or as arguments to `SelectedModel` in order to define sets of candidate models from which to select.  An `expand_model` helper function is additionally available to expand a model over a grid of tuning parameters for inclusion in the candidate set if so desired.  In this general form of model selection, the `grid` argument in the tuning functions is not used.
+Model selection can be conducted by calling `fit` with a `SelectedModel` to automatically choose from any combination of models and model parameters.  Selection has as a special case the just-discussed tuning of a single model over a grid of parameter values.  Combinations of model functions, function names, or function calls can be supplied as lists to the `models` argument of `SelectedModel` in order to define sets of candidate models from which to select.  An `expand_model` helper function is additionally available to expand a model over a grid of tuning parameters for inclusion in the candidate set if so desired.
 
-```{r using_strategies_selection, results="hide"}
+```{r using_strategies_select, results="hide"}
 ## Model interface for model selection
 selected_model <- SelectedModel(
   expand_model(GBMModel, n.trees = c(50, 100), interaction.depth = 1:2),
@@ -1202,7 +1188,7 @@ fit(surv_fo, data = surv_train, model = selected_model)
 
 Selection may also be performed over candidate sets that include tuned models.  For instance, the `SelectedModel` function is applicable to sets containing different classes of models each individually tuned over a grid of parameters.
 
-```{r using_strategies_selection_tuned, results="hide"}
+```{r using_strategies_select_tune, results="hide"}
 ## Model interface for selection among tuned models
 selected_tuned_model <- SelectedModel(
   TunedModel(GBMModel, control = surv_means_control),
@@ -1217,7 +1203,7 @@ fit(surv_fo, data = surv_train, model = selected_tuned_model)
 
 ## Ensemble Models
 
-Ensemble modelling methods combine $m = 1, \ldots, M$ base learning models as a strategy to improve predictive performance.  Two methods implemented in `Machineshop` are *stacked regression* [@breiman:1996:SR] and *super learners* [@vanderLann:2007:SL].  Stacked regression fits a linear combination of predictions from specified base learners to produce a prediction function of the form
+Ensemble modelling methods combine $m = 1, \ldots, M$ base learning models as a strategy to improve predictive performance.  Two methods implemented in `Machineshop` are *stacked regression* [@breiman:1996:SR] and *super learners* [@vanderLaan:2007:SL].  Stacked regression fits a linear combination of predictions from specified base learners to produce a prediction function of the form
 $$
 \hat{f}(x) = \sum_{m=1}^M \hat{w}_m \hat{f}_m(x).
 $$
@@ -1265,6 +1251,9 @@ Core default behaviors of functions in the package can be viewed or changed glob
 `grid`
   : number of parameter-specific values to generate automatically for tuning of models that have pre-defined grids or a `Grid` function, function name, or call [default: 3].
 
+`max.print`
+  : number of models or data rows to show with print methods or `Inf` to show all [default: 10].
+
 `method.EmpiricalSurv`
   : character string specifying the empirical method of estimating baseline survival curves for Cox proportional hazards-based models.  Choices are `"breslow"`, `"efron"` (default), or `"fleming-harrington"`.
 
@@ -1283,13 +1272,19 @@ Core default behaviors of functions in the package can be viewed or changed glob
 `metrics.Surv`
   : function, function name, or vector of these with which to calculate performance metrics for survival responses [default: ``c(`C-Index` = "cindex", Brier = "brier", `ROC AUC` = "roc_auc", Accuracy = "accuracy")``].
 
+`require`
+  : names of installed packages to load during parallel execution of resampling algorithms [default: ``c("MachineShop", "survival", "recipes")``].
+
+`reset`
+  : character names of settings to reset to their default values.
+
 `stat.Curves`
   : function or character string naming a function to compute one summary statistic at each cutoff value of resampled metrics in performance curves, or `NULL` for resample-specific metrics [default: ``"base::mean"``].
 
 `stat.Resamples`
   : function or character string naming a function to compute one summary statistic to control the ordering of models in plots [default: ``"base::mean"``].
 
-`stat.Tune`
+`stat.Train`
   : function or character string naming a function to compute one summary statistic on resampled performance metrics for model selection, model tuning, and recipe tuning [default: ``"base::mean"``].
 
 `stats.PartialDependence`

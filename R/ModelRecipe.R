@@ -12,10 +12,10 @@ ModelRecipe.recipe <- function(object, ...) {
   if (any(sapply(object$steps, function(step) isTRUE(step$trained)))) {
     stop("recipe must be untrained")
   }
-  
+
   case_name_var <- "(casenames)"
   case_name_fo <- ~ -`(casenames)`
-  
+
   if (case_name_var %in% summary(object)$variable) {
     stop("conflict with existing recipe variable: ", case_name_var)
   }
@@ -28,25 +28,30 @@ ModelRecipe.recipe <- function(object, ...) {
   object$var_info <- rbind(object$var_info, case_name_info)
   object$term_info <- rbind(object$term_info, case_name_info)
   object$template[[case_name_var]] <- rownames(object$template)
-  
+
   for (i in seq(object$steps)) {
     step_terms <- object$steps[[i]]$terms
     environment(case_name_fo) <- environment(step_terms[[1]])
     new_term <- rlang::as_quosure(case_name_fo)
     object$steps[[i]]$terms <- c(step_terms, new_term)
   }
-  
-  structure(object, class = c("ModelRecipe", "recipe"))
-}
 
-
-as.data.frame.ModelRecipe <- function(x, original = TRUE, ...) {
-  as.data.frame(if (original) x$template else juice(prep(x)))
+  new("ModelRecipe", object)
 }
 
 
 bake.ModelRecipe <- function(object, new_data, ...) {
-  bake(structure(object, class = "recipe"), prep_recipe_data(new_data))
+  bake(as(object, "recipe"), new_data = prep_recipe_data(new_data))
+}
+
+
+bake.SelectedRecipe <- function(object, ...) {
+  stop("cannot create a design matrix from a ", class(object))
+}
+
+
+bake.TunedRecipe <- function(object, ...) {
+  stop("cannot create a design matrix from a ", class(object))
 }
 
 
@@ -67,25 +72,31 @@ juice.ModelRecipe <- function(x, ...) {
 
 prep.ModelRecipe <- function(x, ...) {
   if (!fully_trained(x)) {
-    x_class <- class(x)
-    class(x) <- "recipe"
-    structure(prep(x, retain = FALSE), class = x_class)
+    new(class(x), prep(as(x, "recipe"), retain = FALSE))
   } else x
 }
 
 
-recipe.ModelRecipe <- function(x, data, ...) {
-  if (fully_trained(x)) {
-    x <- prep(x, training = data, fresh = TRUE, retain = FALSE)
-  }
-  x$template <- tibble::as_tibble(prep_recipe_data(data))
-  x
+prep.SelectedRecipe <- function(x, ...) {
+  stop("cannot train a ", class(x))
+}
+
+
+prep.TunedRecipe <- function(x, ...) {
+  stop("cannot train a ", class(x))
 }
 
 
 prep_recipe_data <- function(x) {
   case_name_var <- "(casenames)"
   if (is.null(x[[case_name_var]])) x[[case_name_var]] <- rownames(x)
+  x
+}
+
+
+recipe.ModelRecipe <- function(x, data, ...) {
+  stopifnot(is(data, "data.frame"))
+  x$template <- as_tibble(prep_recipe_data(data))
   x
 }
 

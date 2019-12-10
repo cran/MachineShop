@@ -2,34 +2,45 @@
 % Please edit documentation in R/summary.R
 \name{summary}
 \alias{summary}
-\alias{summary.Confusion}
+\alias{summary.ConfusionList}
 \alias{summary.ConfusionMatrix}
 \alias{summary.Curves}
-\alias{summary.MLModelTune}
+\alias{summary.MLModel}
 \alias{summary.Performance}
 \alias{summary.Resamples}
-\title{Model Performance Summary}
+\title{Model Performance Summaries}
 \usage{
-\method{summary}{Confusion}(object, ...)
+\method{summary}{ConfusionList}(object, ...)
 
 \method{summary}{ConfusionMatrix}(object, ...)
 
-\method{summary}{Curves}(object,
-  stat = MachineShop::settings("stat.Curves"), ...)
+\method{summary}{Curves}(object, stat = MachineShop::settings("stat.Curves"), ...)
 
-\method{summary}{MLModelTune}(object,
-  stats = MachineShop::settings("stats.Resamples"), na.rm = TRUE, ...)
+\method{summary}{MLModel}(
+  object,
+  stats = MachineShop::settings("stats.Resamples"),
+  na.rm = TRUE,
+  ...
+)
 
-\method{summary}{Performance}(object,
-  stats = MachineShop::settings("stats.Resamples"), na.rm = TRUE, ...)
+\method{summary}{Performance}(
+  object,
+  stats = MachineShop::settings("stats.Resamples"),
+  na.rm = TRUE,
+  ...
+)
 
-\method{summary}{Resamples}(object,
-  stats = MachineShop::settings("stats.Resamples"), na.rm = TRUE, ...)
+\method{summary}{Resamples}(
+  object,
+  stats = MachineShop::settings("stats.Resamples"),
+  na.rm = TRUE,
+  ...
+)
 }
 \arguments{
-\item{object}{\link{confusion}, \link[=performance_curve]{performance curve},
-\link{lift}, model \link{tune}, \link{performance}, or \link{resample}
-result.}
+\item{object}{\link{confusion}, \link[=curves]{performance curve},
+\link{lift}, trained model \link{fit}, \link{performance}, or
+\link{resample} result.}
 
 \item{...}{arguments passed to other methods.}
 
@@ -43,9 +54,7 @@ compute summary statistics.}
 \item{na.rm}{logical indicating whether to exclude missing values.}
 }
 \value{
-array with summmary statistics in the second dimension, metrics in
-the first for single models, and models and metrics in the first and third,
-respectively, for multiple models.
+An object of summmary statistics.
 }
 \description{
 Summary statistics for resampled model performance metrics.
@@ -61,7 +70,7 @@ gbm_res2 <- resample(fo, iris, GBMModel(n.trees = 50), control)
 gbm_res3 <- resample(fo, iris, GBMModel(n.trees = 100), control)
 summary(gbm_res3)
 
-res <- Resamples(GBM1 = gbm_res1, GBM2 = gbm_res2, GBM3 = gbm_res3)
+res <- c(GBM1 = gbm_res1, GBM2 = gbm_res2, GBM3 = gbm_res3)
 summary(res)
 
 }

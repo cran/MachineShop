@@ -2,32 +2,38 @@
 % Please edit documentation in R/performance_curve.R
 \name{performance_curve}
 \alias{performance_curve}
+\alias{curves}
 \alias{performance_curve.default}
 \alias{performance_curve.Resamples}
-\alias{Curves}
 \title{Performance Curves}
 \usage{
 performance_curve(x, ...)
 
-\method{performance_curve}{default}(x, y, metrics = c(MachineShop::tpr,
-  MachineShop::fpr), na.rm = TRUE, ...)
+\method{performance_curve}{default}(
+  x,
+  y,
+  metrics = c(MachineShop::tpr, MachineShop::fpr),
+  na.rm = TRUE,
+  ...
+)
 
-\method{performance_curve}{Resamples}(x, metrics = c(MachineShop::tpr,
-  MachineShop::fpr), na.rm = TRUE, ...)
-
-Curves(...)
+\method{performance_curve}{Resamples}(
+  x,
+  metrics = c(MachineShop::tpr, MachineShop::fpr),
+  na.rm = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{\link[=response]{observed responses} or \link{resample} result
 containing observed and predicted responses.}
 
-\item{...}{named or unnamed \code{performance_curve} output to combine
-together with the \code{Curves} constructor.}
+\item{...}{arguments passed to other methods.}
 
 \item{y}{\link[=predict]{predicted responses} if not contained in \code{x}.}
 
 \item{metrics}{list of two performance \link{metrics} for the analysis
-[default: ROC metrics].  Precision recall curves can be obtained with 
+[default: ROC metrics].  Precision recall curves can be obtained with
 \code{c(precision, recall)}.}
 
 \item{na.rm}{logical indicating whether to remove observed or predicted
@@ -54,5 +60,6 @@ auc(roc)
 
 }
 \seealso{
-\code{\link{auc}}, \code{\link{plot}}, \code{\link{summary}}
+\code{\link{auc}}, \code{\link{c}}, \code{\link{plot}},
+\code{\link{summary}}
 }
