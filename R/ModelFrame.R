@@ -22,8 +22,8 @@
 #'
 #' @return \code{ModelFrame} class object that inherits from \code{data.frame}.
 #'
-#' @seealso  \code{\link{fit}}, \code{\link{resample}}, \code{\link{response}},
-#' \code{\link{SelectedModelFrame}}
+#' @seealso \code{\link{fit}}, \code{\link{resample}}, \code{\link{response}},
+#' \code{\link{SelectedInput}}
 #'
 #' @examples
 #' mf <- ModelFrame(ncases / (ncases + ncontrols) ~ agegp + tobgp + alcgp,
@@ -37,14 +37,14 @@ ModelFrame <- function(x, ...) {
 
 
 ModelFrame.data.frame <- function(x, ...) {
-  casenames <- x[["(casenames)"]]
+  casenames <- x[["(names)"]]
   weights <- x[["(weights)"]]
   strata <- x[["(strata)"]]
-  x[c("(casenames)", "(weights)", "(strata)")] <- NULL
-  model_terms <- terms(lapply(names(x)[-1], as.name), names(x)[1],
-                       all_numeric = all(sapply(x[-1], is.numeric)))
+  x[c("(names)", "(weights)", "(strata)")] <- NULL
+  model_terms <- terms(map(as.name, names(x)[-1]), names(x)[1],
+                       all_numeric = all(map_logi(is.numeric, x[-1])))
   ModelFrame(model_terms, x, na.rm = FALSE,
-             casenames = if (is.null(casenames)) rownames(x) else casenames,
+             names = if (is.null(casenames)) rownames(x) else casenames,
              weights = weights, strata = strata)
 }
 
@@ -56,8 +56,7 @@ ModelFrame.formula <- function(x, data, na.rm = TRUE, weights = NULL,
   invalid_calls <- setdiff(inline_calls(predictors(x)), valid_predictor_calls)
   if (length(invalid_calls)) {
     stop(
-      plural_suffix("unsupported predictor variable function", invalid_calls),
-      ": ", toString(invalid_calls),
+      label_items("unsupported predictor variable function", invalid_calls),
       "; use a recipe or include transformed predictors in the data frame"
     )
   }
@@ -65,8 +64,9 @@ ModelFrame.formula <- function(x, data, na.rm = TRUE, weights = NULL,
   data <- as.data.frame(data)
   model_terms <- terms(x, data = data)
   data[[deparse(response(model_terms))]] <- response(model_terms, data)
+  data <- data[all.vars(model_formula(model_terms))]
 
-  ModelFrame(model_terms, data, na.rm = na.rm, casenames = rownames(data),
+  ModelFrame(model_terms, data, na.rm = na.rm, names = rownames(data),
              weights = weights, strata = strata, ...)
 }
 
@@ -93,16 +93,20 @@ ModelFrame.matrix <- function(x, y = NULL, na.rm = TRUE, offsets = NULL,
   }
   model_terms <- terms(x, y, offsets = offsets)
   data[[deparse(response(model_terms))]] <- y
+  end <- length(data)
+  data <- data[c(end, seq_len(end - 1))]
 
-  ModelFrame(model_terms, data, na.rm = na.rm, casenames = rownames(data),
+  ModelFrame(model_terms, data, na.rm = na.rm, names = rownames(data),
              weights = weights, strata = strata, ...)
 }
 
 
 ModelFrame.ModelFrame <- function(x, na.rm = TRUE, ...) {
-  vars <- as.data.frame(Filter(length, list(...)), stringsAsFactors = FALSE)
-  names(vars) <- sapply(names(vars), function(x) paste0("(", x, ")"))
-  x[names(vars)] <- vars
+  extras <- as.data.frame(Filter(length, list(...)), stringsAsFactors = FALSE)
+  if (length(extras)) {
+    names(extras) <- paste0("(", names(extras), ")")
+    x[names(extras)] <- extras
+  }
   if (na.rm) na.omit(x) else x
 }
 
@@ -125,17 +129,18 @@ ModelFrame.recipe <- function(x, ...) {
 
   model_terms <- terms(x)
   data[[deparse(response(model_terms))]] <- response(model_terms, data)
+  data <- data[all.vars(model_formula(model_terms))]
 
   ModelFrame(model_terms, data, na.rm = FALSE,
-             casenames = if (is.null(data[["(casenames)"]])) rownames(data),
+             names = if (is.null(data[["(names)"]])) rownames(data),
              weights = weights, strata = strata)
 }
 
 
-ModelFrame.terms <- function(x, data, ...) {
-  data[all.vars(model_formula(x))] %>%
-    structure(terms = x, class = c("ModelFrame", class(data))) %>%
-    ModelFrame(...)
+ModelFrame.Terms <- function(x, data, ...) {
+  ModelFrame(structure(
+    as.data.frame(data), terms = x, class = c("ModelFrame", "data.frame")
+  ), ...)
 }
 
 
@@ -147,10 +152,15 @@ formula.ModelFrame <- function(x, ...) {
 }
 
 
+formula.Terms <- function(x, ...) {
+  formula(asS3(x))
+}
+
+
 inline_calls <- function(x) {
   if (is.call(x)) {
     call_name <- as.character(x[[1]])
-    unique(c(call_name, unlist(lapply(x[-1], inline_calls))))
+    unique(c(call_name, unlist(map(inline_calls, x[-1]))))
   }
 }
 
@@ -180,11 +190,10 @@ valid_predictor_calls <- c(
 
 
 terms.formula <- function(x, ...) {
-  structure(
+  FormulaTerms(structure(
     stats::terms.formula(x, ...),
-    .Environment = asNamespace("MachineShop"),
-    class = c("FormulaTerms", "terms", "formula")
-  )
+    .Environment = asNamespace("MachineShop")
+  ))
 }
 
 
@@ -193,17 +202,17 @@ terms.list <- function(x, y = NULL, intercept = TRUE, all_numeric = FALSE,
   if (is.character(y)) y <- as.name(y)
   has_y <- 1L - is.null(y)
 
-  is_names <- sapply(x, is.name)
+  is_names <- map_logi(is.name, x)
   name_inds <- which(is_names)
   noname_inds <- which(!is_names)
 
   x_char <- character(length(x))
   x_char[name_inds] <- as.character(x[name_inds])
-  x_char[noname_inds] <- vapply(x[noname_inds], deparse, "")
+  x_char[noname_inds] <- map_chr(deparse, x[noname_inds])
 
-  valid_calls <- sapply(x[noname_inds], function(var) {
+  valid_calls <- map_logi(function(var) {
     is.call(var) && var[[1]] == .("offset")
-  })
+  }, x[noname_inds])
   if (!all(valid_calls)) stop("non-offset calls in variable specifications")
   offsets <- has_y + noname_inds
 
@@ -217,7 +226,7 @@ terms.list <- function(x, y = NULL, intercept = TRUE, all_numeric = FALSE,
   fo[[2]] <- y
 
   class <- if (all_numeric) {
-    x_char[name_inds] <- sapply(x[name_inds], as.character)
+    x_char[name_inds] <- map_chr(as.character, x[name_inds])
     "DesignTerms"
   } else {
     "FormulaTerms"
@@ -236,7 +245,7 @@ terms.list <- function(x, y = NULL, intercept = TRUE, all_numeric = FALSE,
     factors[cbind(var_names[term_match > 0], label_names[term_match])] <- 1L
   }
 
-  structure(
+  new(class, structure(
     fo,
     variables = as.call(c(.(list), y, x)),
     offset = if (length(offsets)) offsets,
@@ -246,8 +255,8 @@ terms.list <- function(x, y = NULL, intercept = TRUE, all_numeric = FALSE,
     intercept = as.integer(intercept),
     response = has_y,
     .Environment = asNamespace("MachineShop"),
-    class = c(class, "terms", "formula")
-  )
+    class = c("terms", "formula")
+  ))
 }
 
 
@@ -257,11 +266,11 @@ terms.matrix <- function(x, y = NULL, offsets = NULL, ...) {
 
   labels <- colnames(x)
   response <- if (!is.null(y)) make.unique(c(labels, "y"))[length(labels) + 1]
-  labels <- lapply(labels, as.name)
+  labels <- map(as.name, labels)
 
   if (length(offsets)) {
     offsets <- paste0("offset(", offsets, ")")
-    labels <- c(labels, lapply(offsets, str2lang))
+    labels <- c(labels, map(str2lang, offsets))
   }
 
   terms(labels, response, all_numeric = is.numeric(x))
@@ -317,17 +326,17 @@ terms.recipe <- function(x, original = FALSE, ...) {
   } else if (length(binom)) {
     stop("binomial outcome must have 'binom_x' and 'binom_size' roles")
   } else if (length(matrix)) {
-    as.call(c(.(cbind), lapply(matrix, as.name)))
+    as.call(c(.(cbind), map(as.name, matrix)))
   }
 
   is_predictor <- info$role == "predictor"
-  predictors <- lapply(info$variable[is_predictor], as.name)
+  predictors <- map(as.name, info$variable[is_predictor])
   all_numeric <- all(info$type[is_predictor] == "numeric")
 
   offsets <- get_vars("pred_offset", "numeric")
   if (length(offsets)) {
     offsets <- paste0("offset(", offsets, ")")
-    predictors <- c(predictors, lapply(offsets, str2lang))
+    predictors <- c(predictors, map(str2lang, offsets))
   }
 
   terms(predictors, outcome, all_numeric = all_numeric)
@@ -362,7 +371,7 @@ model.matrix.ModelFrame <- function(object, intercept = NULL, ...) {
 }
 
 
-model.matrix.SelectedModelFrame <- function(object, ...) {
+model.matrix.SelectedInput <- function(object, ...) {
   stop("cannot create a design matrix from a ", class(object))
 }
 

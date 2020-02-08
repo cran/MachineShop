@@ -33,8 +33,7 @@ response.formula <- function(object, data = NULL, template = NULL, ...) {
       template_levels <- levels(template)
       new_levels <- y_levels[is.na(match(y_levels, template_levels))]
       if (length(new_levels)) {
-        stop(plural_suffix("response factor has new level", new_levels), ": ",
-             toString(new_levels))
+        stop(label_items("response factor has new level", new_levels))
       }
       y <- factor(y, levels = template_levels, ordered = is.ordered(template),
                   exclude = NULL)
@@ -49,7 +48,7 @@ response.formula <- function(object, data = NULL, template = NULL, ...) {
 
 
 response.MLModel <- function(object, newdata = NULL, ...) {
-  if (is.null(newdata)) object@y else response(object@x, newdata)
+  response(object@x, newdata)
 }
 
 
@@ -75,11 +74,6 @@ response.recipe <- function(object, newdata = NULL, ...) {
   data <- if (is.null(newdata)) juice(object) else bake(object, newdata)
   response(terms(object), data)
 }
-
-
-.response_types <- c("binary", "BinomialVariate", "DiscreteVariate", "factor",
-                     "matrix", "NegBinomialVariate", "numeric", "ordered",
-                     "PoissonVariate", "Surv")
 
 
 #################### Discrete Variate Classes ####################

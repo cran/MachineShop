@@ -15,7 +15,6 @@ NULL
 
 
 #' @rdname extract-methods
-#' @aliases [.BinomialVariate
 #'
 "[.BinomialVariate" <- function(x, i, j, ..., drop = FALSE) {
   y <- if (missing(j)) unclass(x)[i, , drop = drop] else NextMethod(drop = drop)
@@ -26,7 +25,6 @@ NULL
 
 
 #' @rdname extract-methods
-#' @aliases [,DiscreteVariate,ANY,missing,missing-method
 #'
 setMethod("[",
   c(x = "DiscreteVariate", i = "ANY", j = "missing", drop = "missing"),
@@ -37,7 +35,59 @@ setMethod("[",
 
 
 #' @rdname extract-methods
-#' @aliases [,Resamples,ANY,ANY,ANY-method
+#'
+"[.ModelFrame" <- function(x, i, j, ..., drop = FALSE) {
+  ninds <- nargs() - 1 - !missing(drop)
+  if (ninds > 1) {
+    if (!missing(j) || drop) {
+      y <- as.data.frame(x)[i, j, drop = drop]
+      if (identical(colnames(x), colnames(y))) {
+        ModelFrame(terms(x), y, na.rm = FALSE)
+      } else y
+    } else NextMethod(drop = FALSE)
+  } else x[, i, drop = FALSE]
+}
+
+
+#' @rdname extract-methods
+#'
+setMethod("[", c(x = "ModelFrame", i = "ANY", j = "ANY", drop = "ANY"),
+  function(x, i, j, ..., drop = FALSE) {
+    y <- as(x, "ModelFrame")[i, j, drop = drop]
+    if (is(y, "ModelFrame")) {
+      switch_class(x,
+        ModeledInput = new(class(x), y, model = x@model),
+        SelectedInput = new(class(x), y, inputs = x@inputs, params = x@params)
+      )
+    } else y
+  }
+)
+
+
+#' @rdname extract-methods
+#'
+setMethod("[", c(x = "ModelFrame", i = "ANY", j = "missing", drop = "ANY"),
+  function(x, i, j, ..., drop = FALSE) {
+    ninds <- nargs() - 1 - !missing(drop)
+    if (ninds > 1) {
+      if (!drop) {
+        as(asS3(x)[i, , drop = FALSE], class(x))
+      } else x[i, TRUE, drop = TRUE]
+    } else x[, i, drop = FALSE]
+  }
+)
+
+
+#' @rdname extract-methods
+#'
+setMethod("[", c(x = "ModelFrame", i = "missing", j = "missing", drop = "ANY"),
+  function(x, i, j, ..., drop = FALSE) {
+    x[TRUE, , drop = drop]
+  }
+)
+
+
+#' @rdname extract-methods
 #'
 setMethod("[", c(x = "RecipeGrid", i = "ANY", j = "ANY", drop = "ANY"),
   function(x, i, j, ..., drop = FALSE) {
@@ -47,31 +97,28 @@ setMethod("[", c(x = "RecipeGrid", i = "ANY", j = "ANY", drop = "ANY"),
 
 
 #' @rdname extract-methods
-#' @aliases [,Resamples,ANY,ANY,ANY-method
 #'
 setMethod("[", c(x = "Resamples", i = "ANY", j = "ANY", drop = "ANY"),
   function(x, i, j, ..., drop = FALSE) {
-    y <- asS3(x)[i, j, drop = drop]
+    y <- as.data.frame(x)[i, j, drop = drop]
     if (identical(colnames(x), colnames(y))) {
-      y$Model <- droplevels(y$Model)
-      new("Resamples", y, control = x@control, strata = x@strata)
+      Resamples(y, control = x@control, strata = x@strata)
     } else y
   }
 )
 
 
 #' @rdname extract-methods
-#' @aliases [,Resamples,ANY,missing,ANY-method
 #'
 setMethod("[", c(x = "Resamples", i = "ANY", j = "missing", drop = "ANY"),
   function(x, i, j, ..., drop = FALSE) {
-    if (nargs() < 3) x[, i, drop = FALSE] else x[i, TRUE, drop = drop]
+    ninds <- nargs() - 1 - !missing(drop)
+    if (ninds > 1) x[i, TRUE, drop = drop] else x[, i, drop = FALSE]
   }
 )
 
 
 #' @rdname extract-methods
-#' @aliases [,Resamples,missing,missing,ANY-method
 #'
 setMethod("[", c(x = "Resamples", i = "missing", j = "missing", drop = "ANY"),
   function(x, i, j, ..., drop = FALSE) {
@@ -81,7 +128,6 @@ setMethod("[", c(x = "Resamples", i = "missing", j = "missing", drop = "ANY"),
 
 
 #' @rdname extract-methods
-#' @aliases [,SurvMatrix,ANY,ANY,ANY-method
 #'
 setMethod("[", c(x = "SurvMatrix", i = "ANY", j = "ANY", drop = "ANY"),
   function(x, i, j, ..., drop = FALSE) {

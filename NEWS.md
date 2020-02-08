@@ -2,6 +2,37 @@
 
 ## Version Updates
 
+## 2.1.0
+* CRAN release.
+
+
+## 2.0.4
+* Extend `print()` argument `n` to data frame and matrix columns for more concise display of large data structures.
+* Add preprocessing recipe functions `step_kmeans()`, `step_kmedoids()`, and `step_spca()`.
+
+
+## 2.0.3
+* Internal changes:
+  * Remove `MLModel` slot `y`.
+  * Rename `ModelFrame` and `ModelRecipe` columns `(casenames)` to `(names)`.
+  * Register `ModelFrame` inheritance from `data.frame`.
+  * Define `Terms` S4 classes for `ModelFrame` slot `terms`.
+
+
+## 2.0.2
+* Implement `ModeledInput`, `SelectedInput` and `TunedInput` classes and methods.
+* Deprecate `SelectedFormula()`, `SelectedMatrix()`, `SelectedModelFrame()`, `SelectedRecipe()`, and `TunedRecipe()`.
+* Remove deprecated `tune()`.
+* Rename global setting `stat.Curves` to `stat.Curve`.
+
+
+## 2.0.1
+* Rename global setting `stat.Train` to `stat.train`.
+* Add print methods for `SelectedModel`, `StackedModel`, `SuperModel`, and `TunedModel`.
+* Revise training methods to ensure nested resampling of `SelectedRecipe` and `TunedRecipe`.
+* Return list of all training steps in `MLModel` `trainbits` slot.
+
+
 ## 2.0.0
 * Rename global setting `stat.Tune` to `stat.Train`.
 * Enable selection of formulas, design matrices, and model frames with `SelectedFormula()`, `SelectedMatrix()`, and `SelectedModelFrame()`.

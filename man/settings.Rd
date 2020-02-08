@@ -74,17 +74,18 @@ behaviors of functions in the \pkg{MachineShop} package.
     "survival", "recipes")}].}
   \item{\code{reset}}{character names of settings to reset to their default
     values.}
-  \item{\code{stat.Curves}}{function or character string naming a function
+  \item{\code{stat.Curve}}{function or character string naming a function
     to compute one \link{summary} statistic at each cutoff value of resampled
     metrics in performance curves, or \code{NULL} for resample-specific
     metrics [default: \code{"base::mean"}].}
   \item{\code{stat.Resamples}}{function or character string naming a function
     to compute one summary statistic to control the ordering of models in
     \link[=plot]{plots} [default: \code{"base::mean"}].}
-  \item{\code{stat.Train}}{function or character string naming a function
+  \item{\code{stat.train}}{function or character string naming a function
     to compute one summary statistic on resampled performance metrics for
-    \link[=SelectedModel]{model selection}, \link[=TunedModel]{model tuning},
-    and \link[=TunedRecipe]{recipe tuning} [default: \code{"base::mean"}].}
+    input \link[=SelectedInput]{selection} or \link[=TunedInput]{tuning} or
+    for model \link[=SelectedModel]{selection} or \link[=TunedModel]{tuning}
+    [default: \code{"base::mean"}].}
   \item{\code{stats.PartialDependence}}{function, function name, or vector of
     these with which to compute \link[=dependence]{partial dependence}
     summary statistics [default: \code{c(Mean = "base::mean")}].}

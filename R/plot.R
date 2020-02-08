@@ -5,9 +5,9 @@
 #' @name plot
 #' @rdname plot-methods
 #'
-#' @param x \link{calibration}, \link{confusion},
-#'   \link[=curves]{performance curve}, \link{lift}, trained model \link{fit},
-#'   partial \link{dependence}, \link{performance}, \link{resample}, or
+#' @param x \link{calibration}, \link{confusion}, \link{lift},
+#'   trained model \link{fit}, partial \link{dependence}, \link{performance},
+#'   \link[=curves]{performance curve}, \link{resample}, or
 #'   \link[=varimp]{variable importance} result.
 #' @param diagonal logical indicating whether to include a diagonal reference
 #'   line.
@@ -20,9 +20,9 @@
 #' @param se logical indicating whether to include standard error bars.
 #' @param stat function or character string naming a function to compute a
 #'   summary statistic on resampled metrics for trained \code{MLModel} line
-#'   plots and \code{Resamples} model ordering.  For \code{Curves} and
-#'   \code{Lift} classes, plots are of resampled metrics aggregated by the
-#'   statistic if given or of resample-specific metrics if \code{NULL}.
+#'   plots and \code{Resamples} model ordering.  For \code{LiftCurve} and
+#'   \code{PerformanceCurve} classes, plots are of resampled metrics aggregated
+#'   by the statistic if given or of resample-specific metrics if \code{NULL}.
 #' @param stats vector of numeric indexes or character names of partial
 #'   dependence summary statistics to plot.
 #' @param type type of plot to construct.
@@ -118,51 +118,10 @@ plot.ConfusionMatrix <- function(x, ...) {
 
 #' @rdname plot-methods
 #'
-plot.Curves <- function(x, type = c("tradeoffs", "cutoffs"), diagonal = FALSE,
-                        stat = MachineShop::settings("stat.Curves"), ...) {
+plot.LiftCurve <- function(x, find = NULL, diagonal = TRUE,
+                      stat = MachineShop::settings("stat.Curve"), ...) {
   x <- summary(x, stat = stat)
-
-  args <- list(~ x, ~ y)
-  if (nlevels(x$Model) > 1) args$color <- ~ Model
-  if (!is.null(x$Resample)) args$group <- ~ interaction(Model, Resample)
-  mapping <- do.call(aes_, args)
-
-  labels <- c(x = x@metrics$x@label, y = x@metrics$y@label)
-
-  switch(match.arg(type),
-         "tradeoffs" = {
-           x$Cutoff <- NULL
-           p <- ggplot(na.omit(x), mapping) +
-             geom_path() +
-             labs(x = labels["x"], y = labels["y"])
-
-           if (diagonal) {
-             p <- p + geom_abline(intercept = 0, slope = 1, color = "gray")
-           }
-
-           p
-         },
-         "cutoffs" = {
-           df <- reshape(x, varying = c("x", "y"), v.names = "y",
-                         times = labels, timevar = "Metric",
-                         direction = "long")
-           names(df)[names(df) == "Cutoff"] <- "x"
-
-           ggplot(na.omit(df), mapping) +
-             geom_line() +
-             labs(x = "Cutoff", y = "Performance") +
-             facet_wrap(~ Metric)
-         }
-  )
-}
-
-
-#' @rdname plot-methods
-#'
-plot.Lift <- function(x, find = NULL, diagonal = TRUE,
-                      stat = MachineShop::settings("stat.Curves"), ...) {
-  x <- summary(x, stat = stat)
-  p <- plot(as(x, "Curves"), diagonal = diagonal, stat = NULL)
+  p <- plot(as(x, "PerformanceCurve"), diagonal = diagonal, stat = NULL)
 
   if (!is.null(find)) {
     if (find < 0 || find > 1) warning("'find' rate outside of 0 to 1 range")
@@ -192,52 +151,55 @@ plot.Lift <- function(x, find = NULL, diagonal = TRUE,
 #' @rdname plot-methods
 #'
 plot.MLModel <- function(x, metrics = NULL,
-                         stat = MachineShop::settings("stat.Train"),
+                         stat = MachineShop::settings("stat.train"),
                          type = c("boxplot", "density", "errorbar", "line",
                                   "violin"), ...) {
-  if (is.null(x@trainbits)) stop("no training results to plot")
+  if (!is.trained(x)) stop("no training results to plot")
 
-  perf <- x@trainbits@performance
   stat <- fget(stat)
   type <- match.arg(type)
-  if (type == "line") {
-    grid <- unnest(x@trainbits@grid)
-    stats <- apply(perf, c(3, 2), function(x) stat(na.omit(x))) %>%
-      TabularArray %>%
-      as.data.frame
-    df <- data.frame(
-      x = grid[[1]],
-      Value = stats$Value,
-      Metric = stats$Metric
-    )
 
-    metriclevels <- levels(df$Metric)
-    if (is.null(metrics)) {
-      metrics <- metriclevels
+  map(function(trainbit) {
+    perf <- trainbit@performance
+    if (type == "line") {
+      grid <- unnest(trainbit@grid)
+      stats <- apply(perf, c(3, 2), function(x) stat(na.omit(x))) %>%
+        TabularArray %>%
+        as.data.frame
+      df <- data.frame(
+        x = grid[[1]],
+        Value = stats$Value,
+        Metric = stats$Metric
+      )
+
+      metriclevels <- levels(df$Metric)
+      if (is.null(metrics)) {
+        metrics <- metriclevels
+      } else {
+        metrics <- match_indices(metrics, metriclevels)
+        df <- df[df$Metric %in% metrics, , drop = FALSE]
+      }
+      df$Metric <- factor(df$Metric, metrics)
+
+      indices <- map_logi(function(x) length(unique(x)), grid[-1])
+      args <- list(~ x, ~ Value)
+      if (any(indices)) {
+        df$Group <- interaction(grid[-1][indices])
+        args$color <- args$shape <- ~ Group
+      } else {
+        args$group <- 1
+      }
+      mapping <- do.call(aes_, args)
+
+      ggplot(df, mapping) +
+        geom_line(stat = "summary", fun.y = mean) +
+        geom_point(stat = "summary", fun.y = mean) +
+        labs(x = names(grid)[1]) +
+        facet_wrap(~ Metric, scales = "free")
     } else {
-      metrics <- match_indices(metrics, metriclevels)
-      df <- df[df$Metric %in% metrics, , drop = FALSE]
+      plot(perf, metrics = metrics, stat = stat, type = type, ...)
     }
-    df$Metric <- factor(df$Metric, metrics)
-
-    indices <- sapply(grid[-1], function(x) length(unique(x)) > 1)
-    args <- list(~ x, ~ Value)
-    if (any(indices)) {
-      df$Group <- interaction(grid[-1][indices])
-      args$color <- args$shape <- ~ Group
-    } else {
-      args$group <- 1
-    }
-    mapping <- do.call(aes_, args)
-
-    ggplot(df, mapping) +
-      geom_line(stat = "summary", fun.y = mean) +
-      geom_point(stat = "summary", fun.y = mean) +
-      labs(x = names(grid)[1]) +
-      facet_wrap(~ Metric, scales = "free")
-  } else {
-    plot(perf, metrics = metrics, stat = stat, type = type, ...)
-  }
+  }, x@trainbits)
 }
 
 
@@ -318,6 +280,49 @@ plot.Performance <- function(x, metrics = NULL, stat =
            labs(x = "") +
            coord_flip()) +
     facet_wrap(~ Metric, scales = "free")
+}
+
+
+#' @rdname plot-methods
+#'
+plot.PerformanceCurve <- function(x, type = c("tradeoffs", "cutoffs"),
+                                  diagonal = FALSE,
+                                  stat = MachineShop::settings("stat.Curve"),
+                                  ...) {
+  x <- summary(x, stat = stat)
+
+  args <- list(~ x, ~ y)
+  if (nlevels(x$Model) > 1) args$color <- ~ Model
+  if (!is.null(x$Resample)) args$group <- ~ interaction(Model, Resample)
+  mapping <- do.call(aes_, args)
+
+  labels <- c(x = x@metrics$x@label, y = x@metrics$y@label)
+
+  switch(match.arg(type),
+         "tradeoffs" = {
+           x$Cutoff <- NULL
+           p <- ggplot(na.omit(x), mapping) +
+             geom_path() +
+             labs(x = labels["x"], y = labels["y"])
+
+           if (diagonal) {
+             p <- p + geom_abline(intercept = 0, slope = 1, color = "gray")
+           }
+
+           p
+         },
+         "cutoffs" = {
+           df <- reshape(x, varying = c("x", "y"), v.names = "y",
+                         times = labels, timevar = "Metric",
+                         direction = "long")
+           names(df)[names(df) == "Cutoff"] <- "x"
+
+           ggplot(na.omit(df), mapping) +
+             geom_line() +
+             labs(x = "Cutoff", y = "Performance") +
+             facet_wrap(~ Metric)
+         }
+  )
 }
 
 

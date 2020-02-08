@@ -541,41 +541,107 @@ auc(pr)
 lf <- lift(res_probs)
 plot(lf, find = 0.75)
 
+## ----using_stategies_TunedInput1----------------------------------------------
+## Preprocessing recipe with PCA steps
+pca_rec <- recipe(time + status ~ ., data = surv_train) %>%
+  role_surv(time = time, event = status) %>%
+  step_center(all_predictors()) %>%
+  step_scale(all_predictors()) %>%
+  step_pca(all_predictors(), id = "PCA")
+
+## Tuning grid of number of PCA components
+pca_grid <- expand_steps(
+  PCA = list(num_comp = 1:3)
+)
+
+## Tuning specification
+tun_rec <- TunedInput(pca_rec, grid = pca_grid)
+
+## ----using_stategies_TunedInput2----------------------------------------------
+## Input-tuned model fit and final trained model
+model_fit <- fit(tun_rec, model = GBMModel)
+as.MLModel(model_fit)
+
+## ----using_strategies_SelectedInput1------------------------------------------
+## Preprocessing recipe without PCA steps
+rec1 <- recipe(time + status ~ sex + age + year + thickness + ulcer, data = surv_train) %>%
+  role_surv(time = time, event = status)
+rec2 <- recipe(time + status ~ sex + age + year, data = surv_train) %>%
+  role_surv(time = time, event = status)
+
+## Selection among recipes with and without PCA steps
+sel_rec <- SelectedInput(
+  rec1,
+  rec2,
+  TunedInput(pca_rec, grid = pca_grid)
+)
+
+## ----using_strategies_SelectedInput2------------------------------------------
+## Input-selected model fit and model
+model_fit <- fit(sel_rec, model = GBMModel)
+as.MLModel(model_fit)
+
+## ----using_strategies_SelectedInput3, eval=FALSE------------------------------
+#  ## Traditional formulas
+#  fo1 <- Surv(time, status) ~ sex + age + year + thickness + ulcer
+#  fo2 <- Surv(time, status) ~ sex + age + year
+#  
+#  ## Selection among formulas
+#  sel_fo <- SelectedInput(fo1, fo2, data = surv_train)
+#  
+#  ## Input-selected model fit and final trained model
+#  model_fit <- fit(sel_fo, model = GBMModel)
+#  as.MLModel(model_fit)
+
+## ----using_strategies_SelectedInput4, eval=FALSE------------------------------
+#  ## Different combinations of inputs and models
+#  sel_mfo <- SelectedInput(
+#    ModeledInput(fo1, data = surv_train, model = CoxModel),
+#    ModeledInput(fo2, data = surv_train, model = GBMModel)
+#  )
+#  
+#  ## Input-selected model fit and final trained model
+#  model_fit <- fit(sel_mfo)
+#  as.MLModel(model_fit)
+
 ## ----using_strategies_tune----------------------------------------------------
 ## Tune over automatic grid of model parameters
-surv_fit <- TunedModel(
-  GBMModel,
-  grid = 3,
-  control = surv_means_control,
-  metrics = c("CIndex" = cindex, "RMSE" = rmse)
-) %>% fit(surv_fo, data = surv_train)
-(tuned_model <- as.MLModel(surv_fit))
+model_fit <- fit(surv_fo, data = surv_train,
+                 model = TunedModel(
+                   GBMModel,
+                   grid = 3,
+                   control = surv_means_control,
+                   metrics = c("CIndex" = cindex, "RMSE" = rmse)
+                 ))
+(trained_model <- as.MLModel(model_fit))
 
 ## ----using_strategies_tune_grid, eval=FALSE-----------------------------------
 #  ## Tune over randomly sampled grid points
-#  TunedModel(
-#    GBMModel,
-#    grid = Grid(length = 100, random = 10),
-#    control = surv_means_control
-#  ) %>% fit(surv_fo, data = surv_train)
+#  fit(surv_fo, data = surv_train,
+#      model = TunedModel(
+#        GBMModel,
+#        grid = Grid(length = 100, random = 10),
+#        control = surv_means_control
+#      ))
 #  
 #  ## Tune over user-specified grid points
-#  TunedModel(
-#    GBMModel,
-#    grid = expand_params(n.trees = c(25, 50, 100),
-#                         interaction.depth = 1:3),
-#    control = surv_means_control
-#  ) %>% fit(surv_fo, data = surv_train)
+#  fit(surv_fo, data = surv_train,
+#      model = TunedModel(
+#        GBMModel,
+#        grid = expand_params(n.trees = c(25, 50, 100),
+#                             interaction.depth = 1:3),
+#        control = surv_means_control
+#      ))
 
 ## ----using_strategies_tune_summary--------------------------------------------
-summary(tuned_model)
+summary(trained_model)
 
 ## ----using_strategies_tune_plot-----------------------------------------------
-plot(tuned_model, type = "line")
+plot(trained_model, type = "line")
 
 ## ----using_strategies_select, results="hide"----------------------------------
 ## Model interface for model selection
-selected_model <- SelectedModel(
+sel_model <- SelectedModel(
   expand_model(GBMModel, n.trees = c(50, 100), interaction.depth = 1:2),
   GLMNetModel(lambda = 0.01),
   CoxModel,
@@ -583,18 +649,18 @@ selected_model <- SelectedModel(
 )
 
 ## Fit the selected model
-fit(surv_fo, data = surv_train, model = selected_model)
+fit(surv_fo, data = surv_train, model = sel_model)
 
 ## ----using_strategies_select_tune, results="hide"-----------------------------
 ## Model interface for selection among tuned models
-selected_tuned_model <- SelectedModel(
+sel_tun_model <- SelectedModel(
   TunedModel(GBMModel, control = surv_means_control),
   TunedModel(GLMNetModel, control = surv_means_control),
   TunedModel(CoxModel, control = surv_means_control)
 )
 
 ## Fit the selected tuned model
-fit(surv_fo, data = surv_train, model = selected_tuned_model)
+fit(surv_fo, data = surv_train, model = sel_tun_model)
 
 ## ----using_strategies_ensembles-----------------------------------------------
 ## Stacked regression
@@ -607,6 +673,127 @@ supermodel <- SuperModel(GLMBoostModel, CForestModel, CoxModel,
                          model = GBMModel)
 res_super <- resample(surv_fo, data = surv_train, model = supermodel)
 summary(res_super)
+
+## ----using_strategies_methods, eval = FALSE-----------------------------------
+#  ## Preprocessing recipe with PCA steps
+#  pca_rec <- recipe(time + status ~ ., data = surv_train) %>%
+#    role_surv(time = time, event = status) %>%
+#    step_center(all_predictors()) %>%
+#    step_scale(all_predictors()) %>%
+#    step_pca(all_predictors(), id = "PCA")
+#  
+#  ## Tuning grid of number of PCA components
+#  pca_grid <- expand_steps(
+#    PCA = list(num_comp = 1:3)
+#  )
+#  
+#  ## Input specification
+#  tun_rec <- TunedInput(pca_rec, grid = pca_grid)
+#  
+#  ## Model specification
+#  sel_model <- SelectedModel(
+#    GBMModel,
+#    TunedModel(GBMModel),
+#    SuperModel(CoxModel, TunedModel(CForestModel), TunedModel(GLMBoostModel))
+#  )
+#  
+#  ## Model fit and final trained model
+#  model_fit <- fit(tun_rec, model = sel_model)
+#  as.MLModel(model_fit)
+
+## ----using_strategies_dag, echo = FALSE, out.width = "100%"-------------------
+knitr::include_graphics("img/FigModelDAG.png")
+
+## ----using_strategies_nestedcv, echo = FALSE, out.width = "100%"--------------
+knitr::include_graphics("img/FigNestedCV.png")
+
+## ----using_strategies_methods1, echo=FALSE------------------------------------
+cat('TrainStep1 :
+Object of class "TrainBit"
+
+Grid (selected = 1):
+# A tibble: 3 x 1
+  ModelRecipe$PCA$num_comp
+                     <int>
+1                        1
+2                        2
+3                        3
+
+Object of class "Performance"
+
+Metrics: C-Index 
+Models: 1, 2, 3 
+
+Selected model: 1 
+C-Index value: 0.7327563')
+
+## ----using_strategies_methods2, echo=FALSE------------------------------------
+cat('TrainStep2 :
+Object of class "TrainBit"
+
+Grid (selected = 2):
+# A tibble: 3 x 1
+  Model
+  <fct>
+1 1    
+2 2    
+3 3    
+
+Object of class "Performance"
+
+Metrics: C-Index 
+Models: GBMModel, TunedModel, SuperModel 
+
+Selected model: TunedModel 
+C-Index value: 0.742369')
+
+## ----using_strategies_methods3, echo=FALSE------------------------------------
+cat('TrainStep3 :
+Object of class "TrainBit"
+
+Grid (selected = 1):
+# A tibble: 9 x 1
+  Model$n.trees $interaction.depth
+          <dbl>              <int>
+1            50                  1
+2           100                  1
+3           150                  1
+4            50                  2
+5           100                  2
+6           150                  2
+7            50                  3
+8           100                  3
+9           150                  3
+
+Object of class "Performance"
+
+Metrics: C-Index 
+Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6, GBMModel.7, GBMModel.8, GBMModel.9 
+
+Selected model: GBMModel.1 
+C-Index value: 0.7419883')
+
+## ----using_strategies_methods0, echo=FALSE------------------------------------
+cat('Object of class "MLModel"
+
+Model name: GBMModel
+Label: Trained Generalized Boosted Regression
+Package: gbm
+Response types: factor, numeric, PoissonVariate, Surv
+Tuning grid: TRUE
+Variable importance: TRUE
+
+Parameters:
+List of 5
+ $ n.trees          : num 50
+ $ interaction.depth: int 1
+ $ n.minobsinnode   : num 10
+ $ shrinkage        : num 0.1
+ $ bag.fraction     : num 0.5')
+
+## ----eval = FALSE-------------------------------------------------------------
+#  ## Generalization performance of the modeling strategy
+#  resample(tun_rec, model = sel_model)
 
 ## ----using_settings-----------------------------------------------------------
 ## Change settings

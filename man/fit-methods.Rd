@@ -25,20 +25,17 @@ fit(x, ...)
 \method{fit}{MLModelFunction}(x, ...)
 }
 \arguments{
-\item{x}{defines a relationship between model predictor and response
-variables.  May be a \code{\link{formula}}, design \code{\link{matrix}} of
-predictors, \code{\link{ModelFrame}}, \code{\link{SelectedModelFrame}},
-untrained \code{\link[recipes]{recipe}}, \code{\link{SelectedRecipe}}, or
-\code{\link{TunedRecipe}} object.  Alternatively, a \link[=models]{model}
-function or call may be given first followed by objects defining the
-predictor and response relationship.}
+\item{x}{\link[=inputs]{input} specifying a relationship between model
+predictor and response variables.  Alternatively, a \link[=models]{model}
+function or call may be given first followed by the input specification.}
 
 \item{...}{arguments passed to other methods.}
 
 \item{data}{\link[=data.frame]{data frame} containing observed predictors and
 outcomes.}
 
-\item{model}{\link[=models]{model} function, function name, or call.}
+\item{model}{\link[=models]{model} function, function name, or call; ignored
+and can be omitted when fitting \link[=ModeledInput]{modeled inputs}.}
 
 \item{y}{response variable.}
 }

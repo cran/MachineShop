@@ -36,22 +36,26 @@ SuperModel <- function(..., model = GBMModel,
                        control = MachineShop::settings("control"),
                        all_vars = FALSE) {
 
-  base_learners <- lapply(unlist(list(...)), getMLObject, class = "MLModel")
+  base_learners <- ListOf(map(getMLObject, unlist(list(...)), "MLModel"))
+  names(base_learners) <- paste0(if (length(base_learners)) "Learner",
+                                 seq(base_learners))
 
   control <- getMLObject(control, "MLControl")
 
   new("SuperModel",
     name = "SuperModel",
     label = "Super Learner",
-    response_types = .response_types,
+    response_types =
+      Reduce(intersect, map(slot, base_learners, "response_types"),
+             init = getMLObject(model, "MLModel")@response_types),
     predictor_encoding = NA_character_,
     params = as.list(environment()),
     predict = function(object, newdata, times, ...) {
-      predictors <- lapply(object$base_fits, function(fit) {
+      predictors <- map(function(fit) {
         predict(fit, newdata = newdata, times = object$times, type = "prob")
-      })
+      }, object$base_fits)
 
-      df <- super_df(NA, predictors, newdata[["(casenames)"]],
+      df <- super_df(NA, predictors, newdata[["(names)"]],
                      if (object$all_vars) newdata)
 
       predict(object$super_fit, newdata = df, times = times, type = "prob")
@@ -64,29 +68,29 @@ SuperModel <- function(..., model = GBMModel,
 MLModelFunction(SuperModel) <- NULL
 
 
-.fit.SuperModel <- function(model, x, ...) {
-  mf <- ModelFrame(x, na.rm = FALSE)
+.fit.SuperModel <- function(x, inputs, ...) {
+  mf <- ModelFrame(inputs, na.rm = FALSE)
 
-  params <- model@params
+  params <- x@params
   base_learners <- params$base_learners
   super_learner <- params$model
   control <- params$control
 
   predictors <- list()
   for (i in seq(base_learners)) {
-    res <- resample(x, model = base_learners[[i]], control = control)
+    res <- resample(inputs, model = base_learners[[i]], control = control)
     predictors[[i]] <- res$Predicted
   }
 
   df <- super_df(res$Observed, predictors, res$Case, if (params$all_vars) mf)
   super_mf <- ModelFrame(formula(df), df)
 
-  list(base_fits = lapply(base_learners,
-                          function(learner) fit(mf, model = learner)),
+  list(base_fits = map(function(learner) fit(mf, model = learner),
+                       base_learners),
        super_fit = fit(super_mf, model = super_learner),
        all_vars = params$all_vars,
        times = control@times) %>%
-    MLModelFit("SuperModelFit", model, x, response(mf))
+    MLModelFit("SuperModelFit", model = x, x = inputs)
 }
 
 
@@ -95,14 +99,14 @@ super_df <- function(y, predictors, casenames, data = NULL) {
   df <- data.frame(y = y, unnest(as.data.frame(predictors)))
 
   if (!is.null(data)) {
-    df[["(casenames)"]] <- casenames
+    df[["(names)"]] <- casenames
 
     data_predictors <- predictors(data)
     unique_names <- make.unique(c(names(df), names(data_predictors)))
     names(data_predictors) <- tail(unique_names, length(data_predictors))
-    data_predictors[["(casenames)"]] <- data[["(casenames)"]]
+    data_predictors[["(names)"]] <- data[["(names)"]]
 
-    merge(df, data_predictors, by = "(casenames)", sort = FALSE)[-1]
+    merge(df, data_predictors, by = "(names)", sort = FALSE)[-1]
   } else {
     df
   }

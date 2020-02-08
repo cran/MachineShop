@@ -49,14 +49,13 @@ calibration <- function(x, y = NULL, breaks = 10, span = 0.75, dist = NULL,
 }
 
 
-Calibration <- function(object, ...) {
-  if (is.null(object$Model)) object$Model <- "Model"
-  varnames <- c("Response", "Predicted", "Observed")
-  found <- varnames %in% names(object)
-  if (!all(found)) {
-    missing <- varnames[!found]
-    stop(plural_suffix("missing calibration variable", missing), ": ",
-         toString(missing))
+Calibration <- function(object, ..., .check = TRUE) {
+  if (.check) {
+    if (is.null(object$Model)) object$Model <- factor("Model")
+    missing <- missing_names(c("Response", "Predicted", "Observed"), object)
+    if (length(missing)) {
+      stop(label_items("missing calibration variable", missing))
+    }
   }
   rownames(object) <- NULL
   new("Calibration", object, ...)
@@ -120,13 +119,13 @@ setMethod(".calibration_default", c("matrix", "matrix"),
                                     each = nrow(predicted)),
                      Predicted = as.numeric(predicted))
     if (is.null(breaks)) {
-      loessfit_list <- lapply(1:ncol(predicted), function(i) {
+      loessfit_list <- map(function(i) {
         y <- observed[, i]
         x <- predicted[, i]
         predict(loess(y ~ x, span = span), se = TRUE)
-      })
-      Mean <- c(sapply(loessfit_list, getElement, name = "fit"))
-      SE <- c(sapply(loessfit_list, getElement, name = "se.fit"))
+      }, 1:ncol(predicted))
+      Mean <- c(map_num(getElement, loessfit_list, "fit"))
+      SE <- c(map_num(getElement, loessfit_list, "se.fit"))
       df$Observed <- cbind(Mean = Mean, SE = SE,
                            Lower = Mean - SE,
                            Upper = Mean + SE)
@@ -158,11 +157,11 @@ setMethod(".calibration_default", c("Surv", "SurvProbs"),
                                     each = nrow(predicted)),
                      Predicted = as.numeric(predicted))
     if (is.null(breaks)) {
-      Mean <- c(sapply(1:ncol(predicted), function(i) {
+      Mean <- c(map_num(function(i) {
         x <- predicted[, i]
         harefit <- polspline::hare(observed[, "time"], observed[, "status"], x)
         1 - polspline::phare(times[i], x, harefit)
-      }))
+      }, 1:ncol(predicted)))
       df$Observed <- cbind(Mean = Mean, SE = NA, Lower = NA, Upper = NA)
       df
     } else {
@@ -218,7 +217,7 @@ setMethod(".calibration_default", c("Surv", "numeric"),
         x_range <- span * diff(range(x))
         (1 - min_weight) * pmax((1 - (x / x_range)^3)^3, 0) + min_weight
       }
-      metrics_list <- lapply(df$Predicted, function(value) {
+      metrics_list <- map(function(value) {
         weights <- tricubic(predicted - value, span = span, min_weight = 0.01)
         est <- if (dist == "empirical") {
           f_survfit(observed, weights)
@@ -228,7 +227,7 @@ setMethod(".calibration_default", c("Surv", "numeric"),
         with(est, c(Mean = Mean, SE = SE,
                     Lower = max(Mean - SE, 0),
                     Upper = Mean + SE))
-      })
+      }, df$Predicted)
       df$Observed <- do.call(rbind, metrics_list)
       df
     } else {

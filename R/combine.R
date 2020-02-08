@@ -6,7 +6,7 @@
 #' @rdname combine-methods
 #'
 #' @param ... named or unnamed \link{calibration}, \link{confusion},
-#'   \link[=curves]{performance curve}, \link{lift}, \link{summary}, or
+#'   \link{lift}, \link[=curves]{performance curve}, \link{summary}, or
 #'   \link{resample} results.  Curves must have been generated with the same
 #'   performance \link{metrics} and resamples with the same resampling
 #'   \link[=controls]{control}.
@@ -19,7 +19,7 @@ NULL
 
 c.BinomialVariate <- function(...) {
   args <- list(...)
-  if (all(mapply(is, args, "BinomialVariate"))) {
+  if (all(map_logi(is, args, "BinomialVariate"))) {
     structure(do.call(rbind, args), class = "BinomialVariate")
   } else {
     NextMethod()
@@ -31,16 +31,14 @@ c.BinomialVariate <- function(...) {
 #'
 c.Calibration <- function(...) {
   args <- list(...)
-  if (all(mapply(is, args, "Calibration"))) {
+  if (all(map_logi(is, args, "Calibration"))) {
 
-    smoothed <- args[[1]]@smoothed
-    if (!all(sapply(args, function(x) identical(x@smoothed, smoothed)))) {
+    if (!identical_elements(args, function(x) x@smoothed)) {
       stop("Calibration arguments are a mix of smoothed and binned curves")
     }
 
     df <- do.call(append, set_model_names(args))
-    rownames(df) <- NULL
-    Calibration(df, smoothed = smoothed)
+    Calibration(df, smoothed = args[[1]]@smoothed, .check = FALSE)
 
   } else {
     NextMethod()
@@ -53,7 +51,7 @@ c.Calibration <- function(...) {
 c.ConfusionList <- function(...) {
   args <- list(...)
   is_valid <- function(x) is(x, "ConfusionList") || is(x, "ConfusionMatrix")
-  if (all(sapply(args, is_valid))) {
+  if (all(map_logi(is_valid, args))) {
 
     conf_list <- list()
     for (i in seq(args)) {
@@ -85,36 +83,14 @@ c.ConfusionMatrix <- function(...) {
 }
 
 
-#' @rdname combine-methods
-#'
-c.Curves <- function(...) {
-  args <- list(...)
-  class <- class(args[[1]])
-  if (all(mapply(is, args, class))) {
-
-    metrics <- args[[1]]@metrics
-    if (!all(sapply(args, function(x) identical(x@metrics, metrics)))) {
-      stop(class, " arguments have different metrics")
-    }
-
-    df <- do.call(append, set_model_names(args))
-    rownames(df) <- NULL
-    do.call(class, list(df, metrics = metrics))
-
-  } else {
-    NextMethod()
-  }
-}
-
-
 c.DiscreteVariate <- function(...) {
   args <- list(...)
   x <- NextMethod()
   class <- class(args[[1]])
-  if (all(mapply(is, args, class))) {
+  if (all(map_logi(is, args, class))) {
     new(class, x,
-        min = min(sapply(args, slot, name = "min")),
-        max = max(sapply(args, slot, name = "max")))
+        min = min(map_num(slot, args, "min")),
+        max = max(map_num(slot, args, "max")))
   } else {
     x
   }
@@ -123,7 +99,7 @@ c.DiscreteVariate <- function(...) {
 
 #' @rdname combine-methods
 #'
-c.Lift <- function(...) {
+c.LiftCurve <- function(...) {
   NextMethod()
 }
 
@@ -136,7 +112,7 @@ c.ListOf <- function(...) {
   is_valid <- function(x) {
     is(x, "ListOf") && is(x[[1]], class) && is(x[[1]], "vector")
   }
-  if (all(sapply(args, is_valid))) {
+  if (all(map_logi(is_valid, args))) {
     x <- list()
     for (i in seq(args)) {
       name <- names(args)[i]
@@ -155,11 +131,10 @@ c.ListOf <- function(...) {
 
 c.Performance <- function(...) {
   args <- list(...)
-  if (all(mapply(is, args, "Performance"))) {
+  if (all(map_logi(is, args, "Performance"))) {
     if (length(args) > 1) {
 
-      names <- dimnames(args[[1]])[1:2]
-      if (!all(sapply(args, function(x) identical(dimnames(x)[1:2], names)))) {
+      if (!identical_elements(args, function(x) dimnames(x)[1:2])) {
         stop("Performance objects have different row or column names")
       }
 
@@ -176,23 +151,41 @@ c.Performance <- function(...) {
 
 #' @rdname combine-methods
 #'
+c.PerformanceCurve <- function(...) {
+  args <- list(...)
+  class <- class(args[[1]])
+  if (all(map_logi(is, args, class))) {
+
+    if (!identical_elements(args, function(x) x@metrics)) {
+      stop(class, " arguments have different metrics")
+    }
+
+    df <- do.call(append, set_model_names(args))
+    do.call(class, list(df, metrics = args[[1]]@metrics, .check = FALSE))
+
+  } else {
+    NextMethod()
+  }
+}
+
+
+#' @rdname combine-methods
+#'
 c.Resamples <- function(...) {
   args <- list(...)
-  if (all(mapply(is, args, "Resamples"))) {
+  if (all(map_logi(is, args, "Resamples"))) {
 
-    control <- args[[1]]@control
-    if (!all(sapply(args, function(x) identical(x@control, control)))) {
+    if (!identical_elements(args, function(x) x@control)) {
       stop("Resamples arguments have different control structures")
     }
 
-    strata <- args[[1]]@strata
-    if (!all(sapply(args, function(x) identical(x@strata, strata)))) {
+    if (!identical_elements(args, function(x) x@strata)) {
       stop("Resamples arguments have different strata variables")
     }
 
     df <- do.call(append, set_model_names(args))
-    rownames(df) <- NULL
-    Resamples(df, control = control, strata = strata)
+    Resamples(df, control = args[[1]]@control, strata = args[[1]]@strata,
+              .check = FALSE)
 
   } else {
     NextMethod()
@@ -203,51 +196,11 @@ c.Resamples <- function(...) {
 c.SurvMatrix <- function(...) {
   args <- list(...)
   class <- class(args[[1]])
-  if (all(mapply(is, args, class))) {
-    times <- args[[1]]@times
-    if (!all(sapply(args, function(x) identical(x@times, times)))) {
+  if (all(map_logi(is, args, class))) {
+    if (!identical_elements(args, function(x) x@times)) {
       stop(class, " arguments have different times")
     }
-    new(class, do.call(rbind, args), times = times)
-  } else {
-    NextMethod()
-  }
-}
-
-
-c.TrainBits <- function(...) {
-  args <- list(...)
-  if (all(mapply(is, args, "TrainBits"))) {
-    if (length(args) > 1) {
-
-      grid <- do.call(append, lapply(args, slot, name = "grid"))
-
-      values_list <- lapply(args, slot, name = "values")
-      values <- unlist(values_list)
-      names(values) <- paste0(names(values), ".",
-                              rep(seq(args), lengths(values_list)))
-
-      performance <- do.call(c, lapply(args, slot, name = "performance"))
-      dimnames(performance)[[3]] <- names(values)
-
-      metric <- args[[1]]@metric
-      if (!all(sapply(args, function(x) identical(x@metric, metric)))) {
-        stop("TrainBits objects have different metric functions")
-      }
-
-      selected <- ifelse(metric@maximize, which.max, which.min)(values)
-      selected_names <- names(sapply(args, slot, name = "selected"))
-      if (!all(selected_names == selected_names[1])) {
-        stop("TrainBits objects have difference selected metric names")
-      }
-      names(selected) <- selected_names[1]
-
-      TrainBits(grid = grid, performance = performance, selected = selected,
-                values = values, metric = metric)
-
-    } else {
-      args[[1]]
-    }
+    new(class, do.call(rbind, args), times = args[[1]]@times)
   } else {
     NextMethod()
   }

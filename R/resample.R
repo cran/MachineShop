@@ -6,17 +6,15 @@
 #' @name resample
 #' @rdname resample-methods
 #'
-#' @param x defines a relationship between model predictor and response
-#'   variables.  May be a \code{\link{formula}}, design \code{\link{matrix}} of
-#'   predictors, \code{\link{ModelFrame}}, \code{\link{SelectedModelFrame}},
-#'   untrained \code{\link[recipes]{recipe}}, \code{\link{SelectedRecipe}}, or
-#'   \code{\link{TunedRecipe}} object.  Alternatively, a \link[=models]{model}
-#'   function or call may be given first followed by objects defining the
-#'   predictor and response relationship and the \code{control} value.
+#' @param x \link[=inputs]{input} specifying a relationship between model
+#'   predictor and response variables.  Alternatively, a \link[=models]{model}
+#'   function or call may be given first followed by the input specification and
+#'   \code{control} value.
 #' @param y response variable.
 #' @param data \link[=data.frame]{data frame} containing observed predictors and
 #'   outcomes.
-#' @param model \link[=models]{model} function, function name, or call.
+#' @param model \link[=models]{model} function, function name, or call; ignored
+#'   and can be omitted when resampling \link[=ModeledInput]{modeled inputs}.
 #' @param control \link[=controls]{control} function, function name, or call
 #'   defining the resampling method to be employed.
 #' @param ... arguments passed to other methods.
@@ -81,6 +79,7 @@ resample.matrix <- function(x, y, model,
 resample.ModelFrame <- function(x, model,
                                 control = MachineShop::settings("control"),
                                 ...) {
+  if (missing(model)) model <- NullModel
   .resample(getMLObject(control, "MLControl"), x, model)
 }
 
@@ -94,6 +93,7 @@ resample.ModelFrame <- function(x, model,
 #'
 resample.recipe <- function(x, model,
                             control = MachineShop::settings("control"), ...) {
+  if (missing(model)) model <- NullModel
   .resample(getMLObject(control, "MLControl"), ModelRecipe(x), model)
 }
 
@@ -108,281 +108,197 @@ resample.MLModel <- function(x, ...) {
 #' @rdname resample-methods
 #'
 resample.MLModelFunction <- function(x, ...) {
-  resample(..., model = x)
+  resample(x(), ...)
 }
 
 
-Resamples <- function(object, strata = NULL, ...) {
-  varnames <- c("Model", "Resample", "Case", "Observed", "Predicted")
-  found <- varnames %in% names(object)
-  if (!all(found)) {
-    missing <- varnames[!found]
-    stop(plural_suffix("missing resample variable", missing), ": ",
-         toString(missing))
+Resamples <- function(object, ...) {
+  UseMethod("Resamples")
+}
+
+
+Resamples.data.frame <- function(object, ..., strata = NULL, .check = TRUE) {
+  if (.check) {
+    varnames <- c("Model", "Resample", "Case", "Observed", "Predicted")
+    missing <- missing_names(varnames, object)
+    if (length(missing)) {
+      stop(label_items("missing resample variable", missing))
+    }
+    object$Model <- droplevels(object$Model)
   }
   rownames(object) <- NULL
   new("Resamples", object, strata = as.character(strata), ...)
 }
 
 
-setGeneric(".resample", function(object, x, ...) standardGeneric(".resample"))
+Resamples.list <- function(object, ...) {
+  Resamples(do.call(append, object), ...)
+}
 
 
-setMethod(".resample", c("MLBootstrapControl", "ModelFrame"),
-  function(object, x, model) {
-    presets <- MachineShop::settings()
-    strata <- strata_var(x)
-    set.seed(object@seed)
-    splits <- bootstraps(x,
-                         times = object@samples,
-                         strata = strata) %>% rsample2caret
-    index <- splits$index
-    seeds <- sample.int(.Machine$integer.max, length(index))
-
-    is_optimism_control <- is(object, "MLBootOptimismControl")
-    if (is_optimism_control) {
-      train_pred <- resample_args(x, x, model, object)[[1]]$Predicted
-    }
-
-    foreach(i = seq(index),
-            .packages = MachineShop::settings("require")) %dopar% {
-      MachineShop::settings(presets)
-      set.seed(seeds[i])
-      train <- x[index[[i]], , drop = FALSE]
-      if (is_optimism_control) {
-        args <- resample_args(train, list(x, train), model, object, strata)
-        df <- args[[1]][[1]]
-        df_boot <- args[[1]][[2]]
-        df$Boot.Observed <- df_boot$Observed
-        df$Boot.Predicted <- df_boot$Predicted
-        df$Train.Predicted <- train_pred
-        args[[1]] <- df
-        args
-      } else {
-        resample_args(train, x, model, object, strata)
-      }
-    } %>% Resamples.list
-  }
-)
+.resample <- function(object, x, model, ...) {
+  UseMethod(".resample")
+}
 
 
-setMethod(".resample", c("MLBootstrapControl", "ModelRecipe"),
-  function(object, x, model) {
-    presets <- MachineShop::settings()
-    strata <- strata_var(x)
-    set.seed(object@seed)
-    splits <- bootstraps(as.data.frame(x),
-                         times = object@samples,
-                         strata = strata)$splits
-    seeds <- sample.int(.Machine$integer.max, length(splits))
-
-    is_optimism_control <- is(object, "MLBootOptimismControl")
-    if (is_optimism_control) {
-      train_pred <- resample_args(x, x, model, object)[[1]]$Predicted
-    }
-
-    foreach(i = seq(splits),
-            .packages = MachineShop::settings("require")) %dopar% {
-      MachineShop::settings(presets)
-      set.seed(seeds[i])
-      split <- splits[[i]]
-      train <- recipe(x, analysis(split))
-      if (is_optimism_control) {
-        args <- resample_args(train, list(x, train), model, object, strata)
-        df <- args[[1]][[1]]
-        df_boot <- args[[1]][[2]]
-        indices <- seq_boot(df_boot, df)
-        df["Boot.Observed"] <- df_boot[indices, "Observed"]
-        df["Boot.Predicted"] <- df_boot[indices, "Predicted"]
-        df$Train.Predicted <- train_pred
-        args[[1]] <- df
-        args
-      } else {
-        resample_args(train, x, model, object, strata)
-      }
-    } %>% Resamples.list
-  }
-)
-
-
-setMethod(".resample", c("MLCrossValidationControl", "ModelFrame"),
-  function(object, x, model) {
-    presets <- MachineShop::settings()
-    strata <- strata_var(x)
-    set.seed(object@seed)
-    splits <- vfold_cv(x,
-                       v = object@folds,
-                       repeats = object@repeats,
-                       strata = strata) %>% rsample2caret
-    index <- splits$index
-    seeds <- sample.int(.Machine$integer.max, length(index))
-
-    is_optimism_control <- is(object, "MLCVOptimismControl")
-
-    args_list <- foreach(i = seq(index),
-                         .packages = MachineShop::settings("require")) %dopar% {
-      MachineShop::settings(presets)
-      set.seed(seeds[i])
-      train <- x[index[[i]], , drop = FALSE]
-      test <- x[-index[[i]], , drop = FALSE]
-      if (is_optimism_control) {
-        args <- resample_args(train, list(test, x), model, object, strata)
-        args$CV.Predicted <- args[[1]][[2]]["Predicted"]
-        args[[1]] <- args[[1]][[1]]
-        args
-      } else {
-        resample_args(train, test, model, object, strata)
-      }
-    }
-    res <- Resamples.list(args_list)
-
-    if (is_optimism_control) {
-      pred_list <- lapply(args_list, getElement, name = "CV.Predicted")
-      split_factor <- rep(seq_len(object@folds), times = object@repeats)
-      df <- split(seq(pred_list), split_factor) %>%
-        lapply(function(indices) do.call(append, pred_list[indices])) %>%
-        as.data.frame
-      names(df) <- paste0("CV.Predicted.", seq(df))
-      pred <- resample_args(x, x, model, object)[[1]]$Predicted
-      df$Train.Predicted <- do.call(append, rep(list(pred), object@repeats))
-      res[names(df)] <- df
-    }
-
-    res
-  }
-)
-
-
-setMethod(".resample", c("MLCrossValidationControl", "ModelRecipe"),
-  function(object, x, model) {
-    presets <- MachineShop::settings()
-    strata <- strata_var(x)
-    set.seed(object@seed)
-    splits <- vfold_cv(as.data.frame(x),
-                       v = object@folds,
-                       repeats = object@repeats,
+.resample.MLBootstrapControl <- function(object, x, model, ...) {
+  presets <- MachineShop::settings()
+  strata <- strata_var(x)
+  set.seed(object@seed)
+  splits <- bootstraps(rsample_data(x),
+                       times = object@samples,
                        strata = strata)$splits
-    seeds <- sample.int(.Machine$integer.max, length(splits))
+  seeds <- sample.int(.Machine$integer.max, length(splits))
 
-    is_optimism_control <- is(object, "MLCVOptimismControl")
+  is_optimism_control <- is(object, "MLBootOptimismControl")
+  if (is_optimism_control) {
+    train_pred <- subsample(x, x, model, object)$Predicted
+  }
 
-    args_list <- foreach(i = seq(splits),
-                         .packages = MachineShop::settings("require")) %dopar% {
-      MachineShop::settings(presets)
-      set.seed(seeds[i])
-      split <- splits[[i]]
-      train <- recipe(x, analysis(split))
-      test <- assessment(split)
-      if (is_optimism_control) {
-        args <- resample_args(train, list(test, x), model, object, strata)
-        args$CV.Predicted <- args[[1]][[2]]["Predicted"]
-        args[[1]] <- args[[1]][[1]]
-        args
-      } else {
-        resample_args(train, test, model, object, strata)
-      }
-    }
-    res <- Resamples.list(args_list)
-
+  foreach(i = seq(splits),
+          .packages = MachineShop::settings("require")) %dopar% {
+    MachineShop::settings(presets)
+    set.seed(seeds[i])
+    train <- analysis(splits[[i]], x)
     if (is_optimism_control) {
-      pred_list <- lapply(args_list, getElement, name = "CV.Predicted")
-      split_factor <- rep(seq_len(object@folds), times = object@repeats)
-      df <- split(seq(pred_list), split_factor) %>%
-        lapply(function(indices) do.call(append, pred_list[indices])) %>%
-        as.data.frame
-      names(df) <- paste0("CV.Predicted.", seq(df))
-      pred <- resample_args(x, x, model, object)[[1]]$Predicted
-      df$Train.Predicted <- do.call(append, rep(list(pred), object@repeats))
-      res[names(df)] <- df
+      subs <- subsample(train, list(x, train), model, object, i)
+      df <- subs[[1]]
+      df_boot <- subs[[2]]
+      indices <- seq_boot(df_boot, df)
+      df["Boot.Observed"] <- df_boot[indices, "Observed"]
+      df["Boot.Predicted"] <- df_boot[indices, "Predicted"]
+      df$Train.Predicted <- train_pred
+      df
+    } else {
+      subsample(train, x, model, object, i)
     }
+  } %>% Resamples(control = object, strata = strata)
+}
 
-    res
+
+.resample.MLCrossValidationControl <- function(object, x, model, ...) {
+  presets <- MachineShop::settings()
+  strata <- strata_var(x)
+  set.seed(object@seed)
+  splits <- vfold_cv(rsample_data(x),
+                     v = object@folds,
+                     repeats = object@repeats,
+                     strata = strata)$splits
+  seeds <- sample.int(.Machine$integer.max, length(splits))
+
+  is_optimism_control <- is(object, "MLCVOptimismControl")
+
+  df_list <- foreach(i = seq(splits),
+                     .packages = MachineShop::settings("require")) %dopar% {
+    MachineShop::settings(presets)
+    set.seed(seeds[i])
+    train <- analysis(splits[[i]], x)
+    test <- assessment(splits[[i]], x)
+    if (is_optimism_control) {
+      subs <- subsample(train, list(test, x), model, object, i)
+      structure(subs[[1]], CV.Predicted = subs[[2]]["Predicted"])
+    } else {
+      subsample(train, test, model, object, i)
+    }
   }
-)
+  res <- Resamples(df_list, control = object, strata = strata)
 
-
-setMethod(".resample", c("MLOOBControl", "ModelFrame"),
-  function(object, x, model) {
-    presets <- MachineShop::settings()
-    strata <- strata_var(x)
-    set.seed(object@seed)
-    splits <- bootstraps(x,
-                         times = object@samples,
-                         strata = strata) %>% rsample2caret
-    index <- splits$index
-    indexOut <- splits$indexOut
-    seeds <- sample.int(.Machine$integer.max, length(index))
-    foreach(i = seq(index),
-            .packages = MachineShop::settings("require")) %dopar% {
-      MachineShop::settings(presets)
-      set.seed(seeds[i])
-      train <- x[index[[i]], , drop = FALSE]
-      test <- x[indexOut[[i]], , drop = FALSE]
-      resample_args(train, test, model, object, strata)
-    } %>% Resamples.list
+  if (is_optimism_control) {
+    pred_list <- map(attr, df_list, "CV.Predicted")
+    split_factor <- rep(seq_len(object@folds), times = object@repeats)
+    df <- split(seq(pred_list), split_factor) %>%
+      map(function(indices) do.call(append, pred_list[indices]), .) %>%
+      as.data.frame
+    names(df) <- paste0("CV.Predicted.", seq(df))
+    pred <- subsample(x, x, model, object)$Predicted
+    df$Train.Predicted <- do.call(append, rep(list(pred), object@repeats))
+    res[names(df)] <- df
   }
-)
+
+  res
+}
 
 
-setMethod(".resample", c("MLOOBControl", "ModelRecipe"),
-  function(object, x, model) {
-    presets <- MachineShop::settings()
-    strata <- strata_var(x)
-    set.seed(object@seed)
-    splits <- bootstraps(as.data.frame(x),
-                         times = object@samples,
-                         strata = strata)$splits
-    seeds <- sample.int(.Machine$integer.max, length(splits))
-    foreach(i = seq(splits),
-            .packages = MachineShop::settings("require")) %dopar% {
-      MachineShop::settings(presets)
-      set.seed(seeds[i])
-      split <- splits[[i]]
-      train <- recipe(x, analysis(split))
-      test <- assessment(split)
-      resample_args(train, test, model, object, strata)
-    } %>% Resamples.list
-  }
-)
+.resample.MLOOBControl <- function(object, x, model, ...) {
+  presets <- MachineShop::settings()
+  strata <- strata_var(x)
+  set.seed(object@seed)
+  splits <- bootstraps(rsample_data(x),
+                       times = object@samples,
+                       strata = strata)$splits
+  seeds <- sample.int(.Machine$integer.max, length(splits))
+  foreach(i = seq(splits),
+          .packages = MachineShop::settings("require")) %dopar% {
+    MachineShop::settings(presets)
+    set.seed(seeds[i])
+    train <- analysis(splits[[i]], x)
+    test <- assessment(splits[[i]], x)
+    subsample(train, test, model, object, i)
+  } %>% Resamples(control = object, strata = strata)
+}
 
 
-setMethod(".resample", c("MLSplitControl", "ModelFrame"),
-  function(object, x, model) {
-    strata <- strata_var(x)
-    set.seed(object@seed)
-    split <- initial_split(x,
-                           prop = object@prop,
-                           strata = strata)
-    train <- x[split$in_id, , drop = FALSE]
-    test <- x[-split$in_id, , drop = FALSE]
-    do.call(Resamples, resample_args(train, test, model, object, strata))
-  }
-)
+.resample.MLSplitControl <- function(object, x, model, ...) {
+  strata <- strata_var(x)
+  set.seed(object@seed)
+  split <- initial_split(rsample_data(x),
+                         prop = object@prop,
+                         strata = strata)
+  train <- analysis(split, x)
+  test <- testing(split, x)
+  subsample(train, test, model, object) %>%
+    Resamples(control = object, strata = strata)
+}
 
 
-setMethod(".resample", c("MLSplitControl", "ModelRecipe"),
-  function(object, x, model) {
-    strata <- strata_var(x)
-    set.seed(object@seed)
-    split <- initial_split(as.data.frame(x),
-                           prop = object@prop,
-                           strata = strata)
-    train <- recipe(x, analysis(split))
-    test <- testing(split)
-    do.call(Resamples, resample_args(train, test, model, object, strata))
-  }
-)
+.resample.MLTrainControl <- function(object, x, model, ...) {
+  set.seed(object@seed)
+  Resamples(subsample(x, x, model, object), control = object)
+}
 
 
-setMethod(".resample", c("MLTrainControl", "ANY"),
-  function(object, x, model) {
-    set.seed(object@seed)
-    do.call(Resamples, resample_args(x, x, model, object))
-  }
-)
+#################### Utility Functions ####################
 
 
-resample_args <- function(train, test, model, control, strata = character()) {
+rsample_data <- function(x, ...) UseMethod("rsample_data")
+rsample_data.ModelFrame <- function(x, ...) asS3(x)
+rsample_data.ModelRecipe <- function(x, ...) as.data.frame(x)
+
+
+analysis <- function(x, object, ...) UseMethod("analysis", object)
+
+analysis.ModelFrame <- function(x, object, ...) {
+  as(rsample::analysis(x), class(object)[1])
+}
+
+analysis.ModelRecipe <- function(x, object, ...) {
+  recipe(object, rsample::analysis(x))
+}
+
+
+assessment <- function(x, object, ...) UseMethod("assessment", object)
+
+assessment.ModelFrame <- function(x, object, ...) {
+  as(rsample::assessment(x), class(object)[1])
+}
+
+assessment.ModelRecipe <- function(x, object, ...) {
+  rsample::assessment(x)
+}
+
+
+testing <- function(x, object, ...) UseMethod("testing", object)
+
+testing.ModelFrame <- function(x, object, ...) {
+  as(rsample::testing(x), class(object)[1])
+}
+
+testing.ModelRecipe <- function(x, object, ...) {
+  recipe(object, rsample::testing(x))
+}
+
+
+subsample <- function(train, test, model, control, id = 1) {
   model <- getMLObject(model, "MLModel")
 
   trainfit <- fit(train, model)
@@ -393,8 +309,8 @@ resample_args <- function(train, test, model, control, strata = character()) {
       test <- recipe(as.MLModel(trainfit)@x, as.data.frame(test))
     }
     df <- data.frame(Model = factor(model@name),
-                     Resample = 1,
-                     Case = as.data.frame(test, original = FALSE)$"(casenames)",
+                     Resample = as.integer(id),
+                     Case = as.data.frame(test, original = FALSE)[["(names)"]],
                      stringsAsFactors = FALSE)
     df$Observed <- response(test)
     df$Predicted <- predict(trainfit, as.data.frame(test), type = "prob",
@@ -403,15 +319,62 @@ resample_args <- function(train, test, model, control, strata = character()) {
     df
   }
 
-  list(if (class(test)[1] == "list") lapply(test, f) else f(test),
-       control = control, strata = strata)
+  if (class(test)[1] == "list") map(f, test) else f(test)
 }
 
 
-Resamples.list <- function(x) {
-  resample_list <- lapply(x, function(args) args[[1]])
-  resample_df <- do.call(append, resample_list)
-  num_times <- sapply(resample_list, nrow)
-  resample_df$Resample <- rep(seq_along(num_times), num_times)
-  Resamples(resample_df, control = x[[1]]$control, strata = x[[1]]$strata)
+resample_selection <- function(x, transform, params, ...) {
+
+  metrics <- params$metrics
+  stat <- fget(params$stat)
+
+  perf_list <- list()
+  perf_stats <- numeric()
+  for (name in names(x)) {
+    res <- try(
+      resample(transform(x[[name]]), ..., control = params$control),
+      silent = TRUE
+    )
+
+    if (is(res, "try-error")) {
+      warn("resampling failed for ", name, " with error:\n",
+           attr(res, "condition")$message)
+      perf_list[[name]] <- NA
+      perf_stats[name] <- NA
+      next
+    }
+
+    if (is.null(metrics)) {
+      method <- fget(findS3Method(performance, res$Observed))
+      metrics <- c(eval(formals(method)$metrics))
+      is_defined <- map_logi(function(metric) {
+        types <- metricinfo(metric)[[1]]$response_types
+        any(map_logi(is, list(res$Observed), types$observed) &
+              map_logi(is, list(res$Predicted), types$predicted))
+      }, metrics)
+      metrics <- metrics[is_defined]
+    }
+
+    perf <- performance(res, metrics = metrics, cutoff = params$cutoff)
+    perf_list[[name]] <- perf
+    perf_stats[name] <- stat(na.omit(perf[, 1]))
+  }
+
+  failed <- is.na(perf_list)
+  if (all(failed)) {
+    stop("resampling failed for all models", call. = FALSE)
+  } else if (any(failed)) {
+    perf[] <- NA
+    perf_list[failed] <- list(perf)
+  }
+
+  perf <- do.call(c, perf_list)
+  metric <- getMLObject(c(metrics)[[1]], "MLMetric")
+  selected <- ifelse(metric@maximize, which.max, which.min)(perf_stats)
+
+  list(performance = perf,
+       selected = structure(selected, names = colnames(perf)[1]),
+       values = perf_stats,
+       metric = metric)
+
 }

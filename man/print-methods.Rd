@@ -2,30 +2,26 @@
 % Please edit documentation in R/print.R
 \name{print}
 \alias{print}
-\alias{print.Calibration}
-\alias{print.ConfusionList}
-\alias{print.Curves}
 \alias{print.BinomialVariate}
+\alias{print.Calibration}
 \alias{print.ListOf}
 \alias{print.MLModel}
 \alias{print.ModelFrame}
+\alias{print.ModeledInput}
 \alias{print.Performance}
+\alias{print.PerformanceCurve}
 \alias{print.RecipeGrid}
 \alias{print.Resamples}
-\alias{print.SelectedModelFrame}
+\alias{print.SelectedInput}
 \alias{print.SurvMatrix}
-\alias{print.TrainBits}
-\alias{print.TunedRecipe}
+\alias{print.TrainBit}
+\alias{print.TunedInput}
 \alias{print.VarImp}
 \title{Print MachineShop Objects}
 \usage{
-\method{print}{Calibration}(x, n = MachineShop::settings("max.print"), ...)
-
-\method{print}{ConfusionList}(x, n = MachineShop::settings("max.print"), ...)
-
-\method{print}{Curves}(x, n = MachineShop::settings("max.print"), ...)
-
 \method{print}{BinomialVariate}(x, n = MachineShop::settings("max.print"), ...)
+
+\method{print}{Calibration}(x, n = MachineShop::settings("max.print"), ...)
 
 \method{print}{ListOf}(x, n = MachineShop::settings("max.print"), ...)
 
@@ -33,19 +29,23 @@
 
 \method{print}{ModelFrame}(x, n = MachineShop::settings("max.print"), ...)
 
+\method{print}{ModeledInput}(x, n = MachineShop::settings("max.print"), ...)
+
 \method{print}{Performance}(x, n = MachineShop::settings("max.print"), ...)
+
+\method{print}{PerformanceCurve}(x, n = MachineShop::settings("max.print"), ...)
 
 \method{print}{RecipeGrid}(x, n = MachineShop::settings("max.print"), ...)
 
 \method{print}{Resamples}(x, n = MachineShop::settings("max.print"), ...)
 
-\method{print}{SelectedModelFrame}(x, n = MachineShop::settings("max.print"), ...)
+\method{print}{SelectedInput}(x, n = MachineShop::settings("max.print"), ...)
 
 \method{print}{SurvMatrix}(x, n = MachineShop::settings("max.print"), ...)
 
-\method{print}{TrainBits}(x, n = MachineShop::settings("max.print"), ...)
+\method{print}{TrainBit}(x, n = MachineShop::settings("max.print"), ...)
 
-\method{print}{TunedRecipe}(x, n = MachineShop::settings("max.print"), ...)
+\method{print}{TunedInput}(x, n = MachineShop::settings("max.print"), ...)
 
 \method{print}{VarImp}(x, n = MachineShop::settings("max.print"), ...)
 }

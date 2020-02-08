@@ -33,7 +33,7 @@
 #'
 SelectedModel <- function(..., control = MachineShop::settings("control"),
                           metrics = NULL,
-                          stat = MachineShop::settings("stat.Train"),
+                          stat = MachineShop::settings("stat.train"),
                           cutoff = MachineShop::settings("cutoff")) {
 
   models <- as.list(unlist(list(...)))
@@ -49,9 +49,11 @@ SelectedModel <- function(..., control = MachineShop::settings("control"),
   new("SelectedModel",
       name = "SelectedModel",
       label = "Selected Model",
-      response_types = .response_types,
+      response_types = Reduce(intersect,
+                              map(slot, models, "response_types"),
+                              init = .response_types),
       predictor_encoding = NA_character_,
-      params = list(models = models,
+      params = list(models = ListOf(models),
                     control = getMLObject(control, "MLControl"),
                     metrics = metrics, stat = stat, cutoff = cutoff)
   )
@@ -61,8 +63,12 @@ SelectedModel <- function(..., control = MachineShop::settings("control"),
 MLModelFunction(SelectedModel) <- NULL
 
 
-.fit.SelectedModel <- function(model, x, ...) {
-  fit(x, model = train(model, x)$model)
+.fit.SelectedModel <- function(x, inputs, ...) {
+  models <- x@params$models
+  trainbit <- resample_selection(models, identity, x@params, inputs)
+  trainbit$grid <- tibble(Model = factor(seq(models)))
+  model <- models[[trainbit$selected]]
+  push(do.call(TrainBit, trainbit), fit(inputs, model = model))
 }
 
 
@@ -122,7 +128,7 @@ MLModelFunction(SelectedModel) <- NULL
 TunedModel <- function(model, grid = MachineShop::settings("grid"),
                        fixed = NULL, control = MachineShop::settings("control"),
                        metrics = NULL,
-                       stat = MachineShop::settings("stat.Train"),
+                       stat = MachineShop::settings("stat.train"),
                        cutoff = MachineShop::settings("cutoff")) {
 
   if (missing(model)) {
@@ -153,7 +159,8 @@ TunedModel <- function(model, grid = MachineShop::settings("grid"),
   new("TunedModel",
       name = "TunedModel",
       label = "Grid Tuned Model",
-      response_types = .response_types,
+      response_types =
+        if (is.null(model)) .response_types else model()@response_types,
       predictor_encoding = NA_character_,
       params = list(model = model, grid = grid, fixed = fixed,
                     control = getMLObject(control, "MLControl"),
@@ -165,6 +172,13 @@ TunedModel <- function(model, grid = MachineShop::settings("grid"),
 MLModelFunction(TunedModel) <- NULL
 
 
-.fit.TunedModel <- function(model, x, ...) {
-  fit(x, model = train(model, x)$model)
+.fit.TunedModel <- function(x, inputs, ...) {
+  params <- x@params
+  grid <- as.grid(params$grid, fixed = params$fixed,
+                  inputs, model = getMLObject(params$model, "MLModel"))
+  models <- expand_model(list(params$model, grid))
+  trainbit <- resample_selection(models, identity, params, inputs)
+  trainbit$grid <- tibble(Model = grid)
+  model <- models[[trainbit$selected]]
+  push(do.call(TrainBit, trainbit), fit(inputs, model = model))
 }

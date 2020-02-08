@@ -19,7 +19,7 @@ setMetric_ConfusionMatrix("accuracy",
 #'
 auc <- function(observed, predicted = NULL,
                 metrics = c(MachineShop::tpr, MachineShop::fpr),
-                stat = MachineShop::settings("stat.Curves"), ...) {
+                stat = MachineShop::settings("stat.Curve"), ...) {
   call_metric_method("auc", environment())
 }
 
@@ -27,20 +27,6 @@ MLMetric(auc) <- list("auc", "Area Under Performance Curve", TRUE)
 
 
 setMetricGeneric("auc")
-
-
-setMetricMethod("auc", c("Curves", "NULL"),
-  function(observed, predicted, stat, ...) {
-    observed <- summary(observed, stat = stat)
-    indices <- observed["Model"]
-    indices$Resample <- observed$Resample
-    by(observed, indices, function(split) {
-      split <- na.omit(split)
-      n <- nrow(split)
-      if (n > 1) with(split, sum(diff(x) * (y[-n] + y[-1]) / 2)) else NA
-    })
-  }
-)
 
 
 setMetricMethod("auc", c("factor", "factor"))
@@ -57,6 +43,20 @@ setMetricMethod("auc", c("factor", "numeric"),
     } else {
       unname(auc(performance_curve(observed, predicted, metrics = metrics)))
     }
+  }
+)
+
+
+setMetricMethod("auc", c("PerformanceCurve", "NULL"),
+  function(observed, predicted, stat, ...) {
+    observed <- summary(observed, stat = stat)
+    indices <- observed["Model"]
+    indices$Resample <- observed$Resample
+    by(observed, indices, function(split) {
+      split <- na.omit(split)
+      n <- nrow(split)
+      if (n > 1) with(split, sum(diff(x) * (y[-n] + y[-1]) / 2)) else NA
+    })
   }
 )
 
@@ -123,13 +123,13 @@ setMetricMethod("brier", c("Surv", "SurvProbs"),
 
     cens_fit <- survfit(Surv(obs_times, 1 - obs_events) ~ 1, se.fit = FALSE)
 
-    x <- sapply(seq_along(times), function(i) {
+    x <- map_num(function(i) {
       time <- times[i]
       obs_after_time <- obs_times > time
       cens <- predict(cens_fit, pmin(obs_times, time))
       weights <- ifelse(obs_events == 1 | obs_after_time, 1 / cens, 0)
       mean(weights * (obs_after_time - predicted[, i, drop = TRUE])^2)
-    })
+    }, seq_along(times))
 
     if (length(times) > 1) {
       c("mean" = surv_metric_mean(x, times), "time" = x)

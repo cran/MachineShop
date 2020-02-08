@@ -60,30 +60,12 @@ combine_dataframes <- function(x, y = NULL) {
 
 complete_subset <- function(...) {
   is_complete <- complete.cases(...)
-  lapply(list(...), function(x) subset(x, is_complete))
-}
-
-
-fget0 <- function(x) {
-  if (is.character(x)) {
-    x_expr <- str2lang(x)
-    x_name <- x
-    x <- if (is.symbol(x_expr)) {
-      get0(x_name, mode = "function")
-    } else if (is.call(x_expr) && x_expr[[1]] == "::") {
-      get0(as.character(x_expr[[3]]),
-           envir = asNamespace(x_expr[[2]]),
-           mode = "function")
-    }
-  } else if (!is.function(x)) {
-    x <- NULL
-  }
-  x
+  map(function(x) subset(x, is_complete), list(...))
 }
 
 
 fget <- function(x) {
-  f <- fget0(x)
+  f <- get0(x, mode = "function")
   if (is.null(f)) {
     msg <- if (is.character(x)) {
       paste0("function '", x, "' not found")
@@ -107,14 +89,52 @@ findS3Method <- function(generic, object) {
 }
 
 
+get0 <- function(x, mode = "any") {
+  if (is.character(x)) {
+    x_expr <- str2lang(x)
+    x_name <- x
+    if (is.symbol(x_expr)) {
+      base::get0(x_name, mode = mode)
+    } else if (is.call(x_expr) && x_expr[[1]] == "::") {
+      base::get0(as.character(x_expr[[3]]),
+                 envir = asNamespace(x_expr[[2]]),
+                 mode = mode)
+    }
+  } else if (mode %in% c("any", mode(x))) {
+    x
+  }
+}
+
+
 getMLObject <- function(x, class = c("MLControl", "MLMetric", "MLModel")) {
   class <- match.arg(class)
-  if (is.character(x)) x <- fget(x)
+  x <- get0(x)
   if (is.function(x) && class %in% c("MLControl", "MLModel")) x <- x()
   if (!is(x, class)) stop("object not of class ", class)
   x
 }
 
+
+identical_elements <- function(x, transform = identity, ...) {
+  target <- transform(x[[1]])
+  compare <- function(current) identical(transform(current), target, ...)
+  all(map_logi(compare, x[-1]))
+}
+
+
+is.trained <- function(x, ...) {
+  UseMethod("is.trained")
+}
+
+
+is.trained.MLModel <- function(x, ...) {
+  length(x@trainbits) > 0
+}
+
+
+is.trained.step <- function(x, ...) {
+  recipes::is_trained(x)
+}
 
 is_one_element <- function(x, class) {
   length(x) == 1 && is(x[[1]], class)
@@ -127,6 +147,13 @@ is_response <- function(object, class2) {
   } else {
     is(object, class2)
   }
+}
+
+
+label_items <- function(label, x, n = Inf) {
+  item_len <- length(x)
+  items <- if (n < item_len) paste(toString(head(x, n)), "...") else toString(x)
+  paste0(label, if (item_len > 1) "s", ": ", items)
 }
 
 
@@ -153,7 +180,7 @@ list2function <- function(x) {
         if (is.null(name) || !nzchar(name)) metric_name else name
     }
     names(x) <- make.unique(metric_names)
-    eval(bquote(function(...) unlist(lapply(.(x), function(x) x(...)))))
+    eval(bquote(function(...) unlist(map(function(x) x(...), .(x)))))
   } else if (is(x, "function")) {
     x
   } else {
@@ -172,6 +199,39 @@ make_list_names <- function(x, prefix) {
     names(x)[keep] <- old_names[keep]
   }
   names(x)
+}
+
+
+map <- function(f, ...) {
+  all_args <- all(lengths(list(...)))
+  if (all_args) mapply(FUN = f, ..., SIMPLIFY = FALSE) else list()
+}
+
+
+map_chr <- function(f, ...) {
+  res <- map_simplify(f, ...)
+  storage.mode(res) <- "character"
+  res
+}
+
+
+map_logi <- function(f, ...) {
+  res <- map_simplify(f, ...)
+  storage.mode(res) <- "logical"
+  res
+}
+
+
+map_num <- function(f, ...) {
+  res <- map_simplify(f, ...)
+  storage.mode(res) <- "numeric"
+  res
+}
+
+
+map_simplify <- function(f, ...) {
+  res <- map(f, ...)
+  if (length(res)) simplify2array(res, higher = TRUE) else res
 }
 
 
@@ -196,6 +256,11 @@ match_indices <- function(indices, choices) {
 }
 
 
+missing_names <- function(x, data) {
+  x[!(x %in% names(data))]
+}
+
+
 nvars <- function(x, model) {
   stopifnot(is(x, "ModelFrame"))
   model <- getMLObject(model, "MLModel")
@@ -211,29 +276,42 @@ nvars <- function(x, model) {
 
 params <- function(envir) {
   args <- as.list(envir)
-  is_missing <- sapply(args, function(x) is.symbol(x) && !nzchar(x))
+  is_missing <- map_logi(function(x) is.symbol(x) && !nzchar(x), args)
   if (any(is_missing)) {
     missing <- names(args)[is_missing]
-    stop(plural_suffix("missing values for required argument", missing), ": ",
-         toString(missing))
+    stop(label_items("missing values for required argument", missing))
   }
-  args[!sapply(args, is.null)]
+  args[!map_logi(is.null, args)]
 }
 
 
-plural_suffix <- function(x, subject) {
-  if (length(subject) > 1) paste0(x, "s") else x
+push <- function(x, object, ...) {
+  UseMethod("push")
+}
+
+
+push.TrainBit <- function(x, object, ...) {
+  stopifnot(is(object, "MLModelFit"))
+  obj_bits <- (if (isS4(object)) object@mlmodel else object$mlmodel)@trainbits
+  trainbits <- ListOf(c(x, obj_bits))
+  names(trainbits) <- paste0("TrainStep", seq(trainbits))
+  if (isS4(object)) {
+    object@mlmodel@trainbits <- trainbits
+  } else {
+    object$mlmodel@trainbits <- trainbits
+  }
+  object
 }
 
 
 requireModelNamespaces <- function(packages) {
-  pass <- sapply(packages, requireNamespace)
-  if (!all(pass)) {
-    missing <- packages[!pass]
-    stop(plural_suffix("install required package", missing), ": ",
-         toString(missing))
+  available <- map_logi(requireNamespace, packages, quietly = TRUE)
+  if (!all(available)) {
+    missing <- packages[!available]
+    stop(label_items("model requires the installation of package", missing),
+         call. = FALSE)
   }
-  invisible(pass)
+  invisible(available)
 }
 
 
@@ -259,7 +337,7 @@ sample_params <- function(x, size = NULL, replace = FALSE) {
   iter <- 0
   while (nrow(grid) < size && iter < 100) {
     iter <- iter + 1
-    new_grid <- as_tibble(lapply(x, sample, size = size, replace = TRUE))
+    new_grid <- as_tibble(map(sample, x, size = size, replace = TRUE))
     grid <- rbind(grid, new_grid)
     if (!replace) grid <- unique(grid)
   }

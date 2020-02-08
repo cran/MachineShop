@@ -4,14 +4,26 @@ as.data.frame.BinomialVariate <- function(x, ...) {
 
 
 as.data.frame.ModelFrame <- function(x, ...) {
-  x <- NextMethod()
-  attributes(x) <- list(names = names(x), row.names = rownames(x),
-                        class = "data.frame")
-  x
+  structure(as(x, "ModelFrame"), terms = NULL, class = "data.frame")
 }
 
 
 setAs("ModelFrame", "data.frame",
+  function(from) as.data.frame(from)
+)
+
+
+setAs("ModeledFrame", "data.frame",
+  function(from) as.data.frame(from)
+)
+
+
+setAs("SelectedModelFrame", "data.frame",
+  function(from) as.data.frame(from)
+)
+
+
+setAs("SelectedModeledFrame", "data.frame",
   function(from) as.data.frame(from)
 )
 
@@ -45,18 +57,13 @@ as.data.frame.Resamples <- function(x, ...) {
 }
 
 
-as.data.frame.SelectedModelFrame <- function(x, ...) {
-  as.data.frame(as(x, "ModelFrame"))
-}
-
-
 as.data.frame.SurvMatrix <- function(x, ...) {
   as.data.frame.model.matrix(x, ...)
 }
 
 
-as.data.frame.TabularArray <- function(x, ...) {
-  as.data.frame.table(as(x, "array"), responseName = "Value")
+as.data.frame.TabularArray <- function(x, ..., responseName = "Value") {
+  as.data.frame.table(as(x, "array"), responseName = responseName, ...)
 }
 
 
@@ -88,16 +95,41 @@ as.MLModel.MLModelFit <- function(x, ...) {
 }
 
 
+setAs("ModeledFrame", "ModelFrame",
+  function(from) asS3(S3Part(from))
+)
+
+
 setAs("SelectedModelFrame", "ModelFrame",
-  function(from) asS3(from)
+  function(from) asS3(S3Part(from))
+)
+
+
+setAs("SelectedModeledFrame", "ModelFrame",
+  function(from) asS3(S3Part(from))
 )
 
 
 setAs("ModelRecipe", "recipe",
-  function(from) asS3(from)
+  function(from) asS3(S3Part(from))
 )
 
 
-setAs("TunedRecipe", "recipe",
-  function(from) asS3(from)
+setAs("ModeledRecipe", "recipe",
+  function(from) asS3(S3Part(from))
+)
+
+
+setAs("SelectedModelRecipe", "recipe",
+  function(from) asS3(S3Part(from))
+)
+
+
+setAs("SelectedModeledRecipe", "recipe",
+  function(from) asS3(S3Part(from))
+)
+
+
+setAs("TunedModelRecipe", "recipe",
+  function(from) asS3(S3Part(from))
 )

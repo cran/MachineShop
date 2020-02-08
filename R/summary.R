@@ -5,12 +5,12 @@
 #' @name summary
 #' @rdname summary-methods
 #'
-#' @param object \link{confusion}, \link[=curves]{performance curve},
-#'   \link{lift}, trained model \link{fit}, \link{performance}, or
-#'   \link{resample} result.
+#' @param object \link{confusion}, \link{lift}, trained model \link{fit},
+#'   \link{performance}, \link[=curves]{performance curve}, or \link{resample}
+#'   result.
 #' @param stat function or character string naming a function to compute a
 #'   summary statistic at each cutoff value of resampled metrics in
-#'   \code{Curves}, or \code{NULL} for resample-specific metrics.
+#'   \code{PerformanceCurve}, or \code{NULL} for resample-specific metrics.
 #' @param stats function, function name, or vector of these with which to
 #'   compute summary statistics.
 #' @param na.rm logical indicating whether to exclude missing values.
@@ -38,7 +38,7 @@ NULL
 #' @rdname summary-methods
 #'
 summary.ConfusionList <- function(object, ...) {
-  ListOf(lapply(object, summary, ...))
+  ListOf(map(function(conf) summary(conf, ...), object))
 }
 
 
@@ -73,8 +73,53 @@ summary.ConfusionMatrix <- function(object, ...) {
 
 #' @rdname summary-methods
 #'
-summary.Curves <- function(object, stat = MachineShop::settings("stat.Curves"),
-                           ...) {
+summary.MLModel <- function(object, stats =
+                              MachineShop::settings("stats.Resamples"),
+                            na.rm = TRUE, ...) {
+  if (!is.trained(object)) stop("no training results to summarize")
+  map(function(trainbit) {
+    summary(trainbit@performance, stats = stats, na.rm = na.rm, ...)
+  }, object@trainbits)
+}
+
+
+summary.MLModelFit <- function(object, ...) {
+  summary(unMLModelFit(object))
+}
+
+
+#' @rdname summary-methods
+#'
+summary.Performance <- function(object, stats =
+                                  MachineShop::settings("stats.Resamples"),
+                                na.rm = TRUE, ...) {
+  stats <- list2function(stats)
+
+  f <- function(x) {
+    prop_na <- mean(is.na(x))
+    if (na.rm) x <- as.numeric(na.omit(x))
+    c(stats(x), "NA" = prop_na)
+  }
+
+  margins <- 2
+  perm <- c(2, 1)
+  names <- c("Metric", "Statistic")
+  if (length(dim(object)) == 3) {
+    margins <- c(3, margins)
+    perm <- c(perm, 3)
+    names <- c("Model", "Statistic", "Metric")
+  }
+  object_summary <- aperm(apply(object, margins, f), perm = perm)
+  names(dimnames(object_summary)) <- names
+  TabularArray(object_summary)
+}
+
+
+#' @rdname summary-methods
+#'
+summary.PerformanceCurve <- function(object,
+                                     stat = MachineShop::settings("stat.Curve"),
+                                     ...) {
   if (!(is.null(object$Resample) || is.null(stat))) {
 
     stat <- fget(stat)
@@ -112,48 +157,6 @@ summary.Curves <- function(object, stat = MachineShop::settings("stat.Curves"),
     silent = TRUE
   )
   if (is(values, "try-error")) NA else values$y
-}
-
-
-#' @rdname summary-methods
-#'
-summary.MLModel <- function(object, stats =
-                              MachineShop::settings("stats.Resamples"),
-                            na.rm = TRUE, ...) {
-  if (is.null(object@trainbits)) stop("no training results to summarize")
-  summary(object@trainbits@performance, stats = stats, na.rm = na.rm, ...)
-}
-
-
-summary.MLModelFit <- function(object, ...) {
-  summary(unMLModelFit(object))
-}
-
-
-#' @rdname summary-methods
-#'
-summary.Performance <- function(object, stats =
-                                  MachineShop::settings("stats.Resamples"),
-                                na.rm = TRUE, ...) {
-  stats <- list2function(stats)
-
-  f <- function(x) {
-    prop_na <- mean(is.na(x))
-    if (na.rm) x <- as.numeric(na.omit(x))
-    c(stats(x), "NA" = prop_na)
-  }
-
-  margins <- 2
-  perm <- c(2, 1)
-  names <- c("Metric", "Statistic")
-  if (length(dim(object)) == 3) {
-    margins <- c(3, margins)
-    perm <- c(perm, 3)
-    names <- c("Model", "Statistic", "Metric")
-  }
-  object_summary <- aperm(apply(object, margins, f), perm = perm)
-  names(dimnames(object_summary)) <- names
-  TabularArray(object_summary)
 }
 
 

@@ -30,7 +30,9 @@
 StackedModel <- function(..., control = MachineShop::settings("control"),
                          weights = NULL) {
 
-  base_learners <- lapply(unlist(list(...)), getMLObject, class = "MLModel")
+  base_learners <- ListOf(map(getMLObject, unlist(list(...)), "MLModel"))
+  names(base_learners) <- paste0(if (length(base_learners)) "Learner",
+                                 seq(base_learners))
 
   control <- getMLObject(control, "MLControl")
 
@@ -39,7 +41,9 @@ StackedModel <- function(..., control = MachineShop::settings("control"),
   new("StackedModel",
     name = "StackedModel",
     label = "Stacked Regression",
-    response_types = .response_types,
+    response_types =
+      Reduce(intersect, map(slot, base_learners, "response_types"),
+             init = .response_types),
     predictor_encoding = NA_character_,
     params = as.list(environment()),
     predict = function(object, newdata, ...) {
@@ -59,22 +63,22 @@ StackedModel <- function(..., control = MachineShop::settings("control"),
 MLModelFunction(StackedModel) <- NULL
 
 
-.fit.StackedModel <- function(model, x, ...) {
-  mf <- ModelFrame(x, na.rm = FALSE)
+.fit.StackedModel <- function(x, inputs, ...) {
+  mf <- ModelFrame(inputs, na.rm = FALSE)
 
-  base_learners <- model@params$base_learners
-  weights <- model@params$weights
-  control <-  model@params$control
+  base_learners <- x@params$base_learners
+  weights <- x@params$weights
+  control <-  x@params$control
 
   if (is.null(weights)) {
     num_learners <- length(base_learners)
     stack <- list()
     complete_cases <- TRUE
     for (i in 1:num_learners) {
-      stack[[i]] <- resample(x, model = base_learners[[i]], control = control)
+      stack[[i]] <- resample(inputs, model = base_learners[[i]], control = control)
       complete_cases <- complete_cases & complete.cases(stack[[i]])
     }
-    stack <- lapply(stack, function(res) res[complete_cases, ])
+    stack <- map(function(res) res[complete_cases, ], stack)
 
     weights <- Rsolnp::solnp(rep(1 / num_learners, num_learners),
                              function(weights) mean_stack_list(stack, weights),
@@ -83,11 +87,11 @@ MLModelFunction(StackedModel) <- NULL
                              control = list(trace = FALSE))$pars
   }
 
-  list(base_fits = lapply(base_learners,
-                          function(learner) fit(mf, model = learner)),
+  list(base_fits = map(function(learner) fit(mf, model = learner),
+                       base_learners),
        weights = weights,
        times = control@times) %>%
-    MLModelFit("StackedModelFit", model, x, response(mf))
+    MLModelFit("StackedModelFit", model = x, x = inputs)
 }
 
 
