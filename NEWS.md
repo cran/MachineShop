@@ -2,6 +2,33 @@
 
 ## Version Updates
 
+## 2.2.0
+* CRAN release.
+
+
+## 2.1.4
+* Add cost-complexity pruning parameters to `TreeModel`.
+* Perform stratified resampling automatically for `ModeledInput()` and `SelectedInput()` objects constructed with formulas and matrices.
+
+
+## 2.1.3
+* Revisions needed to some `fit()` methods to ensure that unprepped recipes are passed to models, like `TunedModed`, `StackedModel`, `SelectedModel` and `SuperModel`, needing to replicate preprocessing steps in their resampling routines.
+* Extend `GLMModel` to factor and matrix responses.
+* Use `fun` instead of deprecated `fun.y` in ggplot2 functions.
+* Capture user-supplied parameters passed in to the ellipsis of model constructor functions that have them.
+
+
+## 2.1.2
+* Compatibility fix for tibble 3.0.0.
+* Include missing values in model matrices created internally from formulas.
+
+
+## 2.1.1
+* Improve specificity of `metricinfo()` results for factor responses.
+* Correct `SplitControl()` to train on the split sample instead of the full dataset.
+* Perform stratified resampling automatically when `fit()` formula and matrix methods are called with meta-models.
+
+
 ## 2.1.0
 * CRAN release.
 

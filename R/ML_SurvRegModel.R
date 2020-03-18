@@ -29,7 +29,7 @@ SurvRegModel <- function(dist = c("weibull", "exponential", "gaussian",
 
   dist <- match.arg(dist)
 
-  args <- params(environment())
+  args <- params(environment(), ...)
   is_main <- names(args) %in% c("dist", "scale", "parms")
   params <- args[is_main]
   params$control <- as.call(c(.(survival::survreg.control), args[!is_main]))
@@ -84,10 +84,8 @@ MLModelFunction(SurvRegModel) <- NULL
 #'
 #' @examples
 #' library(survival)
-#' library(MASS)
 #'
-#' fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
-#'     data = Melanoma, model = SurvRegModel)
+#' fit(Surv(time, status) ~ ., data = veteran, model = SurvRegModel)
 #'
 SurvRegStepAICModel <- function(dist = c("weibull", "exponential", "gaussian",
                                          "logistic", "lognormal",

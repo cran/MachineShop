@@ -358,7 +358,9 @@ model.matrix.DesignTerms <- function(object, data, ...) {
 
 
 model.matrix.FormulaTerms <- function(object, data, ...) {
-  model.matrix.default(delete.response(object), as.data.frame(data), ...)
+  fo <- delete.response(object)
+  mf <- model.frame(fo, data, na.action = na.pass)
+  model.matrix.default(fo, mf, ...)
 }
 
 
@@ -385,6 +387,9 @@ model.offset <- function(x) {
 
 
 #################### ModelFrame Preprocessing ####################
+
+
+prep.ModelFrame <- function(x, ...) x
 
 
 preprocess <- function(x, newdata = NULL) {

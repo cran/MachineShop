@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 2.1.0
-Date: 2020-02-07
+Version: 2.2.0
+Date: 2020-03-16
 Authors@R: person(c("Brian", "J"), "Smith",
                   email = "brian-j-smith@uiowa.edu",
                   role = c("aut", "cre"))
@@ -23,22 +23,22 @@ Description: Meta-package for statistical and machine learning with a unified
     dependence plots; confusion matrices; and ROC, lift, and other performance
     curves.
 Depends: R (>= 3.6.0)
-Imports: abind, dials (>= 0.0.4), foreach, ggplot2, kernlab, magrittr,
-        Matrix, methods, party, polspline, recipes (>= 0.1.4), rlang,
-        rsample, Rsolnp, survival, tibble, utils
+Imports: abind, dials (>= 0.0.4), foreach, ggplot2 (>= 3.3.0), kernlab,
+        magrittr, Matrix, methods, nnet, party, polspline, recipes (>=
+        0.1.4), rlang, rsample, Rsolnp, survival, tibble, utils
 Suggests: adabag, BART, bartMachine, C50, cluster, doParallel, e1071,
         earth, elasticnet, gbm, glmnet, gridExtra, Hmisc, kableExtra,
-        kknn, knitr, lars, MASS, mboost, mda, nnet, partykit, pls,
+        kknn, knitr, lars, MASS, mboost, mda, partykit, pls,
         randomForest, ranger, rmarkdown, rms, rpart, testthat, tree,
         xgboost
 LazyData: true
 License: GPL-3
 URL: https://brian-j-smith.github.io/MachineShop/
 BugReports: https://github.com/brian-j-smith/MachineShop/issues
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 VignetteBuilder: knitr
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2020-02-07 14:37:35 UTC; bjsmith
+Packaged: 2020-03-17 01:21:41 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2020-02-08 23:50:02 UTC
+Date/Publication: 2020-03-18 15:40:16 UTC

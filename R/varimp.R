@@ -48,10 +48,8 @@ VarImp.numeric <- function(object, ...) {
 #' @examples
 #' ## Survival response example
 #' library(survival)
-#' library(MASS)
 #'
-#' gbm_fit <- fit(Surv(time, status != 2) ~ sex + age + year + thickness + ulcer,
-#'                data = Melanoma, model = GBMModel)
+#' gbm_fit <- fit(Surv(time, status) ~ ., data = veteran, model = GBMModel)
 #' (vi <- varimp(gbm_fit))
 #' plot(vi)
 #'
@@ -89,6 +87,11 @@ varimp_pval.lm <- function(object, base = exp(1), ...) {
 
 varimp_pval.mlm <- function(object, ...) {
   varimp_pval.default(object, ...)
+}
+
+
+varimp_pval.multinom <- function(object, ...) {
+  varimp_pval(t(coef(object)), diag(vcov(object)), ...)
 }
 
 

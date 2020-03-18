@@ -66,9 +66,10 @@ SelectedInput.formula <- function(..., data,
                                   cutoff = MachineShop::settings("cutoff")) {
   inputs <- list(...)
   if (!all(map_logi(is, inputs, "formula"))) stop("inputs must be formulas")
-  SelectedInput(map(ModelFrame, inputs, list(data),
-                    MoreArgs = list(na.rm = FALSE)),
-                control = control, metrics = metrics, stat = stat,
+  mf_list <- map(function(x) {
+    ModelFrame(x, data, na.rm = FALSE, strata = strata(response(x, data)))
+  }, inputs)
+  SelectedInput(mf_list, control = control, metrics = metrics, stat = stat,
                 cutoff = cutoff)
 }
 
@@ -82,9 +83,9 @@ SelectedInput.matrix <- function(..., y,
                                  cutoff = MachineShop::settings("cutoff")) {
   inputs <- list(...)
   if (!all(map_logi(is, inputs, "matrix"))) stop("inputs must be matrices")
-  SelectedInput(map(ModelFrame, inputs, list(y),
-                    MoreArgs = list(na.rm = FALSE)),
-                control = control, metrics = metrics, stat = stat,
+  mf_list <- map(ModelFrame,
+                 inputs, list(y), na.rm = FALSE, strata = list(strata(y)))
+  SelectedInput(mf_list, control = control, metrics = metrics, stat = stat,
                 cutoff = cutoff)
 }
 
@@ -326,7 +327,7 @@ TunedInput.recipe <- function(x, grid = expand_steps(),
     grid_split <- split(grid, 1:nrow(grid))
     set_input <- function(x) update(recipe, x)
     trainbit <- resample_selection(grid_split, set_input, x@params, model)
-    trainbit$grid <- tibble(ModelRecipe = grid)
+    trainbit$grid <- tibble(ModelRecipe = asS3(grid))
     input <- set_input(grid_split[[trainbit$selected]])
     push(do.call(TrainBit, trainbit), fit(input, model = model))
   } else {
