@@ -3,8 +3,8 @@
 #' Formula, design matrix, model frame, or recipe selection from a candidate
 #' set.
 #'
-#' @aliases SelectedModeledFrame
-#' @aliases SelectedModeledRecipe
+#' @aliases SelectedModelFrame
+#' @aliases SelectedModelRecipe
 #' @rdname SelectedInput
 #'
 #' @param ... \link{inputs} specifying relationships between model predictor
@@ -25,8 +25,7 @@
 #'   summary statistic on resampled metric values for recipe selection.
 #' @param cutoff argument passed to the \code{metrics} functions.
 #'
-#' @return \code{SelectedModelFrame}, \code{SelectedModelRecipe},
-#' \code{SelectedModeledFrame}, or \code{SelectedModeledRecipe} class object
+#' @return \code{SelectedModelFrame} or \code{SelectedModelRecipe} class object
 #' that inherits from \code{SelectedInput} and \code{ModelFrame} or
 #' \code{recipe}.
 #'
@@ -100,8 +99,9 @@ SelectedInput.ModelFrame <- function(...,
 
   inputs <- list(...)
 
-  if (!all(map_logi(is, inputs, "ModelFrame"))) {
-    stop("inputs must be ModelFrames")
+  input_classes <- map_chr(function(x) class(x)[1], inputs)
+  if (!all(input_classes %in% c("ModelFrame", "ModeledFrame"))) {
+    stop("inputs must be ModelFrames or ModeledFrames")
   }
 
   if (!identical_elements(inputs, function(x) x[[1]])) {
@@ -115,7 +115,7 @@ SelectedInput.ModelFrame <- function(...,
   }
 
   new("SelectedModelFrame", ModelFrame(data),
-      inputs = ListOf(map(attr, inputs, "terms")),
+      inputs = ListOf(map(terms, inputs)),
       params = list(control = getMLObject(control, "MLControl"),
                     metrics = metrics, stat = stat, cutoff = cutoff))
 
@@ -164,50 +164,6 @@ SelectedInput.recipe <- function(...,
 
 #' @rdname SelectedInput
 #'
-SelectedInput.ModeledInput <-
-  function(...,
-           control = MachineShop::settings("control"),
-           metrics = NULL,
-           stat = MachineShop::settings("stat.train"),
-           cutoff = MachineShop::settings("cutoff")) {
-
-    inputs <- list(...)
-
-    if (!all(map_logi(is, inputs, "ModeledInput"))) {
-      stop("inputs must be ModeledInputs")
-    }
-
-    if (!identical_elements(inputs, function(x) class(x))) {
-      stop("inputs are of different ModeledInput types")
-    }
-
-    models <- map(slot, inputs, "model")
-    input_class <- class(inputs[[1]])
-    switch(input_class,
-           ModeledFrame = {
-             to_class <- "ModelFrame"
-             object_class <- "SelectedModeledFrame"
-           },
-           ModeledRecipe = {
-             to_class <- "ModelRecipe"
-             object_class <- "SelectedModeledRecipe"
-           })
-    inputs <- map(as, inputs, to_class)
-    names(inputs) <- make_list_names(inputs, input_class)
-
-    args <- c(inputs, control = control, metrics = metrics, stat = stat,
-              cutoff = cutoff)
-    object <- do.call(SelectedInput, args)
-
-    new(object_class, as(object, to_class),
-        inputs = ListOf(map(list, input = object@inputs, model = models)),
-        params = object@params)
-
-  }
-
-
-#' @rdname SelectedInput
-#'
 SelectedInput.list <- function(x, ...) {
   do.call(SelectedInput, c(x, list(...)))
 }
@@ -215,36 +171,29 @@ SelectedInput.list <- function(x, ...) {
 
 .fit.SelectedInput <- function(x, ...) {
   inputs <- x@inputs
-  switch(class(x),
+  input_class <- class(x)
+  switch(input_class,
     SelectedModelFrame = {
-      input_class <- "ModelFrame"
-      object <- as(x, "ModelFrame")
-      set_input <- function(x) structure(object, terms = x)
-    },
-    SelectedModeledFrame = {
-      input_class <- "ModeledFrame"
+      grid_name <- "ModelFrame"
       object <- as(x, "ModelFrame")
       set_input <- function(x) {
-        ModeledInput(structure(object, terms = x$input), model = x$model)
+        input <- structure(object, terms = terms(x))
+        if (is(x, "ModeledTerms")) {
+          ModeledInput(input, model = x@model)
+        } else input
       }
     },
     SelectedModelRecipe = {
-      input_class <- "ModelRecipe"
+      grid_name <- "ModelRecipe"
       object <- as.data.frame(x)
       set_input <- function(x) recipe(x, object[unique(summary(x)$variable)])
     },
-    SelectedModeledRecipe = {
-      input_class <- "ModeledRecipe"
-      object <- as.data.frame(x)
-      set_input <- function(x) {
-        ModeledInput(recipe(x$input, object[unique(summary(x$input)$variable)]),
-                     model = x$model)
-      }
-    }
+    stop("unsupported input object of class ", input_class)
   )
-  trainbit <- resample_selection(inputs, set_input, x@params, ...)
+  trainbit <- resample_selection(inputs, set_input, x@params, ...,
+                                 class = input_class)
   trainbit$grid <- tibble(Input = factor(seq(inputs)))
-  names(trainbit$grid) <- input_class
+  names(trainbit$grid) <- grid_name
   input <- set_input(inputs[[trainbit$selected]])
   push(do.call(TrainBit, trainbit), fit(input, ...))
 }
@@ -253,6 +202,8 @@ SelectedInput.list <- function(x, ...) {
 #' Tuned Model Inputs
 #'
 #' Recipe tuning over a grid of parameter values.
+#'
+#' @aliases TunedModelRecipe
 #'
 #' @rdname TunedInput
 #'
@@ -315,7 +266,9 @@ TunedInput.recipe <- function(x, grid = expand_steps(),
          label_items("; not found in recipe step id", step_ids))
   }
 
-  object
+  if (is(x, "ModeledRecipe")) {
+    new("TunedModeledRecipe", object, model = x@model)
+  } else object
 
 }
 
@@ -325,8 +278,9 @@ TunedInput.recipe <- function(x, grid = expand_steps(),
   recipe <- as(x, "ModelRecipe")
   if (all(dim(grid) != 0)) {
     grid_split <- split(grid, 1:nrow(grid))
-    set_input <- function(x) update(recipe, x)
-    trainbit <- resample_selection(grid_split, set_input, x@params, model)
+    set_input <- function(x) do.call(update, c(list(recipe), x))
+    trainbit <- resample_selection(grid_split, set_input, x@params, model,
+                                   class = class(x))
     trainbit$grid <- tibble(ModelRecipe = asS3(grid))
     input <- set_input(grid_split[[trainbit$selected]])
     push(do.call(TrainBit, trainbit), fit(input, model = model))

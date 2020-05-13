@@ -383,12 +383,25 @@ setMethod("show", "ModelRecipe",
 )
 
 
+print.ModelTerms <- function(x, n = MachineShop::settings("max.print"), ...) {
+  print(formula(x))
+}
+
+
 #' @rdname print-methods
 #'
 print.ModeledInput <- function(x, n = MachineShop::settings("max.print"), ...) {
   NextMethod()
   cat("\n")
   print(x@model, n = n)
+  invisible(x)
+}
+
+
+print.ModeledTerms <- function(x, n = MachineShop::settings("max.print"), ...) {
+  print(formula(x))
+  cat("\n")
+  print(x@model, n)
   invisible(x)
 }
 
@@ -533,19 +546,25 @@ print.SelectedModel <- function(x, n = MachineShop::settings("max.print"), ...) 
 
 print.StackedModel <- function(x, n = MachineShop::settings("max.print"), ...) {
   print_title(x)
-  print_modelinfo(x)
+  trained <- is.trained(x)
+  print_modelinfo(x, trained = trained)
   cat("\nParameters:\n")
   cat(str(x@params[setdiff(names(x@params), c("base_learners", "control"))]))
   cat("\nBase learners:\n\n")
   print(x@params$base_learners, n = n)
   print(x@params$control)
+  if (trained) {
+    cat("\n")
+    print(x@trainbits, n = n)
+  }
   invisible(x)
 }
 
 
 print.SuperModel <- function(x, n = MachineShop::settings("max.print"), ...) {
   print_title(x)
-  print_modelinfo(x)
+  trained <- is.trained(x)
+  print_modelinfo(x, trained = trained)
   cat("\nParameters:\n")
   subset <- !(names(x@params) %in% c("base_learners", "control", "model"))
   cat(str(x@params[subset]))
@@ -554,6 +573,10 @@ print.SuperModel <- function(x, n = MachineShop::settings("max.print"), ...) {
   cat("\nBase learners:\n\n")
   print(x@params$base_learners, n = n)
   print(x@params$control)
+  if (trained) {
+    cat("\n")
+    print(x@trainbits, n = n)
+  }
   invisible(x)
 }
 
@@ -594,11 +617,6 @@ setMethod("show", "TabularArray",
     invisible()
   }
 )
-
-
-print.Terms <- function(x, n = MachineShop::settings("max.print"), ...) {
-  print(formula(x))
-}
 
 
 #' @rdname print-methods

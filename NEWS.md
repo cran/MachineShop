@@ -2,6 +2,37 @@
 
 ## Version Updates
 
+## 2.3.0
+* Display progress messages for any foreach parallel backend.
+
+
+## 2.2.5
+* Show all error messages when resample selection stops.
+* Preserve predictor names in `NNetModel` `fit()` method.
+* Fix aggregation of performance curves with infinite values.
+* Add progress bar and verbose output options for `resample()` methods.
+* Get non-negative probabilities for survival confusion matrix.
+* Update Using webpages and vignette.
+
+
+## 2.2.4
+* Fix `BARTMachineModel` to predict highest binary response level.
+* Grid tune `BARTMachineModel` `nu` parameter for numeric responses only.
+
+
+## 2.2.3
+* Extend `ModeledInput()` to `SelectedModelFrame`, `SelectedModelRecipe`, and `TunedModelRecipe`.
+
+
+## 2.2.2
+* Fix updating of recipe parameters in `TunedInput()`.
+
+
+## 2.2.1
+* Print `StackedModel` and `SuperModel` training information.
+* Fix missing case names when resampling with recipes.
+
+
 ## 2.2.0
 * CRAN release.
 

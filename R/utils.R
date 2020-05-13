@@ -261,6 +261,32 @@ missing_names <- function(x, data) {
 }
 
 
+new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
+  width <- max(10, round(0.25 * getOption("width")))
+  if (!is.null(input)) input <- substr(class(input)[1], 1, width)
+  if (!is.null(model)) {
+    model <- substr(getMLObject(model, "MLModel")@name, 1, width)
+  }
+  format <- paste(input, "|", model)
+  if (index > 0) format <- paste0(index, ": ", format)
+  if (total > 0) format <- paste(format, "[:bar] :percent | :elapsed")
+  pb <- progress_bar$new(
+    format = format,
+    total = max(total, 1),
+    clear = TRUE,
+    show_after = 0
+  )
+  msg <- names(index)
+  if (length(msg) && index == 1) {
+    index_max <- attr(index, "max")
+    if (length(index_max)) msg <- paste0(msg, "(", index_max, ")")
+    pb$message(msg)
+  }
+  pb$tick(0)
+  pb
+}
+
+
 nvars <- function(x, model) {
   stopifnot(is(x, "ModelFrame"))
   model <- getMLObject(model, "MLModel")

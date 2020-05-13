@@ -81,8 +81,12 @@ surv_fo <- Surv(time, status) ~ sex + age + year + thickness + ulcer
 ## All available models
 modelinfo() %>% names
 
+## ----using_fit_modelinfo_gbmmodel---------------------------------------------
 ## Model-specific information
 modelinfo(GBMModel)
+
+## ----using_fit_gbmmodel-------------------------------------------------------
+GBMModel
 
 ## ----using_fit_modelinfo_type-------------------------------------------------
 ## All survival response-specific models
@@ -129,50 +133,51 @@ surv_times <- 365 * c(5, 10)
 
 predict(surv_fit, newdata = surv_test, times = surv_times, type = "prob") %>% head
 
-predict(surv_fit, newdata = surv_test, times = surv_times, cutoff = 0.5) %>% head
+predict(surv_fit, newdata = surv_test, times = surv_times, cutoff = 0.7) %>% head
 
-## ----using_variables_formula, results="hide"----------------------------------
+## ----using_variables_formula--------------------------------------------------
 ## Dataset library
 library(MASS)
 
 ## Formula specification
-fit(medv ~ ., data = Boston, model = GBMModel)
+model_fit <- fit(type ~ ., data = Pima.tr, model = GBMModel)
+predict(model_fit, newdata = Pima.te) %>% head
 
-## ----using_variables_matrix, results="hide"-----------------------------------
+## ----using_variables_matrix---------------------------------------------------
 ## Example design matrix and response object
-x <- model.matrix(medv ~ . - 1, data = Boston)
-y <- Boston$medv
+x <- model.matrix(type ~ . - 1, data = Pima.tr)
+y <- Pima.tr$type
 
 ## Design matrix specification
-fit(x, y, model = GBMModel)
+model_fit <- fit(x, y, model = GBMModel)
+predict(model_fit, newdata = Pima.te) %>% head
 
-## ----using_variables_modelframe, results="hide"-------------------------------
+## ----using_variables_modelframe-----------------------------------------------
 ## Model frame specification
 
 ## Formula
-mf <- ModelFrame(medv ~ ., data = Boston)
-
-fit(mf, model = GBMModel)
+mf <- ModelFrame(type ~ ., data = Pima.tr)
+model_fit <- fit(mf, model = GBMModel)
+predict(model_fit, newdata = Pima.te) %>% head
 
 ## Design matrix
 mf <- ModelFrame(x, y)
-
-fit(mf, model = GBMModel)
+model_fit <- fit(mf, model = GBMModel)
+predict(model_fit, newdata = Pima.te) %>% head
 
 ## ----using_variables_modelframe_weights, results="hide"-----------------------
 ## Model frame specification with case weights
 mf <- ModelFrame(ncases / (ncases + ncontrols) ~ agegp + tobgp + alcgp, data = esoph,
                  weights = with(esoph, ncases + ncontrols))
-
 fit(mf, model = GBMModel)
 
-## ----using_variables_recipe, results="hide"-----------------------------------
+## ----using_variables_recipe---------------------------------------------------
 ## Recipe specification
 library(recipes)
 
-rec <- recipe(medv ~ ., data = Boston)
-
-fit(rec, model = GBMModel)
+rec <- recipe(type ~ ., data = Pima.tr)
+model_fit <- fit(rec, model = GBMModel)
+predict(model_fit, newdata = Pima.te) %>% head
 
 ## ----using_variables_recipe_weights, results="hide"---------------------------
 ## Recipe specification with case weights
@@ -184,7 +189,6 @@ df <- within(esoph, {
 rec <- recipe(y ~ agegp + tobgp + alcgp + weights, data = df) %>%
   role_case(weight = weights, replace = TRUE) %>%
   step_ordinalscore(agegp, tobgp, alcgp)
-
 fit(rec, model = GBMModel)
 
 ## ----using_variables_summary, echo=FALSE--------------------------------------
@@ -217,43 +221,50 @@ kable(df, align = c("l", rep("c", ncol(df) - 1)), escape = FALSE,
   column_spec(1, bold = TRUE) %>%
   kableExtra::group_rows("Model Frame", 3, 4)
 
-## ----using_responses_factor, results="hide"-----------------------------------
+## ----using_responses_factor---------------------------------------------------
 ## Iris flowers species (3-level factor)
-fit(Species ~ ., data = iris, model = GBMModel)
+model_fit <- fit(Species ~ ., data = iris, model = GBMModel)
+predict(model_fit) %>% head
+predict(model_fit, type = "prob") %>% head
 
-## ----using_responses_factor_binary, results="hide"----------------------------
+## ----using_responses_factor_binary--------------------------------------------
 ## Pima Indians diabetes statuses (binary factor)
 library(MASS)
 
-fit(type ~ ., data = Pima.tr, model = GBMModel)
+model_fit <- fit(type ~ ., data = Pima.tr, model = GBMModel)
+predict(model_fit, newdata = Pima.te) %>% head
+predict(model_fit, newdata = Pima.te, type = "prob") %>% head
 
-## ----using_responses_ordered, results="hide"----------------------------------
-## Boston housing prices (ordered factor)
-library(MASS)
+## ----using_responses_ordered--------------------------------------------------
+## Iowa City housing prices (ordered factor)
+df <- within(ICHomes,
+  sale_amount <- cut(sale_amount, breaks = 3,
+                     labels = c("Low", "Medium", "High"),
+                     ordered_result = TRUE)
+)
 
-df <- within(Boston, {
-  medv <- cut(medv, breaks = 3, ordered_result = TRUE)
-})
+model_fit <- fit(sale_amount ~ ., data = df, model = GBMModel)
+predict(model_fit) %>% head
+predict(model_fit, type = "prob") %>% head
 
-fit(medv ~ ., data = df, model = GBMModel)
+## ----using_responses_numeric--------------------------------------------------
+## Iowa City housing prices
+model_fit <- fit(sale_amount ~ ., data = ICHomes, model = GBMModel)
+predict(model_fit) %>% head
+predict(model_fit, type = "prob") %>% head
 
-## ----using_responses_numeric, results="hide"----------------------------------
-## Boston housing prices
-library(MASS)
-
-fit(medv ~ ., data = Boston, model = GBMModel)
-
-## ----using_responses_matrix, results="hide"-----------------------------------
+## ----using_responses_matrix---------------------------------------------------
 ## Anscombe's multiple regression models dataset
 
 ## Numeric matrix response formula
-fit(cbind(y1, y2, y3) ~ x1, data = anscombe, model = LMModel)
+model_fit <- fit(cbind(y1, y2, y3) ~ x1, data = anscombe, model = LMModel)
+predict(model_fit) %>% head
 
-## ----using_responses_matrix_recipe, results="hide"----------------------------
+## ----using_responses_matrix_recipe--------------------------------------------
 ## Numeric matrix response recipe
 rec <- recipe(y1 + y2 + y3 ~ x1, data = anscombe)
-
-fit(rec, model = LMModel)
+modelfit <- fit(rec, model = LMModel)
+predict(model_fit) %>% head
 
 ## ----using_responses_surv, results="hide"-------------------------------------
 ## Survival response formula
@@ -265,7 +276,6 @@ fit(Surv(time, status) ~ ., data = surv_train, model = GBMModel)
 ## Survival response recipe
 rec <- recipe(time + status ~ ., data = surv_train) %>%
   role_surv(time = time, event = status)
-
 fit(rec, model = GBMModel)
 
 ## ----using_performance_function-----------------------------------------------
@@ -303,7 +313,7 @@ performance(obs, pred_events)
 
 ## ----using_performance_function_cutoff----------------------------------------
 ## User-specified survival probability metrics
-performance(obs, pred_probs, metrics = c(sensitivity, specificity), cutoff = 0.5)
+performance(obs, pred_probs, metrics = c(sensitivity, specificity), cutoff = 0.7)
 
 ## ----using_metrics_functions--------------------------------------------------
 ## Metric functions for survival means
@@ -322,8 +332,12 @@ specificity(obs, pred_probs)
 ## All available metrics
 metricinfo() %>% names
 
+## ----using_metrics_metricinfo_cindex------------------------------------------
 ## Metric-specific information
 metricinfo(cindex)
+
+## ----using_metrics_cindex-----------------------------------------------------
+cindex
 
 ## ----using_metrics_metricinfo_type--------------------------------------------
 ## Metrics for observed and predicted response variable types
@@ -430,14 +444,12 @@ grid.arrange(p1, p2, p3, p4, nrow = 2)
 ## ----using_resample_strata, results="hide"------------------------------------
 ## Model frame with case status stratification
 mf <- ModelFrame(surv_fo, data = surv_train, strata = surv_train$status)
-
 resample(mf, model = GBMModel)
 
 ## Recipe with case status stratification
 rec <- recipe(time + status ~ ., data = surv_train) %>%
   role_surv(time = time, event = status) %>%
   role_case(stratum = status)
-
 resample(rec, model = GBMModel)
 
 ## ----using_resample_dynamic, results="hide"-----------------------------------
@@ -477,6 +489,21 @@ t.test(res_diff)
 
 plot(vi)
 
+## ----using_analysis_vi_info---------------------------------------------------
+SVMModel
+
+modelinfo(SVMModel)[[1]]$varimp
+
+## ----using_analyses_pd, results = "hide"--------------------------------------
+## Partial dependence plots
+pd <- dependence(surv_fit, select = c(thickness, age))
+plot(pd)
+
+## ----using_analyses_pd_data, results = "hide"---------------------------------
+pd <- dependence(surv_fit, data = surv_test, select = thickness, n = 20,
+                 intervals = "quantile")
+plot(pd)
+
 ## ----using_analyses_cal, results="hide"---------------------------------------
 ## Binned calibration curves
 cal <- calibration(res_probs, breaks = 10)
@@ -489,7 +516,7 @@ plot(cal)
 
 ## ----using_analyses_conf------------------------------------------------------
 ## Confusion matrices
-(conf <- confusion(res_probs, cutoff = 0.5))
+(conf <- confusion(res_probs, cutoff = 0.7))
 
 ## ----using_analyses_conf_plot, results="hide"---------------------------------
 plot(conf)
@@ -506,16 +533,6 @@ metricinfo(conf) %>% names
 performance(conf, metrics = c("Accuracy" = accuracy,
                               "Sensitivity" = sensitivity,
                               "Specificity" = specificity))
-
-## ----using_analyses_pd, results = "hide"--------------------------------------
-## Partial dependence plots
-pd <- dependence(surv_fit, select = c(thickness, age))
-plot(pd)
-
-## ----using_analyses_pd_data, results = "hide"---------------------------------
-pd <- dependence(surv_fit, data = surv_test, select = thickness, n = 20,
-                 intervals = "quantile")
-plot(pd)
 
 ## ----using_analyses_roc-------------------------------------------------------
 ## ROC curves
@@ -725,7 +742,7 @@ Metrics: C-Index
 Models: 1, 2, 3 
 
 Selected model: 1 
-C-Index value: 0.7327563')
+C-Index value: 0.7806223')
 
 ## ----using_strategies_methods2, echo=FALSE------------------------------------
 cat('TrainStep2 :
@@ -745,7 +762,7 @@ Metrics: C-Index
 Models: GBMModel, TunedModel, SuperModel 
 
 Selected model: TunedModel 
-C-Index value: 0.742369')
+C-Index value: 0.7533878')
 
 ## ----using_strategies_methods3, echo=FALSE------------------------------------
 cat('TrainStep3 :
@@ -771,7 +788,7 @@ Metrics: C-Index
 Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6, GBMModel.7, GBMModel.8, GBMModel.9 
 
 Selected model: GBMModel.1 
-C-Index value: 0.7419883')
+C-Index value: 0.7137925')
 
 ## ----using_strategies_methods0, echo=FALSE------------------------------------
 cat('Object of class "MLModel"

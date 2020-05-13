@@ -57,7 +57,7 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
       )
     },
     fit = function(formula, data, weights, ...) {
-      if (is(terms(data), "DesignTerms")) {
+      if (is(terms(data), "ModelDesignTerms")) {
         x <- model.matrix(data, intercept = FALSE)
         y <- response(data)
         if (is_response(y, "binary")) {
@@ -68,7 +68,11 @@ NNetModel <- function(size = 1, linout = FALSE, entropy = NULL, softmax = NULL,
             dimnames = list(names(y), levels(y))
           )
         }
-        nnet::nnet(x, y, weights = weights, ...)
+        modelfit <- nnet::nnet(x, y, weights = weights, ...)
+        modelfit$terms <- terms(data)
+        modelfit$coefnames <- colnames(x)
+        modelfit$xlevels <- list()
+        modelfit
       } else {
         nnet::nnet(formula, data = as.data.frame(data), weights = weights, ...)
       }

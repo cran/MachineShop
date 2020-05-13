@@ -123,18 +123,18 @@ setOldClass("recipe")
 setOldClass(c("terms", "formula"))
 
 
-setClass("Terms",
+setClass("ModelTerms",
   contains = "terms"
 )
 
 
-DesignTerms <- setClass("DesignTerms",
-  contains = "Terms"
+ModelDesignTerms <- setClass("ModelDesignTerms",
+  contains = "ModelTerms"
 )
 
 
-FormulaTerms <- setClass("FormulaTerms",
-  contains = "Terms"
+ModelFormulaTerms <- setClass("ModelFormulaTerms",
+  contains = "ModelTerms"
 )
 
 
@@ -146,6 +146,21 @@ setClass("ModelRecipe",
 setClass("ModeledInput",
   contains = "VIRTUAL",
   slots = c(model = "MLModel")
+)
+
+
+setClass("ModeledTerms",
+  contains = c("ModeledInput", "ModelTerms")
+)
+
+
+setClass("ModeledDesignTerms",
+  contains = c("ModeledTerms", "ModelDesignTerms")
+)
+
+
+setClass("ModeledFormulaTerms",
+  contains = c("ModeledTerms", "ModelFormulaTerms")
 )
 
 
@@ -171,17 +186,7 @@ setClass("SelectedModelFrame",
 )
 
 
-setClass("SelectedModeledFrame",
-  contains = c("SelectedInput", "ModelFrame")
-)
-
-
 setClass("SelectedModelRecipe",
-  contains = c("SelectedInput", "ModelRecipe")
-)
-
-
-setClass("SelectedModeledRecipe",
   contains = c("SelectedInput", "ModelRecipe")
 )
 
@@ -196,6 +201,11 @@ setClass("TunedInput",
 setClass("TunedModelRecipe",
   contains = c("TunedInput", "ModelRecipe"),
   slots = c(grid = "RecipeGrid")
+)
+
+
+setClass("TunedModeledRecipe",
+  contains = c("TunedModelRecipe", "ModeledRecipe")
 )
 
 
