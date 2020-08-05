@@ -61,12 +61,15 @@
 #'     `ROC AUC` = "roc_auc", Accuracy = "accuracy")}].}
 #'   \item{\code{progress.resample}}{logical indicating whether to display a
 #'     progress bar during resampling [default: \code{TRUE}].  Displayed only
-#'     if a computing cluster is registered with the \pkg{doSNOW} package.}
+#'     if a computing cluster is not registered or is registered with the
+#'     \pkg{doSNOW} package.}
 #'   \item{\code{require}}{names of installed packages to load during parallel
 #'     execution of resampling algorithms [default: \code{c("MachineShop",
 #'     "survival", "recipes")}].}
 #'   \item{\code{reset}}{character names of settings to reset to their default
 #'     values.}
+#'   \item{\code{RHS.formula}}{non-modifiable character vector of operators and
+#'     functions allowed in traditional formula specifications.}
 #'   \item{\code{stat.Curve}}{function or character string naming a function
 #'     to compute one \link{summary} statistic at each cutoff value of resampled
 #'     metrics in performance curves, or \code{NULL} for resample-specific
@@ -351,6 +354,26 @@ MachineShop_global <- as.environment(list(
         } else {
           DomainError(x, "must be a character value or vector")
         }
+      }
+    ),
+
+    RHS.formula = list(
+      value = sort(c(
+        ".", "(", ":", "%in%", "I", "offset",
+        "+", "-", "*", "/", "^", "%%", "%/%",
+        "&", "|", "!",
+        "==", "!=", "<", "<=", ">=", ">",
+        "abs", "sign", "sqrt", "floor", "ceiling", "trunc", "round", "signif",
+        "exp", "log", "expm1", "log1p", "cos", "sin", "tan", "cospi", "sinpi",
+        "tanpi", "acos", "asin", "atan",
+        "cosh", "sinh", "tanh", "acosh", "asinh", "atanh",
+        "lgamma", "gamma", "digamma", "trigamma"
+      )),
+      check = function(x) {
+        if (!identical(x, x <- .global_defaults$RHS.formula)) {
+          warn("MachineShop 'RHS.formula' setting cannot be changed")
+        }
+        x
       }
     ),
 

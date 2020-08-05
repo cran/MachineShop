@@ -53,7 +53,7 @@ ModelFrame.data.frame <- function(x, ...) {
 #'
 ModelFrame.formula <- function(x, data, na.rm = TRUE, weights = NULL,
                                strata = NULL, ...) {
-  invalid_calls <- setdiff(inline_calls(predictors(x)), valid_predictor_calls)
+  invalid_calls <- setdiff(inline_calls(predictors(x)), settings("RHS.formula"))
   if (length(invalid_calls)) {
     stop(
       label_items("unsupported predictor variable function", invalid_calls),
@@ -173,19 +173,6 @@ model_formula <- function(x) {
 }
 
 
-valid_predictor_calls <- c(
-  "abs", "sign", "sqrt", "floor", "ceiling", "trunc", "round", "signif",
-  "exp", "log", "expm1", "log1p", "cos", "sin", "tan", "cospi", "sinpi",
-  "tanpi", "acos", "asin", "atan",
-  "cosh", "sinh", "tanh", "acosh", "asinh", "atanh",
-  "lgamma", "gamma", "digamma", "trigamma",
-  "+", "-", "*", "/", "^", "%%", "%/%",
-  "&", "|", "!",
-  "==", "!=", "<", "<=", ">=", ">",
-  "%in%", "(", ".", ":", "I", "offset"
-)
-
-
 #################### ModelFrame Terms ####################
 
 
@@ -303,11 +290,15 @@ terms.ModeledFrame <- function(x, ...) {
 
 
 terms.recipe <- function(x, original = FALSE, ...) {
-  info <- summary(x, original = original)
+  terms.recipe_info(summary(x, original = original))
+}
+
+
+terms.recipe_info <- function(x, ...) {
 
   first <- function(x) head(x, 1)
   get_vars <- function(roles = NULL, types = NULL) {
-    is_match <- by(info, info$variable, function(split) {
+    is_match <- by(x, x$variable, function(split) {
       valid_types <- if (is.null(types)) TRUE else any(types %in% split$type)
       all(roles %in% split$role) && valid_types
     })
@@ -336,12 +327,12 @@ terms.recipe <- function(x, original = FALSE, ...) {
   outcome <- if (length(other)) {
     other
   } else if (!is.na(surv["time"])) {
-    x <- call("Surv", as.name(surv["time"]))
-    if (!is.na(surv["event"])) x[[3]] <- as.name(surv["event"])
-    x
+    args <- as.name(surv["time"])
+    if (!is.na(surv["event"])) args <- c(args, as.name(surv["event"]))
+    as.call(c(.(Surv), args))
   } else if (length(surv)) {
     stop("survival outcome role 'surv_event' specified without 'surv_time'")
-  } else if (!any(is.na(binom[c("count", "size")]))) {
+  } else if (all(!is.na(binom[c("count", "size")]))) {
     call("BinomialVariate", as.name(binom["count"]), as.name(binom["size"]))
   } else if (length(binom)) {
     stop("binomial outcome must have 'binom_x' and 'binom_size' roles")
@@ -349,9 +340,9 @@ terms.recipe <- function(x, original = FALSE, ...) {
     as.call(c(.(cbind), map(as.name, matrix)))
   }
 
-  is_predictor <- info$role == "predictor"
-  predictors <- map(as.name, info$variable[is_predictor])
-  all_numeric <- all(info$type[is_predictor] == "numeric")
+  is_predictor <- x$role == "predictor"
+  predictors <- map(as.name, x$variable[is_predictor])
+  all_numeric <- all(x$type[is_predictor] == "numeric")
 
   offsets <- get_vars("pred_offset", "numeric")
   if (length(offsets)) {
@@ -360,6 +351,7 @@ terms.recipe <- function(x, original = FALSE, ...) {
   }
 
   terms(predictors, outcome, all_numeric = all_numeric)
+
 }
 
 
@@ -403,12 +395,4 @@ model.offset <- function(x) {
   keep <- 1 + c(0, attr(terms(x), "offset"))
   offsets <- eval(attr(terms(x), "variables")[keep], x)
   Reduce("+", offsets)
-}
-
-
-#################### ModelFrame Preprocessing ####################
-
-
-preprocess <- function(x, newdata = NULL) {
-  ModelFrame(delete.response(terms(x)), predictors(x, newdata), na.rm = FALSE)
 }

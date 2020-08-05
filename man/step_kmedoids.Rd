@@ -2,7 +2,6 @@
 % Please edit documentation in R/step_kmedoids.R
 \name{step_kmedoids}
 \alias{step_kmedoids}
-\alias{tidy.step_kmedoids}
 \alias{tunable.step_kmedoids}
 \title{K-Medoids Clustering Variable Selection}
 \usage{
@@ -12,16 +11,17 @@ step_kmedoids(
   k = 5,
   center = TRUE,
   scale = TRUE,
-  metric = c("euclidean", "manhattan"),
+  method = c("pam", "clara"),
+  metric = "euclidean",
   optimize = FALSE,
+  num_samp = 50,
+  samp_size = 40 + 2 * k,
   replace = TRUE,
   prefix = "KMedoids",
   role = "predictor",
   skip = FALSE,
   id = recipes::rand_id("kmedoids")
 )
-
-\method{tidy}{step_kmedoids}(x, ...)
 
 tunable.step_kmedoids(x, ...)
 }
@@ -38,21 +38,31 @@ original variables.}
 
 \item{center, scale}{logicals indicating whether to mean center and median
 absolute deviation scale the original variables prior to cluster
-partitioning; not applied to selected variables.}
+partitioning, or functions or names of functions for the centering and
+scaling; not applied to selected variables.}
+
+\item{method}{character string specifying one of the clustering methods
+provided by the \pkg{cluster} package.  The \code{clara} (clustering
+large applications) method is an extension of \code{pam} (partitioning
+around medoids) designed to handle large datasets.}
 
 \item{metric}{character string specifying the distance metric for calculating
-dissimilarities between observations.}
+dissimilarities between observations as \code{"euclidean"},
+\code{"manhattan"}, or \code{"jaccard"} (\code{clara} only).}
 
 \item{optimize}{logical indicator or 0:5 integer level specifying
-optimization for the clustering algorithm.  See the \code{pamonce} argument
-of \code{\link[cluster]{pam}} for details.}
+optimization for the \code{\link[cluster]{pam}} clustering method.}
+
+\item{num_samp}{number of sub-datasets to sample for the
+\code{\link[cluster]{clara}} clustering method.}
+
+\item{samp_size}{number of cases to include in each sub-dataset.}
 
 \item{replace}{logical indicating whether to replace the original variables.}
 
-\item{prefix}{if the original variables are not replaced, a character string
-prefix added to a sequence of zero-padded integers to generate names for
-the resulting new variables; otherwise, the original variable names are
-retained.}
+\item{prefix}{if the original variables are not replaced, the selected
+variables are added to the dataset with the character string prefix added
+to their names; otherwise, the original variable names are retained.}
 
 \item{role}{analysis role that added step variables should be assigned.  By
 default, they are designated as model predictors.}
@@ -68,12 +78,14 @@ it may affect the computations for subsequent operations.}
 \item{x}{\code{step_kmedoids} object.}
 }
 \value{
-An updated version of \code{recipe} with the new step added to the
-sequence of existing steps (if any).  For the \code{tidy} method, a tibble
-with columns \code{terms} (selectors or variables selected), \code{cluster}
-assignments, \code{medoid} (logical indicator of cluster medoids),
-\code{silhouette} (silhouette values), and \code{names} for the new
-variables.
+Function \code{step_kmedoids} creates a new step whose class is of
+the same name and inherits from \code{\link{step_sbf}}, adds it to the
+sequence of existing steps (if any) in the recipe, and returns the updated
+recipe.  For the \code{tidy} method, a tibble with columns \code{terms}
+(selectors or variables selected), \code{cluster} assignments,
+\code{selected} (logical indicator of selected cluster medoids),
+\code{silhouette} (silhouette values), and \code{name} of the selected
+variable names.
 }
 \description{
 Creates a \emph{specification} of a recipe step that will partition numeric
@@ -100,11 +112,15 @@ tidy(kmedoids_prep, number = 1)
 
 }
 \references{
+Kaufman L and Rousseeuw PJ (1990). Finding Groups in Data: An Introduction to
+Cluster Analysis. Wiley: New York.
+
 Reynolds A, Richards G, de la Iglesia B and Rayward-Smith V (1992).
 Clustering rules: a comparison of partitioning and hierarchical clustering
 algorithms. Journal of Mathematical Modelling and Algorithms 5, 475--504.
 }
 \seealso{
-\code{\link[cluster]{pam}}, \code{\link[recipes]{recipe}},
-\code{\link[recipes]{prep}}, \code{\link[recipes]{bake}}
+\code{\link[cluster]{pam}}, \code{\link[cluster]{clara}},
+\code{\link[recipes]{recipe}}, \code{\link[recipes]{prep}},
+\code{\link[recipes]{bake}}
 }

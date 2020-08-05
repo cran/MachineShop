@@ -7,7 +7,7 @@ badge](https://img.shields.io/badge/docs-online-green.svg)](https://brian-j-smit
 
 # Description
 
-`MachineShop` is a meta-package for statistical and machine learning
+**MachineShop** is a meta-package for statistical and machine learning
 with a unified interface for model fitting, prediction, performance
 assessment, and presentation of results. Support is provided for
 predictive modeling of numerical, categorical, and censored
@@ -73,7 +73,7 @@ devtools::install_github("brian-j-smith/MachineShop", build_vignettes = TRUE)
 Once installed, the following **R** commands will load the package and
 display its help system documentation. Online documentation and examples
 are available at the [MachineShop
-website](https://brian-j-smith.github.io/MachineShop).
+website](https://brian-j-smith.github.io/MachineShop/).
 
 ``` r
 library(MachineShop)

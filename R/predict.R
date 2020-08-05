@@ -40,7 +40,7 @@ predict.MLModelFit <- function(object, newdata = NULL, times = NULL,
                                cutoff = MachineShop::settings("cutoff"),
                                dist = NULL, method = NULL, ...) {
   model <- as.MLModel(object)
-  requireModelNamespaces(model@packages)
+  require_namespaces(model@packages)
   obs <- response(object)
   pred <- .predict(model, object, newdata, times = times, dist = dist,
                    method = method, ...)
@@ -57,6 +57,6 @@ predict.MLModelFit <- function(object, newdata = NULL, times = NULL,
 
 
 .predict.MLModel <- function(x, object, newdata, ...) {
-  newdata <- preprocess(x@x, newdata)
+  newdata <- predictor_frame(x, newdata)
   x@predict(unMLModelFit(object), newdata, model = x, ...)
 }

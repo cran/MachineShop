@@ -143,6 +143,9 @@ library(MASS)
 model_fit <- fit(type ~ ., data = Pima.tr, model = GBMModel)
 predict(model_fit, newdata = Pima.te) %>% head
 
+## ----using_variables_formula_RHS----------------------------------------------
+settings("RHS.formula")
+
 ## ----using_variables_matrix---------------------------------------------------
 ## Example design matrix and response object
 x <- model.matrix(type ~ . - 1, data = Pima.tr)
@@ -785,7 +788,8 @@ Grid (selected = 1):
 Object of class "Performance"
 
 Metrics: C-Index 
-Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6, GBMModel.7, GBMModel.8, GBMModel.9 
+Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6,
+  GBMModel.7, GBMModel.8, GBMModel.9 
 
 Selected model: GBMModel.1 
 C-Index value: 0.7137925')

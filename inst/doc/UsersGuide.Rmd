@@ -71,7 +71,7 @@ devtools::install_github("brian-j-smith/MachineShop", build_vignettes = TRUE)
 
 ## Documentation
 
-Once installed, the following **R** commands will load the package and display its help system documentation.  Online documentation and examples are available at the [MachineShop website](https://brian-j-smith.github.io/MachineShop).
+Once installed, the following **R** commands will load the package and display its help system documentation.  Online documentation and examples are available at the [MachineShop website](https://brian-j-smith.github.io/MachineShop/).
 
 ```{r overview_docs, eval = FALSE, message = FALSE}
 library(MachineShop)
@@ -299,12 +299,12 @@ Prediction of other outcome types is more straightforward.  Predicted numeric an
 
 # Variable Specifications
 
-Variable specification defines the relationship between response and predictor variables as well as the data used to estimate the relationship.  Four main types of specifications are supported by the package's `fit()`, `resample()`, and `tune()` functions: traditional formula, design matrix, model frame, and recipe.
+Variable specification defines the relationship between response and predictor variables as well as the data used to estimate the relationship.  Four main types of specifications are supported by the package's `fit()` and `resample()` functions: traditional formula, design matrix, model frame, and recipe.
 
 
 ## Traditional Formula
 
-Variables may be specified with a traditional formula and data frame pair, as was done at the start of the survival example.  This specification allows for allows for crossing (`*`), interaction (`:`), and removal (`-`) of predictors in the formula; `.` substitution of variables not already appearing in the formula; in-line functions of response variables; and in-lining of base **R** operators and math functions of predictors.
+Variables may be specified with a traditional formula and data frame pair, as was done at the start of the survival example.  This specification allows for crossing (`*`), interaction (`:`), and removal (`-`) of predictors in the formula; `.` substitution of variables not already appearing in the formula; in-line functions of response variables; and in-lining of operators and functions of predictors.
 
 ```{r using_variables_formula}
 ## Dataset library
@@ -314,6 +314,14 @@ library(MASS)
 model_fit <- fit(type ~ ., data = Pima.tr, model = GBMModel)
 predict(model_fit, newdata = Pima.te) %>% head
 ```
+
+The syntax for traditional formulas is detailed in the **R** help documentation on the `formula()` function.  However, some constraints are placed on the syntax by the **MachineShop** package.  Specifically, in-lining on the right-hand side of formulas is limited to the operators and functions listed in the `"RHS.formula"` package setting.
+
+```{r using_variables_formula_RHS}
+settings("RHS.formula")
+```
+
+This setting is intended to help avoid the definition of predictor variable encodings that involve dataset-specific parameter calculations.  Such parameters would be calculated separated on training and test sets, and could lead to failed calculations or improper estimates of predictive performance.  For example, the `factor()` function is not allowed because consistency of its (default) encoding requires that all levels be present in every dataset.  Resampled datasets subset the original cases and are thus prone to missing factor levels.  For users wishing to apply factor encodings or other encodings not available with traditional formulas, a more flexible preprocessing recipe syntax is supported, as described later.
 
 
 ## Design Matrix
@@ -996,7 +1004,7 @@ t.test(res_diff)
 ```
 
 
-# Model Effects and Diagnostics
+# Model Predictor Effects and Diagnostics
 
 Calculation of performance metrics on test sets or by resampling, as discussed previously, is one method of assessing model performance.  Others available include measures of predictor variable importance, partial dependence plots, calibration curves comparing observed and predicted response values, and receiver operating characteristic analysis.
 
@@ -1511,7 +1519,8 @@ Grid (selected = 1):
 Object of class "Performance"
 
 Metrics: C-Index 
-Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6, GBMModel.7, GBMModel.8, GBMModel.9 
+Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6,
+  GBMModel.7, GBMModel.8, GBMModel.9 
 
 Selected model: GBMModel.1 
 C-Index value: 0.7137925')
@@ -1595,13 +1604,16 @@ Core default behaviors of functions in the package can be viewed or changed glob
   : function, function name, or vector of these with which to calculate performance metrics for survival responses [default: ``c(`C-Index` = "cindex", Brier = "brier", `ROC AUC` = "roc_auc", Accuracy = "accuracy")``].
 
 `progress.resample`
-  : logical indicating whether to display a progress bar during resampling [default: ``TRUE``].  Displayed only if a computing cluster is registered with the **doSNOW** package.
+  : logical indicating whether to display a progress bar during resampling [default: ``TRUE``].  Displayed only if a computing cluster is not registered or is registered with the **doSNOW** package.
 
 `require`
   : names of installed packages to load during parallel execution of resampling algorithms [default: ``c("MachineShop", "survival", "recipes")``].
 
 `reset`
   : character names of settings to reset to their default values.
+
+`RHS.formula`
+  : non-modifiable character vector of operators and functions allowed in traditional formula specifications.
 
 `stat.Curve`
   : function or character string naming a function to compute one summary statistic at each cutoff value of resampled metrics in performance curves, or `NULL` for resample-specific metrics [default: ``"base::mean"``].

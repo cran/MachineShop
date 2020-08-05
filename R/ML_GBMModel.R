@@ -16,7 +16,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#'   \item{Response Types:}{\code{factor}, \code{numeric},
+#'     \code{PoissonVariate}, \code{Surv}}
 #'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
 #'     \code{n.trees}, \code{interaction.depth}, \code{shrinkage}*,
 #'     \code{n.minobsinnode}*
@@ -59,8 +60,13 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
     },
     fit = function(formula, data, weights, distribution = NULL, ...) {
       if (is.null(distribution)) {
-        distribution <- switch_class(response(data),
-                                     factor = "multinomial",
+        y <- response(data)
+        distribution <- switch_class(y,
+                                     factor = if (nlevels(y) == 2) {
+                                       y_name <- response(formula)
+                                       data[[y_name]] <- as.numeric(y) - 1
+                                       "bernoulli"
+                                     } else "multinomial",
                                      numeric = "gaussian",
                                      PoissonVariate = "poisson",
                                      Surv = "coxph")
@@ -78,7 +84,7 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
       n <- object$n.trees
       if (object$distribution$name == "coxph") {
         y <- response(model)
-        data <- as.data.frame(preprocess(model@x))
+        data <- as.data.frame(predictor_frame(model))
         lp <- predict(object, newdata = data, n.trees = n, type = "link")
         new_lp <- predict(object, newdata = newdata, n.trees = n, type = "link")
         predict(y, lp, times, new_lp, ...)
