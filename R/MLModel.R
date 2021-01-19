@@ -16,10 +16,13 @@
 #'   unspecified (default).
 #' @param params list of user-specified model parameters to be passed to the
 #'   \code{fit} function.
-#' @param grid tuning grid function whose first agument \code{x} is a
-#'   \code{\link{ModelFrame}} of the model fit data and formula, followed by a
-#'   \code{length} to use in generating sequences of parameter values, a number
-#'   of grid points to sample at \code{random}, and an ellipsis (\code{...}).
+#' @param grid tuning grid function of three optional arguments and a required
+#'   ellipsis (\code{...}).  The optional arguments are a
+#'   \code{\link{ModelFrame}} \code{x} of the model fit data and formula, a
+#'   \code{length} to use in generating sequences of parameter values, and a
+#'   number of grid points to sample at \code{random}.  If argument \code{x} is
+#'   included, then any preprocessing steps specified for the data will be
+#'   applied prior to package calls to the function.
 #' @param fit model fitting function whose arguments are a \code{formula}, a
 #'   \code{\link{ModelFrame}} named \code{data}, case \code{weights}, and an
 #'   ellipsis.
@@ -138,6 +141,15 @@ MLModelFit <- function(object, Class, model, x) {
 }
 
 
+#' Revert an MLModelFit Object
+#'
+#' Function to revert an \code{MLModelFit} object to its original class.
+#'
+#' @param object model \link{fit} result.
+#'
+#' @return The supplied object with its \code{MLModelFit} classes and fields
+#' removed.
+#'
 unMLModelFit <- function(object) {
   if (is(object, "MLModelFit")) {
     if (isS4(object)) {

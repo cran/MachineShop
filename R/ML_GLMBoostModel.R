@@ -37,9 +37,10 @@
 #'
 #' fit(type ~ ., data = Pima.tr, model = GLMBoostModel)
 #'
-GLMBoostModel <- function(family = NULL, mstop = 100, nu = 0.1,
-                          risk = c("inbag", "oobag", "none"),
-                          stopintern = FALSE, trace = FALSE) {
+GLMBoostModel <- function(
+  family = NULL, mstop = 100, nu = 0.1, risk = c("inbag", "oobag", "none"),
+  stopintern = FALSE, trace = FALSE
+) {
 
   args <- params(environment())
   is_main <- names(args) %in% "family"
@@ -54,7 +55,7 @@ GLMBoostModel <- function(family = NULL, mstop = 100, nu = 0.1,
                        "numeric", "PoissonVariate", "Surv"),
     predictor_encoding = "terms",
     params = params,
-    grid = function(x, length, ...) {
+    grid = function(length, ...) {
       list(
         mstop = round(seq_range(0, 50, c(1, 1000), length + 1))
       )
@@ -62,12 +63,13 @@ GLMBoostModel <- function(family = NULL, mstop = 100, nu = 0.1,
     fit = function(formula, data, weights, family = NULL, ...) {
       if (is.null(family)) {
         family <- switch_class(response(data),
-                               BinomialVariate = mboost::Binomial(type = "glm"),
-                               factor = mboost::Binomial(),
-                               NegBinomialVariate = mboost::NBinomial(),
-                               numeric = mboost::Gaussian(),
-                               PoissonVariate = mboost::Poisson(),
-                               Surv = mboost::CoxPH())
+          "BinomialVariate" = mboost::Binomial(type = "glm"),
+          "factor" = mboost::Binomial(),
+          "NegBinomialVariate" = mboost::NBinomial(),
+          "numeric" = mboost::Gaussian(),
+          "PoissonVariate" = mboost::Poisson(),
+          "Surv" = mboost::CoxPH()
+        )
       }
       eval_fit(data,
                formula = mboost::glmboost(formula, data = as.data.frame(data),

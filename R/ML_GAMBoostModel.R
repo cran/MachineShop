@@ -43,11 +43,11 @@
 #'
 #' fit(type ~ ., data = Pima.tr, model = GAMBoostModel)
 #'
-GAMBoostModel <- function(family = NULL,
-                          baselearner = c("bbs", "bols", "btree", "bss", "bns"),
-                          dfbase = 4, mstop = 100, nu = 0.1,
-                          risk = c("inbag", "oobag", "none"),
-                          stopintern = FALSE, trace = FALSE) {
+GAMBoostModel <- function(
+  family = NULL, baselearner = c("bbs", "bols", "btree", "bss", "bns"),
+  dfbase = 4, mstop = 100, nu = 0.1, risk = c("inbag", "oobag", "none"),
+  stopintern = FALSE, trace = FALSE
+) {
 
   baselearner <- match.arg(baselearner)
   risk <- match.arg(risk)
@@ -65,7 +65,7 @@ GAMBoostModel <- function(family = NULL,
                        "numeric", "PoissonVariate", "Surv"),
     predictor_encoding = "terms",
     params = params,
-    grid = function(x, length, ...) {
+    grid = function(length, ...) {
       list(
         mstop = round(seq_range(0, 50, c(1, 1000), length + 1))
       )
@@ -81,12 +81,13 @@ GAMBoostModel <- function(family = NULL,
 
       if (is.null(family)) {
         family <- switch_class(response(data),
-                               BinomialVariate = mboost::Binomial(type = "glm"),
-                               factor = mboost::Binomial(),
-                               NegBinomialVariate = mboost::NBinomial(),
-                               numeric = mboost::Gaussian(),
-                               PoissonVariate = mboost::Poisson(),
-                               Surv = mboost::CoxPH())
+          "BinomialVariate" = mboost::Binomial(type = "glm"),
+          "factor" = mboost::Binomial(),
+          "NegBinomialVariate" = mboost::NBinomial(),
+          "numeric" = mboost::Gaussian(),
+          "PoissonVariate" = mboost::Poisson(),
+          "Surv" = mboost::CoxPH()
+        )
       }
       mboost::gamboost(formula, data = as.data.frame(data), na.action = na.pass,
                        weights = weights, family = family, ...)

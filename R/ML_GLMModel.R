@@ -59,16 +59,17 @@ GLMModel <- function(family = NULL, quasi = FALSE, ...) {
         quasi_prefix <- function(x) if (quasi) paste0("quasi", x) else x
         y <- response(data)
         family <- switch_class(y,
-                               BinomialVariate = quasi_prefix("binomial"),
-                               factor = if (nlevels(y) <= 2) {
-                                 quasi_prefix("binomial")
-                               } else {
-                                 "multinom"
-                               },
-                               matrix = "mgaussian",
-                               NegBinomialVariate = "negbin",
-                               numeric = "gaussian",
-                               PoissonVariate = quasi_prefix("poisson"))
+          "BinomialVariate" = quasi_prefix("binomial"),
+          "factor" = if (nlevels(y) <= 2) {
+            quasi_prefix("binomial")
+          } else {
+            "multinom"
+          },
+          "matrix" = "mgaussian",
+          "NegBinomialVariate" = "negbin",
+          "numeric" = "gaussian",
+          "PoissonVariate" = quasi_prefix("poisson")
+        )
       }
       data <- as.data.frame(data)
       if (identical(family, "mgaussian")) {
@@ -117,9 +118,11 @@ MLModelFunction(GLMModel) <- NULL
 #'   process.
 #' @param steps maximum number of steps to be considered.
 #'
-GLMStepAICModel <- function(family = NULL, quasi = FALSE, ...,
-                            direction = c("both", "backward", "forward"),
-                            scope = NULL, k = 2, trace = FALSE, steps = 1000) {
+GLMStepAICModel <- function(
+  family = NULL, quasi = FALSE, ...,
+  direction = c("both", "backward", "forward"), scope = NULL, k = 2,
+  trace = FALSE, steps = 1000
+) {
 
   direction <- match.arg(direction)
 
@@ -144,11 +147,12 @@ GLMStepAICModel <- function(family = NULL, quasi = FALSE, ...,
       if (is.null(family)) {
         quasi_prefix <- function(x) if (quasi) paste0("quasi", x) else x
         family <- switch_class(response(data),
-                               BinomialVariate = quasi_prefix("binomial"),
-                               factor = quasi_prefix("binomial"),
-                               NegBinomialVariate = "negbin",
-                               numeric = "gaussian",
-                               PoissonVariate = quasi_prefix("poisson"))
+          "BinomialVariate" = quasi_prefix("binomial"),
+          "factor" = quasi_prefix("binomial"),
+          "NegBinomialVariate" = "negbin",
+          "numeric" = "gaussian",
+          "PoissonVariate" = quasi_prefix("poisson")
+        )
       }
       stepargs <- stepAIC_args(formula, direction, scope)
       data <- as.data.frame(data)

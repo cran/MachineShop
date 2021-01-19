@@ -115,6 +115,16 @@ getMLObject <- function(x, class = c("MLControl", "MLMetric", "MLModel")) {
 }
 
 
+has_grid <- function(object) {
+  !is.null(body(object@grid))
+}
+
+
+has_varimp <- function(object) {
+  !is.null(body(object@varimp))
+}
+
+
 identical_elements <- function(x, transform = identity, ...) {
   target <- transform(x[[1]])
   compare <- function(current) identical(transform(current), target, ...)
@@ -294,12 +304,13 @@ nvars <- function(x, model) {
   stopifnot(is(x, "ModelFrame"))
   model <- getMLObject(model, "MLModel")
   switch(model@predictor_encoding,
-         "model.matrix" =
-           ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE)),
-         "terms" = {
-           x_terms <- attributes(terms(x))
-           nrow(x_terms$factors) - x_terms$response - length(x_terms$offset)
-         })
+    "model.matrix" =
+      ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE)),
+    "terms" = {
+      x_terms <- attributes(terms(x))
+      nrow(x_terms$factors) - x_terms$response - length(x_terms$offset)
+    }
+  )
 }
 
 

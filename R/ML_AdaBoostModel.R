@@ -39,12 +39,12 @@
 #' @examples
 #' fit(Species ~ ., data = iris, model = AdaBoostModel(mfinal = 5))
 #'
-AdaBoostModel <- function(boos = TRUE, mfinal = 100,
-                          coeflearn = c("Breiman", "Freund", "Zhu"),
-                          minsplit = 20, minbucket = round(minsplit/3),
-                          cp = 0.01, maxcompete = 4, maxsurrogate = 5,
-                          usesurrogate = 2, xval = 10, surrogatestyle = 0,
-                          maxdepth = 30) {
+AdaBoostModel <- function(
+  boos = TRUE, mfinal = 100, coeflearn = c("Breiman", "Freund", "Zhu"),
+  minsplit = 20, minbucket = round(minsplit/3), cp = 0.01, maxcompete = 4,
+  maxsurrogate = 5, usesurrogate = 2, xval = 10, surrogatestyle = 0,
+  maxdepth = 30
+) {
 
   coeflearn <- match.arg(coeflearn)
 
@@ -60,7 +60,7 @@ AdaBoostModel <- function(boos = TRUE, mfinal = 100,
     response_types = "factor",
     predictor_encoding = "terms",
     params = params,
-    grid = function(x, length, random, ...) {
+    grid = function(length, random, ...) {
       params <- list(
         mfinal = round(seq_range(0, 25, c(1, 200), length + 1)),
         maxdepth = 1:min(length, 30)

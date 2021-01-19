@@ -35,9 +35,10 @@
 #' @examples
 #' fit(Species ~ ., data = iris, model = GBMModel)
 #'
-GBMModel <- function(distribution = NULL, n.trees = 100,
-                     interaction.depth = 1, n.minobsinnode = 10,
-                     shrinkage = 0.1, bag.fraction = 0.5) {
+GBMModel <- function(
+  distribution = NULL, n.trees = 100, interaction.depth = 1,
+  n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5
+) {
 
   MLModel(
     name = "GBMModel",
@@ -62,14 +63,16 @@ GBMModel <- function(distribution = NULL, n.trees = 100,
       if (is.null(distribution)) {
         y <- response(data)
         distribution <- switch_class(y,
-                                     factor = if (nlevels(y) == 2) {
-                                       y_name <- response(formula)
-                                       data[[y_name]] <- as.numeric(y) - 1
-                                       "bernoulli"
-                                     } else "multinomial",
-                                     numeric = "gaussian",
-                                     PoissonVariate = "poisson",
-                                     Surv = "coxph")
+          "factor" = if (nlevels(y) <= 2) {
+            data[[response(formula)]] <- as.numeric(y) - 1
+            "bernoulli"
+          } else {
+            "multinomial"
+          },
+          "numeric" = "gaussian",
+          "PoissonVariate" = "poisson",
+          "Surv" = "coxph"
+        )
       }
       eval_fit(data,
                formula = gbm::gbm(formula, data = as.data.frame(data),

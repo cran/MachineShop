@@ -2,6 +2,18 @@
 
 ## Version Updates
 
+## 2.6.0
+* Preprocess data for automated grid construction only when needed.
+* Select `RPartModel` `cp` grid points from `cptable` according to smallest cross-validation error (mean plus one standard deviation).
+* CRAN release.
+
+## 2.5.2
+* Export `Performance` `diff()` method.
+
+## 2.5.1
+* Implement fast random forest model `RFSRCModel`.
+* Export `unMLModelFit()` function to revert an `MLModelFit` object to its original class.
+
 ## 2.5.0
 * Add `options` argument to `step_lincomp()` and `step_sbf()`.
 * CRAN release.

@@ -56,12 +56,13 @@
 #' @examples
 #' fit(sale_amount ~ ., data = ICHomes, model = SVMRadialModel)
 #'
-SVMModel <- function(scaled = TRUE, type = NULL,
-                     kernel = c("rbfdot", "polydot", "vanilladot", "tanhdot",
-                                "laplacedot", "besseldot", "anovadot",
-                                "splinedot"),
-                     kpar = "automatic", C = 1, nu = 0.2, epsilon = 0.1,
-                     cache = 40, tol = 0.001, shrinking = TRUE) {
+SVMModel <- function(
+  scaled = TRUE, type = NULL,
+  kernel = c("rbfdot", "polydot", "vanilladot", "tanhdot", "laplacedot",
+             "besseldot", "anovadot", "splinedot"),
+  kpar = "automatic", C = 1, nu = 0.2, epsilon = 0.1, cache = 40, tol = 0.001,
+  shrinking = TRUE
+) {
 
   kernel <- match.arg(kernel)
 
@@ -189,13 +190,13 @@ MLModelFunction(SVMTanhModel) <- NULL
   if (!is.logical(scaled)) scaled <- TRUE
 
   params <- switch(kernel,
-                   "anovadot" = list(C = NULL, degree = NULL),
-                   "besseldot" = list(C = NULL, order = NULL,
-                                      degree = NULL),
-                   "laplacedot" = list(C = NULL, sigma = NULL),
-                   "polydot" = list(C = NULL, degree = NULL, scale = NULL),
-                   "rbfdot" = list(C = NULL, sigma = NULL),
-                   "vanilladot" = list(C = NULL))
+    "anovadot" = list(C = NULL, degree = NULL),
+    "besseldot" = list(C = NULL, order = NULL, degree = NULL),
+    "laplacedot" = list(C = NULL, sigma = NULL),
+    "polydot" = list(C = NULL, degree = NULL, scale = NULL),
+    "rbfdot" = list(C = NULL, sigma = NULL),
+    "vanilladot" = list(C = NULL)
+  )
 
   if (length(params)) {
     model@grid <- function(x, length, ...) {

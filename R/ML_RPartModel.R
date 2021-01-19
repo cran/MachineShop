@@ -32,10 +32,11 @@
 #' @examples
 #' fit(Species ~ ., data = iris, model = RPartModel)
 #'
-RPartModel <- function(minsplit = 20, minbucket = round(minsplit / 3),
-                       cp = 0.01, maxcompete = 4, maxsurrogate = 5,
-                       usesurrogate = 2, xval = 10, surrogatestyle = 0,
-                       maxdepth = 30) {
+RPartModel <- function(
+  minsplit = 20, minbucket = round(minsplit / 3), cp = 0.01, maxcompete = 4,
+  maxsurrogate = 5, usesurrogate = 2, xval = 10, surrogatestyle = 0,
+  maxdepth = 30
+) {
 
   MLModel(
     name = "RPartModel",
@@ -45,16 +46,18 @@ RPartModel <- function(minsplit = 20, minbucket = round(minsplit / 3),
     predictor_encoding = "terms",
     params = list(control = as.call(c(.(list), params(environment())))),
     grid = function(x, length, ...) {
-      cptable <- fit(x, model = RPartModel(cp = 0))$cptable[, "CP"]
+      cptable <- fit(x, model = RPartModel(cp = 0))$cptable
+      xerror_order <- order(cptable[, "xerror"] + cptable[, "xstd"])
       list(
-        cp = seq(min(cptable), max(cptable), length = length)
+        cp = sort(head(cptable[xerror_order, "CP"], length))
       )
     },
     fit = function(formula, data, weights, ...) {
       method <- switch_class(response(data),
-                             factor = "class",
-                             numeric = "anova",
-                             Surv = "exp")
+        "factor" = "class",
+        "numeric" = "anova",
+        "Surv" = "exp"
+      )
       rpart::rpart(formula, data = as.data.frame(data), weights = weights,
                    na.action = na.pass, method = method, ...)
     },

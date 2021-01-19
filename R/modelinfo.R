@@ -83,6 +83,7 @@ modelinfo <- function(...) {
                   "QDAModel",
                   "RandomForestModel",
                   "RangerModel",
+                  "RFSRCModel",
                   "RPartModel",
                   "SelectedModel",
                   "StackedModel",
@@ -142,8 +143,8 @@ modelinfo <- function(...) {
     packages = x@packages,
     response_types = x@response_types,
     arguments = args(get0(x@name, mode = "function")),
-    grid = !is.null(body(x@grid)),
-    varimp = !is.null(body(x@varimp))
+    grid = has_grid(x),
+    varimp = has_varimp(x)
   )), names = x@name)
   if (length(list(...))) c(info, .modelinfo(...)) else info
 }

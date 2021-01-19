@@ -125,8 +125,9 @@ as.grid.tbl_df <- function(x, fixed = tibble(), ...) {
 
 
 as.grid.Grid <- function(x, ..., model, fixed = tibble()) {
-  mf <- ModelFrame(..., na.rm = FALSE)
-  params_list <- model@grid(mf, length = x@length, random = x@random)
+  needs_data <- has_grid(model) && ("x" %in% names(formals(model@grid)))
+  mf <- if (needs_data) ModelFrame(..., na.rm = FALSE)
+  params_list <- model@grid(x = mf, length = x@length, random = x@random)
   params <- map(unique, params_list)
   params[lengths(params) == 0] <- NULL
   as.grid(expand_params(params, random = x@random), fixed = fixed)
@@ -138,13 +139,14 @@ as.grid.ParameterGrid <- function(x, ..., model, fixed = tibble()) {
     if (any(map_logi(dials::has_unknowns, x$object))) {
       mf <- ModelFrame(..., na.rm = FALSE)
       data <- switch(model@predictor_encoding,
-                     "model.matrix" = model.matrix(mf, intercept = FALSE),
-                     "terms" = {
-                       mf_terms <- attributes(terms(mf))
-                       var_list <- eval(mf_terms$variables, mf)
-                       names(var_list) <- rownames(mf_terms$factors)
-                       as.data.frame(var_list[-c(1, mf_terms$offset)])
-                     })
+        "model.matrix" = model.matrix(mf, intercept = FALSE),
+        "terms" = {
+          mf_terms <- attributes(terms(mf))
+          var_list <- eval(mf_terms$variables, mf)
+          names(var_list) <- rownames(mf_terms$factors)
+          as.data.frame(var_list[-c(1, mf_terms$offset)])
+        }
+      )
       x <- dials::finalize(x, x = data)
     }
     if (x@random) {

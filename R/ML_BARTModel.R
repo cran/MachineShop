@@ -58,14 +58,13 @@
 #' fit(sale_amount ~ ., data = ICHomes, model = BARTModel)
 #' }
 #'
-BARTModel <- function(K = NULL, sparse = FALSE, theta = 0, omega = 1,
-                      a = 0.5, b = 1, rho = NULL, augment = FALSE,
-                      xinfo = NULL, usequants = FALSE,
-                      sigest = NA, sigdf = 3, sigquant = 0.90, lambda = NA,
-                      k = 2, power = 2, base = 0.95,
-                      tau.num = NULL, offset = NULL,
-                      ntree = NULL, numcut = 100, ndpost = 1000, nskip = NULL,
-                      keepevery = NULL, printevery = 1000) {
+BARTModel <- function(
+  K = NULL, sparse = FALSE, theta = 0, omega = 1, a = 0.5, b = 1, rho = NULL,
+  augment = FALSE, xinfo = NULL, usequants = FALSE, sigest = NA, sigdf = 3,
+  sigquant = 0.90, lambda = NA, k = 2, power = 2, base = 0.95, tau.num = NULL,
+  offset = NULL, ntree = NULL, numcut = 100, ndpost = 1000, nskip = NULL,
+  keepevery = NULL, printevery = 1000
+) {
 
   MLModel(
     name = "BARTModel",
@@ -79,27 +78,27 @@ BARTModel <- function(K = NULL, sparse = FALSE, theta = 0, omega = 1,
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)
       switch_class(y,
-                   factor = {
-                     assert_equal_weights(weights)
-                     if (nlevels(y) == 2) {
-                       f <- BART::gbart
-                       y <- as.numeric(y) - 1
-                     } else {
-                       f <- BART::mbart
-                       y <- as.numeric(y)
-                     }
-                     f(x.train = x, y.train = y, type = "pbart", ...)
-                   },
-                   numeric = {
-                     BART::gbart(x.train = x, y.train = y, w = weights,
-                                 sigest = sigest, sigdf = sigdf,
-                                 sigquant = sigquant, lambda = lambda, ...)
-                   },
-                   Surv = {
-                    assert_equal_weights(weights)
-                    BART::surv.bart(x.train = x, times = y[, "time"],
-                                    delta = y[, "status"], K = K, ...)
-                   })
+        "factor" = {
+          assert_equal_weights(weights)
+          if (nlevels(y) <= 2) {
+            f <- BART::gbart
+            y <- as.numeric(y) - 1
+          } else {
+            f <- BART::mbart
+            y <- as.numeric(y)
+          }
+          f(x.train = x, y.train = y, type = "pbart", ...)
+        },
+        "numeric" = {
+          BART::gbart(x.train = x, y.train = y, w = weights, sigest = sigest,
+                      sigdf = sigdf, sigquant = sigquant, lambda = lambda, ...)
+        },
+        "Surv" = {
+          assert_equal_weights(weights)
+          BART::surv.bart(x.train = x, times = y[, "time"],
+                          delta = y[, "status"], K = K, ...)
+        }
+      )
     },
     predict = function(object, newdata, times, ...) {
       newx <- model.matrix(newdata, intercept = FALSE)
