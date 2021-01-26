@@ -27,11 +27,11 @@ info <- modelinfo()
 #  RShowDoc("Introduction", package = "MachineShop")
 
 ## ----using_example_melanoma---------------------------------------------------
-## Analysis libraries
+## Analysis libraries and dataset
 library(MachineShop)
 library(survival)
-library(MASS)
 library(magrittr)
+data(Melanoma, package = "MASS")
 
 ## Malignant melanoma analysis dataset
 surv_df <- within(Melanoma, status <- as.numeric(status != 2))
@@ -136,8 +136,9 @@ predict(surv_fit, newdata = surv_test, times = surv_times, type = "prob") %>% he
 predict(surv_fit, newdata = surv_test, times = surv_times, cutoff = 0.7) %>% head
 
 ## ----using_variables_formula--------------------------------------------------
-## Dataset library
-library(MASS)
+## Datasets
+data(Pima.te, package = "MASS")
+data(Pima.tr, package = "MASS")
 
 ## Formula specification
 model_fit <- fit(type ~ ., data = Pima.tr, model = GBMModel)
@@ -232,7 +233,8 @@ predict(model_fit, type = "prob") %>% head
 
 ## ----using_responses_factor_binary--------------------------------------------
 ## Pima Indians diabetes statuses (binary factor)
-library(MASS)
+data(Pima.te, package = "MASS")
+data(Pima.tr, package = "MASS")
 
 model_fit <- fit(type ~ ., data = Pima.tr, model = GBMModel)
 predict(model_fit, newdata = Pima.te) %>% head
@@ -1023,7 +1025,7 @@ f2_score <- MLMetric(
 
 ## ----using_extensions_usage---------------------------------------------------
 ## Logistic regression analysis
-library(MASS)
+data(Pima.tr, package = "MASS")
 res <- resample(type ~ ., data = Pima.tr, model = LogisticModel)
 summary(performance(res, metric = f2_score))
 

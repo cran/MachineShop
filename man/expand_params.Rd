@@ -21,7 +21,10 @@ inputs.
 Create a grid of parameter values from all combinations of supplied inputs.
 }
 \examples{
-library(MASS)
+\donttest{
+## Requires prior installation of suggested package gbm to run
+
+data(Boston, package = "MASS")
 
 grid <- expand_params(
   n.trees = c(50, 100),
@@ -29,6 +32,7 @@ grid <- expand_params(
 )
 
 fit(medv ~ ., data = Boston, model = TunedModel(GBMModel, grid = grid))
+}
 
 }
 \seealso{

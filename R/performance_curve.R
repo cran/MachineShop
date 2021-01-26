@@ -18,11 +18,15 @@
 #' @seealso \code{\link{c}}, \code{\link{plot}}, \code{\link{summary}}
 #'
 #' @examples
-#' library(MASS)
+#' \donttest{
+#' ## Requires prior installation of suggested package gbm to run
+#'
+#' data(Pima.tr, package = "MASS")
 #'
 #' res <- resample(type ~ ., data = Pima.tr, model = GBMModel)
 #' lf <- lift(res)
 #' plot(lf)
+#' }
 #'
 lift <- function(x, y = NULL, na.rm = TRUE, ...) {
   as(performance_curve(x, y = y, metrics = c(tpr, rpp), na.rm = na.rm),
@@ -67,7 +71,10 @@ LiftCurve <- function(...) {
 #'
 #'
 #' @examples
-#' library(MASS)
+#' \donttest{
+#' ## Requires prior installation of suggested package gbm to run
+#'
+#' data(Pima.tr, package = "MASS")
 #'
 #' res <- resample(type ~ ., data = Pima.tr, model = GBMModel)
 #'
@@ -75,6 +82,7 @@ LiftCurve <- function(...) {
 #' roc <- performance_curve(res)
 #' plot(roc)
 #' auc(roc)
+#' }
 #'
 performance_curve <- function(x, ...) {
   UseMethod("performance_curve")

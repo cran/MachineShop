@@ -13,12 +13,16 @@
 #' @seealso \code{\link{SelectedModel}}
 #'
 #' @examples
-#' library(MASS)
+#' \donttest{
+#' ## Requires prior installation of suggested package gbm to run
+#'
+#' data(Boston, package = "MASS")
 #'
 #' models <- expand_model(GBMModel, n.trees = c(50, 100),
 #'                                  interaction.depth = 1:2)
 #'
 #' fit(medv ~ ., data = Boston, model = SelectedModel(models))
+#' }
 #'
 expand_model <- function(x, ..., random = FALSE) {
   .expand_model(x, random, ...)
@@ -65,7 +69,10 @@ expand_model <- function(x, ..., random = FALSE) {
 #' @seealso \code{\link{TunedModel}}
 #'
 #' @examples
-#' library(MASS)
+#' \donttest{
+#' ## Requires prior installation of suggested package gbm to run
+#'
+#' data(Boston, package = "MASS")
 #'
 #' grid <- expand_params(
 #'   n.trees = c(50, 100),
@@ -73,6 +80,7 @@ expand_model <- function(x, ..., random = FALSE) {
 #' )
 #'
 #' fit(medv ~ ., data = Boston, model = TunedModel(GBMModel, grid = grid))
+#' }
 #'
 expand_params <- function(..., random = FALSE) {
   if (random) {
@@ -103,7 +111,7 @@ expand_params <- function(..., random = FALSE) {
 #'
 #' @examples
 #' library(recipes)
-#' library(MASS)
+#' data(Boston, package = "MASS")
 #'
 #' rec <- recipe(medv ~ ., data = Boston) %>%
 #'   step_corr(all_numeric(), -all_outcomes(), id = "corr") %>%
