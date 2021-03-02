@@ -55,7 +55,7 @@ SelectedModel <- function(..., control = MachineShop::settings("control"),
       label = "Selected Model",
       response_types = Reduce(intersect,
                               map(slot, models, "response_types"),
-                              init = .response_types),
+                              init = settings("response_types")),
       predictor_encoding = NA_character_,
       params = list(models = ListOf(models),
                     control = getMLObject(control, "MLControl"),
@@ -125,7 +125,7 @@ MLModelFunction(SelectedModel) <- NULL
 #'
 #' # Randomly sampled grid points
 #' fit(sale_amount ~ ., data = ICHomes,
-#'     model = TunedModel(GBMModel, grid = Grid(length = 1000, random = 5)))
+#'     model = TunedModel(GBMModel, grid = Grid(size = 1000, random = 5)))
 #'
 #' # User-specified grid
 #' fit(sale_amount ~ ., data = ICHomes,
@@ -136,7 +136,8 @@ MLModelFunction(SelectedModel) <- NULL
 #' }
 #'
 TunedModel <- function(model, grid = MachineShop::settings("grid"),
-                       fixed = NULL, control = MachineShop::settings("control"),
+                       fixed = list(),
+                       control = MachineShop::settings("control"),
                        metrics = NULL,
                        stat = MachineShop::settings("stat.train"),
                        cutoff = MachineShop::settings("cutoff")) {
@@ -169,8 +170,11 @@ TunedModel <- function(model, grid = MachineShop::settings("grid"),
   new("TunedModel",
       name = "TunedModel",
       label = "Grid Tuned Model",
-      response_types =
-        if (is.null(model)) .response_types else model()@response_types,
+      response_types = if (is.null(model)) {
+        settings("response_types")
+      } else {
+        model()@response_types
+      },
       predictor_encoding = NA_character_,
       params = list(model = model, grid = grid, fixed = fixed,
                     control = getMLObject(control, "MLControl"),

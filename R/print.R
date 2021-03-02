@@ -105,7 +105,7 @@ setMethod("show", "DiscreteVariate",
 print.Grid <- function(x, n = MachineShop::settings("max.print"), ...) {
   print_title(x)
   cat("\n",
-      "Length: ", x@length, "\n",
+      label_items("Size", x@size, add_names = TRUE), "\n",
       "Random sample: ", x@random, "\n",
       sep = ""
   )
@@ -304,7 +304,7 @@ print.MLModel <- function(x, n = MachineShop::settings("max.print"), ...) {
   cat(str(x@params))
   if (trained) {
     cat("\n")
-    print(x@trainbits, n = n)
+    print(x@traininfo, n = n)
   }
   invisible(x)
 }
@@ -413,7 +413,7 @@ print.ParameterGrid <- function(x, n = MachineShop::settings("max.print"),
   if (x@random) {
     cat("Random sample:", x@random, "\n")
   } else {
-    cat(label_items("Length", x@length), "\n")
+    cat(label_items("Size", x@size, add_names = TRUE), "\n")
   }
   invisible(x)
 }
@@ -536,7 +536,7 @@ print.SelectedModel <- function(x, n = MachineShop::settings("max.print"), ...) 
   print(x@params$control)
   if (trained) {
     cat("\n")
-    print(x@trainbits, n = n)
+    print(x@traininfo, n = n)
   }
   invisible(x)
 }
@@ -553,7 +553,7 @@ print.StackedModel <- function(x, n = MachineShop::settings("max.print"), ...) {
   print(x@params$control)
   if (trained) {
     cat("\n")
-    print(x@trainbits, n = n)
+    print(x@traininfo, n = n)
   }
   invisible(x)
 }
@@ -573,7 +573,7 @@ print.SuperModel <- function(x, n = MachineShop::settings("max.print"), ...) {
   print(x@params$control)
   if (trained) {
     cat("\n")
-    print(x@trainbits, n = n)
+    print(x@traininfo, n = n)
   }
   invisible(x)
 }
@@ -670,7 +670,7 @@ print.TunedModel <- function(x, n = MachineShop::settings("max.print"), ...) {
   print(x@params$control)
   if (trained) {
     cat("\n")
-    print(x@trainbits, n = n)
+    print(x@traininfo, n = n)
   }
   invisible(x)
 }

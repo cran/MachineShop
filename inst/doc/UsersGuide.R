@@ -767,7 +767,7 @@ plot(lf, find = 0.75)
 #  fit(surv_fo, data = surv_train,
 #      model = TunedModel(
 #        GBMModel,
-#        grid = Grid(length = 100, random = 10),
+#        grid = Grid(size = 100, random = 10),
 #        control = surv_means_control
 #      ))
 #  

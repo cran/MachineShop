@@ -1,35 +1,212 @@
+#' Model Tuning Grid
+#'
+#' Extract a model-defined grid of tuning parameter values.
+#'
+#' @name get_grid
+#' @rdname get_grid-methods
+#'
+#' @param x optional \link[=inputs]{input} specifying a relationship between
+#'   model predictor and response variables.  Alternatively, a
+#'   \link[=models]{model} function or call may be given first followed by the
+#'   input specification.
+#' @param y response variable.
+#' @param data \link[=data.frame]{data frame} containing observed predictors and
+#'   outcomes.
+#' @param model \link[=models]{model} function, function name, or call.
+#' @param size single integer or vector of integers whose positions or names
+#'   match the parameters in the model's tuning grid and which specify the
+#'   number of values to use in constructing the grid.
+#' @param random number of unique grid points to sample at random, \code{Inf}
+#'   for all random points, or \code{FALSE} for all fixed points.
+#' @param info logical indicating whether to return the grid construction
+#'   information rather than the grid values.
+#' @param ... arguments passed to the default method.
+#'
+#' @details The \code{get_grid} function enables manual extraction and viewing
+#' of grids created automatically if \code{\link{TunedModel}} is called with a
+#' \code{\link{Grid}} object.
+#'
+#' @return A data frame of parameter values or \code{NULL} if data are required
+#' for construction of the grid but not supplied.
+#'
+#' @seealso \code{\link{TunedModel}}, \code{\link{Grid}}
+#'
+#' @examples
+#' get_grid(GBMModel, size = 10)
+#'
+#' get_grid(sale_amount ~ ., data = ICHomes, model = GLMNetModel,
+#'          size = c(lambda = 10, alpha = 5))
+#'
+get_grid <- function(x, ...) {
+  UseMethod("get_grid", x)
+}
+
+
+#' @rdname get_grid-methods
+#'
+get_grid.default <- function(x, ..., model, size = 3, random = FALSE,
+                             info = FALSE) {
+  model <- getMLObject(model, "MLModel")
+  gridinfo <- model@gridinfo
+  mf <- NULL
+
+  if (info) return(gridinfo)
+
+  not_dup <- function(x) !duplicated(x, fromLast = TRUE)
+  if (!is.null(names(size))) {
+    if (!all(names(size) %in% gridinfo$param)) {
+      warn("Unmatched model parameter names in get_grid() argument 'size'.\n",
+           "x Existing ", model@name, " has ",
+           label_items("parameter", gridinfo$param), ".\n",
+           "x Assigned data has ", label_items("name", names(size)), ".")
+    }
+    size <- size[gridinfo$param] * not_dup(gridinfo$param)
+    size[is.na(size)] <- 0L
+  } else if (length(size) == 1) {
+    if (!random) gridinfo <- gridinfo[gridinfo$regular, ]
+    size <- size * not_dup(gridinfo$param)
+  } else if (length(size) != nrow(gridinfo)) {
+    stop("Length of get_grid() argument 'size' must equal 1",
+         " or the number of model parameters.\n",
+         "x Existing ", model@name, " has ", nrow(gridinfo), " ",
+         label_items("parameter", gridinfo$param), ".\n",
+         "x Assigned data has ", length(size), " ",
+         label_items("size", size), ".",
+         call. = FALSE)
+  }
+  gridinfo$size <- size
+  gridinfo <- gridinfo[gridinfo$size >= 1, ]
+
+  has_data_arg <- function(fun) "data" %in% names(formals(fun))
+  needs_data <- any(map_logi(has_data_arg, gridinfo$values))
+  if (needs_data && has_grid(model)) {
+    if (!missing(x)) mf <- ModelFrame(x, ..., na.rm = FALSE)
+    if (is.null(mf)) {
+      return(NULL)
+    } else if (!is_valid_response(y <- response(mf), model)) {
+      warn("Invalid model response type in get_grid().\n",
+           "x Exising ", model@name, " supports ",
+           label_items("type", model@response_types), ".\n",
+           "x Supplied response is of ",
+           label_items("type", class(y)), ".")
+      return(NULL)
+    }
+  }
+
+  param_names <- unique(gridinfo$param)
+  params <- map(function(fun, n) unique(fun(n = n, data = mf)),
+                gridinfo$values, gridinfo$size)
+  params <- map(function(name) {
+    unlist(params[gridinfo$param == name], use.names = FALSE)
+  }, param_names)
+  names(params) <- param_names
+  params[lengths(params) == 0] <- NULL
+  expand_params(params, random = random)
+}
+
+
+#' @rdname get_grid-methods
+#'
+get_grid.formula <- function(x, data, ...) {
+  get_grid.default(x, data, ...)
+}
+
+
+#' @rdname get_grid-methods
+#'
+get_grid.matrix <- function(x, y, ...) {
+  get_grid.default(x, y, ...)
+}
+
+
+#' @rdname get_grid-methods
+#'
+get_grid.ModelFrame <- function(x, ...) {
+  get_grid.default(x, ...)
+}
+
+
+#' @rdname get_grid-methods
+#'
+get_grid.recipe <- function(x, ...) {
+  get_grid.default(x, ...)
+}
+
+
+#' @rdname get_grid-methods
+#'
+get_grid.MLModel <- function(x, ...) {
+  get_grid.default(..., model = x)
+}
+
+
+#' @rdname get_grid-methods
+#'
+get_grid.MLModelFunction <- function(x, ...) {
+  get_grid(x(), ...)
+}
+
+
+new_gridinfo <- function(param = character(), values = list(), regular = NULL) {
+  if (is.null(regular)) regular <- TRUE
+
+  stopifnot(is.character(param))
+  stopifnot(is.list(values))
+  stopifnot(is.logical(regular))
+
+  if (!all(map_logi(is.function, values))) {
+    stop("'values' must be a list of functions")
+  }
+
+  as_tibble(list(param = param, values = values, regular = regular))
+}
+
+
 #' Tuning Grid Control
 #'
 #' Defines control parameters for a tuning grid.
 #'
-#' @param length number of values to be generated for each model parameter in
-#'   the tuning grid.
+#' @param size single integer or vector of integers whose positions or names
+#'   match the parameters in a model's tuning grid and which specify the number
+#'   of values to use in constructing the grid.
 #' @param random number of unique grid points to sample at random, \code{Inf}
 #'   for all random points, or \code{FALSE} for all fixed points.
+#' @param length deprecated argument; use \code{size} instead.
+#'
+#' @details Returned \code{Grid} objects may be supplied to
+#' \code{\link{TunedModel}} for automated construction of model tuning grids.
+#' These grids can be extracted manually and viewed with the
+#' \code{\link{get_grid}} function.
 #'
 #' @return \code{Grid} class object.
 #'
-#' @seealso \code{\link{TunedModel}}
+#' @seealso \code{\link{TunedModel}}, \code{\link{get_grid}}
 #'
 #' @examples
 #' TunedModel(GBMModel, grid = Grid(10, random = 5))
 #'
-Grid <- function(length = 3, random = FALSE) {
-  if (is.finite(length)) {
-    length <- as.integer(length[[1]])
-    if (length <= 0) stop("grid parameter 'length' must be >= 1")
-  } else {
-    stop("grid parameter 'length' must be numeric")
+Grid <- function(size = 3, random = FALSE, length = NULL) {
+  if (!is.null(length)) {
+    depwarn("'length' argument to Grid is deprecated",
+            "use 'size' argument instead", expired = Sys.Date() >= "2021-04-15")
+    size <- length
   }
 
-  if (isTRUE(random) || is.numeric(random)) {
+  if (length(size) && all(is.finite(size))) {
+    storage.mode(size) <- "integer"
+    if (any(size < 0)) stop("grid 'size' values must be >= 0")
+  } else {
+    stop("grid 'size' must contain one or more numeric values")
+  }
+
+  if (isTRUE(random) || (length(random) && is.numeric(random))) {
     random <- floor(random[[1]])
-    if (random <= 0) stop ("number of 'random' grid points must be >= 1")
+    if (random < 1) stop ("number of 'random' grid points must be >= 1")
   } else if (!isFALSE(random)) {
     stop("'random' grid value must be logical or numeric")
   }
 
-  new("Grid", length = length, random = random)
+  new("Grid", size = size, random = random)
 }
 
 
@@ -42,10 +219,12 @@ Grid <- function(length = 3, random = FALSE) {
 #' @param ... named \code{param} objects as defined in the \pkg{dials} package.
 #' @param x list of named \code{param} objects or a
 #'   \code{\link[dials]{parameters}} object.
-#' @param length single number or vector of numbers of parameter values to use
-#'   in constructing a regular grid if \code{random = FALSE}; ignored otherwise.
+#' @param size single integer or vector of integers whose positions or names
+#'   match the given parameters and which specify the number of values to use in
+#'   constructing a regular grid if \code{random = FALSE}; ignored otherwise.
 #' @param random number of unique grid points to sample at random or
-#'   \code{FALSE} for all points from a regular grid defined by \code{length}.
+#'   \code{FALSE} for all points from a regular grid defined by \code{size}.
+#' @param length deprecated argument; use \code{size} instead.
 #'
 #' @return \code{ParameterGrid} class object that inherits from
 #' \code{parameters} and \code{Grid}.
@@ -68,41 +247,63 @@ ParameterGrid <- function(...) {
 
 #' @rdname ParameterGrid
 #'
-ParameterGrid.param <- function(..., length = 3, random = FALSE) {
-  ParameterGrid(list(...), length = length, random = random)
+ParameterGrid.param <- function(..., size = 3, random = FALSE, length = NULL) {
+  ParameterGrid(list(...), size = size, random = random, length = length)
 }
 
 
 #' @rdname ParameterGrid
 #'
-ParameterGrid.list <- function(x, length = 3, random = FALSE, ...) {
-  ParameterGrid(parameters(x), length = length, random = random)
+ParameterGrid.list <- function(x, size = 3, random = FALSE, length = NULL, ...) {
+  ParameterGrid(parameters(x), size = size, random = random, length = length)
 }
 
 
 #' @rdname ParameterGrid
 #'
-ParameterGrid.parameters <- function(x, length = 3, random = FALSE, ...) {
-  if (all(is.finite(length))) {
-    length <- as.integer(length)
-    if (any(length < 0)) stop("grid parameter 'length' must be >= 0")
+ParameterGrid.parameters <- function(x, size = 3, random = FALSE, length = NULL, ...) {
+  if (!is.null(length)) {
+    depwarn("'length' argument to ParameterGrid is deprecated",
+            "use 'size' argument instead", expired = Sys.Date() >= "2021-04-15")
+    size <- length
+  }
+
+  if (length(size) && all(is.finite(size))) {
+    storage.mode(size) <- "integer"
+    if (any(size < 0)) stop("grid 'size' values must be >= 0")
   } else {
-    stop("grid parameter 'length' must be numeric")
+    stop("grid 'size' must contain one or more numeric values")
   }
 
   if (isFALSE(random)) {
-    if (length(length) > 1) length <- rep_len(length, nrow(x))
-    keep <- length > 0
+    if (!is.null(names(size))) {
+      if (!all(names(size) %in% x$id)) {
+        warn("Unmatched parameter names in ParameterGrid() argument 'size'.\n",
+             "x Existing data has ", label_items("parameter", x$id), ".\n",
+             "x Assigned data has ", label_items("name", names(size)), ".")
+      }
+      size <- size[x$id]
+      size[is.na(size)] <- 0L
+    } else if (length(size) > 1 && length(size) != nrow(x)) {
+      stop("Length of ParameterGrid() argument 'size' must equal 1",
+           " or the number of parameters.\n",
+           "x Existing data has ", nrow(x), " ",
+           label_items("parameter", x$id), ".\n",
+           "x Assigned data has ", length(size), " ",
+           label_items("size", size), ".",
+           call. = FALSE)
+    }
+    keep <- size >= 1
     x <- x[keep, ]
-    length <- length[keep]
-  } else if (is.finite(random)) {
+    size <- size[keep]
+  } else if (length(random) && is.finite(random)) {
     random <- as.integer(random[[1]])
-    if (random <= 0) stop ("number of 'random' grid points must be >= 1")
+    if (random < 1) stop ("number of 'random' grid points must be >= 1")
   } else {
     stop("'random' grid value must be logical or numeric")
   }
 
-  new("ParameterGrid", x, length = length, random = random)
+  new("ParameterGrid", x, size = size, random = random)
 }
 
 
@@ -123,12 +324,8 @@ as.grid.tbl_df <- function(x, fixed = tibble(), ...) {
 
 
 as.grid.Grid <- function(x, ..., model, fixed = tibble()) {
-  needs_data <- has_grid(model) && ("x" %in% names(formals(model@grid)))
-  mf <- if (needs_data) ModelFrame(..., na.rm = FALSE)
-  params_list <- model@grid(x = mf, length = x@length, random = x@random)
-  params <- map(unique, params_list)
-  params[lengths(params) == 0] <- NULL
-  as.grid(expand_params(params, random = x@random), fixed = fixed)
+  grid <- get_grid(..., model = model, size = x@size, random = x@random)
+  as.grid(grid, fixed = fixed)
 }
 
 
@@ -150,7 +347,7 @@ as.grid.ParameterGrid <- function(x, ..., model, fixed = tibble()) {
     if (x@random) {
       dials::grid_random(x, size = x@random)
     } else {
-      dials::grid_regular(x, levels = x@length)
+      dials::grid_regular(x, levels = x@size)
     }
   } else {
     tibble(.rows = 1)

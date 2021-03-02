@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2021-01-25" />
+<meta name="date" content="2021-03-02" />
 
 <title>MachineShop User’s Guide</title>
 
@@ -29,7 +29,14 @@
     </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
 pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
@@ -155,12 +162,12 @@ div.csl-indent {
 
 
 <h1 class="title toc-ignore">MachineShop User’s Guide</h1>
-<h3 class="subtitle">R Package Version 2.6.1</h3>
+<h3 class="subtitle">R Package Version 2.7.0</h3>
 <h4 class="author">Brian J Smith</h4>
 <address class="author_afil">
 University of Iowa<br><a class="author_email" href="mailto:#"><a href="mailto:brian-j-smith@uiowa.edu" class="email">brian-j-smith@uiowa.edu</a></a>
 </address>
-<h4 class="date">2021-01-25</h4>
+<h4 class="date">2021-03-02</h4>
 
 
 <div id="TOC">
@@ -356,7 +363,7 @@ Number of subjects
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 Median (Range)
 </td>
 <td style="text-align:center;">
@@ -369,7 +376,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 1 = Dead
 </td>
 <td style="text-align:center;">
@@ -377,7 +384,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 0 = Alive
 </td>
 <td style="text-align:center;">
@@ -390,7 +397,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 1 = Male
 </td>
 <td style="text-align:center;">
@@ -398,7 +405,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 0 = Female
 </td>
 <td style="text-align:center;">
@@ -411,7 +418,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 Median (Range)
 </td>
 <td style="text-align:center;">
@@ -424,7 +431,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 Median (Range)
 </td>
 <td style="text-align:center;">
@@ -437,7 +444,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 Median (Range)
 </td>
 <td style="text-align:center;">
@@ -450,7 +457,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 1 = Presence
 </td>
 <td style="text-align:center;">
@@ -458,7 +465,7 @@ Median (Range)
 </td>
 </tr>
 <tr>
-<td style="text-align:left; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;padding-left: 2em;" indentlevel="1">
 0 = Absence
 </td>
 <td style="text-align:center;">
@@ -838,7 +845,7 @@ Design Matrix
 </td>
 </tr>
 <tr>
-<td style="text-align:left;font-weight: bold; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;font-weight: bold;padding-left: 2em;" indentlevel="1">
 Traditional Formula
 </td>
 <td style="text-align:center;">
@@ -858,7 +865,7 @@ Traditional Formula
 </td>
 </tr>
 <tr>
-<td style="text-align:left;font-weight: bold; padding-left:  2em;" indentlevel="1">
+<td style="text-align:left;font-weight: bold;padding-left: 2em;" indentlevel="1">
 Design Matrix
 </td>
 <td style="text-align:center;">
@@ -2109,7 +2116,7 @@ Event
 <span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fit</span>(surv_fo, <span class="at">data =</span> surv_train,</span>
 <span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="fu">TunedModel</span>(</span>
 <span id="cb73-4"><a href="#cb73-4" aria-hidden="true" tabindex="-1"></a>      GBMModel,</span>
-<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">grid =</span> <span class="fu">Grid</span>(<span class="at">length =</span> <span class="dv">100</span>, <span class="at">random =</span> <span class="dv">10</span>),</span>
+<span id="cb73-5"><a href="#cb73-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">grid =</span> <span class="fu">Grid</span>(<span class="at">size =</span> <span class="dv">100</span>, <span class="at">random =</span> <span class="dv">10</span>),</span>
 <span id="cb73-6"><a href="#cb73-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">control =</span> surv_means_control</span>
 <span id="cb73-7"><a href="#cb73-7" aria-hidden="true" tabindex="-1"></a>    ))</span>
 <span id="cb73-8"><a href="#cb73-8" aria-hidden="true" tabindex="-1"></a></span>
@@ -2354,7 +2361,7 @@ Event
 <dd>character string specifying distributional approximations to estimated survival curves for predicting survival events/probabilities. Choices are <code>&quot;empirical&quot;</code> (default) for the Kaplan-Meier estimator, <code>&quot;exponential&quot;</code>, or <code>&quot;weibull&quot;</code>.
 </dd>
 <dt><code>grid</code></dt>
-<dd>number of parameter-specific values to generate automatically for tuning of models that have pre-defined grids or a <code>Grid()</code> function, function name, or call [default: 3].
+<dd><code>size</code> argument to <code>Grid()</code> indicating the number of parameter-specific values to generate automatically for tuning of models that have pre-defined grids or a <code>Grid()</code> function, function name, or call [default: 3].
 </dd>
 <dt><code>max.print</code></dt>
 <dd>number of models or data rows to show with print methods or <code>Inf</code> to show all [default: 10].
@@ -2424,7 +2431,7 @@ Event
 <span id="cb85-13"><a href="#cb85-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $grid</span></span>
 <span id="cb85-14"><a href="#cb85-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Grid&quot;</span></span>
 <span id="cb85-15"><a href="#cb85-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb85-16"><a href="#cb85-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Length: 10</span></span>
+<span id="cb85-16"><a href="#cb85-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Size: 10</span></span>
 <span id="cb85-17"><a href="#cb85-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Random sample: FALSE</span></span>
 <span id="cb85-18"><a href="#cb85-18" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb85-19"><a href="#cb85-19" aria-hidden="true" tabindex="-1"></a><span class="do">## Restore the previous settings</span></span>

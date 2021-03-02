@@ -65,7 +65,7 @@ setOldClass(c("grid_regular", "param_grid"))
 
 
 setClass("Grid",
-  slots = c(length = "integer",
+  slots = c(size = "integer",
             random = "ANY")
 )
 
@@ -90,12 +90,12 @@ setClass("MLModel",
             response_types = "character",
             predictor_encoding = "character",
             params = "list",
-            grid = "function",
+            gridinfo = "tbl_df",
             fit = "function",
             predict = "function",
             varimp = "function",
             x = "ANY",
-            trainbits = "ListOf")
+            traininfo = "ListOf")
 )
 
 

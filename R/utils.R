@@ -116,7 +116,7 @@ getMLObject <- function(x, class = c("MLControl", "MLMetric", "MLModel")) {
 
 
 has_grid <- function(object) {
-  !is.null(body(object@grid))
+  nrow(object@gridinfo) > 0
 }
 
 
@@ -138,7 +138,7 @@ is.trained <- function(x, ...) {
 
 
 is.trained.MLModel <- function(x, ...) {
-  length(x@trainbits) > 0
+  length(x@traininfo) > 0
 }
 
 
@@ -151,19 +151,31 @@ is_one_element <- function(x, class) {
 }
 
 
-is_response <- function(object, class2) {
+is_response <- function(y, class2) {
   if (class2 == "binary") {
-    is(object, "factor") && nlevels(object) == 2
+    is(y, "factor") && nlevels(y) == 2
   } else {
-    is(object, class2)
+    is(y, class2)
   }
 }
 
 
-label_items <- function(label, x, n = Inf) {
+is_valid_response <- function(y, object) {
+  response_types <- if (is(object, "MLModel")) {
+    object@response_types
+  } else if (is.list(object)) {
+    object$response_types
+  }
+  any(map_logi(is_response, list(y), response_types))
+}
+
+
+label_items <- function(label, x, n = Inf, add_names = FALSE) {
   item_len <- length(x)
+  if (add_names && !is.null(names(x))) x <- paste(names(x), x, sep = " = ")
   items <- if (n < item_len) paste(toString(head(x, n)), "...") else toString(x)
-  paste0(label, if (item_len > 1) "s", ": ", items)
+  if (item_len != 1) label <- paste0(label, "s")
+  if (item_len) paste0(label, ": ", items) else label
 }
 
 
@@ -332,13 +344,13 @@ push <- function(x, object, ...) {
 
 push.TrainBit <- function(x, object, ...) {
   stopifnot(is(object, "MLModelFit"))
-  obj_bits <- (if (isS4(object)) object@mlmodel else object$mlmodel)@trainbits
-  trainbits <- ListOf(c(x, obj_bits))
-  names(trainbits) <- paste0("TrainStep", seq(trainbits))
+  obj_bits <- (if (isS4(object)) object@mlmodel else object$mlmodel)@traininfo
+  traininfo <- ListOf(c(x, obj_bits))
+  names(traininfo) <- paste0("TrainStep", seq(traininfo))
   if (isS4(object)) {
-    object@mlmodel@trainbits <- trainbits
+    object@mlmodel@traininfo <- traininfo
   } else {
-    object$mlmodel@trainbits <- trainbits
+    object$mlmodel@traininfo <- traininfo
   }
   object
 }
@@ -382,7 +394,18 @@ sample_params <- function(x, size = NULL, replace = FALSE) {
     if (!replace) grid <- unique(grid)
   }
 
-  head(grid, size)
+  grid <- head(grid, size)
+  sortable_types <- c("character", "complex", "Date", "factor", "logical",
+                      "numeric")
+  is_sortable <- map_logi(function(column) {
+    any(map_logi(is, list(column), sortable_types))
+  }, grid)
+  if (any(is_sortable)) {
+    sort_order <- do.call(order, rev(grid[is_sortable]))
+    grid <- grid[sort_order, ]
+  }
+
+  grid
 }
 
 
@@ -448,12 +471,6 @@ set_model_names <- function(x) {
   for (i in seq(x)) levels(x[[i]][[name]]) <- level_names[[i]]
 
   x
-}
-
-
-set_param <- function(params, name, value) {
-  if (name %in% names(params)) params[[name]] <- value
-  params
 }
 
 
