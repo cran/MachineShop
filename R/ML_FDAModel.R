@@ -16,8 +16,7 @@
 #'   \code{\link[mda]{gen.ridge}} is appropriate.  Other possibilities are
 #'   \code{\link[mda]{mars}} for multivariate adaptive regression splines and
 #'   \code{\link[mda]{bruto}} for adaptive backfitting of additive splines.  Use
-#'   the \code{\link[MachineShop:dot-]{.}} operator to quote specified
-#'   functions.
+#'   the \code{\link[=quote]{.}} operator to quote specified functions.
 #' @param ... additional arguments to \code{method} for \code{FDAModel} and to
 #'   \code{FDAModel} for \code{PDAModel}.
 #'
@@ -71,8 +70,8 @@ FDAModel <- function(
       param = c("nprune", "degree"),
       values = c(
         function(n, data, ...) {
-          modelfit <- fit(data, model = EarthModel(pmethod = "none"))
-          max_terms <- min(2 + 0.75 * nrow(modelfit$dirs), 200)
+          model_fit <- fit(data, model = EarthModel(pmethod = "none"))
+          max_terms <- min(2 + 0.75 * nrow(model_fit$dirs), 200)
           round(seq(2, max_terms, length = n))
         },
         function(n, ...) head(1:2, n)

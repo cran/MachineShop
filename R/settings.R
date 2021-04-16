@@ -127,22 +127,22 @@ settings <- function(...) {
     return(invisible(global_values))
   }
 
-  args_names <- names(args)
-  if (is.null(args_names)) args_names <- character(length(args))
-  args_names_nzchar <- nzchar(args_names)
+  arg_names <- names(args)
+  if (is.null(arg_names)) arg_names <- character(length(args))
+  arg_names_nzchar <- nzchar(arg_names)
 
-  is_get_args <- !args_names_nzchar & vapply(args, is.character, logical(1))
-  args_names[is_get_args] <- unlist(args[is_get_args])
+  is_get_args <- !arg_names_nzchar & vapply(args, is.character, logical(1))
+  arg_names[is_get_args] <- unlist(args[is_get_args])
 
-  settings_pmatch <- pmatch(args_names, names(global_settings))
+  settings_pmatch <- pmatch(arg_names, names(global_settings))
   valid_settings <- !is.na(settings_pmatch)
-  for (name in args_names[!valid_settings]) {
+  for (name in arg_names[!valid_settings]) {
     warning("'", name, "' is not a MachineShop setting")
   }
 
   presets <- global_values[settings_pmatch[valid_settings]]
 
-  which_set_args <- which(args_names_nzchar & valid_settings)
+  which_set_args <- which(arg_names_nzchar & valid_settings)
   for (index in which_set_args) {
     global_name <- names(global_settings)[settings_pmatch[index]]
     value <- global_checks[[global_name]](args[[index]])
@@ -152,7 +152,7 @@ settings <- function(...) {
     MachineShop_global$settings[[global_name]]$value <- value
   }
 
-  if (any(args_names_nzchar)) {
+  if (any(arg_names_nzchar)) {
     invisible(presets)
   } else if (length(args) > 1) {
     presets
@@ -176,6 +176,20 @@ check_const <- function(x, name) {
 }
 
 
+check_grid <- function(x) {
+  if (is(x, "numeric")) {
+    Grid(x)
+  } else if (identical(x, "Grid") || identical(x, Grid)) {
+    Grid()
+  } else if (is(x, "Grid")) {
+    x
+  } else {
+    DomainError(x, "must be a positive integer value(s) or ",
+                "a Grid function, function name, or object")
+  }
+}
+
+
 check_logical <- function(x) {
   result <- as.logical(x)[[1]]
   if (!(isTRUE(result) || isFALSE(result))) {
@@ -195,7 +209,7 @@ check_match <- function(choices) {
 
 
 check_metrics <- function(x) {
-  result <- try(lapply(c(x), getMLObject, class = "MLMetric"), silent = TRUE)
+  result <- try(lapply(c(x), get_MLObject, class = "MLMetric"), silent = TRUE)
   if (is(result, "try-error")) {
     DomainError(x, "must be a metrics function, function name, ",
                    "or vector of these")
@@ -212,7 +226,7 @@ check_stat <- function(x) {
 
 
 check_stats <- function(x) {
-  result <- try(list2function(x)(1:5), silent = TRUE)
+  result <- try(list_to_function(x)(1:5), silent = TRUE)
   if (is(result, "try-error") || !is.numeric(result)) {
     DomainError(x, "must be a statistics function, function name, ",
                    "or vector of these")
@@ -230,7 +244,7 @@ MachineShop_global <- as.environment(list(
     control = list(
       value = "CVControl",
       check = function(x) {
-        result <- try(getMLObject(x, "MLControl"), silent = TRUE)
+        result <- try(get_MLObject(x, "MLControl"), silent = TRUE)
         if (is(result, "try-error")) {
           DomainError(x, "must be an MLControl object, function, ",
                          "or function name")
@@ -259,19 +273,7 @@ MachineShop_global <- as.environment(list(
 
     grid = list(
       value = 3,
-      check = function(x) {
-        if (is(x, "Grid")) {
-          x
-        } else if (identical(x, "Grid") || identical(x, Grid)) {
-          Grid()
-        } else {
-          result <- try(Grid(x), silent = TRUE)
-          if (is(result, "try-error")) {
-            DomainError(x, "must be a positive integer value(s) or ",
-                           "a Grid function, function name, or call")
-          } else result
-        }
-      }
+      check = check_grid
     ),
 
     max.print = list(

@@ -17,8 +17,7 @@
 #'   \code{\link[mda]{gen.ridge}} is appropriate.  Other possibilities are
 #'   \code{\link[mda]{mars}} for multivariate adaptive regression splines and
 #'   \code{\link[mda]{bruto}} for adaptive backfitting of additive splines.  Use
-#'   the \code{\link[MachineShop:dot-]{.}} operator to quote specified
-#'   functions.
+#'   the \code{\link[=quote]{.}} operator to quote specified functions.
 #' @param trace logical indicating whether iteration information is printed.
 #' @param ... additional arguments to \code{mda.start} and \code{method}.
 #'
@@ -52,9 +51,11 @@
 #' fit(Species ~ ., data = iris, model = MDAModel)
 #' }
 #'
-MDAModel <- function(subclasses = 3, sub.df = NULL, tot.df = NULL,
-                     dimension = sum(subclasses) - 1, eps = .Machine$double.eps,
-                     iter = 5, method = .(mda::polyreg), trace = FALSE, ...) {
+MDAModel <- function(
+  subclasses = 3, sub.df = NULL, tot.df = NULL, dimension = sum(subclasses) - 1,
+  eps = .Machine$double.eps, iter = 5, method = .(mda::polyreg), trace = FALSE,
+  ...
+) {
 
   MLModel(
     name = "MDAModel",

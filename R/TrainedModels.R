@@ -35,15 +35,16 @@
 #' summary(selected_model)
 #' }
 #'
-SelectedModel <- function(..., control = MachineShop::settings("control"),
-                          metrics = NULL,
-                          stat = MachineShop::settings("stat.train"),
-                          cutoff = MachineShop::settings("cutoff")) {
+SelectedModel <- function(
+  ..., control = MachineShop::settings("control"), metrics = NULL,
+  stat = MachineShop::settings("stat.train"),
+  cutoff = MachineShop::settings("cutoff")
+) {
 
   models <- as.list(unlist(list(...)))
   model_names <- character()
   for (i in seq(models)) {
-    models[[i]] <- getMLObject(models[[i]], class = "MLModel")
+    models[[i]] <- get_MLObject(models[[i]], class = "MLModel")
     name <- names(models)[i]
     model_names[i] <-
       if (!is.null(name) && nzchar(name)) name else models[[i]]@name
@@ -58,7 +59,7 @@ SelectedModel <- function(..., control = MachineShop::settings("control"),
                               init = settings("response_types")),
       predictor_encoding = NA_character_,
       params = list(models = ListOf(models),
-                    control = getMLObject(control, "MLControl"),
+                    control = get_MLObject(control, "MLControl"),
                     metrics = metrics, stat = stat, cutoff = cutoff)
   )
 
@@ -69,11 +70,11 @@ MLModelFunction(SelectedModel) <- NULL
 
 .fit.SelectedModel <- function(x, inputs, ...) {
   models <- x@params$models
-  trainbit <- resample_selection(models, identity, x@params, inputs,
-                                 class = "SelectedModel")
-  trainbit$grid <- tibble(Model = factor(seq(models)))
-  model <- models[[trainbit$selected]]
-  push(do.call(TrainBit, trainbit), fit(inputs, model = model))
+  train_step <- resample_selection(models, identity, x@params, inputs,
+                                   class = "SelectedModel")
+  train_step$grid <- tibble(Model = factor(seq(models)))
+  model <- models[[train_step$selected]]
+  push(do.call(TrainStep, train_step), fit(inputs, model = model))
 }
 
 
@@ -83,11 +84,13 @@ MLModelFunction(SelectedModel) <- NULL
 #'
 #' @param model \link[=models]{model} function, function name, or call defining
 #'   the model to be tuned.
-#' @param grid \link[=data.frame]{data frame} containing parameter values at
-#'   which to evaluate a single model supplied to \code{models}, such as that
-#'   returned by \code{\link{expand_params}}; the number of parameter-specific
-#'   values to generate automatically if the model has a pre-defined grid; or a
-#'   call to \code{\link{Grid}} or \code{\link{ParameterGrid}}.
+#' @param grid single integer or vector of integers whose positions or names
+#'   match the parameters in the model's pre-defined tuning grid if one exists
+#'   and which specify the number of values used to construct the grid;
+#'   \code{\link{Grid}} function, function call, or object;
+#'   \code{\link{ParameterGrid}} object; or \link[=data.frame]{data frame}
+#'   containing parameter values at which to evaluate the model, such as that
+#'   returned by \code{\link{expand_params}}.
 #' @param fixed list of fixed parameter values to combine with those in
 #'   \code{grid}.
 #' @param control \link[=controls]{control} function, function name, or call
@@ -101,6 +104,9 @@ MLModelFunction(SelectedModel) <- NULL
 #' @param cutoff argument passed to the \code{metrics} functions.
 #'
 #' @details
+#' The \code{\link{expand_modelgrid}} function enables manual extraction and
+#' viewing of grids created automatically when a \code{TunedModel} is fit.
+#'
 #' \describe{
 #'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
 #'     \code{Surv}}
@@ -135,12 +141,12 @@ MLModelFunction(SelectedModel) <- NULL
 #'                                             n.minobsinnode = c(5, 10))))
 #' }
 #'
-TunedModel <- function(model, grid = MachineShop::settings("grid"),
-                       fixed = list(),
-                       control = MachineShop::settings("control"),
-                       metrics = NULL,
-                       stat = MachineShop::settings("stat.train"),
-                       cutoff = MachineShop::settings("cutoff")) {
+TunedModel <- function(
+  model, grid = MachineShop::settings("grid"), fixed = list(),
+  control = MachineShop::settings("control"), metrics = NULL,
+  stat = MachineShop::settings("stat.train"),
+  cutoff = MachineShop::settings("cutoff")
+) {
 
   if (missing(model)) {
     model <- NULL
@@ -149,19 +155,15 @@ TunedModel <- function(model, grid = MachineShop::settings("grid"),
     stopifnot(is(model, "MLModelFunction"))
   }
 
-  grid <- if (is(grid, "numeric")) {
-    Grid(grid)
-  } else if (identical(grid, "Grid") || identical(grid, Grid)) {
-    Grid()
-  } else if (is(grid, "Grid")) {
-    grid
-  } else if (is(grid, "parameters")) {
-    ParameterGrid(grid)
-  } else if (is(grid, "data.frame")) {
-    as_tibble(grid)
-  } else {
-    stop("'grid' must be a grid length, Grid or ParameterGrid object, ",
-         "or data frame")
+  grid <- check_grid(grid)
+  if (is(grid, "DomainError")) {
+    value <- grid$value
+    if (is(value, "data.frame")) {
+      grid <- as_tibble(value)
+    } else {
+      stop("'grid' value ", grid$message,
+           "; a ParameterGrid object; or a data frame")
+    }
   }
 
   fixed <- as_tibble(fixed)
@@ -177,7 +179,7 @@ TunedModel <- function(model, grid = MachineShop::settings("grid"),
       },
       predictor_encoding = NA_character_,
       params = list(model = model, grid = grid, fixed = fixed,
-                    control = getMLObject(control, "MLControl"),
+                    control = get_MLObject(control, "MLControl"),
                     metrics = metrics, stat = stat, cutoff = cutoff)
   )
 
@@ -188,12 +190,11 @@ MLModelFunction(TunedModel) <- NULL
 
 .fit.TunedModel <- function(x, inputs, ...) {
   params <- x@params
-  grid <- as.grid(params$grid, fixed = params$fixed,
-                  inputs, model = getMLObject(params$model, "MLModel"))
+  grid <- expand_modelgrid(x, inputs)
   models <- expand_model(list(params$model, grid))
-  trainbit <- resample_selection(models, identity, params, inputs,
-                                 class = "TunedModel")
-  trainbit$grid <- tibble(Model = grid)
-  model <- models[[trainbit$selected]]
-  push(do.call(TrainBit, trainbit), fit(inputs, model = model))
+  train_step <- resample_selection(models, identity, params, inputs,
+                                   class = "TunedModel")
+  train_step$grid <- tibble(Model = grid)
+  model <- models[[train_step$selected]]
+  push(do.call(TrainStep, train_step), fit(inputs, model = model))
 }

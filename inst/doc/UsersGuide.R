@@ -1,6 +1,6 @@
 ## ----setup, include=FALSE-----------------------------------------------------
 source("setup.R")
-rdoc_url <- function(name) name
+rdoc_url <- function(names, ...) names
 
 ## ----overview_modelinfo, echo=FALSE-------------------------------------------
 library(MachineShop)
@@ -614,7 +614,7 @@ plot(lf, find = 0.75)
 #  #>  $ bag.fraction     : num 0.5
 #  #>
 #  #> TrainStep1 :
-#  #> Object of class "TrainBit"
+#  #> Object of class "TrainStep"
 #  #>
 #  #> Grid (selected = 3):
 #  #> # A tibble: 3 x 1
@@ -668,7 +668,7 @@ plot(lf, find = 0.75)
 #  #>  $ bag.fraction     : num 0.5
 #  #>
 #  #> TrainStep1 :
-#  #> Object of class "TrainBit"
+#  #> Object of class "TrainStep"
 #  #>
 #  #> Grid (selected = 1):
 #  #> # A tibble: 3 x 1
@@ -737,7 +737,7 @@ plot(lf, find = 0.75)
 #  #>  $ bag.fraction     : num 0.5
 #  #>
 #  #> TrainStep1 :
-#  #> Object of class "TrainBit"
+#  #> Object of class "TrainStep"
 #  #>
 #  #> Grid (selected = 1):
 #  #> # A tibble: 9 x 1
@@ -847,8 +847,8 @@ knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 #  res_stacked <- resample(surv_fo, data = surv_train, model = stackedmodel)
 #  summary(res_stacked)
 #  #>          Statistic
-#  #> Metric         Mean    Median        SD Min    Max NA
-#  #>   C-Index 0.7560737 0.7467949 0.1341055 0.5 0.9375  0
+#  #> Metric        Mean    Median        SD       Min    Max NA
+#  #>   C-Index 0.758157 0.7467949 0.1297774 0.5208333 0.9375  0
 #  
 #  ## Super learner
 #  supermodel <- SuperModel(GLMBoostModel, CForestModel, CoxModel,
@@ -856,8 +856,8 @@ knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 #  res_super <- resample(surv_fo, data = surv_train, model = supermodel)
 #  summary(res_super)
 #  #>          Statistic
-#  #> Metric         Mean    Median         SD  Min       Max NA
-#  #>   C-Index 0.7146186 0.7440476 0.09896758 0.52 0.8536585  0
+#  #> Metric         Mean Median        SD  Min       Max NA
+#  #>   C-Index 0.7262053   0.75 0.1021023 0.52 0.8780488  0
 
 ## ----using_strategies_methods, eval = FALSE-----------------------------------
 #  ## Preprocessing recipe with PCA steps
@@ -894,7 +894,7 @@ knitr::include_graphics("img/FigNestedCV.png")
 
 ## ----using_strategies_methods1, echo=FALSE------------------------------------
 cat('TrainStep1 :
-Object of class "TrainBit"
+Object of class "TrainStep"
 
 Grid (selected = 1):
 # A tibble: 3 x 1
@@ -914,7 +914,7 @@ C-Index value: 0.7806223')
 
 ## ----using_strategies_methods2, echo=FALSE------------------------------------
 cat('TrainStep2 :
-Object of class "TrainBit"
+Object of class "TrainStep"
 
 Grid (selected = 2):
 # A tibble: 3 x 1
@@ -934,7 +934,7 @@ C-Index value: 0.7533878')
 
 ## ----using_strategies_methods3, echo=FALSE------------------------------------
 cat('TrainStep3 :
-Object of class "TrainBit"
+Object of class "TrainStep"
 
 Grid (selected = 1):
 # A tibble: 9 x 1
@@ -1093,7 +1093,7 @@ f <- function(x) {
 }
 
 info <- metricinfo()
-df <- cbind("Function" = rdoc_url(names(info)),
+df <- cbind("Function" = rdoc_url(names(info), "metrics"),
             do.call(rbind, lapply(info, f)))
 names(df)[3:5] <- paste0(names(df)[3:5], footnote_marker_number(1:3))
 

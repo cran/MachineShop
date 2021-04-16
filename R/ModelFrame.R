@@ -41,22 +41,23 @@ ModelFrame <- function(x, ...) {
 
 
 ModelFrame.data.frame <- function(x, ...) {
-  casenames <- x[["(names)"]]
+  case_names <- x[["(names)"]]
   weights <- x[["(weights)"]]
   strata <- x[["(strata)"]]
   x[c("(names)", "(weights)", "(strata)")] <- NULL
   model_terms <- terms(map(as.name, names(x)[-1]), names(x)[1],
                        all_numeric = all(map_logi(is.numeric, x[-1])))
   ModelFrame(model_terms, x, na.rm = FALSE,
-             names = if (is.null(casenames)) rownames(x) else casenames,
+             names = if (is.null(case_names)) rownames(x) else case_names,
              weights = weights, strata = strata)
 }
 
 
 #' @rdname ModelFrame-methods
 #'
-ModelFrame.formula <- function(x, data, na.rm = TRUE, weights = NULL,
-                               strata = NULL, ...) {
+ModelFrame.formula <- function(
+  x, data, na.rm = TRUE, weights = NULL, strata = NULL, ...
+) {
   invalid_calls <- setdiff(inline_calls(predictors(x)), settings("RHS.formula"))
   if (length(invalid_calls)) {
     stop(
@@ -77,8 +78,9 @@ ModelFrame.formula <- function(x, data, na.rm = TRUE, weights = NULL,
 
 #' @rdname ModelFrame-methods
 #'
-ModelFrame.matrix <- function(x, y = NULL, na.rm = TRUE, offsets = NULL,
-                              weights = NULL, strata = NULL, ...) {
+ModelFrame.matrix <- function(
+  x, y = NULL, na.rm = TRUE, offsets = NULL, weights = NULL, strata = NULL, ...
+) {
   data <- as.data.frame(x)
   colnames(x) <- names(data)
   if (!is.null(offsets)) {
@@ -188,8 +190,9 @@ terms.formula <- function(x, ...) {
 }
 
 
-terms.list <- function(x, y = NULL, intercept = TRUE, all_numeric = FALSE,
-                       ...) {
+terms.list <- function(
+  x, y = NULL, intercept = TRUE, all_numeric = FALSE, ...
+) {
   if (is.character(y)) y <- as.name(y)
   has_y <- 1L - is.null(y)
 

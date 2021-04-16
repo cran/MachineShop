@@ -9,17 +9,20 @@ utils::globalVariables(c("i", "x", "y"))
 
 #' Quote Operator
 #'
-#' Shorthand notation for the \code{\link{quote}} function.  The quote operator
-#' simply returns its argument unevaluated and can be applied to any \R
-#' expression.  Useful for calling model constructors with quoted parameter
-#' values that are defined in terms of \code{nobs}, \code{nvars}, or \code{y}.
+#' Shorthand notation for the \code{\link[base:substitute]{quote}} function.
+#' The quote operator simply returns its argument unevaluated and can be applied
+#' to any \R expression.  Useful for calling model constructors with quoted
+#' parameter values that are defined in terms of \code{nobs}, \code{nvars}, or
+#' \code{y}.
+#'
+#' @name quote
 #'
 #' @param expr any syntactically valid \R expression.
 #'
 #' @return
 #' The quoted (unevaluated) expression.
 #'
-#' @seealso \code{\link{quote}}
+#' @seealso \code{\link[base:substitute]{quote}}
 #'
 #' @examples
 #' ## Stepwise variable selection with BIC
@@ -38,8 +41,9 @@ assert_equal_weights <- function(weights) {
 }
 
 
-attach_objects <- function(what, pos = 2L,
-                           name = deparse(substitute(what), backtick = FALSE)) {
+attach_objects <- function(
+  what, pos = 2L, name = deparse(substitute(what), backtick = FALSE)
+) {
   make_attach <- attach
   make_attach(what, pos, name, warn.conflicts = FALSE)
   do.call(on.exit, list(substitute(detach(name))), envir = parent.frame())
@@ -78,17 +82,6 @@ fget <- function(x) {
 }
 
 
-findS3Method <- function(generic, object) {
-  generic_name <- as.character(substitute(generic))[1]
-  classes <- substring(methods(generic_name), nchar(generic_name) + 2)
-  class <- match_class(object, classes)
-  if (is.na(class)) {
-    stop(generic_name, " method not found for '", class(object)[1], "' class")
-  }
-  paste0(generic_name, ".", class)
-}
-
-
 get0 <- function(x, mode = "any") {
   if (is.character(x)) {
     x_expr <- str2lang(x)
@@ -106,12 +99,23 @@ get0 <- function(x, mode = "any") {
 }
 
 
-getMLObject <- function(x, class = c("MLControl", "MLMetric", "MLModel")) {
+get_MLObject <- function(x, class = c("MLControl", "MLMetric", "MLModel")) {
   class <- match.arg(class)
   x <- get0(x)
   if (is.function(x) && class %in% c("MLControl", "MLModel")) x <- x()
   if (!is(x, class)) stop("object not of class ", class)
   x
+}
+
+
+get_S3method <- function(generic, object) {
+  generic_name <- as.character(substitute(generic))[1]
+  classes <- substring(methods(generic_name), nchar(generic_name) + 2)
+  class <- match_class(object, classes)
+  if (is.na(class)) {
+    stop(generic_name, " method not found for '", class(object)[1], "' class")
+  }
+  fget(paste0(generic_name, ".", class))
 }
 
 
@@ -132,20 +136,6 @@ identical_elements <- function(x, transform = identity, ...) {
 }
 
 
-is.trained <- function(x, ...) {
-  UseMethod("is.trained")
-}
-
-
-is.trained.MLModel <- function(x, ...) {
-  length(x@traininfo) > 0
-}
-
-
-is.trained.step <- function(x, ...) {
-  recipes::is_trained(x)
-}
-
 is_one_element <- function(x, class) {
   length(x) == 1 && is(x[[1]], class)
 }
@@ -157,6 +147,21 @@ is_response <- function(y, class2) {
   } else {
     is(y, class2)
   }
+}
+
+
+is_trained <- function(x, ...) {
+  UseMethod("is_trained")
+}
+
+
+is_trained.MLModel <- function(x, ...) {
+  length(x@train_steps) > 0
+}
+
+
+is_trained.step <- function(x, ...) {
+  recipes::is_trained(x)
 }
 
 
@@ -179,7 +184,7 @@ label_items <- function(label, x, n = Inf, add_names = FALSE) {
 }
 
 
-list2function <- function(x) {
+list_to_function <- function(x) {
   error_msg <- paste0("'", deparse(substitute(x)), "' must be a function, ",
                       "function name, or vector of these")
   if (is(x, "MLMetric")) x <- list(x)
@@ -288,7 +293,7 @@ new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
   width <- max(10, round(0.25 * getOption("width")))
   if (!is.null(input)) input <- substr(class(input)[1], 1, width)
   if (!is.null(model)) {
-    model <- substr(getMLObject(model, "MLModel")@name, 1, width)
+    model <- substr(get_MLObject(model, "MLModel")@name, 1, width)
   }
   format <- paste(input, "|", model)
   if (index > 0) format <- paste0(index, ": ", format)
@@ -314,7 +319,7 @@ new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
 
 nvars <- function(x, model) {
   stopifnot(is(x, "ModelFrame"))
-  model <- getMLObject(model, "MLModel")
+  model <- get_MLObject(model, "MLModel")
   switch(model@predictor_encoding,
     "model.matrix" =
       ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE)),
@@ -342,28 +347,54 @@ push <- function(x, object, ...) {
 }
 
 
-push.TrainBit <- function(x, object, ...) {
+push.TrainStep <- function(x, object, ...) {
   stopifnot(is(object, "MLModelFit"))
-  obj_bits <- (if (isS4(object)) object@mlmodel else object$mlmodel)@traininfo
-  traininfo <- ListOf(c(x, obj_bits))
-  names(traininfo) <- paste0("TrainStep", seq(traininfo))
+  mlmodel <- if (isS4(object)) object@mlmodel else object$mlmodel
+  train_steps <- ListOf(c(x, mlmodel@train_steps))
+  names(train_steps) <- paste0("TrainStep", seq(train_steps))
   if (isS4(object)) {
-    object@mlmodel@traininfo <- traininfo
+    object@mlmodel@train_steps <- train_steps
   } else {
-    object$mlmodel@traininfo <- traininfo
+    object$mlmodel@train_steps <- train_steps
   }
   object
 }
 
 
 require_namespaces <- function(packages) {
-  available <- map_logi(requireNamespace, packages, quietly = TRUE)
-  if (!all(available)) {
-    missing <- packages[!available]
-    stop(label_items("call requires the installation of package", missing),
-         call. = FALSE)
+  paren_pos <- regexpr("\\(([^)]*)\\)", packages)
+  paren_len <- attr(paren_pos, "match.length")
+
+  end_pos <- ifelse(paren_pos > 0, paren_pos - 1, nchar(packages))
+  package_names <- trimws(substr(packages, 1, end_pos))
+
+  package_errors <- function(x, msg, fix) {
+    if (any(x)) {
+      items <- packages[x]
+      item_names <- package_names[x]
+      stop(label_items(msg, items), ".\n",
+           "To address this issue, try running ", fix, "(", deparse(item_names),
+           ").", call. = FALSE)
+    }
   }
-  invisible(available)
+
+  installed <- map_logi(requireNamespace, package_names, quietly = TRUE)
+  package_errors(!installed, "call requires prior installation of package",
+                 "install.packages")
+
+  end_pos <- paren_pos + paren_len - 2
+  compat_versions <- strsplit(substr(packages, paren_pos + 1, end_pos), " ")
+
+  compatible <- map_logi(function(package_name, compat_version) {
+    if (length(compat_version) == 2) {
+      version <- packageVersion(package_name)
+      eval(call(compat_version[1], version, compat_version[2]))
+    } else TRUE
+  }, package_names, compat_versions)
+  package_errors(!compatible, "call requires updated package version",
+                 "update.packages")
+
+  invisible(installed & compatible)
 }
 
 
@@ -373,13 +404,13 @@ sample_params <- function(x, size = NULL, replace = FALSE) {
   n <- length(x)
   if (n == 0) return(tibble())
 
-  varnames <- paste0("Var", seq(x))
+  var_names <- paste0("Var", seq(x))
   x_names <- names(x)
   if (!is.null(x_names)) {
     is_nzchar <- nzchar(x_names)
-    varnames[is_nzchar] <- x_names[is_nzchar]
+    var_names[is_nzchar] <- x_names[is_nzchar]
   }
-  names(x) <- varnames
+  names(x) <- var_names
 
   max_size <- prod(lengths(x))
   if (is.null(size)) size <- max_size

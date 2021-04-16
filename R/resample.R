@@ -57,8 +57,9 @@ resample <- function(x, ...) {
 #' values of the response variable; i.e. categorical levels for \code{factor},
 #' continuous for \code{numeric}, and event status \code{Surv}.
 #'
-resample.formula <- function(x, data, model,
-                             control = MachineShop::settings("control"), ...) {
+resample.formula <- function(
+  x, data, model, control = MachineShop::settings("control"), ...
+) {
   mf <- ModelFrame(x, data, na.rm = FALSE, strata = strata(response(x, data)))
   resample(mf, model, control, ...)
 }
@@ -66,8 +67,9 @@ resample.formula <- function(x, data, model,
 
 #' @rdname resample-methods
 #'
-resample.matrix <- function(x, y, model,
-                            control = MachineShop::settings("control"), ...) {
+resample.matrix <- function(
+  x, y, model, control = MachineShop::settings("control"), ...
+) {
   mf <- ModelFrame(x, y, na.rm = FALSE, strata = strata(y))
   resample(mf, model, control, ...)
 }
@@ -81,11 +83,11 @@ resample.matrix <- function(x, y, model,
 #' argument in its constructor.  Resampling of this class is unstratified by
 #' default.
 #'
-resample.ModelFrame <- function(x, model,
-                                control = MachineShop::settings("control"),
-                                ...) {
+resample.ModelFrame <- function(
+  x, model, control = MachineShop::settings("control"), ...
+) {
   if (missing(model)) model <- NullModel()
-  .resample(getMLObject(control, "MLControl"), x, model, ...)
+  .resample(get_MLObject(control, "MLControl"), x, model, ...)
 }
 
 
@@ -96,10 +98,11 @@ resample.ModelFrame <- function(x, model,
 #' with the \code{\link{role_case}} function.  Resampling will be unstratified
 #' otherwise.
 #'
-resample.recipe <- function(x, model,
-                            control = MachineShop::settings("control"), ...) {
+resample.recipe <- function(
+  x, model, control = MachineShop::settings("control"), ...
+) {
   if (missing(model)) model <- NullModel()
-  .resample(getMLObject(control, "MLControl"), ModelRecipe(x), model, ...)
+  .resample(get_MLObject(control, "MLControl"), ModelRecipe(x), model, ...)
 }
 
 
@@ -124,8 +127,8 @@ Resamples <- function(object, ...) {
 
 Resamples.data.frame <- function(object, ..., strata = NULL, .check = TRUE) {
   if (.check) {
-    varnames <- c("Model", "Resample", "Case", "Observed", "Predicted")
-    missing <- missing_names(varnames, object)
+    var_names <- c("Model", "Resample", "Case", "Observed", "Predicted")
+    missing <- missing_names(var_names, object)
     if (length(missing)) {
       stop(label_items("missing resample variable", missing))
     }
@@ -146,8 +149,9 @@ Resamples.list <- function(object, ...) {
 }
 
 
-.resample.MLBootstrapControl <- function(object, x, model, progress_index = 0,
-                                         ...) {
+.resample.MLBootstrapControl <- function(
+  object, x, model, progress_index = 0, ...
+) {
   presets <- settings()
   strata <- strata_var(x)
   set.seed(object@seed)
@@ -197,8 +201,9 @@ Resamples.list <- function(object, ...) {
 }
 
 
-.resample.MLCrossValidationControl <- function(object, x, model,
-                                               progress_index = 0, ...) {
+.resample.MLCrossValidationControl <- function(
+  object, x, model, progress_index = 0, ...
+) {
   presets <- settings()
   strata <- strata_var(x)
   set.seed(object@seed)
@@ -363,21 +368,21 @@ training.ModelRecipe <- function(x, object, ...) {
 
 
 subsample <- function(train, test, model, control, id = 1) {
-  model <- getMLObject(model, "MLModel")
+  model <- get_MLObject(model, "MLModel")
 
-  trainfit <- fit(train, model)
-  if (is(trainfit, "StackedModel")) control@times <- trainfit$times
+  model_fit <- fit(train, model)
+  if (is(model_fit, "StackedModel")) control@times <- model_fit$times
 
   f <- function(test) {
     if (is(train, "ModelRecipe")) {
-      test <- recipe(as.MLModel(trainfit)@x, as.data.frame(test))
+      test <- recipe(as.MLModel(model_fit)@x, as.data.frame(test))
     }
     df <- data.frame(Model = factor(model@name),
                      Resample = as.integer(id),
                      Case = as.data.frame(test, original = FALSE)[["(names)"]],
                      stringsAsFactors = FALSE)
     df$Observed <- response(test)
-    df$Predicted <- predict(trainfit, as.data.frame(test), type = "prob",
+    df$Predicted <- predict(model_fit, as.data.frame(test), type = "prob",
                             times = control@times, method = control@method,
                             dist = control@dist)
     df
@@ -414,7 +419,7 @@ resample_selection <- function(x, transform, params, ..., class) {
     }
 
     if (is.null(metrics)) {
-      method <- fget(findS3Method(performance, res$Observed))
+      method <- get_S3method(performance, res$Observed)
       metrics <- c(eval(formals(method)$metrics))
       is_defined <- map_logi(function(metric) {
         types <- metricinfo(metric)[[1]]$response_types
@@ -440,7 +445,7 @@ resample_selection <- function(x, transform, params, ..., class) {
   }
 
   perf <- do.call(c, perf_list)
-  metric <- getMLObject(c(metrics)[[1]], "MLMetric")
+  metric <- get_MLObject(c(metrics)[[1]], "MLMetric")
   selected <- ifelse(metric@maximize, which.max, which.min)(perf_stats)
 
   list(performance = perf,

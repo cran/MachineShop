@@ -47,47 +47,47 @@ performance <- function(x, ...) {
 
 #' @rdname performance
 #'
-performance.BinomialVariate <-
-  function(x, y, metrics = MachineShop::settings("metrics.numeric"),
-           na.rm = TRUE, ...) {
+performance.BinomialVariate <- function(
+  x, y, metrics = MachineShop::settings("metrics.numeric"), na.rm = TRUE, ...
+) {
   .performance(x, y, metrics, na.rm)
 }
 
 
 #' @rdname performance
 #'
-performance.factor <- function(x, y, metrics =
-                                 MachineShop::settings("metrics.factor"),
-                               cutoff = MachineShop::settings("cutoff"),
-                               na.rm = TRUE, ...) {
+performance.factor <- function(
+  x, y, metrics = MachineShop::settings("metrics.factor"),
+  cutoff = MachineShop::settings("cutoff"), na.rm = TRUE, ...
+) {
   .performance(x, y, metrics, na.rm, cutoff = cutoff)
 }
 
 
 #' @rdname performance
 #'
-performance.matrix <- function(x, y, metrics =
-                                 MachineShop::settings("metrics.matrix"),
-                               na.rm = TRUE, ...) {
+performance.matrix <- function(
+  x, y, metrics = MachineShop::settings("metrics.matrix"), na.rm = TRUE, ...
+) {
   .performance(x, y, metrics, na.rm)
 }
 
 
 #' @rdname performance
 #'
-performance.numeric <- function(x, y, metrics =
-                                  MachineShop::settings("metrics.numeric"),
-                                na.rm = TRUE, ...) {
+performance.numeric <- function(
+  x, y, metrics = MachineShop::settings("metrics.numeric"), na.rm = TRUE, ...
+) {
   .performance(x, y, metrics, na.rm)
 }
 
 
 #' @rdname performance
 #'
-performance.Surv <- function(x, y, metrics =
-                               MachineShop::settings("metrics.Surv"),
-                             cutoff = MachineShop::settings("cutoff"),
-                             na.rm = TRUE, ...) {
+performance.Surv <- function(
+  x, y, metrics = MachineShop::settings("metrics.Surv"),
+  cutoff = MachineShop::settings("cutoff"), na.rm = TRUE, ...
+) {
   .performance(x, y, metrics, na.rm, cutoff = cutoff)
 }
 
@@ -98,7 +98,7 @@ performance.Surv <- function(x, y, metrics =
     x <- complete$x
     y <- complete$y
   }
-  if (length(x)) list2function(metrics)(x, y, ...) else NA_real_
+  if (length(x)) list_to_function(metrics)(x, y, ...) else NA_real_
 }
 
 
@@ -111,9 +111,10 @@ performance.ConfusionList <- function(x, ...) {
 
 #' @rdname performance
 #'
-performance.ConfusionMatrix <-
-  function(x, metrics = MachineShop::settings("metrics.ConfusionMatrix"), ...) {
-  list2function(metrics)(x)
+performance.ConfusionMatrix <- function(
+  x, metrics = MachineShop::settings("metrics.ConfusionMatrix"), ...
+) {
+  list_to_function(metrics)(x)
 }
 
 

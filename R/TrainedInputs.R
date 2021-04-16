@@ -58,11 +58,11 @@ SelectedInput <- function(...) {
 
 #' @rdname SelectedInput
 #'
-SelectedInput.formula <- function(..., data,
-                                  control = MachineShop::settings("control"),
-                                  metrics = NULL,
-                                  stat = MachineShop::settings("stat.train"),
-                                  cutoff = MachineShop::settings("cutoff")) {
+SelectedInput.formula <- function(
+  ..., data, control = MachineShop::settings("control"), metrics = NULL,
+  stat = MachineShop::settings("stat.train"),
+  cutoff = MachineShop::settings("cutoff")
+) {
   inputs <- list(...)
   if (!all(map_logi(is, inputs, "formula"))) stop("inputs must be formulas")
   mf_list <- map(function(x) {
@@ -75,11 +75,11 @@ SelectedInput.formula <- function(..., data,
 
 #' @rdname SelectedInput
 #'
-SelectedInput.matrix <- function(..., y,
-                                 control = MachineShop::settings("control"),
-                                 metrics = NULL,
-                                 stat = MachineShop::settings("stat.train"),
-                                 cutoff = MachineShop::settings("cutoff")) {
+SelectedInput.matrix <- function(
+  ..., y, control = MachineShop::settings("control"), metrics = NULL,
+  stat = MachineShop::settings("stat.train"),
+  cutoff = MachineShop::settings("cutoff")
+) {
   inputs <- list(...)
   if (!all(map_logi(is, inputs, "matrix"))) stop("inputs must be matrices")
   mf_list <- map(ModelFrame,
@@ -91,11 +91,11 @@ SelectedInput.matrix <- function(..., y,
 
 #' @rdname SelectedInput
 #'
-SelectedInput.ModelFrame <- function(...,
-                                     control = MachineShop::settings("control"),
-                                     metrics = NULL,
-                                     stat = MachineShop::settings("stat.train"),
-                                     cutoff = MachineShop::settings("cutoff")) {
+SelectedInput.ModelFrame <- function(
+  ..., control = MachineShop::settings("control"), metrics = NULL,
+  stat = MachineShop::settings("stat.train"),
+  cutoff = MachineShop::settings("cutoff")
+) {
 
   inputs <- list(...)
 
@@ -116,7 +116,7 @@ SelectedInput.ModelFrame <- function(...,
 
   new("SelectedModelFrame", ModelFrame(data),
       inputs = ListOf(map(terms, inputs)),
-      params = list(control = getMLObject(control, "MLControl"),
+      params = list(control = get_MLObject(control, "MLControl"),
                     metrics = metrics, stat = stat, cutoff = cutoff))
 
 }
@@ -124,11 +124,11 @@ SelectedInput.ModelFrame <- function(...,
 
 #' @rdname SelectedInput
 #'
-SelectedInput.recipe <- function(...,
-                                 control = MachineShop::settings("control"),
-                                 metrics = NULL,
-                                 stat = MachineShop::settings("stat.train"),
-                                 cutoff = MachineShop::settings("cutoff")) {
+SelectedInput.recipe <- function(
+  ..., control = MachineShop::settings("control"), metrics = NULL,
+  stat = MachineShop::settings("stat.train"),
+  cutoff = MachineShop::settings("cutoff")
+) {
 
   inputs <- list(...)
 
@@ -156,7 +156,7 @@ SelectedInput.recipe <- function(...,
   fo <- reformulate(".", paste(outcome_vars, collapse = "+"))
   new("SelectedModelRecipe", new("ModelRecipe", recipe(fo, data = data)),
       inputs = ListOf(inputs),
-      params = list(control = getMLObject(control, "MLControl"),
+      params = list(control = get_MLObject(control, "MLControl"),
                     metrics = metrics, stat = stat, cutoff = cutoff))
 
 }
@@ -190,12 +190,12 @@ SelectedInput.list <- function(x, ...) {
     },
     stop("unsupported input object of class ", input_class)
   )
-  trainbit <- resample_selection(inputs, set_input, x@params, ...,
-                                 class = "SelectedInput")
-  trainbit$grid <- tibble(Input = factor(seq(inputs)))
-  names(trainbit$grid) <- grid_name
-  input <- set_input(inputs[[trainbit$selected]])
-  push(do.call(TrainBit, trainbit), fit(input, ...))
+  train_step <- resample_selection(inputs, set_input, x@params, ...,
+                                   class = "SelectedInput")
+  train_step$grid <- tibble(Input = factor(seq(inputs)))
+  names(train_step$grid) <- grid_name
+  input <- set_input(inputs[[train_step$selected]])
+  push(do.call(TrainStep, train_step), fit(input, ...))
 }
 
 
@@ -246,15 +246,15 @@ TunedInput <- function(x, ...) {
 
 #' @rdname TunedInput
 #'
-TunedInput.recipe <- function(x, grid = expand_steps(),
-                              control = MachineShop::settings("control"),
-                              metrics = NULL,
-                              stat = MachineShop::settings("stat.train"),
-                              cutoff = MachineShop::settings("cutoff"), ...) {
+TunedInput.recipe <- function(
+  x, grid = expand_steps(), control = MachineShop::settings("control"),
+  metrics = NULL, stat = MachineShop::settings("stat.train"),
+  cutoff = MachineShop::settings("cutoff"), ...
+) {
 
   object <- new("TunedModelRecipe", ModelRecipe(x),
                 grid = grid,
-                params = list(control = getMLObject(control, "MLControl"),
+                params = list(control = get_MLObject(control, "MLControl"),
                               metrics = metrics, stat = stat, cutoff = cutoff))
 
   grid_names <- names(object@grid)
@@ -279,11 +279,11 @@ TunedInput.recipe <- function(x, grid = expand_steps(),
   if (all(dim(grid) != 0)) {
     grid_split <- split(grid, 1:nrow(grid))
     set_input <- function(x) do.call(update, c(list(recipe), x))
-    trainbit <- resample_selection(grid_split, set_input, x@params, model,
-                                   class = "TunedInput")
-    trainbit$grid <- tibble(ModelRecipe = asS3(grid))
-    input <- set_input(grid_split[[trainbit$selected]])
-    push(do.call(TrainBit, trainbit), fit(input, model = model))
+    train_step <- resample_selection(grid_split, set_input, x@params, model,
+                                     class = "TunedInput")
+    train_step$grid <- tibble(ModelRecipe = asS3(grid))
+    input <- set_input(grid_split[[train_step$selected]])
+    push(do.call(TrainStep, train_step), fit(input, model = model))
   } else {
     fit(recipe, model = model)
   }
