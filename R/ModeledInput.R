@@ -43,7 +43,7 @@ ModeledInput <- function(x, ...) {
 #' @rdname ModeledInput-methods
 #'
 ModeledInput.formula <- function(x, data, model, ...) {
-  mf <- ModelFrame(x, data, na.rm = FALSE, strata = strata(response(x, data)))
+  mf <- ModelFrame(x, data, na.rm = FALSE, strata = response(x, data))
   ModeledInput(mf, model = model)
 }
 
@@ -51,7 +51,7 @@ ModeledInput.formula <- function(x, data, model, ...) {
 #' @rdname ModeledInput-methods
 #'
 ModeledInput.matrix <- function(x, y, model, ...) {
-  mf <- ModelFrame(x, y, na.rm = FALSE, strata = strata(y))
+  mf <- ModelFrame(x, y, na.rm = FALSE, strata = y)
   ModeledInput(mf, model = model)
 }
 
@@ -59,7 +59,7 @@ ModeledInput.matrix <- function(x, y, model, ...) {
 #' @rdname ModeledInput-methods
 #'
 ModeledInput.ModelFrame <- function(x, model, ...) {
-  model <- get_MLObject(model, "MLModel")
+  model <- get_MLModel(model)
   switch_class(x,
     "SelectedModelFrame" = {
       inputs <- map(ModeledInput, x@inputs, model = list(model))
@@ -90,7 +90,7 @@ ModeledInput.ModeledTerms <- function(x, model, ...) {
 #' @rdname ModeledInput-methods
 #'
 ModeledInput.recipe <- function(x, model, ...) {
-  model <- get_MLObject(model, "MLModel")
+  model <- get_MLModel(model)
   switch_class(x,
     "SelectedModelRecipe" = {
       inputs <- map(ModeledInput, x@inputs, model = list(model))

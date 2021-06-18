@@ -17,7 +17,8 @@
 #'   with a fixed coefficient of 1 to linear predictors in compatible regression
 #'   models.
 #' @param weights vector of case weights [default: equal].
-#' @param strata vector of resampling stratification levels [default: none].
+#' @param strata vector of values to use in conducting stratified
+#'   \link{resample} estimation of model performance [default: none].
 #' @param ... arguments passed to other methods.
 #'
 #' @return \code{ModelFrame} class object that inherits from \code{data.frame}.
@@ -60,10 +61,10 @@ ModelFrame.formula <- function(
 ) {
   invalid_calls <- setdiff(inline_calls(predictors(x)), settings("RHS.formula"))
   if (length(invalid_calls)) {
-    stop(
+    throw(Error(
       label_items("unsupported predictor variable function", invalid_calls),
       "; use a recipe or include transformed predictors in the data frame"
-    )
+    ))
   }
 
   data <- as.data.frame(data)
@@ -92,7 +93,7 @@ ModelFrame.matrix <- function(
       }
       data.frame(offsets)
     } else if (!is.data.frame(offsets)) {
-      stop("'offsets' must be a numeric vector, matrix, or data frame")
+      throw(Error("'offsets' must be a numeric vector, matrix, or data frame"))
     }
     data <- data.frame(data, offsets)
     offsets <- tail(names(data), length(offsets))
@@ -128,25 +129,16 @@ ModelFrame.recipe <- function(x, ...) {
   x <- prep(x)
   data <- juice(x)
 
-  info <- summary(x)
-
-  var_name <- info$variable[info$role == "case_weight"]
-  weights <- if (length(var_name) == 0) NULL else
-    if (length(var_name) == 1) data[[var_name]] else
-      stop("multiple case weights specified")
-
-  var_name <- info$variable[info$role == "case_stratum"]
-  strata <- if (length(var_name) == 0) NULL else
-    if (length(var_name) == 1) data[[var_name]] else
-      stop("multiple strata variables specified")
-
   model_terms <- terms(x)
   data[[deparse(response(model_terms))]] <- response(model_terms, data)
   data <- data[all.vars(model_formula(model_terms))]
 
+  weights_name <- case_weights_name(x)
+  strata_name <- case_strata_name(x)
   ModelFrame(model_terms, data, na.rm = FALSE,
              names = if (is.null(data[["(names)"]])) rownames(data),
-             weights = weights, strata = strata)
+             weights = if (length(weights_name)) data[[weights_name]],
+             strata = if (length(strata_name)) data[[strata_name]])
 }
 
 
@@ -205,9 +197,11 @@ terms.list <- function(
   x_char[noname_inds] <- map_chr(deparse, x[noname_inds])
 
   valid_calls <- map_logi(function(var) {
-    is.call(var) && var[[1]] == .("offset")
+    is.call(var) && var[[1]] == "offset"
   }, x[noname_inds])
-  if (!all(valid_calls)) stop("non-offset calls in variable specifications")
+  if (!all(valid_calls)) {
+    throw(Error("non-offset calls in variable specifications"))
+  }
   offsets <- has_y + noname_inds
 
   fo <- str2lang(
@@ -326,9 +320,10 @@ terms.recipe_info <- function(x, ...) {
 
   have_outcome <- as.logical(lengths(list(binom, surv, matrix, other)))
   if (sum(have_outcome) > 1 || length(other) > 1) {
-    stop("specified outcome is not a single variable, binomila variable with ",
-         "roles 'binom_x' and 'binom_size', survival variables with ",
-         "roles 'surv_time' and 'surv_event', or multiple numeric variables")
+    throw(Error("specified outcome is not a single variable, binomial ",
+                "variable with roles 'binom_x' and 'binom_size', survival ",
+                "variables with roles 'surv_time' and 'surv_event', or ",
+                "multiple numeric variables"))
   }
 
   outcome <- if (length(other)) {
@@ -338,11 +333,12 @@ terms.recipe_info <- function(x, ...) {
     if (!is.na(surv["event"])) args <- c(args, as.name(surv["event"]))
     as.call(c(.(Surv), args))
   } else if (length(surv)) {
-    stop("survival outcome role 'surv_event' specified without 'surv_time'")
+    msg <- "survival outcome role 'surv_event' specified without 'surv_time'"
+    throw(Error(msg))
   } else if (all(!is.na(binom[c("count", "size")]))) {
     call("BinomialVariate", as.name(binom["count"]), as.name(binom["size"]))
   } else if (length(binom)) {
-    stop("binomial outcome must have 'binom_x' and 'binom_size' roles")
+    throw(Error("binomial outcome must have 'binom_x' and 'binom_size' roles"))
   } else if (length(matrix)) {
     as.call(c(.(cbind), map(as.name, matrix)))
   }
@@ -393,7 +389,7 @@ model.matrix.ModelFrame <- function(object, intercept = NULL, ...) {
 
 
 model.matrix.SelectedInput <- function(object, ...) {
-  stop("cannot create a design matrix from a ", class(object))
+  throw(Error("cannot create a design matrix from a ", class(object)))
 }
 
 

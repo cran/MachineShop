@@ -34,13 +34,6 @@ utils::globalVariables(c("i", "x", "y"))
 }
 
 
-assert_equal_weights <- function(weights) {
-  if (any(diff(weights) != 0)) {
-    warn("model weights are not supported and will be ignored")
-  }
-}
-
-
 attach_objects <- function(
   what, pos = 2L, name = deparse(substitute(what), backtick = FALSE)
 ) {
@@ -54,7 +47,7 @@ combine_dataframes <- function(x, y = NULL) {
   if (is.null(y)) return(x)
   common_cols <- intersect(names(x), names(y))
   if (!identical(x[common_cols], y[common_cols])) {
-    stop("common columns in data frames differ")
+    throw(Error("common columns in data frames differ"))
   }
   diff_cols <- setdiff(names(y), common_cols)
   x[diff_cols] <- y[diff_cols]
@@ -76,14 +69,14 @@ fget <- function(x) {
     } else {
       "invalid function"
     }
-    stop(msg)
+    throw(Error(msg))
   }
   f
 }
 
 
 get0 <- function(x, mode = "any") {
-  if (is.character(x)) {
+  if (is.character(x) && length(x) == 1) {
     x_expr <- str2lang(x)
     x_name <- x
     if (is.symbol(x_expr)) {
@@ -103,8 +96,23 @@ get_MLObject <- function(x, class = c("MLControl", "MLMetric", "MLModel")) {
   class <- match.arg(class)
   x <- get0(x)
   if (is.function(x) && class %in% c("MLControl", "MLModel")) x <- x()
-  if (!is(x, class)) stop("object not of class ", class)
+  if (!is(x, class)) throw(TypeError(x, class, "'x'"))
   x
+}
+
+
+get_MLControl <- function(x) {
+  get_MLObject(x, class = "MLControl")
+}
+
+
+get_MLMetric <- function(x) {
+  get_MLObject(x, class = "MLMetric")
+}
+
+
+get_MLModel <- function(x) {
+  get_MLObject(x, class = "MLModel")
 }
 
 
@@ -113,7 +121,8 @@ get_S3method <- function(generic, object) {
   classes <- substring(methods(generic_name), nchar(generic_name) + 2)
   class <- match_class(object, classes)
   if (is.na(class)) {
-    stop(generic_name, " method not found for '", class(object)[1], "' class")
+    throw(Error(generic_name, " method not found for '", class(object)[1],
+                "' class"))
   }
   fget(paste0(generic_name, ".", class))
 }
@@ -136,8 +145,13 @@ identical_elements <- function(x, transform = identity, ...) {
 }
 
 
-is_one_element <- function(x, class) {
-  length(x) == 1 && is(x[[1]], class)
+is_counting <- function(x) {
+  isTRUE(attr(x, "type") == "counting")
+}
+
+
+is_one_element <- function(x, class = "ANY") {
+  is.vector(x) && length(x) == 1 && is(x[[1]], class)
 }
 
 
@@ -185,13 +199,13 @@ label_items <- function(label, x, n = Inf, add_names = FALSE) {
 
 
 list_to_function <- function(x) {
-  error_msg <- paste0("'", deparse(substitute(x)), "' must be a function, ",
+  err_msg <- paste0("'", deparse(substitute(x)), "' must be a function, ",
                       "function name, or vector of these")
   if (is(x, "MLMetric")) x <- list(x)
   if (is(x, "vector")) {
     x <- as.list(x)
     metric_names <- character()
-    for (i in seq(x)) {
+    for (i in seq_along(x)) {
       if (is(x[[i]], "character")) {
         metric_name <- x[[i]]
         x[[i]] <- fget(metric_name)
@@ -200,18 +214,18 @@ list_to_function <- function(x) {
       } else if (is(x[[i]], "function")) {
         metric_name <- "metric"
       } else {
-        stop(error_msg)
+        throw(Error(err_msg))
       }
       name <- names(x)[i]
       metric_names[i] <-
         if (is.null(name) || !nzchar(name)) metric_name else name
     }
     names(x) <- make.unique(metric_names)
-    eval(bquote(function(...) unlist(map(function(x) x(...), .(x)))))
+    function(...) unlist(map(function(fun) fun(...), x))
   } else if (is(x, "function")) {
     x
   } else {
-    stop(error_msg)
+    throw(Error(err_msg))
   }
 }
 
@@ -219,7 +233,7 @@ list_to_function <- function(x) {
 make_list_names <- function(x, prefix) {
   old_names <- names(x)
   names(x) <- if (length(x)) {
-    if (length(x) > 1) paste0(prefix, ".", seq(x)) else prefix
+    if (length(x) > 1) paste0(prefix, ".", seq_along(x)) else prefix
   }
   if (!is.null(old_names)) {
     keep <- nzchar(old_names)
@@ -277,9 +291,15 @@ match_indices <- function(indices, choices) {
   indices <- na.omit(names(lookup)[lookup[indices]])
   if (length(indices) == 0) {
     indices <- names(lookup)[1]
-    warn("specified indices not found; using ", indices, " instead")
+    throw(LocalWarning("specified indices not found; using ", indices,
+                       " instead"))
   }
   indices
+}
+
+
+max.progress_index <- function(x, ...) {
+  attr(x, "max")
 }
 
 
@@ -293,7 +313,7 @@ new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
   width <- max(10, round(0.25 * getOption("width")))
   if (!is.null(input)) input <- substr(class(input)[1], 1, width)
   if (!is.null(model)) {
-    model <- substr(get_MLObject(model, "MLModel")@name, 1, width)
+    model <- substr(get_MLModel(model)@name, 1, width)
   }
   format <- paste(input, "|", model)
   if (index > 0) format <- paste0(index, ": ", format)
@@ -306,28 +326,30 @@ new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
     clear = TRUE,
     show_after = 0
   )
-  msg <- names(index)
-  if (length(msg) && index == 1) {
-    index_max <- attr(index, "max")
-    if (length(index_max)) msg <- paste0(msg, "(", index_max, ")")
-    pb$message(msg)
+  if (is(index, "progress_index") && index == 1) {
+    pb$message(paste0(names(index), "(", max(index), ")"))
   }
   pb$tick(0)
   pb
 }
 
 
+new_progress_index <- function(names, max) {
+  structure(0, names = names, max = max, class = c("progress_index", "numeric"))
+}
+
+
 nvars <- function(x, model) {
   stopifnot(is(x, "ModelFrame"))
-  model <- get_MLObject(model, "MLModel")
-  switch(model@predictor_encoding,
-    "model.matrix" =
-      ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE)),
-    "terms" = {
+  model <- get_MLModel(model)
+  res <- switch(model@predictor_encoding,
+    "model.frame" = {
       x_terms <- attributes(terms(x))
       nrow(x_terms$factors) - x_terms$response - length(x_terms$offset)
-    }
+    },
+    "model.matrix" = ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE))
   )
+  if (is.null(res)) NA else res
 }
 
 
@@ -336,7 +358,7 @@ params <- function(envir, ...) {
   is_missing <- map_logi(function(x) is.symbol(x) && !nzchar(x), args)
   if (any(is_missing)) {
     missing <- names(args)[is_missing]
-    stop(label_items("missing values for required argument", missing))
+    throw(Error(label_items("missing values for required argument", missing)))
   }
   c(args[!map_logi(is.null, args)], list(...))
 }
@@ -351,7 +373,7 @@ push.TrainStep <- function(x, object, ...) {
   stopifnot(is(object, "MLModelFit"))
   mlmodel <- if (isS4(object)) object@mlmodel else object$mlmodel
   train_steps <- ListOf(c(x, mlmodel@train_steps))
-  names(train_steps) <- paste0("TrainStep", seq(train_steps))
+  names(train_steps) <- paste0("TrainStep", seq_along(train_steps))
   if (isS4(object)) {
     object@mlmodel@train_steps <- train_steps
   } else {
@@ -372,14 +394,14 @@ require_namespaces <- function(packages) {
     if (any(x)) {
       items <- packages[x]
       item_names <- package_names[x]
-      stop(label_items(msg, items), ".\n",
-           "To address this issue, try running ", fix, "(", deparse(item_names),
-           ").", call. = FALSE)
+      throw(LocalError("Call ", label_items(msg, items), ".\n",
+                       "To address this issue, try running ", fix, "(",
+                       deparse(item_names), ")."))
     }
   }
 
   installed <- map_logi(requireNamespace, package_names, quietly = TRUE)
-  package_errors(!installed, "call requires prior installation of package",
+  package_errors(!installed, "requires prior installation of package",
                  "install.packages")
 
   end_pos <- paren_pos + paren_len - 2
@@ -391,7 +413,7 @@ require_namespaces <- function(packages) {
       eval(call(compat_version[1], version, compat_version[2]))
     } else TRUE
   }, package_names, compat_versions)
-  package_errors(!compatible, "call requires updated package version",
+  package_errors(!compatible, "requires updated package version",
                  "update.packages")
 
   invisible(installed & compatible)
@@ -404,7 +426,7 @@ sample_params <- function(x, size = NULL, replace = FALSE) {
   n <- length(x)
   if (n == 0) return(tibble())
 
-  var_names <- paste0("Var", seq(x))
+  var_names <- paste0("Var", seq_along(x))
   x_names <- names(x)
   if (!is.null(x_names)) {
     is_nzchar <- nzchar(x_names)
@@ -437,6 +459,17 @@ sample_params <- function(x, size = NULL, replace = FALSE) {
   }
 
   grid
+}
+
+
+sample_replace <- function(x, inds) {
+  if (!is.logical(inds)) {
+    old_inds <- inds
+    inds <- structure(logical(length(x)), names = names(x))
+    inds[old_inds] <- TRUE
+  }
+  x[inds] <- sample(x[!inds], sum(inds), replace = TRUE)
+  x
 }
 
 
@@ -487,7 +520,7 @@ seq_nvars <- function(x, model, length) {
 set_model_names <- function(x) {
   name <- "Model"
   level_names <- list()
-  for (i in seq(x)) {
+  for (i in seq_along(x)) {
     if (is.null(x[[i]][[name]])) x[[i]][[name]] <- rep(name, nrow(x[[i]]))
     x[[i]][[name]] <- as.factor(x[[i]][[name]])
     arg_name <- names(x)[i]
@@ -499,7 +532,7 @@ set_model_names <- function(x) {
   }
   level_names <- level_names %>% unlist %>% make.unique %>% relist(level_names)
 
-  for (i in seq(x)) levels(x[[i]][[name]]) <- level_names[[i]]
+  for (i in seq_along(x)) levels(x[[i]][[name]]) <- level_names[[i]]
 
   x
 }
@@ -513,53 +546,19 @@ stepAIC_args <- function(formula, direction, scope) {
 }
 
 
-strata <- function(object, ...) {
-  UseMethod("strata")
-}
-
-
-strata.default <- function(object, ...) {
-  object
-}
-
-
-strata.BinomialVariate <- function(object, ...) {
-  as.numeric(object)
-}
-
-
-strata.matrix <- function(object, ...) {
-  object[, 1]
-}
-
-
-strata.Surv <- function(object, ...) {
-  object[, "status"]
-}
-
-
-strata_var <- function(object, ...) {
-  UseMethod("strata_var")
-}
-
-
-strata_var.ModelFrame <- function(object, ...) {
-  if ("(strata)" %in% names(object)) "(strata)" else NULL
-}
-
-
-strata_var.recipe <- function(object, ...) {
-  info <- summary(object)
-  var_name <- info$variable[info$role == "case_stratum"]
-  if (length(var_name) == 0) NULL else
-    if (length(var_name) == 1) var_name else
-      stop("multiple strata variables specified")
-}
-
-
 switch_class <- function(EXPR, ...) {
   blocks <- eval(substitute(alist(...)))
   eval.parent(blocks[[match_class(EXPR, names(blocks))]])
+}
+
+
+toString.character <- function(x, conjunction = NULL, ...) {
+  if (!is.null(conjunction)) {
+    n <- length(x)
+    if (n > 1) x[n] <- paste(conjunction, x[n])
+    if (n == 2) x <- paste(x[1], x[2])
+  }
+  NextMethod()
 }
 
 
@@ -575,25 +574,4 @@ unnest <- function(data) {
     df[name] <- x
   }
   df
-}
-
-
-#################### Exception Handling ####################
-
-
-DomainError <- function(value, ...) {
-  errorCondition(message = paste0(...),
-                 call = sys.call(-1),
-                 value = value,
-                 class = "DomainError")
-}
-
-
-depwarn <- function(old, new, expired = FALSE) {
-  ifelse(expired, stop, warning)(old, ";\n", new, call. = FALSE)
-}
-
-
-warn <- function(...) {
-  warning(..., call. = FALSE)
 }

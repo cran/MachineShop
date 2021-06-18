@@ -37,7 +37,7 @@ lift <- function(x, y = NULL, na.rm = TRUE, ...) {
 LiftCurve <- function(...) {
   object <- as(PerformanceCurve(...), "LiftCurve")
   if (!all(map_logi(identical, object@metrics, c(tpr, rpp)))) {
-    stop("incorrect LiftCurve metrics")
+    throw(Error("incorrect LiftCurve metrics"))
   }
   object
 }
@@ -135,7 +135,8 @@ performance_curve.Resamples <- function(
 .get_curve_metrics <- function(metrics) {
   metrics <- map(fget, metrics)
   if (length(metrics) != 2 || !all(map_logi(is, metrics, "MLMetric"))) {
-    stop("'metrics' must be a list of two performance metrics")
+    metrics <- Error("Value must be a list of two performance metrics.")
+    throw(check_assignment(metrics))
   }
   metrics
 }
@@ -146,11 +147,12 @@ PerformanceCurve <- function(object, ..., metrics, .check = TRUE) {
     if (is.null(object$Model)) object$Model <- factor("Model")
     missing <- missing_names(c("Cutoff", "x", "y"), object)
     if (length(missing)) {
-      stop(label_items("missing performance curve variable", missing))
+      throw(Error(label_items("missing performance curve variable", missing)))
     }
 
     if (!all(map_logi(is, metrics[1:2], "MLMetric"))) {
-      stop("missing performance metrics in PerformanceCurve constructor")
+      msg <- "missing performance metrics in PerformanceCurve constructor"
+      throw(Error(msg))
     }
     metrics <- c(y = metrics[[1]], x = metrics[[2]])
 
@@ -187,8 +189,8 @@ setGeneric(".curve_default", function(observed, predicted, ...)
 
 setMethod(".curve_default", c("ANY", "ANY"),
   function(observed, predicted, ...) {
-    stop("performance_curve requires a predicted binary factor or survival",
-         " probabilities")
+    throw(Error("performance_curve requires a predicted binary factor or ",
+                "survival probabilities"))
   }
 )
 
@@ -197,7 +199,7 @@ setMethod(".curve_default", c("factor", "numeric"),
   function(observed, predicted, metrics, ...) {
     cutoffs <- c(-Inf, unique(predicted))
     x <- y <- numeric(length(cutoffs))
-    for (i in 1:length(cutoffs)) {
+    for (i in seq_along(cutoffs)) {
       conf <- confusion(observed, predicted, cutoff = cutoffs[i])
       x[i] <- metrics[[2]](conf)
       y[i] <- metrics[[1]](conf)
@@ -221,7 +223,7 @@ setMethod(".curve_default", c("Surv", "SurvProbs"),
         cutoffs <- c(-Inf, unique(pred))
         x <- y <- numeric(length(cutoffs))
 
-        for (j in 1:length(cutoffs)) {
+        for (j in seq_along(cutoffs)) {
           pos <- pred <= cutoffs[j]
           pos_pred <- surv_subset(observed, pos, time)
           neg_pred <- surv_subset(observed, !pos, time)
@@ -237,7 +239,7 @@ setMethod(".curve_default", c("Surv", "SurvProbs"),
 
         PerformanceCurve(data.frame(Cutoff = cutoffs, x = x, y = y),
                          metrics = metrics)
-      }, 1:length(times)),
+      }, seq_along(times)),
       class = "listof",
       names = paste0("time", seq_along(times))
     )

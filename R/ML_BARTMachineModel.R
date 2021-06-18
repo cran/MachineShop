@@ -71,14 +71,14 @@ BARTMachineModel <- function(
       values = c(
         function(n, ...) seq(0.9, 0.99, length = n),
         function(n, ...) seq(1, 3, length = n),
-        function(n, ...) 1:min(n, 10) + 1,
+        function(n, ...) seq(2, length = min(n, 10)),
         function(n, data, ...) {
-          if (is.numeric(response(data))) 1:min(n, 10) + 1
+          if (is.numeric(response(data))) seq(2, length = min(n, 10))
         }
       )
     ),
     fit = function(formula, data, weights, ...) {
-      assert_equal_weights(weights)
+      throw(check_equal_weights(weights))
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)
       if (is_response(y, "binary")) y <- factor(y, levels = rev(levels(y)))

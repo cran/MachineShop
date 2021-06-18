@@ -10,7 +10,7 @@ RangerModel(
   importance = c("impurity", "impurity_corrected", "permutation"),
   min.node.size = NULL,
   replace = TRUE,
-  sample.fraction = ifelse(replace, 1, 0.632),
+  sample.fraction = if (replace) 1 else 0.632,
   splitrule = NULL,
   num.random.splits = 1,
   alpha = 0.5,
@@ -73,7 +73,7 @@ Fast implementation of random forests or recursive partitioning.
     \code{mtry}, \code{min.node.size}*, \code{splitrule}*
   }
 }
-* included only in randomly sampled grid points
+* excluded from grids by default
 
 Default values for the \code{NULL} arguments and further model details can be
 found in the source link below.

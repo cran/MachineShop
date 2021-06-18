@@ -80,13 +80,13 @@ BlackBoostModel <- function(
     packages = c("mboost", "partykit"),
     response_types = c("binary", "BinomialVariate", "NegBinomialVariate",
                        "numeric", "PoissonVariate", "Surv"),
-    predictor_encoding = "terms",
+    predictor_encoding = "model.frame",
     params = params,
     gridinfo = new_gridinfo(
       param = c("mstop", "maxdepth"),
       values = c(
         function(n, ...) round(seq_range(0, 50, c(1, 1000), n + 1)),
-        function(n, ...) 1:min(n, 10)
+        function(n, ...) seq_len(min(n, 10))
       )
     ),
     fit = function(formula, data, weights, family = NULL, ...) {
@@ -104,12 +104,12 @@ BlackBoostModel <- function(
                          na.action = na.pass, weights = weights,
                          family = family, ...)
     },
-    predict = function(object, newdata, times, ...) {
+    predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       if (object$family@name == "Cox Partial Likelihood") {
         lp <- drop(predict(object, type = "link"))
         new_lp <- drop(predict(object, newdata = newdata, type = "link"))
-        predict(object$response, lp, times, new_lp, ...)
+        predict(object$response, lp, new_lp, ...)
       } else {
         predict(object, newdata = newdata, type = "response")
       }

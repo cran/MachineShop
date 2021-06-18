@@ -41,18 +41,18 @@ SuperModel <- function(
   all_vars = FALSE
 ) {
 
-  base_learners <- ListOf(map(get_MLObject, unlist(list(...)), "MLModel"))
+  base_learners <- ListOf(map(get_MLModel, unlist(list(...))))
   names(base_learners) <- paste0(if (length(base_learners)) "Learner",
-                                 seq(base_learners))
+                                 seq_along(base_learners))
 
-  control <- get_MLObject(control, "MLControl")
+  control <- get_MLControl(control)
 
   new("SuperModel",
     name = "SuperModel",
     label = "Super Learner",
     response_types =
       Reduce(intersect, map(slot, base_learners, "response_types"),
-             init = get_MLObject(model, "MLModel")@response_types),
+             init = get_MLModel(model)@response_types),
     predictor_encoding = NA_character_,
     params = as.list(environment()),
     varimp = function(object, ...) NULL
@@ -73,8 +73,8 @@ MLModelFunction(SuperModel) <- NULL
   control <- params$control
 
   predictors <- list()
-  i <- structure(0, max = length(base_learners), names = x@name)
-  while (i < attr(i, "max")) {
+  i <- new_progress_index(names = x@name, max = length(base_learners))
+  while (i < max(i)) {
     i <- i + 1
     res <- resample(inputs, model = base_learners[[i]], control = control,
                     progress_index = i)
@@ -111,7 +111,7 @@ MLModelFunction(SuperModel) <- NULL
 
 
 super_df <- function(y, predictors, case_names = NULL, data = NULL) {
-  names(predictors) <- make.names(seq(predictors))
+  names(predictors) <- make.names(seq_along(predictors))
   df <- data.frame(y = y, unnest(as.data.frame(predictors)))
 
   if (!is.null(data)) {

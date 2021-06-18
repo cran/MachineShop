@@ -8,7 +8,8 @@
 #' @param recipe existing \link[recipes]{recipe} object.
 #' @param x,size number of counts and trials for the specification of a
 #'   \code{\link{BinomialVariate}} outcome.
-#' @param stratum variable for stratified \link[=resample]{resampling} of cases.
+#' @param stratum variable to use in conducting stratified \link{resample}
+#'   estimation of model performance.
 #' @param weight numeric variable of case weights for model
 #'   \link[=fit]{fitting}.
 #' @param replace logical indicating whether to replace existing roles.
@@ -27,9 +28,12 @@
 #' library(survival)
 #' library(recipes)
 #'
-#' rec <- recipe(time + status ~ ., data = veteran) %>%
-#'   role_surv(time = time, event = status) %>%
-#'   role_case(stratum = status)
+#' df <- within(veteran, {
+#'   y <- Surv(time, status)
+#'   remove(time, status)
+#' })
+#' rec <- recipe(y ~ ., data = df) %>%
+#'   role_case(stratum = y)
 #'
 #' (res <- resample(rec, model = CoxModel))
 #' summary(res)
@@ -46,7 +50,7 @@ role_binom <- function(recipe, x, size) {
     recipes::add_role(recipe, x, new_role = "binom_x") %>%
       recipes::add_role(size, new_role = "binom_size")
   } else {
-    stop("binomial 'x' and 'size' variables must be specified")
+    throw(Error("binomial 'x' and 'size' variables must be specified"))
   }
 }
 
@@ -84,6 +88,6 @@ role_surv <- function(recipe, time, event) {
     }
     recipe
   } else {
-    stop("a survival 'time' variable must be specified")
+    throw(Error("a survival 'time' variable must be specified"))
   }
 }

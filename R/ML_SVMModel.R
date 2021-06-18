@@ -74,7 +74,7 @@ SVMModel <- function(
     predictor_encoding = "model.matrix",
     params = params(environment()),
     fit = function(formula, data, weights, ...) {
-      assert_equal_weights(weights)
+      throw(check_equal_weights(weights))
       eval_fit(data,
                formula = kernlab::ksvm(formula, data = as.data.frame(data),
                                        prob.model = TRUE, ...),
@@ -82,9 +82,10 @@ SVMModel <- function(
     },
     predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
-      kernlab::predict(object, newdata = newdata,
-                       type = ifelse(is.factor(response(model)),
-                                     "probabilities", "response"))
+      kernlab::predict(
+        object, newdata = newdata,
+        type = if (is.factor(response(model))) "probabilities" else "response"
+      )
     }
   )
 
@@ -193,8 +194,8 @@ MLModelFunction(SVMTanhModel) <- NULL
     param = c("C", "degree", "order", "scale", "sigma"),
     values = c(
       function(n, ...) 2^seq_range(-4, 2, c(-4, 10), n),
-      function(n, ...) 1:min(n, 3),
-      function(n, ...) 1:min(n, 3),
+      function(n, ...) seq_len(min(n, 3)),
+      function(n, ...) seq_len(min(n, 3)),
       function(n, ...) 10^seq_range(-4, 2, c(-4, log10(2)), n),
       function(n, data, ...) {
         sigmas <- kernlab::sigest(model.matrix(data, intercept = FALSE),

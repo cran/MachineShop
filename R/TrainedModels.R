@@ -37,14 +37,14 @@
 #'
 SelectedModel <- function(
   ..., control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.train"),
+  stat = MachineShop::settings("stat.Trained"),
   cutoff = MachineShop::settings("cutoff")
 ) {
 
   models <- as.list(unlist(list(...)))
   model_names <- character()
-  for (i in seq(models)) {
-    models[[i]] <- get_MLObject(models[[i]], class = "MLModel")
+  for (i in seq_along(models)) {
+    models[[i]] <- get_MLModel(models[[i]])
     name <- names(models)[i]
     model_names[i] <-
       if (!is.null(name) && nzchar(name)) name else models[[i]]@name
@@ -59,8 +59,8 @@ SelectedModel <- function(
                               init = settings("response_types")),
       predictor_encoding = NA_character_,
       params = list(models = ListOf(models),
-                    control = get_MLObject(control, "MLControl"),
-                    metrics = metrics, stat = stat, cutoff = cutoff)
+                    control = get_MLControl(control), metrics = metrics,
+                    stat = stat, cutoff = cutoff)
   )
 
 }
@@ -72,7 +72,7 @@ MLModelFunction(SelectedModel) <- NULL
   models <- x@params$models
   train_step <- resample_selection(models, identity, x@params, inputs,
                                    class = "SelectedModel")
-  train_step$grid <- tibble(Model = factor(seq(models)))
+  train_step$grid <- tibble(Model = factor(seq_along(models)))
   model <- models[[train_step$selected]]
   push(do.call(TrainStep, train_step), fit(inputs, model = model))
 }
@@ -91,8 +91,8 @@ MLModelFunction(SelectedModel) <- NULL
 #'   \code{\link{ParameterGrid}} object; or \link[=data.frame]{data frame}
 #'   containing parameter values at which to evaluate the model, such as that
 #'   returned by \code{\link{expand_params}}.
-#' @param fixed list of fixed parameter values to combine with those in
-#'   \code{grid}.
+#' @param fixed list or one-row data frame with columns of fixed parameter
+#'   values to combine with those in \code{grid}.
 #' @param control \link[=controls]{control} function, function name, or call
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
@@ -144,7 +144,7 @@ MLModelFunction(SelectedModel) <- NULL
 TunedModel <- function(
   model, grid = MachineShop::settings("grid"), fixed = list(),
   control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.train"),
+  stat = MachineShop::settings("stat.Trained"),
   cutoff = MachineShop::settings("cutoff")
 ) {
 
@@ -161,13 +161,16 @@ TunedModel <- function(
     if (is(value, "data.frame")) {
       grid <- as_tibble(value)
     } else {
-      stop("'grid' value ", grid$message,
-           "; a ParameterGrid object; or a data frame")
+      grid$message <- paste0(grid$message,
+                             "; a ParameterGrid object; or a data frame")
+      throw(check_assignment(grid))
     }
   }
 
   fixed <- as_tibble(fixed)
-  if (nrow(fixed) > 1) stop("only single values allowed for fixed parameters")
+  if (nrow(fixed) > 1) {
+    throw(Error("only single values allowed for fixed parameters"))
+  }
 
   new("TunedModel",
       name = "TunedModel",
@@ -179,8 +182,8 @@ TunedModel <- function(
       },
       predictor_encoding = NA_character_,
       params = list(model = model, grid = grid, fixed = fixed,
-                    control = get_MLObject(control, "MLControl"),
-                    metrics = metrics, stat = stat, cutoff = cutoff)
+                    control = get_MLControl(control), metrics = metrics,
+                    stat = stat, cutoff = cutoff)
   )
 
 }

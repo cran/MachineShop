@@ -4,17 +4,18 @@
 \alias{Grid}
 \title{Tuning Grid Control}
 \usage{
-Grid(size = 3, random = FALSE, length = NULL)
+Grid(size = 3, random = FALSE)
 }
 \arguments{
 \item{size}{single integer or vector of integers whose positions or names
 match the parameters in a model's tuning grid and which specify the number
-of values to use in constructing the grid.}
+of values used to construct the grid.}
 
-\item{random}{number of unique grid points to sample at random, \code{Inf}
-for all random points, or \code{FALSE} for all fixed points.}
-
-\item{length}{deprecated argument; use \code{size} instead.}
+\item{random}{number of unique points to sample at random from the grid
+defined by \code{size}.  If \code{size} is a single unnamed integer, then
+\code{random = Inf} will include all values of all grid parameters in the
+constructed grid, whereas \code{random = FALSE} will include all values of
+default grid parameters.}
 }
 \value{
 \code{Grid} class object.

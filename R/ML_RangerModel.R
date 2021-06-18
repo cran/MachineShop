@@ -32,7 +32,7 @@
 #'     \code{mtry}, \code{min.node.size}*, \code{splitrule}*
 #'   }
 #' }
-#' * included only in randomly sampled grid points
+#' * excluded from grids by default
 #'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -53,7 +53,7 @@ RangerModel <- function(
   num.trees = 500, mtry = NULL,
   importance = c("impurity", "impurity_corrected", "permutation"),
   min.node.size = NULL, replace = TRUE,
-  sample.fraction = ifelse(replace, 1, 0.632), splitrule = NULL,
+  sample.fraction = if (replace) 1 else 0.632, splitrule = NULL,
   num.random.splits = 1, alpha = 0.5, minprop = 0.1,
   split.select.weights = NULL, always.split.variables = NULL,
   respect.unordered.factors = NULL, scale.permutation.importance = FALSE,
@@ -67,7 +67,7 @@ RangerModel <- function(
     label = "Fast Random Forests",
     packages = "ranger",
     response_types = c("factor", "numeric", "Surv"),
-    predictor_encoding = "terms",
+    predictor_encoding = "model.frame",
     params = params(environment()),
     gridinfo = new_gridinfo(
       param = c("mtry", "min.node.size", "splitrule"),
@@ -75,26 +75,26 @@ RangerModel <- function(
         function(n, data, ...) seq_nvars(data, RangerModel, n),
         function(n, data, ...) round(seq(1, min(20, nrow(data)), length = n)),
         function(n, data, ...) {
-          methods <- if (is.factor(response(data))) {
-            c("gini", "extratrees")
-          } else {
-            c("variance", "extratrees", "maxstat")
-          }
-          head(sample(methods), n)
+          methods <- switch_class(response(data),
+            "factor" = c("gini", "extratrees"),
+            "numeric" = c("variance", "extratrees", "maxstat"),
+            "Surv" = c("logrank", "extratrees", "C", "maxstat")
+          )
+          head(methods, n)
         }
       ),
-      regular = c(TRUE, FALSE, FALSE)
+      default = c(TRUE, FALSE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
       ranger::ranger(formula, data = as.data.frame(data),
                      case.weights = weights,
                      probability = is(response(data), "factor"), ...)
     },
-    predict = function(object, newdata, times, ...) {
+    predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       pred <- predict(object, data = newdata)
       if (!is.null(object$survival)) {
-        predict(Surv(pred$unique.death.times), pred$survival, times, ...)
+        predict(Surv(pred$unique.death.times), pred$survival, ...)
       } else {
         pred$predictions
       }

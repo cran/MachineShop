@@ -14,15 +14,14 @@
 #' @param cutoff numeric (0, 1) threshold above which binary factor
 #'   probabilities are classified as events and below which survival
 #'   probabilities are classified.
-#' @param dist character string specifying distributional approximations to
+#' @param distr character string specifying distributional approximations to
 #'   estimated survival curves.  Possible values are \code{"empirical"},
 #'   \code{"exponential"}, \code{"rayleigh"}, or \code{"weibull"}; with defaults
 #'   of \code{"empirical"} for predicted survival events/probabilities and
 #'   \code{"weibull"} for predicted survival means.
 #' @param method character string specifying the empirical method of estimating
 #'   baseline survival curves for Cox proportional hazards-based models.
-#'   Choices are \code{"breslow"}, \code{"efron"} (default), or
-#'   \code{"fleming-harrington"}.
+#'   Choices are \code{"breslow"} or \code{"efron"} (default).
 #' @param ... arguments passed to model-specific prediction functions.
 #'
 #' @seealso \code{\link{confusion}}, \code{\link{performance}},
@@ -41,13 +40,13 @@
 #'
 predict.MLModelFit <- function(
   object, newdata = NULL, times = NULL, type = c("response", "prob"),
-  cutoff = MachineShop::settings("cutoff"), dist = NULL, method = NULL, ...
+  cutoff = MachineShop::settings("cutoff"), distr = NULL, method = NULL, ...
 ) {
   model <- as.MLModel(object)
   require_namespaces(model@packages)
   obs <- response(object)
-  pred <- .predict(model, object, newdata, times = times, dist = dist,
-                   method = method, ...)
+  pred <- .predict(model, object, newdata, weights = case_weights(model),
+                   times = times, distr = distr, method = method, ...)
   pred <- convert_prob(obs, pred, times = times)
   if (match.arg(type) == "response") {
     convert_response(obs, pred, cutoff = cutoff)

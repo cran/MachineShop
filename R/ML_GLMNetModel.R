@@ -50,7 +50,7 @@ GLMNetModel <- function(
   family = NULL, alpha = 1, lambda = 0, standardize = TRUE, intercept = NULL,
   penalty.factor = .(rep(1, nvars)), standardize.response = FALSE,
   thresh = 1e-7, maxit = 100000,
-  type.gaussian = .(ifelse(nvars < 500, "covariance", "naive")),
+  type.gaussian = .(if (nvars < 500) "covariance" else "naive"),
   type.logistic = c("Newton", "modified.Newton"),
   type.multinomial = c("ungrouped", "grouped")
 ) {
@@ -81,8 +81,8 @@ GLMNetModel <- function(
           if (length(lambda) >= 2) {
             exp(seq(log(min(lambda)), log(max(lambda)), length = n))
           } else {
-            warn("GLMNetModel grid values for lambda could not be generated",
-                 " automatically")
+            throw(LocalWarning("GLMNetModel grid values for lambda could not ",
+                               "be generated automatically"))
             numeric()
           }
         },
@@ -106,7 +106,7 @@ GLMNetModel <- function(
       glmnet::glmnet(x, y, offset = offset, weights = weights,
                      family = family, nlambda = nlambda, ...)
     },
-    predict = function(object, newdata, model, times, ...) {
+    predict = function(object, newdata, model, ...) {
       newx <- model.matrix(newdata, intercept = FALSE)
       newoffset <- model.offset(newdata)
       y <- response(model)
@@ -118,7 +118,7 @@ GLMNetModel <- function(
                       type = "link")[, 1]
         new_lp <- predict(object, newx = newx, newoffset = newoffset,
                           type = "link")[, 1]
-        predict(y, lp, times, new_lp, ...)
+        predict(y, lp, new_lp, ...)
       } else {
         predict(object, newx = newx, newoffset = newoffset,
                 s = object$lambda[1], type = "response")

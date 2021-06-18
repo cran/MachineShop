@@ -23,7 +23,7 @@
 #'     \code{n.minobsinnode}*
 #'   }
 #' }
-#' * included only in randomly sampled grid points
+#' * excluded from grids by default
 #'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -49,17 +49,17 @@ GBMModel <- function(
     label = "Generalized Boosted Regression",
     packages = "gbm",
     response_types = c("factor", "numeric", "PoissonVariate", "Surv"),
-    predictor_encoding = "terms",
+    predictor_encoding = "model.frame",
     params = params(environment()),
     gridinfo = new_gridinfo(
       param = c("n.trees", "interaction.depth", "shrinkage", "n.minobsinnode"),
       values = c(
         function(n, ...) round(seq_range(0, 50, c(1, 1000), n + 1)),
-        function(n, ...) 1:min(n, 10),
+        function(n, ...) seq_len(min(n, 10)),
         function(n, ...) seq(0.001, 0.1, length = n),
         function(n, data, ...) round(seq(1, min(20, nrow(data)), length = n))
       ),
-      regular = c(TRUE, TRUE, FALSE, FALSE)
+      default = c(TRUE, TRUE, FALSE, FALSE)
     ),
     fit = function(formula, data, weights, distribution = NULL, ...) {
       if (is.null(distribution)) {
@@ -84,7 +84,7 @@ GBMModel <- function(
                                      w = weights, distribution = distribution,
                                      verbose = FALSE, ...))
     },
-    predict = function(object, newdata, model, times, ...) {
+    predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       n <- object$n.trees
       if (object$distribution$name == "coxph") {
@@ -92,7 +92,7 @@ GBMModel <- function(
         data <- as.data.frame(predictor_frame(model))
         lp <- predict(object, newdata = data, n.trees = n, type = "link")
         new_lp <- predict(object, newdata = newdata, n.trees = n, type = "link")
-        predict(y, lp, times, new_lp, ...)
+        predict(y, lp, new_lp, ...)
       } else {
         predict(object, newdata = newdata, n.trees = n, type = "response")
       }

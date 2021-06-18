@@ -14,13 +14,14 @@
 #' @param cutoff numeric (0, 1) threshold above which binary factor
 #'   probabilities are classified as events and below which survival
 #'   probabilities are classified.
-#' @param dist character string specifying a distribution with which to estimate
-#'   the survival mean in the total sum of square component of \code{r2}.
-#'   Possible values are \code{"empirical"} for the Kaplan-Meier estimator,
-#'   \code{"exponential"}, \code{"extreme"}, \code{"gaussian"},
+#' @param distr character string specifying a distribution with which to
+#'   estimate the observed survival mean in the total sum of square component of
+#'   \code{r2}.  Possible values are \code{"empirical"} for the Kaplan-Meier
+#'   estimator, \code{"exponential"}, \code{"extreme"}, \code{"gaussian"},
 #'   \code{"loggaussian"}, \code{"logistic"}, \code{"loglogistic"},
-#'   \code{"lognormal"}, \code{"rayleigh"}, \code{"t"}, or \code{"weibull"}
-#'   (default).
+#'   \code{"lognormal"}, \code{"rayleigh"}, \code{"t"}, or \code{"weibull"}.
+#'   Defaults to the distribution that was used in predicting mean survival
+#'   times.
 #' @param f function to calculate a desired sensitivity-specificity tradeoff.
 #' @param metrics list of two performance metrics for the calculation [default:
 #'   ROC metrics].
@@ -210,22 +211,22 @@ metric_method_name <- function(f) {
 }
 
 
-metric_matrix <- function(observed, predicted, FUN, ...) {
+metric_matrix <- function(observed, predicted, fun, ...) {
   mean(map_num(function(i) {
-    FUN(observed[, i], predicted[, i], ...)
-  }, 1:ncol(observed)))
+    fun(observed[, i], predicted[, i], ...)
+  }, seq_len(ncol(observed))))
 }
 
 
-metric_SurvMatrix <- function(observed, predicted, FUN, cutoff = NULL, ...) {
+metric_SurvMatrix <- function(observed, predicted, fun, cutoff = NULL, ...) {
   conf_list <- confusion(observed, predicted, cutoff = cutoff)
-  x <- map_num(function(conf) FUN(conf, ...), conf_list)
+  x <- map_num(function(conf) fun(conf, ...), conf_list)
   times <- predicted@times
-  if (length(times) > 1) c("mean" = surv_metric_mean(x, times), x) else x[[1]]
+  if (length(times) > 1) c("mean" = survmetric_mean(x, times), x) else x[[1]]
 }
 
 
-metric_SurvMean <- function(observed, predicted, FUN, ...) {
+metric_SurvMean <- function(observed, predicted, fun, ...) {
   events <- observed[, "status"] == 1
-  FUN(observed[events, "time"], predicted[events], ...)
+  fun(time(observed[events]), predicted[events], ...)
 }

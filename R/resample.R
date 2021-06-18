@@ -53,14 +53,20 @@ resample <- function(x, ...) {
 #' @rdname resample-methods
 #'
 #' @details
-#' Stratified resampling is performed for the \code{formula} method according to
-#' values of the response variable; i.e. categorical levels for \code{factor},
-#' continuous for \code{numeric}, and event status \code{Surv}.
+#' Stratified resampling is performed automatically for the \code{formula} and
+#' \code{matrix} methods according to the type of response variable.  In
+#' general, strata are constructed from numeric proportions for
+#' \code{\link{BinomialVariate}}; original values for \code{character},
+#' \code{factor}, \code{logical}, and \code{ordered}; first columns of values
+#' for \code{matrix}; original values for \code{numeric}; and numeric times
+#' within event statuses for \code{Surv}.  Numeric values are stratified into
+#' quantile bins and categorical values into factor levels defined by
+#' \code{\link{MLControl}}.
 #'
 resample.formula <- function(
   x, data, model, control = MachineShop::settings("control"), ...
 ) {
-  mf <- ModelFrame(x, data, na.rm = FALSE, strata = strata(response(x, data)))
+  mf <- ModelFrame(x, data, na.rm = FALSE, strata = response(x, data))
   resample(mf, model, control, ...)
 }
 
@@ -70,7 +76,7 @@ resample.formula <- function(
 resample.matrix <- function(
   x, y, model, control = MachineShop::settings("control"), ...
 ) {
-  mf <- ModelFrame(x, y, na.rm = FALSE, strata = strata(y))
+  mf <- ModelFrame(x, y, na.rm = FALSE, strata = y)
   resample(mf, model, control, ...)
 }
 
@@ -78,23 +84,23 @@ resample.matrix <- function(
 #' @rdname resample-methods
 #'
 #' @details
-#' User-specified stratification variables may be specified for
+#' Resampling stratification variables may be specified manually for
 #' \code{ModelFrames} upon creation with the \code{\link[=ModelFrame]{strata}}
-#' argument in its constructor.  Resampling of this class is unstratified by
+#' argument in their constructor.  Resampling of this class is unstratified by
 #' default.
 #'
 resample.ModelFrame <- function(
   x, model, control = MachineShop::settings("control"), ...
 ) {
   if (missing(model)) model <- NullModel()
-  .resample(get_MLObject(control, "MLControl"), x, model, ...)
+  .resample(get_MLControl(control), x, model, ...)
 }
 
 
 #' @rdname resample-methods
 #'
 #' @details
-#' Variables in \code{recipe} specifications may be designated as case strata
+#' Stratification variables may be designated in \code{recipe} specifications
 #' with the \code{\link{role_case}} function.  Resampling will be unstratified
 #' otherwise.
 #'
@@ -102,7 +108,7 @@ resample.recipe <- function(
   x, model, control = MachineShop::settings("control"), ...
 ) {
   if (missing(model)) model <- NullModel()
-  .resample(get_MLObject(control, "MLControl"), ModelRecipe(x), model, ...)
+  .resample(get_MLControl(control), ModelRecipe(x), model, ...)
 }
 
 
@@ -130,7 +136,7 @@ Resamples.data.frame <- function(object, ..., strata = NULL, .check = TRUE) {
     var_names <- c("Model", "Resample", "Case", "Observed", "Predicted")
     missing <- missing_names(var_names, object)
     if (length(missing)) {
-      stop(label_items("missing resample variable", missing))
+      throw(Error(label_items("missing resample variable", missing)))
     }
     object$Model <- droplevels(object$Model)
   }
@@ -153,11 +159,11 @@ Resamples.list <- function(object, ...) {
   object, x, model, progress_index = 0, ...
 ) {
   presets <- settings()
-  strata <- strata_var(x)
   set.seed(object@seed)
-  splits <- bootstraps(rsample_data(x),
-                       times = object@samples,
-                       strata = strata)$splits
+  splits <- rsample_sets(bootstraps,
+                         data = x,
+                         times = object@samples,
+                         control = object)$splits
   seeds <- sample.int(.Machine$integer.max, length(splits))
 
   is_optimism_control <- is(object, "MLBootOptimismControl")
@@ -167,7 +173,7 @@ Resamples.list <- function(object, ...) {
 
   snow_opts <- list()
   progress <- function(n) NULL
-  if (settings("progress.resample")) {
+  if (settings("resample_progress")) {
     pb <- new_progress_bar(length(splits), input = x, model = model,
                            index = progress_index)
     on.exit(pb$terminate())
@@ -177,9 +183,9 @@ Resamples.list <- function(object, ...) {
     )
   }
 
-  foreach(i = seq(splits),
+  foreach(i = seq_along(splits),
           .packages = settings("require"),
-          .verbose = settings("verbose.resample"),
+          .verbose = settings("resample_verbose"),
           .options.snow = snow_opts) %dopar% {
     progress(i)
     settings(presets)
@@ -197,7 +203,7 @@ Resamples.list <- function(object, ...) {
     } else {
       subsample(train, x, model, object, i)
     }
-  } %>% Resamples(control = object, strata = strata)
+  } %>% Resamples(control = object, strata = case_strata_name(x))
 }
 
 
@@ -205,19 +211,19 @@ Resamples.list <- function(object, ...) {
   object, x, model, progress_index = 0, ...
 ) {
   presets <- settings()
-  strata <- strata_var(x)
   set.seed(object@seed)
-  splits <- vfold_cv(rsample_data(x),
-                     v = object@folds,
-                     repeats = object@repeats,
-                     strata = strata)$splits
+  splits <- rsample_sets(vfold_cv,
+                         data = x,
+                         v = object@folds,
+                         repeats = object@repeats,
+                         control = object)$splits
   seeds <- sample.int(.Machine$integer.max, length(splits))
 
   is_optimism_control <- is(object, "MLCVOptimismControl")
 
   snow_opts <- list()
   progress <- function(n) NULL
-  if (settings("progress.resample")) {
+  if (settings("resample_progress")) {
     pb <- new_progress_bar(length(splits), input = x, model = model,
                            index = progress_index)
     on.exit(pb$terminate())
@@ -227,9 +233,9 @@ Resamples.list <- function(object, ...) {
     )
   }
 
-  df_list <- foreach(i = seq(splits),
+  df_list <- foreach(i = seq_along(splits),
                      .packages = settings("require"),
-                     .verbose = settings("verbose.resample"),
+                     .verbose = settings("resample_verbose"),
                      .options.snow = snow_opts) %dopar% {
     progress(i)
     settings(presets)
@@ -243,15 +249,15 @@ Resamples.list <- function(object, ...) {
       subsample(train, test, model, object, i)
     }
   }
-  res <- Resamples(df_list, control = object, strata = strata)
+  res <- Resamples(df_list, control = object, strata = case_strata_name(x))
 
   if (is_optimism_control) {
     pred_list <- map(attr, df_list, "CV.Predicted")
-    split_factor <- rep(seq_len(object@folds), times = object@repeats)
-    df <- split(seq(pred_list), split_factor) %>%
+    split_factor <- rep(seq_len(object@folds), object@repeats)
+    df <- split(seq_along(pred_list), split_factor) %>%
       map(function(indices) do.call(append, pred_list[indices]), .) %>%
       as.data.frame
-    names(df) <- paste0("CV.Predicted.", seq(df))
+    names(df) <- paste0("CV.Predicted.", seq_along(df))
     pred <- subsample(x, x, model, object)$Predicted
     df$Train.Predicted <- do.call(append, rep(list(pred), object@repeats))
     res[names(df)] <- df
@@ -263,16 +269,16 @@ Resamples.list <- function(object, ...) {
 
 .resample.MLOOBControl <- function(object, x, model, progress_index = 0, ...) {
   presets <- settings()
-  strata <- strata_var(x)
   set.seed(object@seed)
-  splits <- bootstraps(rsample_data(x),
-                       times = object@samples,
-                       strata = strata)$splits
+  splits <- rsample_sets(bootstraps,
+                         data = x,
+                         times = object@samples,
+                         control = object)$splits
   seeds <- sample.int(.Machine$integer.max, length(splits))
 
   snow_opts <- list()
   progress <- function(n) NULL
-  if (settings("progress.resample")) {
+  if (settings("resample_progress")) {
     pb <- new_progress_bar(length(splits), input = x, model = model,
                            index = progress_index)
     on.exit(pb$terminate())
@@ -282,9 +288,9 @@ Resamples.list <- function(object, ...) {
     )
   }
 
-  foreach(i = seq(splits),
+  foreach(i = seq_along(splits),
           .packages = settings("require"),
-          .verbose = settings("verbose.resample"),
+          .verbose = settings("resample_verbose"),
           .options.snow = snow_opts) %dopar% {
     progress(i)
     settings(presets)
@@ -292,20 +298,20 @@ Resamples.list <- function(object, ...) {
     train <- analysis(splits[[i]], x)
     test <- assessment(splits[[i]], x)
     subsample(train, test, model, object, i)
-  } %>% Resamples(control = object, strata = strata)
+  } %>% Resamples(control = object, strata = case_strata_name(x))
 }
 
 
 .resample.MLSplitControl <- function(object, x, model, ...) {
-  strata <- strata_var(x)
   set.seed(object@seed)
-  split <- initial_split(rsample_data(x),
-                         prop = object@prop,
-                         strata = strata)
+  split <- rsample_sets(initial_split,
+                        data = x,
+                        prop = object@prop,
+                        control = object)
   train <- training(split, x)
   test <- testing(split, x)
   subsample(train, test, model, object) %>%
-    Resamples(control = object, strata = strata)
+    Resamples(control = object, strata = case_strata_name(x))
 }
 
 
@@ -321,6 +327,17 @@ Resamples.list <- function(object, ...) {
 rsample_data <- function(x, ...) UseMethod("rsample_data")
 rsample_data.ModelFrame <- function(x, ...) asS3(x)
 rsample_data.ModelRecipe <- function(x, ...) as.data.frame(x)
+
+
+rsample_sets <- function(fun, data, control, ...) {
+  df <- rsample_data(data)
+  df[["(strata)"]] <- case_strata(data,
+                                  breaks = control@strata_breaks,
+                                  nunique = control@strata_nunique,
+                                  prop = control@strata_prop,
+                                  size = control@strata_size)
+  suppressWarnings(fun(df, ..., strata = case_strata_name(df), pool = 0))
+}
 
 
 analysis <- function(x, object, ...) UseMethod("analysis", object)
@@ -368,10 +385,11 @@ training.ModelRecipe <- function(x, object, ...) {
 
 
 subsample <- function(train, test, model, control, id = 1) {
-  model <- get_MLObject(model, "MLModel")
+  model <- get_MLModel(model)
 
   model_fit <- fit(train, model)
-  if (is(model_fit, "StackedModel")) control@times <- model_fit$times
+  times <- time(model_fit)
+  if (length(times)) control@times <- times
 
   f <- function(test) {
     if (is(train, "ModelRecipe")) {
@@ -384,7 +402,7 @@ subsample <- function(train, test, model, control, id = 1) {
     df$Observed <- response(test)
     df$Predicted <- predict(model_fit, as.data.frame(test), type = "prob",
                             times = control@times, method = control@method,
-                            dist = control@dist)
+                            distr = control@distr)
     df
   }
 
@@ -392,7 +410,7 @@ subsample <- function(train, test, model, control, id = 1) {
 }
 
 
-resample_selection <- function(x, transform, params, ..., class) {
+resample_selection <- function(x, update, params, ..., class) {
 
   metrics <- params$metrics
   stat <- fget(params$stat)
@@ -400,13 +418,13 @@ resample_selection <- function(x, transform, params, ..., class) {
   perf_list <- list()
   perf_stats <- numeric()
   err_msgs <- character()
-  i <- structure(0, max = length(x), names = class)
-  while (i < attr(i, "max")) {
+  i <- new_progress_index(names = class, max = length(x))
+  while (i < max(i)) {
     i <- i + 1
     name <- names(x)[i]
 
     res <- try(
-      resample(transform(x[[name]]), ..., control = params$control,
+      resample(update(x[[name]]), ..., control = params$control,
                progress_index = i),
       silent = TRUE
     )
@@ -414,7 +432,7 @@ resample_selection <- function(x, transform, params, ..., class) {
     if (is(res, "try-error")) {
       perf_list[[name]] <- NA
       perf_stats[name] <- NA
-      err_msgs[name] <- attr(res, "condition")$message
+      err_msgs[name] <- conditionMessage(attr(res, "condition"))
       next
     }
 
@@ -435,18 +453,18 @@ resample_selection <- function(x, transform, params, ..., class) {
   }
 
   failed <- is.na(perf_list)
-  err_msgs <- paste(names(err_msgs), err_msgs, collapse = "\n")
+  err_msgs <- paste0(names(err_msgs), ": ", err_msgs, collapse = "\n")
   if (all(failed)) {
-    stop("resampling failed for all models\n", err_msgs, call. = FALSE)
+    throw(LocalError("Resampling failed for all models.\n", err_msgs))
   } else if (any(failed)) {
-    warn("resampling failed for some models\n", err_msgs)
+    throw(LocalWarning("Resampling failed for some models.\n", err_msgs))
     perf[] <- NA
     perf_list[failed] <- list(perf)
   }
 
   perf <- do.call(c, perf_list)
-  metric <- get_MLObject(c(metrics)[[1]], "MLMetric")
-  selected <- ifelse(metric@maximize, which.max, which.min)(perf_stats)
+  metric <- get_MLMetric(c(metrics)[[1]])
+  selected <- (if (metric@maximize) which.max else which.min)(perf_stats)
 
   list(performance = perf,
        selected = structure(selected, names = colnames(perf)[1]),

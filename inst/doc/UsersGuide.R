@@ -34,14 +34,17 @@ library(magrittr)
 data(Melanoma, package = "MASS")
 
 ## Malignant melanoma analysis dataset
-surv_df <- within(Melanoma, status <- as.numeric(status != 2))
+surv_df <- within(Melanoma, {
+  y <- Surv(time, status != 2)
+  remove(time, status)
+})
 
 ## ----using_example_summary, echo=FALSE----------------------------------------
 surv_stats <- list(
-  list("Number of subjects" = ~ length(status)),
-  "time" = list("Median (Range)" = ~ median_range(time)),
-  "status" = list("1 = Dead" = ~ n_perc(status == 1),
-                  "0 = Alive" = ~ n_perc(status == 0)),
+  list("Number of subjects" = ~ length(y)),
+  "time" = list("Median (Range)" = ~ median_range(y[, "time"])),
+  "status" = list("1 = Dead" = ~ n_perc(y[, "status"] == 1),
+                  "0 = Alive" = ~ n_perc(y[, "status"] == 0)),
   "sex" = list("1 = Male" = ~ n_perc(sex == 1),
                "0 = Female" = ~ n_perc(sex == 0)),
   "age" = list("Median (Range)" = ~ median_range(age)),
@@ -57,7 +60,7 @@ summary_kbl(surv_stats, surv_df)
 library(ggplot2)
 
 col <- "#F8766D"
-survfit(Surv(time, status) ~ 1, data = surv_df) %>%
+survfit(y ~ 1, data = surv_df) %>%
   with(data.frame(time, surv, lower, upper, censor = ifelse(n.censor > 0, time, NA))) %>%
   ggplot(aes(x = time, y = surv)) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = col, alpha = 0.2) +
@@ -75,7 +78,7 @@ surv_train <- surv_df[train_indices, ]
 surv_test <- surv_df[-train_indices, ]
 
 ## Global formula for the analysis
-surv_fo <- Surv(time, status) ~ sex + age + year + thickness + ulcer
+surv_fo <- y ~ sex + age + year + thickness + ulcer
 
 ## ----using_fit_modelinfo------------------------------------------------------
 ## All available models
@@ -97,7 +100,7 @@ modelinfo(Surv(0), CoxModel, GBMModel, SVMModel) %>% names
 
 ## ----using_fit_modelinfo_response---------------------------------------------
 ## Models for a responses variable
-modelinfo(Surv(surv_df$time, surv_df$status)) %>% names
+modelinfo(surv_df$y) %>% names
 
 ## ----using_fit_function, results="hide"---------------------------------------
 ## Generalized boosted regression fit
@@ -122,18 +125,18 @@ fit(surv_fo, data = surv_train, model = CoxStepAICModel(k = .(log(length(y)))))
 
 ## ----using_predict_function---------------------------------------------------
 ## Predicted survival means (default: Weibull distribution)
-predict(surv_fit, newdata = surv_test) %>% head
+predict(surv_fit, newdata = surv_test)
 
 ## Predicted survival means (empirical distribution)
-predict(surv_fit, newdata = surv_test, dist = "empirical") %>% head
+predict(surv_fit, newdata = surv_test, distr = "empirical")
 
 ## ----using_predict_function_times---------------------------------------------
 ## Predict survival probabilities and events at specified follow-up times
 surv_times <- 365 * c(5, 10)
 
-predict(surv_fit, newdata = surv_test, times = surv_times, type = "prob") %>% head
+predict(surv_fit, newdata = surv_test, times = surv_times, type = "prob")
 
-predict(surv_fit, newdata = surv_test, times = surv_times, cutoff = 0.7) %>% head
+predict(surv_fit, newdata = surv_test, times = surv_times, cutoff = 0.7)
 
 ## ----using_variables_formula--------------------------------------------------
 ## Datasets
@@ -188,6 +191,7 @@ predict(model_fit, newdata = Pima.te) %>% head
 df <- within(esoph, {
   y <- ncases / (ncases + ncontrols)
   weights <- ncases + ncontrols
+  remove(ncases, ncontrols)
 })
 
 rec <- recipe(y ~ agegp + tobgp + alcgp + weights, data = df) %>%
@@ -242,11 +246,11 @@ predict(model_fit, newdata = Pima.te, type = "prob") %>% head
 
 ## ----using_responses_ordered--------------------------------------------------
 ## Iowa City housing prices (ordered factor)
-df <- within(ICHomes,
+df <- within(ICHomes, {
   sale_amount <- cut(sale_amount, breaks = 3,
                      labels = c("Low", "Medium", "High"),
                      ordered_result = TRUE)
-)
+})
 
 model_fit <- fit(sale_amount ~ ., data = df, model = GBMModel)
 predict(model_fit) %>% head
@@ -267,12 +271,15 @@ predict(model_fit) %>% head
 
 ## ----using_responses_matrix_recipe--------------------------------------------
 ## Numeric matrix response recipe
-## Defined in a data frame
-df <- within(anscombe, y <- cbind(y1, y2, y3))
-rec <- recipe(y ~ x1, data = df)
-
 ## Defined in a recipe formula
 rec <- recipe(y1 + y2 + y3 ~ x1, data = anscombe)
+
+## Defined within a data frame
+df <- within(anscombe, {
+  y <- cbind(y1, y2, y3)
+  remove(y1, y2, y3)
+})
+rec <- recipe(y ~ x1, data = df)
 model_fit <- fit(rec, model = LMModel)
 predict(model_fit) %>% head
 
@@ -280,20 +287,20 @@ predict(model_fit) %>% head
 ## Survival response formula
 library(survival)
 
-fit(Surv(time, status) ~ ., data = surv_train, model = GBMModel)
+fit(Surv(time, status) ~ ., data = veteran, model = GBMModel)
 
 ## ----using_responses_surv_recipe, results="hide"------------------------------
 ## Survival response recipe
-## Defined in a data frame
+## Defined in a recipe formula
+rec <- recipe(time + status ~ ., data = veteran) %>%
+  role_surv(time = time, event = status)
+
+## Defined within a data frame
 df <- within(veteran, {
   y <- Surv(time, status)
   remove(time, status)
 })
 rec <- recipe(y ~ ., data = df)
-
-## Defined in a recipe formula
-rec <- recipe(time + status ~ ., data = veteran) %>%
-  role_surv(time = time, event = status)
 fit(rec, model = GBMModel)
 
 ## ----using_performance_function-----------------------------------------------
@@ -460,14 +467,13 @@ p4 <- plot(res_means, type = "violin")
 grid.arrange(p1, p2, p3, p4, nrow = 2)
 
 ## ----using_resample_strata, results="hide"------------------------------------
-## Model frame with case status stratification
-mf <- ModelFrame(surv_fo, data = surv_train, strata = surv_train$status)
+## Model frame with response variable stratification
+mf <- ModelFrame(surv_fo, data = surv_train, strata = surv_train$y)
 resample(mf, model = GBMModel)
 
-## Recipe with case status stratification
-rec <- recipe(time + status ~ ., data = surv_train) %>%
-  role_surv(time = time, event = status) %>%
-  role_case(stratum = status)
+## Recipe with response variable stratification
+rec <- recipe(y ~ ., data = surv_train) %>%
+  role_case(stratum = y)
 resample(rec, model = GBMModel)
 
 ## ----using_resample_dynamic, results="hide"-----------------------------------
@@ -578,8 +584,7 @@ plot(lf, find = 0.75)
 
 ## ----using_stategies_TunedInput1, eval=FALSE----------------------------------
 #  ## Preprocessing recipe with PCA steps
-#  pca_rec <- recipe(time + status ~ ., data = surv_train) %>%
-#    role_surv(time = time, event = status) %>%
+#  pca_rec <- recipe(y ~ ., data = surv_train) %>%
 #    step_center(all_predictors()) %>%
 #    step_scale(all_predictors()) %>%
 #    step_pca(all_predictors(), id = "PCA")
@@ -616,7 +621,7 @@ plot(lf, find = 0.75)
 #  #> TrainStep1 :
 #  #> Object of class "TrainStep"
 #  #>
-#  #> Grid (selected = 3):
+#  #> Grid (selected = 1):
 #  #> # A tibble: 3 x 1
 #  #>   ModelRecipe$PCA$num_comp
 #  #>                      <int>
@@ -629,15 +634,13 @@ plot(lf, find = 0.75)
 #  #> Metrics: C-Index
 #  #> Models: 1, 2, 3
 #  #>
-#  #> Selected model: 3
-#  #> C-Index value: 0.7241954
+#  #> Selected model: 1
+#  #> C-Index value: 0.734361
 
 ## ----using_strategies_SelectedInput1, eval=FALSE------------------------------
 #  ## Preprocessing recipe without PCA steps
-#  rec1 <- recipe(time + status ~ sex + age + year + thickness + ulcer, data = surv_train) %>%
-#    role_surv(time = time, event = status)
-#  rec2 <- recipe(time + status ~ sex + age + year, data = surv_train) %>%
-#    role_surv(time = time, event = status)
+#  rec1 <- recipe(y ~ sex + age + year + thickness + ulcer, data = surv_train)
+#  rec2 <- recipe(y ~ sex + age + year, data = surv_train)
 #  
 #  ## Selection among recipes with and without PCA steps
 #  sel_rec <- SelectedInput(
@@ -670,7 +673,7 @@ plot(lf, find = 0.75)
 #  #> TrainStep1 :
 #  #> Object of class "TrainStep"
 #  #>
-#  #> Grid (selected = 1):
+#  #> Grid (selected = 3):
 #  #> # A tibble: 3 x 1
 #  #>   ModelRecipe
 #  #>   <fct>
@@ -683,13 +686,32 @@ plot(lf, find = 0.75)
 #  #> Metrics: C-Index
 #  #> Models: Recipe.1, Recipe.2, Recipe.3
 #  #>
-#  #> Selected model: Recipe.1
-#  #> C-Index value: 0.7311282
+#  #> Selected model: Recipe.3
+#  #> C-Index value: 0.7487572
+#  #> ------------------------------------------------------------
+#  #> TrainStep2 :
+#  #> Object of class "TrainStep"
+#  #>
+#  #> Grid (selected = 1):
+#  #> # A tibble: 3 x 1
+#  #>   ModelRecipe$PCA$num_comp
+#  #>                      <int>
+#  #> 1                        1
+#  #> 2                        2
+#  #> 3                        3
+#  #>
+#  #> Object of class "Performance"
+#  #>
+#  #> Metrics: C-Index
+#  #> Models: 1, 2, 3
+#  #>
+#  #> Selected model: 1
+#  #> C-Index value: 0.7474176
 
 ## ----using_strategies_SelectedInput3, eval=FALSE------------------------------
 #  ## Traditional formulas
-#  fo1 <- Surv(time, status) ~ sex + age + year + thickness + ulcer
-#  fo2 <- Surv(time, status) ~ sex + age + year
+#  fo1 <- y ~ sex + age + year + thickness + ulcer
+#  fo2 <- y ~ sex + age + year
 #  
 #  ## Selection among formulas
 #  sel_fo <- SelectedInput(fo1, fo2, data = surv_train)
@@ -760,7 +782,7 @@ plot(lf, find = 0.75)
 #  #>   GBMModel.7, GBMModel.8, GBMModel.9
 #  #>
 #  #> Selected model: GBMModel.1
-#  #> CIndex value: 0.7730294
+#  #> CIndex value: 0.7513153
 
 ## ----using_strategies_tune_grid, eval=FALSE-----------------------------------
 #  ## Tune over randomly sampled grid points
@@ -787,35 +809,35 @@ plot(lf, find = 0.75)
 #  #>
 #  #>             Statistic
 #  #> Model             Mean    Median         SD       Min       Max NA
-#  #>   GBMModel.1 0.7730294 0.7692308 0.07206580 0.6363636 0.9354839  0
-#  #>   GBMModel.2 0.7610614 0.7663043 0.06966664 0.6256684 0.8924731  0
-#  #>   GBMModel.3 0.7564966 0.7647059 0.06743686 0.6480447 0.8870968  0
-#  #>   GBMModel.4 0.7687377 0.7616580 0.08218605 0.6256983 0.9301075  0
-#  #>   GBMModel.5 0.7629211 0.7616580 0.07106607 0.6592179 0.9032258  0
-#  #>   GBMModel.6 0.7562730 0.7409326 0.07500287 0.5865922 0.8602151  0
-#  #>   GBMModel.7 0.7608822 0.7487685 0.07981747 0.5989305 0.8978495  0
-#  #>   GBMModel.8 0.7514888 0.7700535 0.06886940 0.6201117 0.8494624  0
-#  #>   GBMModel.9 0.7443015 0.7564767 0.06410204 0.6312849 0.8324324  0
+#  #>   GBMModel.1 0.7513153 0.7548387 0.05260501 0.6486486 0.8261803  0
+#  #>   GBMModel.2 0.7299930 0.7222222 0.05449760 0.6283784 0.8207547  0
+#  #>   GBMModel.3 0.7313907 0.7300885 0.04459823 0.6541850 0.7863636  0
+#  #>   GBMModel.4 0.7396956 0.7548387 0.05221877 0.6148649 0.8025751  0
+#  #>   GBMModel.5 0.7187003 0.7288732 0.04911338 0.6289593 0.7843137  0
+#  #>   GBMModel.6 0.7107110 0.7181818 0.04722521 0.6148649 0.7745098  0
+#  #>   GBMModel.7 0.7329099 0.7477876 0.05461139 0.6013514 0.7896996  0
+#  #>   GBMModel.8 0.7151567 0.7318182 0.05737671 0.5894040 0.7870968  0
+#  #>   GBMModel.9 0.7003070 0.7061611 0.05647950 0.5945946 0.7889908  0
 #  #>
 #  #> , , Metric = RMSE
 #  #>
 #  #>             Statistic
 #  #> Model             Mean   Median       SD      Min       Max NA
-#  #>   GBMModel.1  3818.182 3835.515 1251.954 1992.999  5953.100  0
-#  #>   GBMModel.2  4016.418 3642.123 1586.513 1792.675  8511.133  0
-#  #>   GBMModel.3  4226.311 3790.948 1873.500 1342.394  8857.896  0
-#  #>   GBMModel.4  5614.160 4428.054 3009.006 1912.743 11666.415  0
-#  #>   GBMModel.5  5407.976 3893.101 3288.373 1419.643 14090.833  0
-#  #>   GBMModel.6  5450.541 5941.670 2733.285 1535.649 10480.901  0
-#  #>   GBMModel.7  7922.834 6177.645 4506.633 2941.312 16243.705  0
-#  #>   GBMModel.8 10728.876 7384.484 7889.461 2564.302 26325.938  0
-#  #>   GBMModel.9 11470.890 9691.195 7191.709 1999.900 26402.048  0
+#  #>   GBMModel.1  3820.101 3922.004 1114.457 2067.702  5634.290  0
+#  #>   GBMModel.2  3983.721 3819.946 1046.342 2132.840  5731.912  0
+#  #>   GBMModel.3  4927.169 4607.758 1648.306 2913.023  8981.286  0
+#  #>   GBMModel.4  5577.329 4754.214 2760.113 1952.892 12794.955  0
+#  #>   GBMModel.5  5155.270 4156.921 2543.658 1761.762 10932.087  0
+#  #>   GBMModel.6  5659.614 4696.612 2813.594 2045.974 11673.612  0
+#  #>   GBMModel.7  7699.418 6963.495 3820.770 3525.290 19525.003  0
+#  #>   GBMModel.8  9112.486 8183.500 4469.315 4290.710 20736.130  0
+#  #>   GBMModel.9 12906.024 9741.308 8188.991 4937.101 32771.044  0
 
 ## ----using_strategies_tune_plot, eval=FALSE-----------------------------------
 #  plot(trained_model, type = "line")
 #  #> $TrainStep1
 
-## ----using_strategies_tune_png, echo = FALSE----------------------------------
+## ----using_strategies_tune_png, echo=FALSE------------------------------------
 knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 
 ## ----using_strategies_select, results="hide", eval=FALSE----------------------
@@ -847,8 +869,8 @@ knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 #  res_stacked <- resample(surv_fo, data = surv_train, model = stackedmodel)
 #  summary(res_stacked)
 #  #>          Statistic
-#  #> Metric        Mean    Median        SD       Min    Max NA
-#  #>   C-Index 0.758157 0.7467949 0.1297774 0.5208333 0.9375  0
+#  #> Metric         Mean    Median        SD      Min       Max NA
+#  #>   C-Index 0.7098798 0.7111111 0.1482607 0.484375 0.9285714  0
 #  
 #  ## Super learner
 #  supermodel <- SuperModel(GLMBoostModel, CForestModel, CoxModel,
@@ -856,13 +878,12 @@ knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 #  res_super <- resample(surv_fo, data = surv_train, model = supermodel)
 #  summary(res_super)
 #  #>          Statistic
-#  #> Metric         Mean Median        SD  Min       Max NA
-#  #>   C-Index 0.7262053   0.75 0.1021023 0.52 0.8780488  0
+#  #> Metric         Mean    Median        SD    Min       Max NA
+#  #>   C-Index 0.6572016 0.6985294 0.1459938 0.4375 0.8488372  0
 
-## ----using_strategies_methods, eval = FALSE-----------------------------------
+## ----using_strategies_methods, eval=FALSE-------------------------------------
 #  ## Preprocessing recipe with PCA steps
-#  pca_rec <- recipe(time + status ~ ., data = surv_train) %>%
-#    role_surv(time = time, event = status) %>%
+#  pca_rec <- recipe(y ~ ., data = surv_train) %>%
 #    step_center(all_predictors()) %>%
 #    step_scale(all_predictors()) %>%
 #    step_pca(all_predictors(), id = "PCA")
@@ -906,17 +927,17 @@ Grid (selected = 1):
 
 Object of class "Performance"
 
-Metrics: C-Index 
-Models: 1, 2, 3 
+Metrics: C-Index
+Models: 1, 2, 3
 
-Selected model: 1 
-C-Index value: 0.7806223')
+Selected model: 1
+C-Index value: 0.7133325')
 
 ## ----using_strategies_methods2, echo=FALSE------------------------------------
 cat('TrainStep2 :
 Object of class "TrainStep"
 
-Grid (selected = 2):
+Grid (selected = 1):
 # A tibble: 3 x 1
   Model
   <fct>
@@ -927,37 +948,10 @@ Grid (selected = 2):
 Object of class "Performance"
 
 Metrics: C-Index 
-Models: GBMModel, TunedModel, SuperModel 
+Models: GBMModel, TunedModel, SuperModel
 
-Selected model: TunedModel 
-C-Index value: 0.7533878')
-
-## ----using_strategies_methods3, echo=FALSE------------------------------------
-cat('TrainStep3 :
-Object of class "TrainStep"
-
-Grid (selected = 1):
-# A tibble: 9 x 1
-  Model$n.trees $interaction.depth
-          <dbl>              <int>
-1            50                  1
-2           100                  1
-3           150                  1
-4            50                  2
-5           100                  2
-6           150                  2
-7            50                  3
-8           100                  3
-9           150                  3
-
-Object of class "Performance"
-
-Metrics: C-Index 
-Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6,
-  GBMModel.7, GBMModel.8, GBMModel.9 
-
-Selected model: GBMModel.1 
-C-Index value: 0.7137925')
+Selected model: GBMModel 
+C-Index value: 0.7712238')
 
 ## ----using_strategies_methods0, echo=FALSE------------------------------------
 cat('Object of class "MLModel"
@@ -971,13 +965,13 @@ Variable importance: TRUE
 
 Parameters:
 List of 5
- $ n.trees          : num 50
- $ interaction.depth: int 1
+ $ n.trees          : num 100
+ $ interaction.depth: num 1
  $ n.minobsinnode   : num 10
  $ shrinkage        : num 0.1
  $ bag.fraction     : num 0.5')
 
-## ----eval = FALSE-------------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  ## Generalization performance of the modeling strategy
 #  resample(tun_rec, model = sel_model)
 
@@ -1040,10 +1034,30 @@ x <- lapply(names(info), function(modelname) {
 })
 df <- as.data.frame(do.call(rbind, x), stringsAsFactors = FALSE)
 names(df) <- c("Function", names(types))
+rdoc_names <- sapply(df$Function, function(name) {
+  switch(name,
+    "CoxStepAICModel" = "CoxModel",
+    "GLMStepAICModel" = "GLMModel",
+    "PDAModel" = "FDAModel",
+    "SurvRegStepAICModel" = "SurvRegModel",
+    "SVMANOVAModel" = "SVMModel",
+    "SVMBesselModel" = "SVMModel",
+    "SVMLaplaceModel" = "SVMModel",
+    "SVMLinearModel" = "SVMModel",
+    "SVMPolyModel" = "SVMModel",
+    "SVMRadialModel" = "SVMModel",
+    "SVMSplineModel" = "SVMModel",
+    "SVMTanhModel" = "SVMModel",
+    "XGBDARTModel" = "XGBModel",
+    "XGBLinearModel" = "XGBModel",
+    "XGBTreeModel" = "XGBModel",
+    name
+  )
+})
 
 toString2 <- function(x) toString(na.omit(x))
 df_classes <- data.frame(
-  Function = rdoc_url(df$Function),
+  Function = rdoc_url(df$Function, rdoc_names),
   Label = sapply(info, getElement, name = "label"),
   Categorical = apply(df[c("binary", "factor", "ordered")], 1, toString2),
   Continuous = apply(df[c("matrix", "numeric")], 1, toString2),

@@ -39,7 +39,7 @@ fit <- function(x, ...) {
 #' @rdname fit-methods
 #'
 fit.formula <- function(x, data, model, ...) {
-  mf <- ModelFrame(x, data, na.rm = FALSE, strata = strata(response(x, data)))
+  mf <- ModelFrame(x, data, na.rm = FALSE, strata = response(x, data))
   fit(mf, model)
 }
 
@@ -47,7 +47,7 @@ fit.formula <- function(x, data, model, ...) {
 #' @rdname fit-methods
 #'
 fit.matrix <- function(x, y, model, ...) {
-  mf <- ModelFrame(x, y, na.rm = FALSE, strata = strata(y))
+  mf <- ModelFrame(x, y, na.rm = FALSE, strata = y)
   fit(mf, model)
 }
 
@@ -60,7 +60,7 @@ fit.matrix <- function(x, y, model, ...) {
 #' constructor.
 #'
 fit.ModelFrame <- function(x, model, ...) {
-  model <- if (missing(model)) NullModel() else get_MLObject(model, "MLModel")
+  model <- if (missing(model)) NullModel() else get_MLModel(model)
   .fit(x, model)
 }
 
@@ -72,7 +72,7 @@ fit.ModelFrame <- function(x, model, ...) {
 #' with the \code{\link{role_case}} function.
 #'
 fit.recipe <- function(x, model, ...) {
-  model <- if (missing(model)) NullModel() else get_MLObject(model, "MLModel")
+  model <- if (missing(model)) NullModel() else get_MLModel(model)
   .fit(x, model)
 }
 
@@ -105,7 +105,7 @@ fit.MLModelFunction <- function(x, ...) {
 
   y <- response(mf)
   if (!is_valid_response(y, x)) {
-    stop("invalid response type '", class(y)[1], "' for ", x@name)
+    throw(TypeError(y, x@response_types, paste(x@name, "response variable")))
   }
 
   require_namespaces(x@packages)

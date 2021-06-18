@@ -35,14 +35,14 @@ expand_model <- function(x, ..., random = FALSE) {
 
 
 .expand_model.default <- function(x, random, ...) {
-  expand_model(get_MLObject(x, class = "MLModel"), ..., random = random)
+  expand_model(get_MLModel(x), ..., random = random)
 }
 
 
 .expand_model.list <- function(x, ...) {
   grid <- x[[2]]
   models <- map(function(args) do.call(x[[1]], args),
-                split(grid, seq(max(1, nrow(grid)))))
+                split(grid, seq_len(max(1, nrow(grid)))))
   names(models) <- paste0(models[[1]]@name, ".", names(models))
   models
 }
@@ -163,25 +163,26 @@ expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
   not_dup <- function(x) !duplicated(x, fromLast = TRUE)
   if (!is.null(names(size))) {
     if (!all(names(size) %in% gridinfo$param)) {
-      warn("Unmatched model parameter names in expand_modelgrid() argument",
-           " 'size'.\n",
-           "x Existing ", model@name, " has ",
-           label_items("parameter", gridinfo$param), ".\n",
-           "x Assigned data has ", label_items("name", names(size)), ".")
+      throw(LocalWarning(
+        "Unmatched model parameters in expand_modelgrid() argument 'size'.\n",
+        "x Existing ", model@name, " has ",
+        label_items("parameter", gridinfo$param), ".\n",
+        "x Assigned data has ", label_items("name", names(size)), "."
+      ))
     }
     size <- size[gridinfo$param] * not_dup(gridinfo$param)
     size[is.na(size)] <- 0L
   } else if (length(size) == 1) {
-    if (!random) gridinfo <- gridinfo[gridinfo$regular, ]
+    if (!random) gridinfo <- gridinfo[gridinfo$default, ]
     size <- size * not_dup(gridinfo$param)
   } else if (length(size) != nrow(gridinfo)) {
-    stop("Length of expand_modelgrid() argument 'size' must equal 1",
-         " or the number of model parameters.\n",
-         "x Existing ", model@name, " has ", nrow(gridinfo), " ",
-         label_items("parameter", gridinfo$param), ".\n",
-         "x Assigned data has ", length(size), " ",
-         label_items("size", size), ".",
-         call. = FALSE)
+    throw(LocalError(
+      "Length of expand_modelgrid() argument 'size' must equal 1 ",
+      "or the number of model parameters.\n",
+      "x Existing ", model@name, " has ", nrow(gridinfo), " ",
+      label_items("parameter", gridinfo$param), ".\n",
+      "x Assigned data has ", length(size), " ", label_items("size", size), "."
+    ))
   }
   gridinfo$size <- size
   gridinfo <- gridinfo[gridinfo$size >= 1, ]
@@ -193,11 +194,12 @@ expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
     if (is.null(mf)) {
       return(NULL)
     } else if (!is_valid_response(y <- response(mf), model)) {
-      warn("Invalid model response type in expand_modelgrid().\n",
-           "x Exising ", model@name, " supports ",
-           label_items("type", model@response_types), ".\n",
-           "x Supplied response is of ",
-           label_items("type", class(y)), ".")
+      throw(LocalWarning(
+        "Invalid model response type in expand_modelgrid().\n",
+        "x Exising ", model@name, " supports ",
+        label_items("type", model@response_types), ".\n",
+        "x Supplied response is of ", label_items("type", class(y)), "."
+      ))
       return(NULL)
     }
   }
@@ -222,23 +224,20 @@ expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
     if (needs_data) {
       if (missing(x)) return(NULL)
       mf <- ModelFrame(x, ..., na.rm = FALSE)
-      model <- get_MLObject(model, "MLModel")
+      model <- get_MLModel(model)
       data <- switch(model@predictor_encoding,
-                     "model.matrix" = model.matrix(mf, intercept = FALSE),
-                     "terms" = {
-                       mf_terms <- attributes(terms(mf))
-                       var_list <- eval(mf_terms$variables, mf)
-                       names(var_list) <- rownames(mf_terms$factors)
-                       as.data.frame(var_list[-c(1, mf_terms$offset)])
-                     }
+        "model.frame" = {
+          mf_terms <- attributes(terms(mf))
+          var_list <- eval(mf_terms$variables, mf)
+          names(var_list) <- rownames(mf_terms$factors)
+          as.data.frame(var_list[-c(1, mf_terms$offset)])
+        },
+        "model.matrix" = model.matrix(mf, intercept = FALSE)
       )
       grid <- dials::finalize(grid, x = data)
     }
-    if (grid@random) {
-      dials::grid_random(grid, size = grid@random)
-    } else {
-      dials::grid_regular(grid, levels = grid@size)
-    }
+    params <- map(dials::value_seq, grid$object, grid@size)
+    expand_params(params, random = grid@random)
   } else {
     tibble()
   }
@@ -332,12 +331,14 @@ expand_steps <- function(..., random = FALSE) {
     step_names <- names(steps)
   }
 
-  if (!all(map_logi(is.list, steps))) stop("step arguments must be lists")
+  if (!all(map_logi(is.list, steps))) {
+    throw(Error("step arguments must be lists"))
+  }
 
   get_names <- function(x) {
     res <- NULL
     if (is.list(x)) {
-      for (i in seq(x)) {
+      for (i in seq_along(x)) {
         name <- names(x[i])
         if (is.null(name)) name <- ""
         res <- c(res, name, get_names(x[[i]]))
@@ -347,21 +348,21 @@ expand_steps <- function(..., random = FALSE) {
   }
 
   if (!all(nzchar(get_names(steps)))) {
-    stop("all steps and their parameters must be named")
+    throw(Error("all steps and their parameters must be named"))
   } else if (any(duplicated(step_names))) {
-    stop("step names must be unique")
+    throw(Error("step names must be unique"))
   }
 
   grid <- expand_params(unlist(steps, recursive = FALSE), random = random)
   recipe_grid <- tibble(.rows = nrow(grid))
 
-  offset <- 0
+  start <- 1
   for (name in step_names) {
-    indices <- offset + seq_len(length(steps[[name]]))
-    x <- grid[indices]
+    n <- length(steps[[name]])
+    x <- grid[seq(start, length = n)]
     names(x) <- substring(names(x), nchar(name) + 2)
     recipe_grid[[name]] <- x
-    offset <- offset + length(indices)
+    start <- start + n
   }
 
   RecipeGrid(recipe_grid)

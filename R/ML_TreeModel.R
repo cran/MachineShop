@@ -46,7 +46,7 @@ TreeModel <- function(
     label = "Regression and Classification Trees",
     packages = "tree",
     response_types = c("factor", "numeric"),
-    predictor_encoding = "terms",
+    predictor_encoding = "model.frame",
     params = params(environment()),
     fit = function(formula, data, weights, split, k = NULL, best = NULL,
                    method = NULL, ...) {
@@ -56,7 +56,7 @@ TreeModel <- function(
         tree::prune.tree(model_fit, k = k, best = best, method = method)
       } else model_fit
     },
-    predict = function(object, newdata, times, ...) {
+    predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata)
     }

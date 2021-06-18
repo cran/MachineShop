@@ -27,7 +27,7 @@
 #'     \code{mfinal}, \code{maxdepth}, \code{coeflearn}*
 #'   }
 #' }
-#' * included only in randomly sampled grid points
+#' * excluded from grids by default
 #'
 #' Further model details can be found in the source link below.
 #'
@@ -62,19 +62,19 @@ AdaBoostModel <- function(
     label = "Boosting with Classification Trees",
     packages = "adabag",
     response_types = "factor",
-    predictor_encoding = "terms",
+    predictor_encoding = "model.frame",
     params = params,
     gridinfo = new_gridinfo(
       param = c("mfinal", "maxdepth", "coeflearn"),
       values = c(
         function(n, ...) round(seq_range(0, 25, c(1, 200), n + 1)),
-        function(n, ...) 1:min(n, 30),
-        function(n, ...) head(sample(c("Breiman", "Freund", "Zhu")), n)
+        function(n, ...) seq_len(min(n, 30)),
+        function(n, ...) head(c("Breiman", "Freund", "Zhu"), n)
       ),
-      regular = c(TRUE, TRUE, FALSE)
+      default = c(TRUE, TRUE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
-      assert_equal_weights(weights)
+      throw(check_equal_weights(weights))
       adabag::boosting(formula, data = as.data.frame(data), ...)
     },
     predict = function(object, newdata, ...) {

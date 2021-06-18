@@ -81,7 +81,7 @@ BARTModel <- function(
       y <- response(data)
       switch_class(y,
         "factor" = {
-          assert_equal_weights(weights)
+          throw(check_equal_weights(weights))
           if (nlevels(y) <= 2) {
             f <- BART::gbart
             y <- as.numeric(y) - 1
@@ -96,13 +96,14 @@ BARTModel <- function(
                       sigdf = sigdf, sigquant = sigquant, lambda = lambda, ...)
         },
         "Surv" = {
-          assert_equal_weights(weights)
+          throw(check_censoring(y, "right"))
+          throw(check_equal_weights(weights))
           BART::surv.bart(x.train = x, times = y[, "time"],
                           delta = y[, "status"], K = K, ...)
         }
       )
     },
-    predict = function(object, newdata, times, ...) {
+    predict = function(object, newdata, weights, ...) {
       newx <- model.matrix(newdata, intercept = FALSE)
       if (is(object, "mbart")) {
         predict(object, newdata = newx)$prob.test.mean %>%
@@ -112,10 +113,10 @@ BARTModel <- function(
       } else if (is(object, "survbart")) {
         N <- nrow(newx)
         K <- object$K
-        newx <- cbind(t = object$times, newx[rep(1:N, each = K), ])
+        newx <- cbind(t = object$times, newx[rep(seq_len(N), each = K), ])
         pred <- predict(object, newdata = newx)$surv.test.mean %>%
           matrix(nrow = N, ncol = K, byrow = TRUE)
-        predict(Surv(object$times), pred, times, ...)
+        predict(Surv(object$times), pred, ...)
       } else if (is(object, "wbart")) {
         colMeans(predict(object, newdata = newx))
       }

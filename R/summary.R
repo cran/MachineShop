@@ -80,7 +80,7 @@ summary.ConfusionMatrix <- function(object, ...) {
 summary.MLModel <- function(
   object, stats = MachineShop::settings("stats.Resamples"), na.rm = TRUE, ...
 ) {
-  if (!is_trained(object)) stop("no training results to summarize")
+  if (!is_trained(object)) throw(Error("no training results to summarize"))
   map(function(train_step) {
     summary(train_step@performance, stats = stats, na.rm = na.rm, ...)
   }, object@train_steps)
@@ -135,7 +135,7 @@ summary.PerformanceCurve <- function(
       cutoffs <- unique(curves$Cutoff)
       curves_split <- split(curves, curves$Resample)
       x_all <- y_all <- matrix(NA, length(cutoffs), length(curves_split))
-      for (j in seq(curves_split)) {
+      for (j in seq_along(curves_split)) {
         curve <- curves_split[[j]]
         x_all[, j] <- .curve_approx(curve$Cutoff, curve$x, cutoffs)
         y_all[, j] <- .curve_approx(curve$Cutoff, curve$y, cutoffs)

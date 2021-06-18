@@ -30,7 +30,7 @@
 #'     }
 #'   }
 #' }
-#' * included only in randomly sampled grid points
+#' * excluded from grids by default
 #'
 #' The \code{\link{predict}} function for this model additionally accepts the
 #' following argument.
@@ -76,7 +76,7 @@ FDAModel <- function(
         },
         function(n, ...) head(1:2, n)
       ),
-      regular = c(TRUE, FALSE)
+      default = c(TRUE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
       mda::fda(formula, data = as.data.frame(data), weights = weights, ...)

@@ -47,7 +47,7 @@ setMethod("convert_prob", c("matrix", "matrix"),
     stopifnot(ncol(object) == ncol(x))
     var_names <- colnames(x)
     if (is.null(var_names)) var_names <- colnames(object)
-    if (is.null(var_names)) var_names <- paste0("y", seq(ncol(x)))
+    if (is.null(var_names)) var_names <- paste0("y", seq_len(ncol(x)))
     structure(x, dimnames = list(NULL, var_names))
   }
 )
@@ -72,7 +72,14 @@ setMethod("convert_prob", c("numeric", "matrix"),
 
 setMethod("convert_prob", c("Surv", "matrix"),
   function(object, x, times, ...) {
-    SurvProbs(x, times)
+    SurvProbs(x, times, distr = attr(x, "surv_distr"))
+  }
+)
+
+
+setMethod("convert_prob", c("Surv", "numeric"),
+  function(object, x, ...) {
+    SurvMeans(x, distr = attr(x, "surv_distr"))
   }
 )
 
@@ -103,7 +110,8 @@ setMethod("convert_response", c("factor", "factor"),
 
 setMethod("convert_response", c("factor", "matrix"),
   function(object, x, ...) {
-    factor(max.col(x), levels = 1:nlevels(object), labels = levels(object))
+    factor(max.col(x), levels = seq_len(nlevels(object)),
+           labels = levels(object))
   }
 )
 
@@ -124,13 +132,9 @@ setMethod("convert_response", c("integer", "numeric"),
 
 setMethod("convert_response", c("ordered", "matrix"),
   function(object, x, ...) {
-    ordered(max.col(x), levels = 1:nlevels(object), labels = levels(object))
+    ordered(max.col(x), levels = seq_len(nlevels(object)),
+            labels = levels(object))
   }
-)
-
-
-setMethod("convert_response", c("Surv", "SurvEvents"),
-  function(object, x, ...) x
 )
 
 
@@ -138,6 +142,6 @@ setMethod("convert_response", c("Surv", "SurvProbs"),
   function(object, x, cutoff, ...) {
     events <- x <= cutoff
     storage.mode(events) <- "integer"
-    SurvEvents(events, x@times)
+    SurvEvents(events, x@times, distr = x@distr)
   }
 )

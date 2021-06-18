@@ -34,7 +34,8 @@ c.Calibration <- function(...) {
   if (all(map_logi(is, args, "Calibration"))) {
 
     if (!identical_elements(args, function(x) x@smoothed)) {
-      stop("Calibration arguments are a mix of smoothed and binned curves")
+      msg <- "Calibration arguments are a mix of smoothed and binned curves"
+      throw(Error(msg))
     }
 
     df <- do.call(append, set_model_names(args))
@@ -54,7 +55,7 @@ c.ConfusionList <- function(...) {
   if (all(map_logi(is_valid, args))) {
 
     conf_list <- list()
-    for (i in seq(args)) {
+    for (i in seq_along(args)) {
       x <- args[[i]]
       if (is(x, "ConfusionMatrix")) x <- list("Model" = x)
       arg_name <- names(args)[i]
@@ -114,7 +115,7 @@ c.ListOf <- function(...) {
   }
   if (all(map_logi(is_valid, args))) {
     x <- list()
-    for (i in seq(args)) {
+    for (i in seq_along(args)) {
       name <- names(args)[i]
       if (!is.null(name) && nzchar(name)) {
         names(args[[i]]) <- rep(name, length(args[[i]]))
@@ -135,7 +136,7 @@ c.Performance <- function(...) {
     if (length(args) > 1) {
 
       if (!identical_elements(args, function(x) dimnames(x)[1:2])) {
-        stop("Performance objects have different row or column names")
+        throw(Error("Performance objects have different row or column names"))
       }
 
       Performance(abind(args, along = 3))
@@ -157,7 +158,7 @@ c.PerformanceCurve <- function(...) {
   if (all(map_logi(is, args, class))) {
 
     if (!identical_elements(args, function(x) x@metrics)) {
-      stop(class, " arguments have different metrics")
+      throw(Error(class, " arguments have different metrics"))
     }
 
     df <- do.call(append, set_model_names(args))
@@ -176,11 +177,11 @@ c.Resamples <- function(...) {
   if (all(map_logi(is, args, "Resamples"))) {
 
     if (!identical_elements(args, function(x) x@control)) {
-      stop("Resamples arguments have different control structures")
+      throw(Error("Resamples arguments have different control structures"))
     }
 
     if (!identical_elements(args, function(x) x@strata)) {
-      stop("Resamples arguments have different strata variables")
+      throw(Error("Resamples arguments have different strata variables"))
     }
 
     df <- do.call(append, set_model_names(args))
@@ -195,14 +196,34 @@ c.Resamples <- function(...) {
 
 c.SurvMatrix <- function(...) {
   args <- list(...)
-  class <- class(args[[1]])
+  arg1 <- args[[1]]
+  class <- class(arg1)
   if (all(map_logi(is, args, class))) {
+
     if (!identical_elements(args, function(x) x@times)) {
-      stop(class, " arguments have different times")
+      throw(Error(class, " arguments have different times"))
     }
-    new(class, do.call(rbind, args), times = args[[1]]@times)
+
+    if (!identical_elements(args, function(x) x@distr)) {
+      throw(Error(class, " arguments have different distributions"))
+    }
+
+    new(class, do.call(rbind, args), times = arg1@times, distr = arg1@distr)
+
   } else {
     NextMethod()
+  }
+}
+
+
+c.SurvMeans <- function(...) {
+  args <- list(...)
+  x <- NextMethod()
+  class <- class(args[[1]])
+  if (all(map_logi(is, args, class))) {
+    new(class, x, distr = args[[1]]@distr)
+  } else {
+    x
   }
 }
 
@@ -213,8 +234,8 @@ setMethod("+", c("SurvMatrix", "SurvMatrix"),
   function(e1, e2) {
     x <- callNextMethod()
     class <- class(e1)
-    if (class(e2) == class && all(e1@times == e2@times)) {
-      new(class, x, times = e1@times)
+    if (all(class(e2) == class, e1@times == e2@times, e1@distr == e2@distr)) {
+      new(class, x, times = e1@times, distr = e1@distr)
     } else x
   }
 )

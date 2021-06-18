@@ -14,12 +14,13 @@
 #'   predicted survival probabilities and with \link[stats:loess]{loess} for
 #'   others.
 #' @param span numeric parameter controlling the degree of loess smoothing.
-#' @param dist character string specifying a distribution with which to estimate
-#'   observed survival means.  Possible values are \code{"empirical"} for the
-#'   Kaplan-Meier estimator, \code{"exponential"}, \code{"extreme"},
-#'   \code{"gaussian"}, \code{"loggaussian"}, \code{"logistic"},
-#'   \code{"loglogistic"}, \code{"lognormal"}, \code{"rayleigh"}, \code{"t"}, or
-#'   \code{"weibull"} (default).
+#' @param distr character string specifying a distribution with which to
+#'   estimate the observed survival mean.  Possible values are
+#'   \code{"empirical"} for the Kaplan-Meier estimator, \code{"exponential"},
+#'   \code{"extreme"}, \code{"gaussian"}, \code{"loggaussian"},
+#'   \code{"logistic"}, \code{"loglogistic"}, \code{"lognormal"},
+#'   \code{"rayleigh"}, \code{"t"}, or \code{"weibull"}.  Defaults to the
+#'   distribution that was used in predicting mean survival times.
 #' @param na.rm logical indicating whether to remove observed or predicted
 #'   responses that are \code{NA} when calculating metrics.
 #' @param ... arguments passed to other methods.
@@ -41,14 +42,14 @@
 #' }
 #'
 calibration <- function(
-  x, y = NULL, breaks = 10, span = 0.75, dist = NULL, na.rm = TRUE, ...
+  x, y = NULL, breaks = 10, span = 0.75, distr = NULL, na.rm = TRUE, ...
 ) {
   if (na.rm) {
     complete <- complete_subset(x = x, y = y)
     x <- complete$x
     y <- complete$y
   }
-  .calibration(x, y, breaks = breaks, span = span, dist = dist)
+  .calibration(x, y, breaks = breaks, span = span, distr = distr)
 }
 
 
@@ -57,7 +58,7 @@ Calibration <- function(object, ..., .check = TRUE) {
     if (is.null(object$Model)) object$Model <- factor("Model")
     missing <- missing_names(c("Response", "Predicted", "Observed"), object)
     if (length(missing)) {
-      stop(label_items("missing calibration variable", missing))
+      throw(Error(label_items("missing calibration variable", missing)))
     }
   }
   rownames(object) <- NULL
@@ -90,7 +91,7 @@ setGeneric(".calibration_default", function(observed, predicted, ...)
 
 setMethod(".calibration_default", c("ANY", "ANY"),
   function(observed, predicted, ...) {
-    stop("calibration unavailable for response type")
+    throw(Error("calibration unavailable for response type"))
   }
 )
 
@@ -126,7 +127,7 @@ setMethod(".calibration_default", c("matrix", "matrix"),
         y <- observed[, i]
         x <- predicted[, i]
         predict(loess(y ~ x, span = span), se = TRUE)
-      }, 1:ncol(predicted))
+      }, seq_len(ncol(predicted)))
       Mean <- c(map_num(getElement, loessfit_list, "fit"))
       SE <- c(map_num(getElement, loessfit_list, "se.fit"))
       df$Observed <- cbind(Mean = Mean, SE = SE,
@@ -160,11 +161,12 @@ setMethod(".calibration_default", c("Surv", "SurvProbs"),
                                     each = nrow(predicted)),
                      Predicted = as.numeric(predicted))
     if (is.null(breaks)) {
+      throw(check_censoring(observed, "right"))
       Mean <- c(map_num(function(i) {
         x <- predicted[, i]
         harefit <- polspline::hare(observed[, "time"], observed[, "status"], x)
         1 - polspline::phare(times[i], x, harefit)
-      }, 1:ncol(predicted)))
+      }, seq_len(ncol(predicted))))
       df$Observed <- cbind(Mean = Mean, SE = NA, Lower = NA, Upper = NA)
       df
     } else {
@@ -189,23 +191,19 @@ setMethod(".calibration_default", c("Surv", "SurvProbs"),
 
 
 setMethod(".calibration_default", c("Surv", "numeric"),
-  function(observed, predicted, breaks, dist, span, ...) {
-    max_time <- surv_max(observed)
-    dist <- if (is.null(dist)) {
-      settings("dist.Surv")
-    } else {
-      match.arg(dist, c("empirical", names(survreg.distributions)))
-    }
-    nparams <- if (dist %in% c("exponential", "rayleigh")) 1 else 2
+  function(observed, predicted, breaks, distr, span, ...) {
+    max_time <- max(time(observed))
+    distr <- get_surv_distr(distr, observed, predicted)
+    nparams <- if (distr %in% c("exponential", "rayleigh")) 1 else 2
 
-    f_survfit <- function(observed, weights = NULL) {
+    survfit_est <- function(observed, weights = NULL) {
       km <- survfit(observed ~ 1, weights = weights, se.fit = FALSE)
       est <- survival:::survmean(km, rmean = max_time)
       list(Mean = est$matrix[["*rmean"]], SE = est$matrix[["*se(rmean)"]])
     }
 
-    f_survreg <- function(observed, dist, weights = NULL) {
-      regfit <- survreg(observed ~ 1, weights = weights, dist = dist)
+    survreg_est <- function(observed, distr, weights = NULL) {
+      regfit <- survreg(observed ~ 1, weights = weights, dist = distr)
       est <- predict(regfit, data.frame(row.names = 1), se.fit = TRUE)
       list(Mean = est$fit[[1]], SE = est$se.fit[[1]])
     }
@@ -222,10 +220,10 @@ setMethod(".calibration_default", c("Surv", "numeric"),
       }
       metrics_list <- map(function(value) {
         weights <- tricubic(predicted - value, span = span, min_weight = 0.01)
-        est <- if (dist == "empirical") {
-          f_survfit(observed, weights)
+        est <- if (distr == "empirical") {
+          survfit_est(observed, weights)
         } else {
-          f_survreg(observed, dist, weights)
+          survreg_est(observed, distr, weights)
         }
         with(est, c(Mean = Mean, SE = SE,
                     Lower = max(Mean - SE, 0),
@@ -241,10 +239,10 @@ setMethod(".calibration_default", c("Surv", "numeric"),
       )
       by_results <- by(df, df[c("Predicted", "Response")], function(data) {
         observed <- data$Observed
-        est <- if (dist == "empirical") {
-          f_survfit(observed)
-        } else if (length(surv_times(observed)) >= nparams) {
-          f_survreg(observed, dist)
+        est <- if (distr == "empirical") {
+          survfit_est(observed)
+        } else if (length(event_time(observed)) >= nparams) {
+          survreg_est(observed, distr)
         } else {
           list(Mean = NA_real_, SE = NA_real_)
         }

@@ -35,11 +35,11 @@ StackedModel <- function(
   ..., control = MachineShop::settings("control"), weights = NULL
 ) {
 
-  base_learners <- ListOf(map(get_MLObject, unlist(list(...)), "MLModel"))
+  base_learners <- ListOf(map(get_MLModel, unlist(list(...))))
   names(base_learners) <- paste0(if (length(base_learners)) "Learner",
-                                 seq(base_learners))
+                                 seq_along(base_learners))
 
-  control <- get_MLObject(control, "MLControl")
+  control <- get_MLControl(control)
 
   if (!is.null(weights)) stopifnot(length(weights) == length(base_learners))
 
@@ -68,8 +68,8 @@ MLModelFunction(StackedModel) <- NULL
     num_learners <- length(base_learners)
     stack <- list()
     complete_cases <- TRUE
-    i <- structure(0, max = num_learners, names = x@name)
-    while (i < attr(i, "max")) {
+    i <- new_progress_index(names = x@name, max = num_learners)
+    while (i < max(i)) {
       i <- i + 1
       stack[[i]] <- resample(inputs, model = base_learners[[i]],
                              control = control, progress_index = i)
@@ -94,7 +94,7 @@ MLModelFunction(StackedModel) <- NULL
 
 .predict.StackedModel <- function(x, object, newdata, ...) {
   pred <- 0
-  for (i in seq(object$base_fits)) {
+  for (i in seq_along(object$base_fits)) {
     base_pred <- predict(object$base_fits[[i]], newdata = newdata,
                          times = object$times, type = "prob")
     pred <- pred + object$weights[i] * base_pred
@@ -105,7 +105,7 @@ MLModelFunction(StackedModel) <- NULL
 
 mean_stack_list <- function(x, weights) {
   pred <- 0
-  for (i in seq(x)) pred <- pred + weights[i] * x[[i]]$Predicted
+  for (i in seq_along(x)) pred <- pred + weights[i] * x[[i]]$Predicted
   res <- x[[1]]
   res$Predicted <- pred
   mean(stack_loss(res$Observed, res$Predicted, res), na.rm = TRUE)

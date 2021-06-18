@@ -9,7 +9,7 @@ calibration(
   y = NULL,
   breaks = 10,
   span = 0.75,
-  dist = NULL,
+  distr = NULL,
   na.rm = TRUE,
   ...
 )
@@ -28,12 +28,13 @@ others.}
 
 \item{span}{numeric parameter controlling the degree of loess smoothing.}
 
-\item{dist}{character string specifying a distribution with which to estimate
-observed survival means.  Possible values are \code{"empirical"} for the
-Kaplan-Meier estimator, \code{"exponential"}, \code{"extreme"},
-\code{"gaussian"}, \code{"loggaussian"}, \code{"logistic"},
-\code{"loglogistic"}, \code{"lognormal"}, \code{"rayleigh"}, \code{"t"}, or
-\code{"weibull"} (default).}
+\item{distr}{character string specifying a distribution with which to
+estimate the observed survival mean.  Possible values are
+\code{"empirical"} for the Kaplan-Meier estimator, \code{"exponential"},
+\code{"extreme"}, \code{"gaussian"}, \code{"loggaussian"},
+\code{"logistic"}, \code{"loglogistic"}, \code{"lognormal"},
+\code{"rayleigh"}, \code{"t"}, or \code{"weibull"}.  Defaults to the
+distribution that was used in predicting mean survival times.}
 
 \item{na.rm}{logical indicating whether to remove observed or predicted
 responses that are \code{NA} when calculating metrics.}

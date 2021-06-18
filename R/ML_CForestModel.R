@@ -51,7 +51,7 @@ CForestModel <- function(
     label = "Conditional Random Forests",
     packages = "party",
     response_types = c("factor", "numeric", "Surv"),
-    predictor_encoding = "terms",
+    predictor_encoding = "model.frame",
     params = list(controls = as.call(c(.(party::cforest_control), args))),
     gridinfo = new_gridinfo(
       param = "mtry",
@@ -63,12 +63,12 @@ CForestModel <- function(
       party::cforest(formula, data = as.data.frame(data), weights = weights,
                      ...)
     },
-    predict = function(object, newdata, model, times, ...) {
+    predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       if (object@responses@is_censored) {
         y <- response(model)
         fits <- predict(object, newdata = newdata, type = "prob")
-        predict(y, fits, times, ...)
+        predict(y, fits, ...)
       } else {
         predict(object, newdata = newdata, type = "prob") %>%
           unlist %>%

@@ -53,7 +53,7 @@
 #'     }
 #'   }
 #' }
-#' * included only in randomly sampled grid points
+#' * excluded from grids by default
 #'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -106,8 +106,9 @@ XGBModel <- function(
                       "reg:tweedie", "rank:pairwise", "rank:ndcg", "rank:map"),
         "PoissonVariate" = "count:poisson",
         "Surv" = {
+          throw(check_censoring(y, "right"))
           y_time <- y[, "time"]
-          y_event <- y[, "status"] != 0
+          y_event <- y[, "status"] == 1
           c("survival:cox", "survival:aft")
         }
       )
@@ -151,14 +152,14 @@ XGBModel <- function(
         "survival:aft" = if (is.null(times)) {
           pred
         } else {
-          stop("time-specific prediction not available for XGBModel",
-               " survival:aft")
+          throw(Error("time-specific prediction not available for XGBModel ",
+                      "survival:aft"))
         },
         "survival:cox" = {
           x <- model.matrix(predictor_frame(model), intercept = FALSE)
           lp <- log(predict(object, newdata = x))
           new_lp <- log(pred)
-          predict(response(model), lp, times, new_lp, ...)
+          predict(response(model), lp, new_lp, times = times, ...)
         },
         pred
       )
@@ -256,7 +257,7 @@ MLModelFunction(XGBTreeModel) <- NULL
               "min_child_weight", "colsample_bytree", "rate_drop", "skip_drop"),
     values = c(
       function(n, ...) round(seq_range(0, 50, c(1, 1000), n + 1)),
-      function(n, ...) 1:min(n, 10),
+      function(n, ...) seq_len(min(n, 10)),
       function(...) c(0.3, 0.4),
       function(n, ...) seq(0.25, 1, length = n),
       function(...) c(0.6, 0.8),
@@ -271,7 +272,7 @@ MLModelFunction(XGBTreeModel) <- NULL
       function(n, ...) seq(0.01, 0.50, length = n),
       function(n, ...) seq(0.05, 0.95, length = n)
     ),
-    regular = c(rep(TRUE, 9), rep(FALSE, 6))
+    default = c(rep(TRUE, 9), rep(FALSE, 6))
   )
   params <- switch(booster,
     "dart" = c("nrounds", "max_depth", "eta", "gamma", "min_child_weight",

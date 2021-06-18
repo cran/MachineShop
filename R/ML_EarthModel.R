@@ -20,7 +20,7 @@
 #'     \code{nprune}, \code{degree}*
 #'   }
 #' }
-#' * included only in randomly sampled grid points
+#' * excluded from grids by default
 #'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -71,7 +71,7 @@ EarthModel <- function(
         },
         function(n, ...) head(1:2, n)
       ),
-      regular = c(TRUE, FALSE)
+      default = c(TRUE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
       attach_objects(list(

@@ -21,24 +21,23 @@
 #'   \item{\code{cutoff}}{numeric (0, 1) threshold above which binary factor
 #'     probabilities are classified as events and below which survival
 #'     probabilities are classified [default: 0.5].}
-#'   \item{\code{dist.Surv}}{character string specifying distributional
+#'   \item{\code{distr.SurvMeans}}{character string specifying distributional
 #'     approximations to estimated survival curves for predicting survival
 #'     means.  Choices are \code{"empirical"} for the Kaplan-Meier estimator,
-#'     \code{"exponential"}, or \code{"weibull"} (default).}
-#'   \item{\code{dist.SurvProbs}}{character string specifying distributional
+#'     \code{"exponential"}, \code{"rayleigh"}, or \code{"weibull"} (default).}
+#'   \item{\code{distr.SurvProbs}}{character string specifying distributional
 #'     approximations to estimated survival curves for predicting survival
 #'     events/probabilities.  Choices are \code{"empirical"} (default) for the
-#'     Kaplan-Meier estimator, \code{"exponential"}, or \code{"weibull"}.}
+#'     Kaplan-Meier estimator, \code{"exponential"}, \code{"rayleigh"}, or
+#'     \code{"weibull"}.}
 #'   \item{\code{grid}}{\code{size} argument to \code{\link{Grid}} indicating
 #'     the number of parameter-specific values to generate automatically for
 #'     \link[=TunedModel]{tuning} of models that have pre-defined grids or a
 #'     \code{\link{Grid}} function, function name, or call [default: 3].}
-#'   \item{\code{max.print}}{number of models or data rows to show with print
-#'     methods or \code{Inf} to show all [default: 10].}
 #'   \item{\code{method.EmpiricalSurv}}{character string specifying the
 #'     empirical method of estimating baseline survival curves for Cox
-#'     proportional hazards-based models.  Choices are \code{"breslow"},
-#'     \code{"efron"} (default), or \code{"fleming-harrington"}.}
+#'     proportional hazards-based models.  Choices are \code{"breslow"} or
+#'     \code{"efron"} (default).}
 #'   \item{\code{metrics.ConfusionMatrix}}{function, function name, or vector of
 #'     these with which to calculate \link{performance} \link{metrics} for
 #'     confusion matrices [default: \code{c(Accuracy = "accuracy", Kappa =
@@ -59,13 +58,17 @@
 #'     which to calculate \link{performance} \link{metrics} for survival
 #'     responses [default: \code{c(`C-Index` = "cindex", Brier = "brier",
 #'     `ROC AUC` = "roc_auc", Accuracy = "accuracy")}].}
-#'   \item{\code{progress.resample}}{logical indicating whether to display a
-#'     progress bar during resampling [default: \code{TRUE}].  Displayed only
-#'     if a computing cluster is not registered or is registered with the
-#'     \pkg{doSNOW} package.}
+#'   \item{\code{print_max}}{number of models or data rows to show with print
+#'     methods or \code{Inf} to show all [default: 10].}
 #'   \item{\code{require}}{names of installed packages to load during parallel
 #'     execution of resampling algorithms [default: \code{c("MachineShop",
 #'     "survival", "recipes")}].}
+#'   \item{\code{resample_progress}}{logical indicating whether to display a
+#'     progress bar during resampling [default: \code{TRUE}].  Displayed only
+#'     if a computing cluster is not registered or is registered with the
+#'     \pkg{doSNOW} package.}
+#'   \item{\code{resample_verbose}}{logical indicating whether to enable verbose
+#'     messages when resampling [default: \code{FALSE}].}
 #'   \item{\code{reset}}{character names of settings to reset to their default
 #'     values.}
 #'   \item{\code{RHS.formula}}{non-modifiable character vector of operators and
@@ -77,7 +80,7 @@
 #'   \item{\code{stat.Resamples}}{function or character string naming a function
 #'     to compute one summary statistic to control the ordering of models in
 #'     \link[=plot]{plots} [default: \code{"base::mean"}].}
-#'   \item{\code{stat.train}}{function or character string naming a function
+#'   \item{\code{stat.Trained}}{function or character string naming a function
 #'     to compute one summary statistic on resampled performance metrics for
 #'     input \link[=SelectedInput]{selection} or \link[=TunedInput]{tuning} or
 #'     for model \link[=SelectedModel]{selection} or \link[=TunedModel]{tuning}
@@ -89,8 +92,6 @@
 #'     with which to compute \link{summary} statistics on resampled performance
 #'     metrics [default: \code{c(Mean = "base::mean", Median = "stats::median",
 #'     SD = "stats::sd", Min = "base::min", Max = "base::max")}].}
-#'   \item{\code{verbose.resample}}{logical indicating whether to enable verbose
-#'     messages when resampling [default: \code{FALSE}].}
 #' }
 #'
 #' @examples
@@ -137,7 +138,7 @@ settings <- function(...) {
   settings_pmatch <- pmatch(arg_names, names(global_settings))
   valid_settings <- !is.na(settings_pmatch)
   for (name in arg_names[!valid_settings]) {
-    warning("'", name, "' is not a MachineShop setting")
+    throw(Warning("'", name, "' is not a MachineShop setting"))
   }
 
   presets <- global_values[settings_pmatch[valid_settings]]
@@ -146,9 +147,9 @@ settings <- function(...) {
   for (index in which_set_args) {
     global_name <- names(global_settings)[settings_pmatch[index]]
     value <- global_checks[[global_name]](args[[index]])
-    if (is(value, "DomainError")) {
-      stop("MachineShop '", global_name, "' setting ", value$message)
-    }
+    eval(substitute(
+      throw(check_assignment(global_name, value), call = sys.call(-2))
+    ))
     MachineShop_global$settings[[global_name]]$value <- value
   }
 
@@ -165,75 +166,6 @@ settings <- function(...) {
 }
 
 
-#################### Settings Utility Functions ####################
-
-
-check_const <- function(x, name) {
-  if (!identical(x, x <- .global_defaults[[name]])) {
-    warn("MachineShop '", name, "' setting cannot be changed")
-  }
-  x
-}
-
-
-check_grid <- function(x) {
-  if (is(x, "numeric")) {
-    Grid(x)
-  } else if (identical(x, "Grid") || identical(x, Grid)) {
-    Grid()
-  } else if (is(x, "Grid")) {
-    x
-  } else {
-    DomainError(x, "must be a positive integer value(s) or ",
-                "a Grid function, function name, or object")
-  }
-}
-
-
-check_logical <- function(x) {
-  result <- as.logical(x)[[1]]
-  if (!(isTRUE(result) || isFALSE(result))) {
-    DomainError(x, "must be a logical value")
-  } else result
-}
-
-
-check_match <- function(choices) {
-  function(x) {
-    result <- try(match.arg(x, choices), silent = TRUE)
-    if (is(result, "try-error")) {
-      DomainError(x, "must be one of ", toString(paste0("\"", choices, "\"")))
-    } else result
-  }
-}
-
-
-check_metrics <- function(x) {
-  result <- try(lapply(c(x), get_MLObject, class = "MLMetric"), silent = TRUE)
-  if (is(result, "try-error")) {
-    DomainError(x, "must be a metrics function, function name, ",
-                   "or vector of these")
-  } else x
-}
-
-
-check_stat <- function(x) {
-  result <- try(fget(x)(1:5), silent = TRUE)
-  if (is(result, "try-error") || !is.numeric(result) || length(result) != 1) {
-    DomainError(x, "must be a statistic function or function name")
-  } else x
-}
-
-
-check_stats <- function(x) {
-  result <- try(list_to_function(x)(1:5), silent = TRUE)
-  if (is(result, "try-error") || !is.numeric(result)) {
-    DomainError(x, "must be a statistics function, function name, ",
-                   "or vector of these")
-  } else x
-}
-
-
 #################### Global Environment ####################
 
 
@@ -244,7 +176,7 @@ MachineShop_global <- as.environment(list(
     control = list(
       value = "CVControl",
       check = function(x) {
-        result <- try(get_MLObject(x, "MLControl"), silent = TRUE)
+        result <- try(get_MLControl(x), silent = TRUE)
         if (is(result, "try-error")) {
           DomainError(x, "must be an MLControl object, function, ",
                          "or function name")
@@ -255,20 +187,18 @@ MachineShop_global <- as.environment(list(
     cutoff = list(
       value = 0.5,
       check = function(x) {
-        if (!is.numeric(x) || length(x) != 1 || x <= 0 || x >= 1) {
-          DomainError(x, "must be a numeric value in (0, 1)")
-        } else x
+        check_numeric(x, bounds = c(0, 1))
       }
     ),
 
-    dist.Surv = list(
+    distr.SurvMeans = list(
       value = "weibull",
-      check = check_match(c("weibull", "exponential", "empirical"))
+      check = check_match(c("weibull", "exponential", "rayleigh", "empirical"))
     ),
 
-    dist.SurvProbs = list(
+    distr.SurvProbs = list(
       value = "empirical",
-      check = check_match(c("empirical", "weibull", "exponential"))
+      check = check_match(c("empirical", "weibull", "exponential", "rayleigh"))
     ),
 
     grid = list(
@@ -276,19 +206,9 @@ MachineShop_global <- as.environment(list(
       check = check_grid
     ),
 
-    max.print = list(
-      value = 10,
-      check = function(x) {
-        result <- try(floor(x[[1]]), silent = TRUE)
-        if (is(result, "try-error") || result <= 0) {
-          DomainError(x, "must be a positive number")
-        } else result
-      }
-    ),
-
     method.EmpiricalSurv = list(
       value = "efron",
-      check = check_match(c("efron", "breslow", "fleming-harrington"))
+      check = check_match(c("efron", "breslow"))
     ),
 
     metrics = list(
@@ -323,7 +243,7 @@ MachineShop_global <- as.environment(list(
         "tpr",
         "weighted_kappa2"
       ),
-      check = function(x) check_const(x, "metrics")
+      check = function(x) check_const_setting(x, "metrics")
     ),
 
     metrics.ConfusionMatrix = list(
@@ -433,12 +353,16 @@ MachineShop_global <- as.environment(list(
         "XGBLinearModel",
         "XGBTreeModel"
       ),
-      check = function(x) check_const(x, "models")
+      check = function(x) check_const_setting(x, "models")
     ),
 
-    progress.resample = list(
-      value = TRUE,
-      check = check_logical
+    print_max = list(
+      value = 10,
+      check = function(x) {
+        result <- check_numeric(x, bounds = c(1, Inf), include = TRUE)
+        if (is.numeric(result)) result <- floor(result)
+        result
+      }
     ),
 
     require = list(
@@ -448,9 +372,19 @@ MachineShop_global <- as.environment(list(
         available <- vapply(x, requireNamespace, logical(1), quietly = TRUE)
         if (!all(available)) {
           missing <- x[!available]
-          DomainError(x, label_items("given unavailable package", missing))
+          DomainError(x, label_items("includes unavailable package", missing))
         } else c(x, .global_defaults$require)
       }
+    ),
+
+    resample_progress = list(
+      value = TRUE,
+      check = check_logical
+    ),
+
+    resample_verbose = list(
+      value = FALSE,
+      check = check_logical
     ),
 
     reset = list(
@@ -465,7 +399,7 @@ MachineShop_global <- as.environment(list(
           }
           if ("reset" %in% reset_names) .global_defaults$reset else reset_names
         } else {
-          DomainError(x, "must be a character value or vector")
+          DomainError(x, "must be one or more character strings")
         }
       }
     ),
@@ -475,7 +409,7 @@ MachineShop_global <- as.environment(list(
         "binary", "BinomialVariate", "DiscreteVariate", "factor", "matrix",
         "NegBinomialVariate", "numeric", "ordered", "PoissonVariate", "Surv"
       ),
-      check = function(x) check_const(x, "response_types")
+      check = function(x) check_const_setting(x, "response_types")
     ),
 
     RHS.formula = list(
@@ -490,7 +424,7 @@ MachineShop_global <- as.environment(list(
         "cosh", "sinh", "tanh", "acosh", "asinh", "atanh",
         "lgamma", "gamma", "digamma", "trigamma"
       )),
-      check = function(x) check_const(x, "RHS.formula")
+      check = function(x) check_const_setting(x, "RHS.formula")
     ),
 
     stat.Curve = list(
@@ -508,7 +442,7 @@ MachineShop_global <- as.environment(list(
       check = check_stat
     ),
 
-    stat.train = list(
+    stat.Trained = list(
       value = "base::mean",
       check = check_stat
     ),
@@ -528,11 +462,6 @@ MachineShop_global <- as.environment(list(
         "Max" = "base::max"
       ),
       check = check_stats
-    ),
-
-    verbose.resample = list(
-      value = FALSE,
-      check = check_logical
     )
 
   )

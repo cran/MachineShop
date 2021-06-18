@@ -55,12 +55,12 @@ LDAModel <- function(
       param = "dimen",
       values = c(
         function(n, data, ...) {
-          1:min(nlevels(response(data)) - 1, nvars(data, LDAModel), n)
+          seq_len(min(nlevels(response(data)) - 1, nvars(data, LDAModel), n))
         }
       )
     ),
     fit = function(formula, data, weights, dimen, use, ...) {
-      assert_equal_weights(weights)
+      throw(check_equal_weights(weights))
       model_fit <- MASS::lda(formula, data = as.data.frame(data), ...)
       model_fit$dimen <- if (missing(dimen)) length(model_fit$svd) else dimen
       model_fit$use <- use

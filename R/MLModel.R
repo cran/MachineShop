@@ -15,16 +15,15 @@
 #'   \code{"matrix"}, \code{"NegBinomialVariate"}, \code{"numeric"},
 #'   \code{"ordered"}, \code{"PoissonVariate"}, and \code{"Surv"}.
 #' @param predictor_encoding character string indicating whether the model is
-#'   fit with predictor variables encoded as a \code{"\link{model.matrix}"}, a
-#'   data.frame containing the originally specified model \code{"terms"}, or
-#'   unspecified (default).
+#'   fit with predictor variables encoded as a \code{"\link{model.frame}"},
+#'   a \code{"\link{model.matrix}"}, or unspecified (default).
 #' @param params list of user-specified model parameters to be passed to the
 #'   \code{fit} function.
 #' @param gridinfo tibble of information for construction of tuning grids
 #'   consisting of a character column \code{param} with the names of parameters
 #'   in the grid, a list column \code{values} with functions to generate grid
 #'   points for the corresponding parameters, and an optional logical column
-#'   \code{regular} indicating which parameters to include by default in regular
+#'   \code{default} indicating which parameters to include by default in regular
 #'   grids.  Values functions may optionally include arguments \code{n} and
 #'   \code{data} for the number of grid points to generate and a
 #'   \code{\link{ModelFrame}} of the model fit data and formula, respectively;
@@ -94,9 +93,9 @@
 MLModel <- function(
   name = "MLModel", label = name, packages = character(),
   response_types = character(),
-  predictor_encoding = c(NA, "model.matrix", "terms"), params = list(),
+  predictor_encoding = c(NA, "model.frame", "model.matrix"), params = list(),
   gridinfo = tibble::tibble(
-    param = character(), values = list(), regular = logical()
+    param = character(), values = list(), default = logical()
   ),
   fit = function(formula, data, weights, ...) stop("no fit function"),
   predict = function(object, newdata, times, ...) stop("no predict function"),
@@ -104,13 +103,6 @@ MLModel <- function(
 ) {
 
   stopifnot(response_types %in% settings("response_types"))
-
-  if (is.function(gridinfo)) {
-    depwarn("'grid' argument to MLModel() is deprecated",
-            "use 'gridinfo' argument with a tibble instead",
-            expired = Sys.Date() >= "2021-04-15")
-    gridinfo <- new_gridinfo()
-  }
 
   new("MLModel",
       name = name,
@@ -132,7 +124,7 @@ setMethod("initialize", "MLModel",
     .Object@gridinfo <- new_gridinfo(
       param = gridinfo[["param"]],
       values = gridinfo[["values"]],
-      regular = gridinfo[["regular"]]
+      default = gridinfo[["default"]]
     )
     .Object <- callNextMethod(.Object, ...)
     .Object
@@ -146,10 +138,10 @@ MLModelFit <- function(object, Class, model, x) {
   if (is(object, Class)) {
     object <- unMLModelFit(object)
   } else if (is(object, "MLModelFit")) {
-    stop("cannot change MLModelFit class")
+    throw(Error("cannot change MLModelFit class"))
   }
 
-  if (!is(model, "MLModel")) stop("model not of class MLModel")
+  if (!is(model, "MLModel")) throw(TypeError(model, "MLModel", "'model'"))
 
   if (isS4(object)) {
     object <- new(Class, object, mlmodel = model)
@@ -157,7 +149,7 @@ MLModelFit <- function(object, Class, model, x) {
     object$mlmodel <- model
     class(object) <- c(Class, "MLModelFit", class(object))
   } else {
-    stop("unsupported object class")
+    throw(TypeError(object, c("S4 class", "list"), "'object'"))
   }
 
   object
@@ -183,7 +175,7 @@ unMLModelFit <- function(object) {
       object$mlmodel <- NULL
       classes <- class(object)
       pos <- match("MLModelFit", classes)
-      structure(object, class = classes[-(1:pos)])
+      structure(object, class = classes[-seq_len(pos)])
     }
   } else object
 }

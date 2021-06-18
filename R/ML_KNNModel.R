@@ -17,7 +17,7 @@
 #'     \code{k}, \code{distance}*, \code{kernel}*
 #'   }
 #' }
-#' * included only in randomly sampled grid points
+#' * excluded from grids by default
 #'
 #' Further model details can be found in the source link below.
 #'
@@ -55,15 +55,16 @@ KNNModel <- function(
         },
         function(n, ...) seq_inner(0, 4, length = n),
         function(n, ...) {
-          kernel <- c("optimal", "biweight", "cos", "epanechnikov", "gaussian",
-                      "inv", "rank", "rectangular", "triangular", "triweight")
-          head(sample(kernel), n)
+          kernels <- c("optimal", "rectangular", "triangular", "epanechnikov",
+                       "biweight", "triweight", "cos", "inv", "gaussian",
+                       "rank")
+          head(kernels, n)
         }
       ),
-      regular = c(TRUE, FALSE, FALSE)
+      default = c(TRUE, FALSE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
-      assert_equal_weights(weights)
+      throw(check_equal_weights(weights))
       list(formula = formula, train = as.data.frame(data), ...)
     },
     predict = function(object, newdata, ...) {

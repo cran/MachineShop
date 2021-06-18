@@ -11,7 +11,7 @@
   times = NULL,
   type = c("response", "prob"),
   cutoff = MachineShop::settings("cutoff"),
-  dist = NULL,
+  distr = NULL,
   method = NULL,
   ...
 )
@@ -32,7 +32,7 @@ survival events/probabilities or \code{NULL} for predicted survival means.}
 probabilities are classified as events and below which survival
 probabilities are classified.}
 
-\item{dist}{character string specifying distributional approximations to
+\item{distr}{character string specifying distributional approximations to
 estimated survival curves.  Possible values are \code{"empirical"},
 \code{"exponential"}, \code{"rayleigh"}, or \code{"weibull"}; with defaults
 of \code{"empirical"} for predicted survival events/probabilities and
@@ -40,8 +40,7 @@ of \code{"empirical"} for predicted survival events/probabilities and
 
 \item{method}{character string specifying the empirical method of estimating
 baseline survival curves for Cox proportional hazards-based models.
-Choices are \code{"breslow"}, \code{"efron"} (default), or
-\code{"fleming-harrington"}.}
+Choices are \code{"breslow"} or \code{"efron"} (default).}
 
 \item{...}{arguments passed to model-specific prediction functions.}
 }

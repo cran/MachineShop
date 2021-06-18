@@ -17,7 +17,7 @@
 #'     \code{mtry}, \code{nodesize}*
 #'   }
 #' }
-#' * included only in randomly sampled grid points
+#' * excluded from grids by default
 #'
 #' Default values for the \code{NULL} arguments and further model details can be
 #' found in the source link below.
@@ -45,7 +45,7 @@ RandomForestModel <- function(
     label = "Random Forests",
     packages = "randomForest",
     response_types = c("factor", "numeric"),
-    predictor_encoding = "terms",
+    predictor_encoding = "model.frame",
     params = params(environment()),
     gridinfo = new_gridinfo(
       param = c("mtry", "nodesize"),
@@ -53,10 +53,10 @@ RandomForestModel <- function(
         function(n, data, ...) seq_nvars(data, RandomForestModel, n),
         function(n, data, ...) round(seq(1, min(20, nrow(data)), length = n))
       ),
-      regular = c(TRUE, FALSE)
+      default = c(TRUE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
-      assert_equal_weights(weights)
+      throw(check_equal_weights(weights))
       eval_fit(data,
                formula = randomForest::randomForest(formula,
                                                     data = as.data.frame(data),
@@ -66,7 +66,7 @@ RandomForestModel <- function(
     predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata,
-              type = ifelse(is.factor(response(model)), "prob", "response"))
+              type = if (is.factor(response(model))) "prob" else "response")
     },
     varimp = function(object, ...) {
       randomForest::importance(object)

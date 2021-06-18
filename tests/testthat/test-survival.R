@@ -13,7 +13,7 @@ rec <- recipe(time + status ~ sex + age + year + thickness + ulcer, data = df) %
 times <- 365 * c(2, 5, 10)
 
 output <- function(obs, pred) {
-  print(head(pred))
+  print(pred)
   print(performance(obs, pred))
 }
 
@@ -23,14 +23,14 @@ test_predict_all <- function(..., model) {
   invisible(capture.output(model_fit <- fit(..., model = model)))
   obs <- response(model_fit)
 
-  for (dist in c("emp", "exp", "ray", "wei")) {
-    cat("\nPredicted means (dist = ", dist, ")\n", sep = "")
-    output(obs, predict(model_fit, dist = dist))
-    cat("\nPredicted probabilities (dist = ", dist, ")\n", sep = "")
-    output(obs, predict(model_fit, times = times, type = "prob", dist = dist))
+  for (distr in c("emp", "exp", "ray", "wei")) {
+    cat("\nPredicted means (distr = ", distr, ")\n", sep = "")
+    output(obs, predict(model_fit, distr = distr))
+    cat("\nPredicted probabilities (distr = ", distr, ")\n", sep = "")
+    output(obs, predict(model_fit, times = times, type = "prob", distr = distr))
   }
 
-  for (method in c("bre", "efr", "fle")) {
+  for (method in c("bre", "efr")) {
     cat("\nPredicted means (method = ", method, ")\n", sep = "")
     output(obs, predict(model_fit, method = method))
     cat("\nPredicted probabilities (method = ", method, ")\n", sep = "")
@@ -53,7 +53,7 @@ verify_output(test_path("test-survival.txt"), {
   skip_if_not(TEST_ALL)
   set.seed(123)
   cat("Recipe Specification", "\n")
-  test_predict_all(rec, model = "CoxModel")
+  test_predict_all(rec, model = CoxModel())
   cat("Formula Specification", "\n")
   models <- c(CoxModel(), GBMModel(), CForestModel(), SurvRegModel(),
               XGBDARTModel(), XGBLinearModel(updater = "coord_descent"),

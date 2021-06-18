@@ -31,14 +31,14 @@ response.formula <- function(object, data = NULL, template = NULL, ...) {
       template_levels <- levels(template)
       new_levels <- y_levels[is.na(match(y_levels, template_levels))]
       if (length(new_levels)) {
-        stop(label_items("response factor has new level", new_levels))
+        throw(Error(label_items("response factor has new level", new_levels)))
       }
       y <- factor(y, levels = template_levels, ordered = is.ordered(template),
                   exclude = NULL)
     }
     template_class <- class(template)[1]
     if (!(is.null(template) || is(y, template_class))) {
-      stop("response variable must be of type ", template_class)
+      throw(TypeError(y, template_class, "response variable"))
     }
     y
   } else if (length(object) > 2) object[[2]]
@@ -150,6 +150,8 @@ PoissonVariate <- function(x = integer()) {
 #'   events or probabilities at points in time in the columns and cases in the
 #'   rows.
 #' @param times numeric vector of survival times for the columns.
+#' @param distr character string specifying the survival distribution from which
+#'   the matrix values were derived.
 #'
 #' @return Object that is of the same class as the constructor name and inherits
 #' from \code{SurvMatrix}.  Examples of these are predicted survival events and
@@ -160,31 +162,38 @@ PoissonVariate <- function(x = integer()) {
 NULL
 
 
-SurvMatrix <- function(data = NA, times = NULL) {
+SurvMatrix <- function(data = NA, times = NULL, distr = NULL) {
   data <- as.matrix(data)
 
   if (is.null(times)) times <- rep(NA_real_, ncol(data))
+  if (is.null(distr)) distr <- NA_character_
 
   if (length(times) != ncol(data)) {
-    stop("unequal number of survival times and predictions")
+    throw(Error("unequal number of survival times and predictions"))
   }
 
   rownames(data) <- NULL
   colnames(data) <- if (length(times)) paste("Time", seq_along(times))
 
-  new("SurvMatrix", data, times = times)
+  new("SurvMatrix", data, times = times, distr = distr)
 }
 
 
 #' @rdname SurvMatrix
 #'
-SurvEvents <- function(data = NA, times = NULL) {
-  as(SurvMatrix(data, times), "SurvEvents")
+SurvEvents <- function(data = NA, times = NULL, distr = NULL) {
+  as(SurvMatrix(data, times, distr), "SurvEvents")
 }
 
 
 #' @rdname SurvMatrix
 #'
-SurvProbs <- function(data = NA, times = NULL) {
-  as(SurvMatrix(data, times), "SurvProbs")
+SurvProbs <- function(data = NA, times = NULL, distr = NULL) {
+  as(SurvMatrix(data, times, distr), "SurvProbs")
+}
+
+
+SurvMeans <- function(x = numeric(), distr = NULL) {
+  if (is.null(distr)) distr <- NA_character_
+  new("SurvMeans", x, distr = distr)
 }

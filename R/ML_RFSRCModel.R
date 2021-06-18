@@ -78,7 +78,7 @@ RFSRCModel <- function(
   ntree = 1000, mtry = NULL, nodesize = NULL, nodedepth = NULL,
   splitrule = NULL, nsplit = 10, block.size = NULL,
   samptype = c("swor", "swr"), membership = FALSE,
-  sampsize = ifelse(samptype == "swor", function(x) 0.632 * x, function(x) x),
+  sampsize = if (samptype == "swor") function(x) 0.632 * x else function(x) x,
   nimpute = 1, ntime = NULL,
   proximity = c(FALSE, TRUE, "inbag", "oob", "all"),
   distance = c(FALSE, TRUE, "inbag", "oob", "all"),
@@ -102,7 +102,7 @@ RFSRCModel <- function(
     label = "Random Forest (SRC)",
     packages = "randomForestSRC",
     response_types = c("factor", "matrix", "numeric", "Surv"),
-    predictor_encoding = "terms",
+    predictor_encoding = "model.frame",
     params = params(environment()),
     gridinfo = new_gridinfo(
       param = c("mtry", "nodesize"),
@@ -116,7 +116,7 @@ RFSRCModel <- function(
       data <- as.data.frame(data)
       family <- switch_class(y,
         "matrix" = {
-          colnames(y) <- paste0("y", 1:ncol(y))
+          colnames(y) <- paste0("y", seq_len(ncol(y)))
           "Multivar"
         },
         "Surv" = "Surv"
@@ -130,7 +130,7 @@ RFSRCModel <- function(
       randomForestSRC::rfsrc(formula, data = data, na.action = "na.impute",
                              case.wt = weights, ...)
     },
-    predict = function(object, newdata, model, times, ...) {
+    predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       pred <- randomForestSRC::predict.rfsrc(object, newdata = newdata)
       if (pred$family == "regr+") {
@@ -138,7 +138,7 @@ RFSRCModel <- function(
         names(y_names) <- sub("_.*", "", y_names)
         map_simplify(function(name) pred$regrOutput[[name]]$predicted, y_names)
       } else if (pred$family == "surv") {
-        predict(Surv(pred$time.interest), pred$survival, times, ...)
+        predict(Surv(pred$time.interest), pred$survival, ...)
       } else {
         pred$predicted
       }
