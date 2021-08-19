@@ -49,11 +49,12 @@ GBMModel <- function(
     label = "Generalized Boosted Regression",
     packages = "gbm",
     response_types = c("factor", "numeric", "PoissonVariate", "Surv"),
+    weights = TRUE,
     predictor_encoding = "model.frame",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = c("n.trees", "interaction.depth", "shrinkage", "n.minobsinnode"),
-      values = c(
+      get_values = c(
         function(n, ...) round(seq_range(0, 50, c(1, 1000), n + 1)),
         function(n, ...) seq_len(min(n, 10)),
         function(n, ...) seq(0.001, 0.1, length = n),
@@ -92,7 +93,7 @@ GBMModel <- function(
         data <- as.data.frame(predictor_frame(model))
         lp <- predict(object, newdata = data, n.trees = n, type = "link")
         new_lp <- predict(object, newdata = newdata, n.trees = n, type = "link")
-        predict(y, lp, new_lp, ...)
+        predict(y, lp, new_lp, weights = case_weights(model), ...)
       } else {
         predict(object, newdata = newdata, n.trees = n, type = "response")
       }

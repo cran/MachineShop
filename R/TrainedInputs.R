@@ -15,7 +15,7 @@
 #' @param y response variable.
 #' @param data \link[=data.frame]{data frame} or an object that can be converted
 #'   to one.
-#' @param control \link[=controls]{control} function, function name, or call
+#' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
 #'   these with which to calculate performance.  If not specified, default
@@ -68,7 +68,7 @@ SelectedInput.formula <- function(
     throw(Error("inputs must be formulas"))
   }
   mf_list <- map(function(x) {
-    ModelFrame(x, data, na.rm = FALSE, strata = response(x, data))
+    do.call(ModelFrame, list(x, data, na.rm = FALSE, strata = response(x)))
   }, inputs)
   SelectedInput(mf_list, control = control, metrics = metrics, stat = stat,
                 cutoff = cutoff)
@@ -213,7 +213,7 @@ SelectedInput.list <- function(x, ...) {
 #' @param x untrained \code{\link[recipes]{recipe}}.
 #' @param grid \code{RecipeGrid} containing parameter values at which to
 #'   evaluate a recipe, such as those returned by \code{\link{expand_steps}}.
-#' @param control \link[=controls]{control} function, function name, or call
+#' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
 #'   these with which to calculate performance.  If not specified, default
@@ -279,7 +279,7 @@ TunedInput.recipe <- function(
 .fit.TunedModelRecipe <- function(x, model, ...) {
   grid <- x@grid
   recipe <- as(x, "ModelRecipe")
-  if (all(dim(grid) != 0)) {
+  if (all(size(grid) > 0)) {
     grid_split <- split(grid, seq_len(nrow(grid)))
     update_input <- function(x) do.call(update, c(list(recipe), x))
     train_step <- resample_selection(grid_split, update_input, x@params, model,

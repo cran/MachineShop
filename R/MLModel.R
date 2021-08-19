@@ -14,6 +14,9 @@
 #'   \code{"BinomialVariate"}, \code{"DiscreteVariate"}, \code{"factor"},
 #'   \code{"matrix"}, \code{"NegBinomialVariate"}, \code{"numeric"},
 #'   \code{"ordered"}, \code{"PoissonVariate"}, and \code{"Surv"}.
+#' @param weights logical value or vector of the same length as
+#'    \code{response_types} indicating whether case weights are supported for
+#'    the responses.
 #' @param predictor_encoding character string indicating whether the model is
 #'   fit with predictor variables encoded as a \code{"\link{model.frame}"},
 #'   a \code{"\link{model.matrix}"}, or unspecified (default).
@@ -21,7 +24,7 @@
 #'   \code{fit} function.
 #' @param gridinfo tibble of information for construction of tuning grids
 #'   consisting of a character column \code{param} with the names of parameters
-#'   in the grid, a list column \code{values} with functions to generate grid
+#'   in the grid, a list column \code{get_values} with functions to generate grid
 #'   points for the corresponding parameters, and an optional logical column
 #'   \code{default} indicating which parameters to include by default in regular
 #'   grids.  Values functions may optionally include arguments \code{n} and
@@ -75,6 +78,7 @@
 #' LogisticModel <- MLModel(
 #'   name = "LogisticModel",
 #'   response_types = "binary",
+#'   weights = TRUE,
 #'   fit = function(formula, data, weights, ...) {
 #'     glm(formula, data = data, weights = weights, family = binomial, ...)
 #'   },
@@ -92,23 +96,26 @@
 #'
 MLModel <- function(
   name = "MLModel", label = name, packages = character(),
-  response_types = character(),
+  response_types = character(), weights = FALSE,
   predictor_encoding = c(NA, "model.frame", "model.matrix"), params = list(),
   gridinfo = tibble::tibble(
-    param = character(), values = list(), default = logical()
+    param = character(), get_values = list(), default = logical()
   ),
   fit = function(formula, data, weights, ...) stop("no fit function"),
   predict = function(object, newdata, times, ...) stop("no predict function"),
   varimp = function(object, ...) NULL, ...
 ) {
 
+  stopifnot(!any(duplicated(response_types)))
   stopifnot(response_types %in% settings("response_types"))
+  stopifnot(length(weights) %in% c(1, length(response_types)))
 
   new("MLModel",
       name = name,
       label = label,
       packages = packages,
       response_types = response_types,
+      weights = weights,
       predictor_encoding = match.arg(predictor_encoding),
       params = params,
       gridinfo = gridinfo,
@@ -123,7 +130,7 @@ setMethod("initialize", "MLModel",
     stopifnot(is_tibble(gridinfo))
     .Object@gridinfo <- new_gridinfo(
       param = gridinfo[["param"]],
-      values = gridinfo[["values"]],
+      get_values = gridinfo[["get_values"]],
       default = gridinfo[["default"]]
     )
     .Object <- callNextMethod(.Object, ...)

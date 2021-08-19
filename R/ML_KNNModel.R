@@ -46,10 +46,10 @@ KNNModel <- function(
     packages = "kknn",
     response_types = c("factor", "numeric", "ordered"),
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = c("k", "distance", "kernel"),
-      values = c(
+      get_values = c(
         function(n, data, ...) {
           round(seq_range(0, 5, c(1, nrow(data) / 3), n + 1))
         },
@@ -64,7 +64,6 @@ KNNModel <- function(
       default = c(TRUE, FALSE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
-      throw(check_equal_weights(weights))
       list(formula = formula, train = as.data.frame(data), ...)
     },
     predict = function(object, newdata, ...) {

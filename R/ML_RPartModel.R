@@ -47,11 +47,12 @@ RPartModel <- function(
     label = "Recursive Partitioning and Regression Trees",
     packages = c("rpart", "partykit"),
     response_types = c("factor", "numeric", "Surv"),
+    weights = TRUE,
     predictor_encoding = "model.frame",
-    params = list(control = as.call(c(.(list), params(environment())))),
+    params = list(control = as.call(c(.(list), new_params(environment())))),
     gridinfo = new_gridinfo(
       param = "cp",
-      values = c(
+      get_values = c(
         function(n, data, ...) {
           cptable <- fit(data, model = RPartModel(cp = 0))$cptable
           xerror_order <- order(cptable[, "xerror"] + cptable[, "xstd"])

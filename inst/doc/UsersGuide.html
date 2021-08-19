@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2021-06-17" />
+<meta name="date" content="2021-08-19" />
 
 <title>MachineShop User’s Guide</title>
 
@@ -163,12 +163,12 @@ div.csl-indent {
 
 
 <h1 class="title toc-ignore">MachineShop User’s Guide</h1>
-<h3 class="subtitle">R Package Version 2.9.0</h3>
+<h3 class="subtitle">R Package Version 3.0.0</h3>
 <h4 class="author">Brian J Smith</h4>
 <address class="author_afil">
 University of Iowa<br><a class="author_email" href="mailto:#"><a href="mailto:brian-j-smith@uiowa.edu" class="email">brian-j-smith@uiowa.edu</a></a>
 </address>
-<h4 class="date">2021-06-17</h4>
+<h4 class="date">2021-08-19</h4>
 
 
 <div id="TOC">
@@ -325,18 +325,17 @@ University of Iowa<br><a class="author_email" href="mailto:#"><a href="mailto:br
 <div id="melanoma-example" class="section level1" number="4">
 <h1 number="4"><span class="header-section-number">4</span> Melanoma Example</h1>
 <p>Use of the <strong>MachineShop</strong> package is demonstrated with a survival analysis example in which the response variable is a censored time to event outcome. Since survival outcomes are a combination of numerical (time to event) and categorical (event) variables, package features for both variable types are illustrated with the example. Support for outcomes other than survival, including nominal and ordinal factors as well as numeric vectors and matrices, is also discussed.</p>
-<p>Survival analysis is performed with the <code>Melanoma</code> dataset from the <strong>MASS</strong> package <span class="citation">(Andersen et al. 1993)</span>. This dataset provides survival time, in days, from disease treatment to (1) death from disease, (2) alive at study termination, or (3) death from other causes for 205 Denmark patients with malignant melanomas. Also provided are potential predictors of the survival outcomes. The analysis begins by loading required packages <strong>MachineShop</strong>, <strong>survival</strong> <span class="citation">(Therneau 2020)</span>, and <strong>MASS</strong> as well as <strong>magrittr</strong> <span class="citation">(Bache and Wickham 2014)</span> for its pipe (<code>%&gt;%</code>) operator to simplify some of the code syntax. For the analysis, a binary overall survival outcome is created by combining the two death categories (1 and 3) into one.</p>
+<p>Survival analysis is performed with the <code>Melanoma</code> dataset from the <strong>MASS</strong> package <span class="citation">(Andersen et al. 1993)</span>. This dataset provides survival time, in days, from disease treatment to (1) death from disease, (2) alive at study termination, or (3) death from other causes for 205 Denmark patients with malignant melanomas. Also provided are potential predictors of the survival outcomes. The analysis begins by loading required packages <strong>MachineShop</strong>, <strong>survival</strong> <span class="citation">(Therneau 2020)</span>, and <strong>MASS</strong>. For the analysis, a binary overall survival outcome is created by combining the two death categories (1 and 3) into one.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Analysis libraries and dataset</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MachineShop)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(survival)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(magrittr)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(Melanoma, <span class="at">package =</span> <span class="st">&quot;MASS&quot;</span>)</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="do">## Malignant melanoma analysis dataset</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>surv_df <span class="ot">&lt;-</span> <span class="fu">within</span>(Melanoma, {</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">Surv</span>(time, status <span class="sc">!=</span> <span class="dv">2</span>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">remove</span>(time, status)</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(Melanoma, <span class="at">package =</span> <span class="st">&quot;MASS&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Malignant melanoma analysis dataset</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>surv_df <span class="ot">&lt;-</span> <span class="fu">within</span>(Melanoma, {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">Surv</span>(time, status <span class="sc">!=</span> <span class="dv">2</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">remove</span>(time, status)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div>
 <p>Descriptive summaries of the study variables are given below in Table 1, followed by a plot of estimated overall survival probabilities and 95% confidence intervals.</p>
 <center>
 Table 1. Variable summaries for the Melanoma survival analysis example.
@@ -504,6 +503,9 @@ Median (Range)
 <dt><code>response_types</code></dt>
 <dd>Character vector of response variable types supported by the model.
 </dd>
+<dt><code>weights</code></dt>
+<dd>Logical value or vector of the same length as <code>response_types</code> indicating whether case weights are supported for the responses.
+</dd>
 <dt><code>arguments</code></dt>
 <dd>Closure with the argument names and corresponding default values of the model function.
 </dd>
@@ -548,16 +550,19 @@ Median (Range)
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $GBMModel$response_types</span></span>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] &quot;factor&quot;         &quot;numeric&quot;        &quot;PoissonVariate&quot; &quot;Surv&quot;          </span></span>
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $GBMModel$arguments</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (distribution = NULL, n.trees = 100, interaction.depth = 1, </span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5) </span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $GBMModel$grid</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $GBMModel$weights</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $GBMModel$arguments</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (distribution = NULL, n.trees = 100, interaction.depth = 1, </span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5) </span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $GBMModel$varimp</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $GBMModel$grid</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $GBMModel$varimp</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 <p>Submitting the model function at the console will result in similar information being displayed as formatted text.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>GBMModel</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;MLModelFunction&quot;</span></span>
@@ -566,13 +571,14 @@ Median (Range)
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Label: Generalized Boosted Regression</span></span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Package: gbm</span></span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Response types: factor, numeric, PoissonVariate, Surv</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: TRUE</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: TRUE</span></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Arguments:</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (distribution = NULL, n.trees = 100, interaction.depth = 1, </span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5) </span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Case weights support: TRUE</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: TRUE</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: TRUE</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Arguments:</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (distribution = NULL, n.trees = 100, interaction.depth = 1, </span></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5) </span></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
 <div id="type-specific-models" class="section level3" number="5.1.1">
 <h3 number="5.1.1"><span class="header-section-number">5.1.1</span> Type-Specific Models</h3>
 <p>When data objects are supplied as arguments to modelinfo(), information is returned on all models applicable to response variables of the same data types. If model functions are additionally supplied as arguments, information on the subset matching the data types is returned.</p>
@@ -608,7 +614,7 @@ Median (Range)
 </div>
 <div id="fit-function" class="section level2" number="5.2">
 <h2 number="5.2"><span class="header-section-number">5.2</span> Fit Function</h2>
-<p>Package models, such as GBMModel, can be specified in the <code>model</code> argument of the fit() function to estimate a relationship (<code>surv_fo</code>) between predictors and an outcome based on a set of data (<code>surv_train</code>). Argument specifications may be in terms of the model function, function name, or a function call.</p>
+<p>Package models, such as GBMModel, can be specified in the <code>model</code> argument of the fit() function to estimate a relationship (<code>surv_fo</code>) between predictors and an outcome based on a set of data (<code>surv_train</code>). Argument specifications may be in terms of a model function, function name, or object.</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Generalized boosted regression fit</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Model function</span></span>
@@ -617,7 +623,7 @@ Median (Range)
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Model function name</span></span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="fu">fit</span>(surv_fo, <span class="at">data =</span> surv_train, <span class="at">model =</span> <span class="st">&quot;GBMModel&quot;</span>)</span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="do">## Model function call</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="do">## Model object</span></span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="fu">fit</span>(surv_fo, <span class="at">data =</span> surv_train, <span class="at">model =</span> <span class="fu">GBMModel</span>(<span class="at">n.trees =</span> <span class="dv">100</span>, <span class="at">interaction.depth =</span> <span class="dv">1</span>))</span></code></pre></div>
 <p>Model function arguments will assume their default values unless otherwise changed in a function call.</p>
 </div>
@@ -766,7 +772,7 @@ Median (Range)
 <p>The model frame approach has a few advantages over model fitting directly with a traditional formula. One is that cases with missing values on any of the response or predictor variables are excluded from the model frame by default. This is often desirable for models that do not handle missing values. Conversely, missing values can be retained in the model frame by setting its argument <code>na.rm = FALSE</code> for models, like GBMModel, that do handle them. A second advantage is that case weights can be included in the model frame to be passed on to the model fitting functions.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Model frame specification with case weights</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>mf <span class="ot">&lt;-</span> <span class="fu">ModelFrame</span>(ncases <span class="sc">/</span> (ncases <span class="sc">+</span> ncontrols) <span class="sc">~</span> agegp <span class="sc">+</span> tobgp <span class="sc">+</span> alcgp, <span class="at">data =</span> esoph,</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">weights =</span> <span class="fu">with</span>(esoph, ncases <span class="sc">+</span> ncontrols))</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">weights =</span> ncases <span class="sc">+</span> ncontrols)</span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="fu">fit</span>(mf, <span class="at">model =</span> GBMModel)</span></code></pre></div>
 <p>A third, which will be illustrated later, is user-specification of a variable for stratified resampling via the constructor’s <code>strata</code> argument.</p>
 </div>
@@ -1208,7 +1214,7 @@ Recipe
 <span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
 <span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $cindex$arguments</span></span>
-<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (observed, predicted = NULL, ...) </span></span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (observed, predicted = NULL, weights = NULL, ...) </span></span>
 <span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; $cindex$response_types</span></span>
@@ -1225,7 +1231,7 @@ Recipe
 <span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Maximize: TRUE</span></span>
 <span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Arguments:</span></span>
-<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (observed, predicted = NULL, ...) </span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (observed, predicted = NULL, weights = NULL, ...) </span></span>
 <span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
 <span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Types:</span></span>
@@ -1521,7 +1527,8 @@ Event
 <span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>surv_means_control <span class="ot">&lt;-</span> <span class="fu">CVControl</span>(<span class="at">folds =</span> <span class="dv">5</span>, <span class="at">repeats =</span> <span class="dv">3</span>, <span class="at">seed =</span> <span class="dv">123</span>)</span>
 <span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a><span class="do">## Prediction of survival probabilities</span></span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>surv_probs_control <span class="ot">&lt;-</span> <span class="fu">CVControl</span>(<span class="at">folds =</span> <span class="dv">5</span>, <span class="at">repeats =</span> <span class="dv">3</span>, <span class="at">times =</span> surv_times, <span class="at">seed =</span> <span class="dv">123</span>)</span></code></pre></div>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>surv_probs_control <span class="ot">&lt;-</span> <span class="fu">CVControl</span>(<span class="at">folds =</span> <span class="dv">5</span>, <span class="at">repeats =</span> <span class="dv">3</span>, <span class="at">seed =</span> <span class="dv">123</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_predict</span>(<span class="at">times =</span> surv_times)</span></code></pre></div>
 </div>
 <div id="parallel-processing" class="section level2" number="9.2">
 <h2 number="9.2"><span class="header-section-number">9.2</span> Parallel Processing</h2>
@@ -1551,27 +1558,30 @@ Event
 <span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Unique numeric threshold: 5</span></span>
 <span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Minimum proportion: 0.1</span></span>
 <span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Minimum size: 20</span></span>
-<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Seed: 123</span></span>
-<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>(res_probs <span class="ot">&lt;-</span> <span class="fu">resample</span>(surv_fo, <span class="at">data =</span> surv_train, <span class="at">model =</span> GBMModel, <span class="at">control =</span> surv_probs_control))</span>
-<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Resamples&quot;</span></span>
-<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: GBMModel</span></span>
-<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Stratification variable: (strata) </span></span>
-<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;MLControl&quot;</span></span>
-<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Name: CVControl</span></span>
-<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Label: K-Fold Cross-Validation</span></span>
-<span id="cb40-31"><a href="#cb40-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Folds: 5</span></span>
-<span id="cb40-32"><a href="#cb40-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Repeats: 3</span></span>
-<span id="cb40-33"><a href="#cb40-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Stratification parameters</span></span>
-<span id="cb40-34"><a href="#cb40-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Breaks: 4</span></span>
-<span id="cb40-35"><a href="#cb40-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Unique numeric threshold: 5</span></span>
-<span id="cb40-36"><a href="#cb40-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Minimum proportion: 0.1</span></span>
-<span id="cb40-37"><a href="#cb40-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Minimum size: 20</span></span>
-<span id="cb40-38"><a href="#cb40-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Survival times: 1825, 3650</span></span>
-<span id="cb40-39"><a href="#cb40-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Seed: 123</span></span></code></pre></div>
+<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Monitoring: progress </span></span>
+<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Seed: 123</span></span>
+<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>(res_probs <span class="ot">&lt;-</span> <span class="fu">resample</span>(surv_fo, <span class="at">data =</span> surv_train, <span class="at">model =</span> GBMModel, <span class="at">control =</span> surv_probs_control))</span>
+<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Resamples&quot;</span></span>
+<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: GBMModel</span></span>
+<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Stratification variable: (strata) </span></span>
+<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;MLControl&quot;</span></span>
+<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Name: CVControl</span></span>
+<span id="cb40-31"><a href="#cb40-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Label: K-Fold Cross-Validation</span></span>
+<span id="cb40-32"><a href="#cb40-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Folds: 5</span></span>
+<span id="cb40-33"><a href="#cb40-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Repeats: 3</span></span>
+<span id="cb40-34"><a href="#cb40-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Prediction parameters</span></span>
+<span id="cb40-35"><a href="#cb40-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Survival times: 1825, 3650</span></span>
+<span id="cb40-36"><a href="#cb40-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Stratification parameters</span></span>
+<span id="cb40-37"><a href="#cb40-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Breaks: 4</span></span>
+<span id="cb40-38"><a href="#cb40-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Unique numeric threshold: 5</span></span>
+<span id="cb40-39"><a href="#cb40-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Minimum proportion: 0.1</span></span>
+<span id="cb40-40"><a href="#cb40-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Minimum size: 20</span></span>
+<span id="cb40-41"><a href="#cb40-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Monitoring: progress </span></span>
+<span id="cb40-42"><a href="#cb40-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Seed: 123</span></span></code></pre></div>
 </div>
 <div id="summary-statistics" class="section level2" number="9.4">
 <h2 number="9.4"><span class="header-section-number">9.4</span> Summary Statistics</h2>
@@ -1684,18 +1694,19 @@ Event
 <span id="cb47-24"><a href="#cb47-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Unique numeric threshold: 5</span></span>
 <span id="cb47-25"><a href="#cb47-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Minimum proportion: 0.1</span></span>
 <span id="cb47-26"><a href="#cb47-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Minimum size: 20</span></span>
-<span id="cb47-27"><a href="#cb47-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Seed: 123</span></span>
-<span id="cb47-28"><a href="#cb47-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-29"><a href="#cb47-29" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(res)</span>
-<span id="cb47-30"><a href="#cb47-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; , , Metric = C-Index</span></span>
-<span id="cb47-31"><a href="#cb47-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb47-32"><a href="#cb47-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       Statistic</span></span>
-<span id="cb47-33"><a href="#cb47-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Model       Mean    Median         SD       Min       Max NA</span></span>
-<span id="cb47-34"><a href="#cb47-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   GBM1 0.7625619 0.7669683 0.05929276 0.6431718 0.8537736  0</span></span>
-<span id="cb47-35"><a href="#cb47-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   GBM2 0.7513153 0.7548387 0.05260501 0.6486486 0.8261803  0</span></span>
-<span id="cb47-36"><a href="#cb47-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   GBM3 0.7299930 0.7222222 0.05449760 0.6283784 0.8207547  0</span></span>
-<span id="cb47-37"><a href="#cb47-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb47-38"><a href="#cb47-38" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(res)</span></code></pre></div>
+<span id="cb47-27"><a href="#cb47-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Monitoring: progress </span></span>
+<span id="cb47-28"><a href="#cb47-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Seed: 123</span></span>
+<span id="cb47-29"><a href="#cb47-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-30"><a href="#cb47-30" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(res)</span>
+<span id="cb47-31"><a href="#cb47-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; , , Metric = C-Index</span></span>
+<span id="cb47-32"><a href="#cb47-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb47-33"><a href="#cb47-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;       Statistic</span></span>
+<span id="cb47-34"><a href="#cb47-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Model       Mean    Median         SD       Min       Max NA</span></span>
+<span id="cb47-35"><a href="#cb47-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   GBM1 0.7625619 0.7669683 0.05929276 0.6431718 0.8537736  0</span></span>
+<span id="cb47-36"><a href="#cb47-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   GBM2 0.7513153 0.7548387 0.05260501 0.6486486 0.8261803  0</span></span>
+<span id="cb47-37"><a href="#cb47-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   GBM3 0.7299930 0.7222222 0.05449760 0.6283784 0.8207547  0</span></span>
+<span id="cb47-38"><a href="#cb47-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-39"><a href="#cb47-39" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(res)</span></code></pre></div>
 <p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAGACAMAAABFpiBcAAABPlBMVEUAAAAAADoAAGYAOpAAZrYZGT8ZGWIZP2IZP4EZYp8aGhozMzM6AAA6ADo6AGY6Ojo6kNs/GRk/GT8/GWI/P4E/gb1NTU1NTW5NTY5NbqtNjshiGRliGT9iGWJiPxliYmJin9lmAABmADpmtrZmtv9uTU1uTW5uTY5ubqtujqtujshuq+SBPxmBPz+BYhmBvdmOTU2OTW6OTY6Obm6ObquOjm6Ojo6OjsiOyP+QOgCQtpCQ27aQ2/+fYhmf2Z+f2dmrbk2rbm6rbo6rjk2rjqurq46ryKur5P+2ZgC2//+9gT+92b292dnIjk3Ijm7IyI7I5KvI/+TI///Zn2LZvYHZ2Z/Z2b3Z2dnbkDrb/9vb///kq27kq47k/8jk///r6+v/tmb/yI7/25D/29v/5Kv//7b//8j//9v//+T///+DL+ZdAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAQGUlEQVR4nO2cDXsbxRVGRYG2GNqmLchOWlpCiWUwbUgpIFpSnBQQ0BqCkpC0ATdKN0b7//9AZz+uLSe2oonenZ155rxPsKT1Ht97N8ezu8qDBiUhEWfQdwOELAuCkqiDoCTqICiJOghKog6CkqizvqB3CNEHQUnUQVASdRCURB0EJVEHQUnUQVASdRCURB0EJVEHQTvPzY2NjZ/+q35669cfL3zj27df66ejlIKgXefLHzsprzaGIqh3ELTj3P7t5TtHLjpBb738p40N9+L2bzZ+8rvXqgcn8NVX7nz5Qs+NRhoE7Tg327N7nUrQX75Sb3NO3nSiNmrefvXvr3589s/IOQjacW4uroyVoO4s7/677YR0y2q1vlZPv9x4pbcO4w6CdpxbL7cr6NWNjReOBa2vRq++5s7wGxvPX75z61eX+20z2iBox3nsGvTkCtqe2a/+nkvQ04OgXeeRu/hW0IVrUHdFeuvlf/6RJfTUIGjnOfk+qAn67dt2F//85Wp9PXEzRY6CoCTqICiJOghKog6CkqiDoCTq6AT97+M5bdvKWQfui82vcOdNI6iSza8wgibF5lcYQZNi8yuMoEmx+RVG0KTY/AojaFJsfoURNCk2v8IImhSbX2EETYrNrzCCJsXmVxhBk2LzK4ygSbH5FUbQpNj8CiNoUmx+hRE0KTa/wgiaFJtfYQRNis2vMIImxeZXGEGTYvMrjKBJsfkVRtCk2PwKI2hS7Frwi4EibRpBk2LXE3TFA/3iqjuegUubRtCkWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9Y2gipYBJXD1jaCKlgElcPWNoIqWASVw9b2MkFnw+HwQlkWl9zjcOwe3Ytyf2vqvhajqe3VR/exsQgqh63tJYLOnIrzvd1GxmJ7Umy/eVAevlu9mg23RII+/sm/p8GnfT7wqVOtXljKdijoYGB/RQh6MvO9sfta7BzUgs6vTYrRe5OyeN+92t/8TLSCnvLZ1KfAp3+C9VqFtWx3gg4GR4Yi6MkcncWbFbQS9etx+V2jZvvNSpz1jtpKP2G1vdbuo68sa0woaIRZoe0lgu4ctE/qa9DzTtAbb82v3xgpr0HrNp8In7LXGb92KxfWsqygcvjoAJw5UOWgc3Nz0pzi98bF6JtPvv+gkArKNSjXoGfs80RBm2vQwyuNoOW+E3T61ae7YkG1cNSH/KxwF3/qPm2W3cVvTuovtYyNqPYKQYUwgp66T5tl74NWF59b0+P3QUfT5k+JoEoYQU/dpw3/kqRgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpgEVQOW9sIqmARVA5b2wiqYBFUDlvbCKpg1xM0UKRNI2hSbH6FETQpNr/CCJoUm19hBE2Kza8wgibF5lcYQZNi8yuMoEmx+RVG0KTY/AojaFJsfoURNCk2v8IImhSbX2EETYrNrzCCJsXmVxhBk2LzK4ygSbH5FUbQpNj8CiNoUmx+hRE0KTa/wgiaFJtfYQRNis2vMIImxeZXGEGTYvMrjKBJsfkVRtCk2PwKI2hS7CNwqI9iWPkjGvQTI2hS7KOCPu2xXPPTbeynBJgYQZNiEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zAIqmARVA7bMAiqYBFUDtswCKpgEVQO2zDLBJ0Nh8MLZVlcco/DsXt0L8r9rWm9ZWx79dF9bCyCymEbZomgM6fifG+3LEZTZ+n2pNh+86A8fHc0PbwyqV63uwm7rz8cOENBB4P2rwFBj/exY3PmmPO9apEsdg5qQefXJsXoPSfm+6PprF5JbQnVdd98fHV+gg4GZiiCHu9jB+fMMWsvj57Uon49Lr/7rNlcraLVAdUc0vbAnvnjevu096eM39xyQWMc8mmzRNCdg/ZJfQ163gl646359Ru1oNWpv43u16semxV07WS0gjo3NyfNKX5vXIy++eT7D+pXh+8c+ck16OMw16Drw0fH5swxm2tQdypvzvX7TtDpV5/uNt6Oj/fro/vYWO7i5bANs+wufnNSf2nWzFrU5tUJPxH0cRhB14dtmGXvg1YXn+27nvX7oE7N+s+9YbOhSR/dx8YiqBy2YfiXJAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAWLoHLYhkFQBYugctiGQVAFi6By2IZBUAX7qKA9J8DECJoUm19hBE2Kza8wgibF5lcYQZNi8yuMoEmx+RVG0KTY/AojaFJsfoURNCk2v8IImhSbX2EETYrNrzCCJsXmVxhBk2LzK4ygSbH5FUbQpNj8CiNoUmx+hRE0KTa/wgiaFJtfYQRNis2vMIImxeZXGEGTYvMrjKBJsfkVRtCk2PwKI2hSbH6FETQo2/f/yO6Xvo/WuiyCeqfnjwLxrNn30VqXRVDvIGhIFkG9g6AhWQT1DoKGZBHUOwgakkVQ7yBoSBZBvYOgIVkE9Q6ChmQR1DsIGpJFUO8gaEgWQb2DoCFZBPUOgoZkEdQ7CBqSRVDvIGhIFkG9g6AhWQT1DoKGZBHUOwgakkVQ7yBoSBZBvYOgIVkE9Q6ChmQR1DsIGpJFUO8gaEgWQb2DoCFZBPUOgoZkEdQ7CBqSRVDvIGhIFkG9g6AhWQT1DoKGZBHUOwgakkVQ7yBoSBZBvYOgIVkE9Q6ChmRlgs6Gw+GFsiwuucfh2D26F+X+1rT6hvvapo/u1SyChmRVgs6chPO93bIYORmL7Umx/eZBefjuaFptuHfBduujezWrFHQwWP+stLxm30drXVYk6Hxv7L4WOwe1oPNrk2L03qQs3h/Va2cxsiW0j+7VrFDQwaBrQxG0yZGCzQpaifr1uPzus2Zzs4JWn5i+7FAmk6eWpQ9B0ztMa2SJoDsH7ZP6GvS8E/TGW/PrN2pdL21ObL8+fr3UbFqC9n201mWFK6hzc3PSnOL3xsXom0++/6BdWA+vmKF9dK9muQYNyUqvQZ2IjZL7TtDpV5/u2pl/f9zu10f3apa7+JCs7C6+Oo3P2hW0EbV5NTt/wArayoKgHcE27bLTUXXxuTU9fh+0foOpfo9pOOQatJEFQTuCbVr+JakKgoZkEdQ7CBqSRVDvIGhIFkG9g6AhWQT1DoKGZBHUOwgakkVQ7yBoSBZBvYOgIVkE9Q6ChmQR1DsIGpJFUO8gaEgWQb2DoCFZBPUOgoZkEdQ7CBqSRVDvIGhIFkG9g6AhWQT1DoKGZBHUOwgakkVQ7yBoSBZBvYOgIVkE9Q6ChmQR1DsIGpJFUO8gaEgWQb2DoCFZBPUOgoZkEdQ7CBqSRVDvIGhIFkG9g6AhWQT1DoKGZBHUOwgakkVQ7/T4se9Pkb6P1rosggZn8yuMoEmx+RVG0KTY/AojaFJsfoURNCk2v8IImhSbX2EETYrNrzCCJsXmVxhBk2LzK4ygSbH5FUbQpNj8CiNoUmx+hRE0KTa/wgiaFJtfYQRNis2vMIImxeZXGEGTYvMrjKBJsfkVRtCk2PwKI2hSbH6FETQpNr/CCQmqTg//I2+vdSm8NAjad10KLw2C9l2XwkuDoH3XpfDSxCcoIQtBUBJ1EJREHQQlUQdBSdSJRNDDd4bnD+pn873h5qQs7w2Hw61puLpVveFwvNBI4MKBBl4YsLhUFww+sRVebeI4BJ3vub+hC/XT/XE5c4O4h7B1XVzdkxsCFg408ELhwyuT8l4fE7eFV5w4DkEP/zwti9G0feYyvzYJW7dsDtyJDSELBxp4oXCxc1C9Cj9xW3jFieMQtO75yqR+9o/qFO/OB9V5L1xdl+r3+8SGkIUDDbxQuF3Iwk/cFl5x4jgErc5xraCXxtUsxXaQReW4bnPcTmwIWjjQwIuFm4vCHiZuCq84cRyCLq6gx8er+8uyxWrVEexlBZ0d3aMEuA5dONJOkNnWNPzEbeF665MnjkPQhWvQv4QUdPECbH/3kQ1BCzfPuhf0uHC7pIWfeHHNTkXQ+d7uwl28+2Wrhphf7/ywLdRtzjYLG8IWDjTwQuF2IQs/cVt4xYnjENQuS9xvmHvWvkm2GeC+dqHu4vVRD4UDDbxQeNZUDD9xW3i1iSMRlJDTg6Ak6iAoiToISqIOgpKog6Ak6iBoZ/nhw+fqx7vP2ZYHP/uot25SDYJ2l7s/+qKsPH3DNiCofxC0uzQ+Pvj5Fyc3EJ8gaIf5/FzZnOEfvDQYDM5VgtaOVl9++HAwqFdYsjQI2mHuP/uf+gz/8OIb9Ql/QdD6AvWu+z5ZHgTtMA9f/6g+w/+v8rCx0wS9X62etbhkaRC0y7hzfHMPf9+d4p9ZFPTuoM65vjuMPgjaZe4/++/qHv7hxWc+emQF5ey+YhC0yzx8/a/VPXx1LVreP7GCuld9N5dGELTTfP6L6gxf2fjgpVrQhxfPufumZ9xNkpMWS58cBO009wf1bdDn7gr0bxffqJbP6h2nP7zevM2En08OgpKog6Ak6iAoiToISqIOgpKog6Ak6iAoiToISqIOgpKog6Ak6vwfde+vm4wx3iAAAAAASUVORK5CYII=" style="display: block; margin: auto;" /></p>
 <p>Pairwise model differences for each metric can be calculated with the diff() function applied to results from a call to c(). Resulting differences can be summarized descriptively with the summary() and plot() functions and assessed for statistical significance with pairwise t-test performed by the t.test() function.</p>
 <div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Pairwise model comparisons</span></span>
@@ -1758,18 +1769,19 @@ Event
 <span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Label: Support Vector Machines</span></span>
 <span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Package: kernlab</span></span>
 <span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Response types: factor, numeric</span></span>
-<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: FALSE</span></span>
-<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: FALSE</span></span>
-<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Arguments:</span></span>
-<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (scaled = TRUE, type = NULL, kernel = c(&quot;rbfdot&quot;, &quot;polydot&quot;, </span></span>
-<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     &quot;vanilladot&quot;, &quot;tanhdot&quot;, &quot;laplacedot&quot;, &quot;besseldot&quot;, &quot;anovadot&quot;, </span></span>
-<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     &quot;splinedot&quot;), kpar = &quot;automatic&quot;, C = 1, nu = 0.2, epsilon = 0.1, </span></span>
-<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     cache = 40, tol = 0.001, shrinking = TRUE) </span></span>
-<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
-<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a><span class="fu">modelinfo</span>(SVMModel)[[<span class="dv">1</span>]]<span class="sc">$</span>varimp</span>
-<span id="cb51-19"><a href="#cb51-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Case weights support: FALSE</span></span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: FALSE</span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: FALSE</span></span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb51-12"><a href="#cb51-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Arguments:</span></span>
+<span id="cb51-13"><a href="#cb51-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; function (scaled = TRUE, type = NULL, kernel = c(&quot;rbfdot&quot;, &quot;polydot&quot;, </span></span>
+<span id="cb51-14"><a href="#cb51-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     &quot;vanilladot&quot;, &quot;tanhdot&quot;, &quot;laplacedot&quot;, &quot;besseldot&quot;, &quot;anovadot&quot;, </span></span>
+<span id="cb51-15"><a href="#cb51-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     &quot;splinedot&quot;), kpar = &quot;automatic&quot;, C = 1, nu = 0.2, epsilon = 0.1, </span></span>
+<span id="cb51-16"><a href="#cb51-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;     cache = 40, tol = 0.001, shrinking = TRUE) </span></span>
+<span id="cb51-17"><a href="#cb51-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb51-18"><a href="#cb51-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-19"><a href="#cb51-19" aria-hidden="true" tabindex="-1"></a><span class="fu">modelinfo</span>(SVMModel)[[<span class="dv">1</span>]]<span class="sc">$</span>varimp</span>
+<span id="cb51-20"><a href="#cb51-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
 </div>
 <div id="partial-dependence-plots" class="section level2" number="10.2">
 <h2 number="10.2"><span class="header-section-number">10.2</span> Partial Dependence Plots</h2>
@@ -1798,7 +1810,7 @@ Event
 <div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Smoothed calibration curves</span></span>
 <span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>cal <span class="ot">&lt;-</span> <span class="fu">calibration</span>(res_probs, <span class="at">breaks =</span> <span class="cn">NULL</span>)</span>
 <span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(cal)</span></code></pre></div>
-<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAGACAMAAABFpiBcAAABAlBMVEUAAAAAADoAAGYAOjoAOmYAOpAAZrYAv8QzMzM6AAA6ADo6AGY6OgA6Ojo6OmY6ZpA6ZrY6kNtNTU1NTW5NTY5NbqtNjshmAABmADpmAGZmOgBmOjpmZjpmkJBmtttmtv9uTU1uTW5uTY5ubqtuq+SOTU2OTW6OTY6OyP+QOgCQOjqQkDqQkGaQtpCQttuQ2/+rbk2rbm6rbo6ryKur5P+2ZgC2Zjq2kDq225C229u22/+2/9u2//++vr7Ijk3I///bkDrbtmbbtpDb25Db27bb/7bb///kq27k///r6+vy8vL4dm3/tmb/yI7/25D/27b/5Kv//7b//8j//9v//+T///+bBdL3AAAACXBIWXMAAA7DAAAOwwHHb6hkAAAfCUlEQVR4nO2dDX/ctpHG126sjey7tFrH0TW5q5pETqRrGjupdNemXknJ3dlWtFb0xu//VY7A8p3AECQHgwE5zy/xvunRANi/QAIEhotEJGKsRegCiESQBFARawmgItYSQEWsJYCKWEsAFbGWACpiLQFUxFpjAL3/+V8Xi8Un/1DPLxZav/8pfX76yffZT/zyxV7rZfOXHO/UXj15O6JEoslpBKC3n2+hXCjqMkAXj9+kRC4evdI/cb2rPmu8bEgAFUEaDuj98eL3aed5/8uu4u9CkZnc/9fiICXy0b9sQbz43e5e62Xr1wigIruGA7pZZGRd7+7kgKbPFZGP/6Ixuz/+D8PL5Le05/1InQokP+8uPvqHBlS998lPAqioqeGAnm6RzJT1oP+tetPTx39/qg7q18/+vgW09nKzq04FdK+rnnz0+Y4++G/fE0BFdQ0G9Ha/emguzkFVF3n6+J/H+nEn61CrL9Mzgz+pH3/y9nb/0ffJb8dpR3x//Ch975fdHQFU1NBYQDWYKVQ5oH94q/vW0/St2/2DDNDqS31CoE5MX+kP9evtM9ULC6CiutAA3R7wf1YnpimRm/RwvXn8Jge08vJ690D9YPrORg2o9CBpk9H96JUAKqprMKD3x/k5qIYqA1Sfmab/3+7vpYf0fMxUfSmAivpozCj+D9snJkDVyCglMQe08rJ5iFc9cQZtIqN4UVOj5kH1RaT//aJ2iE+fKyI3j/49/bcAtHxZGyT9Sb3Ug6Tvk3S8JOegoqYwriR99KocxeuJ+pTF2/3FTlICWnlZTjNtimmmTT4FIICK6hq1WOSXL9S1eH2lPQP0EzXhebq93nlQAbTyMrkuJup/+Xzx0T/1RL1673d/kkO8qClZzSRiLQFUxFoCqIi1BFARawmgItYSQEWsJYCKWEsAFbGWACpiLQFUxFqDAb00yvK2k0Z4A4WNsMhYYTEZBCWAzqvIAihO/emsMyuyAIpTfzrrzIosgOLUn846syILoDj1p7POrMgCKE796awzKzJS2PUaE0JIAui8iowTdi09KJl1ZkXGCLtecznE33x1rh/vXq5evC8etvJXf1rrzIo8PqzCkwmgH1afakAfXh8l7z7LHzL5qj+1dWZFHh12nT2nEgDo2fO/bXvQu2/PVWeaPWSfeqo/uXVmRR4Zdr3On1PJ5RB/8/X75O6bk+whfePjVCSlE7ES3di9lAugH15oMrOH7DMvf6ABrDMr8ghr0Xvq30OlQT2oEnr9I/y2Iyyym3W5bL+3ZjhRfyPnoN68XMMuldpv66ml6u+hkgugD68Pt6P4QxnFo3k5hjWzeVlMLVV/D5U6AVX/yzwovpddWCud5dRS9fdQSa4kzavIVqsNzurUUvX3UEkAnVeRzVZ751kduwugIawzK7LJaqezOLq3vJgMghJA51VkgxXCs8qnABrEOrMit60OJ58GLyaDoATQeRW5ZXU5+TR4MRkEJYDOq8gNKzA4gr2YDIISQOdV5Lq1R/d5KYDG921HWGQnQAs8r65sXkwGQQmg8ypyzWrjc/twdVXnUwANYp1ZkatW6Lp7i85LATS+bzvCIlesRj4LPDvCYjIISgCdV5FLq21RXfPM0xwWk0FQAui8ilxYTf2nwtPcebbCYjIISgCdV5EBQNdbPt3CYjIISgCdV5Fza4tPhSfQezbDYjIISgCdV5FtgK7hzrMVFpNBUALovIqcWRsjpLT77MRTAI3v246wyDmg1fc0nt18CqBBrDMr8tZa59MNTwE0vm87wiK3AFXd54CwmAyCEkDnVWRtLfnUY/chYTEZBCWAzqvINUDXLmN3c1hMBkEJoPMqsrIWfPbCUwCN79uOsMgloK5jd3NYTAZBCaDzKnKSzYH2PLq3wmIyCEoAnVeRk20Hqi+7jwmLySAoAXReRU4Un0O6z0sBNL5vO8Iip4CuB3WflwJofN92hEVOluCaZOewmAyCGgyoKEqtl+k/V1ehi+Eu6UHnVOT1OlFDpCHd52VsPWh3HcbUn846oyKrk8/lwMN7Mywmg6AE0NkUWZ98LofzKYAGsc6lyFm2kOVwPgXQINZ5FDlPZrMcjqcAGs23jeIlDVukAhNAkepPZ51BkctUdVdLrLCYDIISQKde5EomxatLARSp/nTWqRe5kugz5RMtLCaDoATQSRd5XeNTAJ32t43qpQhby5OshkcC6IS/bWSv/7D1NN56+C6ATvbbRvd6D1vPMp/xKYAi1Z/OOtEirw18CqBT/bZ9eL2Gbd6kI5ueF0An+W378foM27yHTH75SACd4rftyesvbPseR2UHKoAi1Z/OOrUiG/CsdKACKFL96awTK3L7DnHl8hABdGrftk+vl7CmOxgWgC4xw2IyCEoAnU6RjTfYrHegAihS/emskymyEc/q/jgBFLH+dNapFNmIpwAK1WFM/ems0yiyufts8ymAItWfzjqFItvwrG2AF0Ax609nnUCRbXjWEzQIoJj1p7NGX2Rr99nYAS+AYtafzhp5ke14GvkUQJHqT2eNu8h2PJsZmARQ1PrTWWMuMtB9tjKECaCo9aezxltkEM9WBrsJAnr3cvXivXrybqV0pB8/Pc8+7a7DmPrTWWMtMoynrQOdEqAPr1MkP8tffUhZPTuqfNxdhzH1p7NGWuQOPG0d6JQAvfv2PLn5Kusw7745SR5+OKl83F2HMfWns0ZZ5K7ucxaA3nz9XnOppbrS9JCvDvSpPk5FUjqRSet154+0cnwvvZSEQHZA1UE9B1Q/3nxZ7UW7/8jG/IHSWeMr8rrb28phV9w+dqI96IftaClVcR7aXYcx9aezxlZkdXTv8rZzLE4R0Oo56Nlh/q4AiuQdZt2efAqgSg+vD/NR/PbArrrRhx9lmgnHO8i6dvIaktROEdBsHlR1otmR/t1q9bwYyHfXYUz96awRFbkYu8NeUxLlSQIKq7sOY+pPZ42myJWpJdBrTPItgCLXn84aSZFrM58CqIO66zCm/nTWOIpcn5jvC+hyKYAi15/OGkORmxeOIG97CrSCpwAawbfNxOtubV/XBLyNRaA1OPuFbUsADWFlX2TDZXcnQNtw9gprkAAawsq8yMZlIXZvmefGRKd72E4vJoOgBFDORbasWuoA1Nx39gjr4MVkEJQAyrjItkV1Vu8VCKdrWBcvJoOgBFC2RbYv+rR4u+B0C+vmxWQQlADKtMjQmmSTV8HpcKdYARSn/nRWnkWGl8w3vVnX6XInYwEUp/50VpZF7tjRUfOWB/bpA3q9u1B6/MbB6Lf+dFaGRe7ccVR4a2edTreCjxrQ++Mdd6Pf+tNZ2RW5e0Nc5m0OiaYP6O3+gbvRb/3prNyK3I2n9rYH7E58xg3o/bEASuY1Wx26z0vLZaIZAJpsnM4+t/JbfzorpyK74KlOO01eNz7jBvR2fyGDJCqvwdqNZ9Z1GrxXcwC0l/zWn87Kpsid3Wd5YG+HdcRTAOXybfP3NqwdeHatOp4JoDIPSuetWWE8HVYdzwPQ++O9dCDvONnkt/50Vg5FhvA0jdhbYZ35jBtQhebpXrJ58tbB6Lf+dNbwRQa6T8vypGZY1xGSwdpHLAC92HGcbPJbfzpr6CKDeHaHvdLqH3aIggOanGo6L6QHJfBmVgueS3Bt59bbE81a2EEKD2h6EpqcLh69cjH6rT+dNWiRLd1n17rjZBicRdiBCg9oH/mtP501YJGNeHYuix/MZh4WxYvJICgBNFSRLXiCpoxNBi2FySCoOqAXi8WB2ymoaKQMabzVVXabtoMhj+Xhqvog6cn/7R84rgr1+wdKZw3jXa8bVuDI3j6mM2gpPzQa1JhmUjNNMs3k29tM4w2cdhrPNxm0lC8eWxJA6b2NNN42Ou2jIQYt5YvHlmqH+At1iL/d33Mx+q0/nZXcmw2OtlbrkR0cqTNoKT80GlQfJG3UWhEnPgXQYd5qGm/zwniHa0MMWsoMxf3xdkWxG0JOkmkmUm8ljbeBTtcZTgYtZYZCXelJ1Kq4HnuHOiSAEnrLqU/Dnrce0+8MWsoMRQaoumaOJQGUzJvjuT3vbC748BYWzdoTUHW4V8Ntvcj4ILl++t1ioabY1fvpx9dP/7qr3s8/L35eAA3jzfAsus7MOui6JYOWAgHdpMDp6fSLJ2+vn77Sx/zr3cdv1Hv5/9e7Ka0Xj9/kn+c/bwU0P7+VFfVevDmeFWvflXJDwmJaewySDrIdwrf7B9fPtjTp89KURv1++k/+Ov88/3kroGoE3+fU1m/96awkXtV91lfQjVnwwaGlbIDuKRRVN3qRj+dP9RE90T1lCqBeDq/A1D1n+k/2+YVl/F+/1NmDUb/1p7MSeLd45q+yjjPylgIA1Uf46tH6dn+RHcpNgGaf25aANM5BVR/txqjf+tNZ/XvXlTPPsuOMvKUgQJPT9HC9qS4rVod6fUh/9ka/v8nPPZ++yj/fWJYhtwdJ98dyDoroXa+z5J2NM87IWwoE9HpXDYTSLjGlTp9bqh6zOUjKAM0/z3++A9C0B3VbUC+AOnkVnpfGM87IWwoEND2h3NMHY91bLvSjnmbaSSrTTFkPmn1e/DwAqDudAqiTdzssMo+HIm8pV0wK5UfzvqqO4t3pTATQbq/OGm8drUfeUr1BGw2ozINielXfCc9yRt5SvUEb34P2lN/601k9eDWczmm80cL6to4DdKgEUGTvtut0TeONFpbAKoAGsWJ6r65SOi/dEtFG3lKYDIISQJG86oxzOx3vlsY78pbCZBCUAIrh1eOh7GqRE57RtxQmg6AE0HHe/AJRfjHTrfscHTaE1QHQX80ayphSAWieoF6mmdxVzCPll9qd8Yy+pegBVbqwrMkTQNsqliRVVtG54xl9SwUBNENT9sV3qZiCT6pLPHt0n8PCYngFUJz601n7eqvXh6o73/rhGX1LBQE0P8RL4gabqhcvVedZePviGX1LhQF0m7hBFiwbddWgc1nx9sYz+pYKBGgP+a0/ndXJ21z3Ud+a2b/7dAzrwTslQO9erl6818/erVarT88rb8wHUMPWy8rASHkH4Rl9Sw0ANFsv9+R/nlnHONftj+wJbB9eHyXvPtNPz44ab8wDUMN6uUayr2TQ0b0jrFdv2B7UAGBVG8MUvD2B7d2358nNV+eKzB9O6m/MAFDjYs5WvhpzHu8RYb17GQCa/nP/n98tFnsbvctY7+nc4vfor3APWs8PevP1++TuG4VmemhfrY4qb3ycCvpLiFyWZNvtDN1rQx7vWevXX69aMgKqU4vs6Nene+rmXJXP67ID+uFFzuPNlyeqFy3fUPL7B0pnbS+ZMy6DN6VKXDMpcoiwNkBde9BXifr/9t9epf8lt3984wRoPYFt2WFqnR3V3/Bbfzprc8mc8WdMiTybebyHh6X08gN0f1Hu5uwcJFUT2NZPOVNAJ30OCuRJMuaZXTfyeA8MS+7lB+gfK0x2AlrVw+vDbNCuju0PP56Xb0wOUGB3mzFFdz42YkBKoLBogNZuX9wL0GzaU/WZ71ar5yfJVOdBgc2XlgzyxdCdASmBwuIBmh7ji/3unYOkHrnF/dafygpuDbbc36AytcSAlEBhhwE6QPVBkvOV+CkACt9X0Hb7jdrMJwNSAoUNA2iiMzDO4W7HlZ7T6LXeWas+Mc+AlEBhgwGabJPnTRfQ1sX1lhe4K2HzwhEDUgKFDQboqeOWpEgBNZxxNrzA/Ybb1zUZkBIobBhAnY/vUQJqGRBVveDN2g2X3RmQEihsEEAdt8vFCCgwWi+94M3ajctCGJASKGwQQO+PJwho5700cm9/PFmQEihsEEAn2IM63Etj6x2CJwtSAoUNAqjpPkoRA+p4F6IEvF+7kn3NJwNSAoUNAmieXCT+aaY+t8jqoBPc0sGAlEBhgwDaS37rP8ba6x5ZyyUcFl4yz4CUQGHNUAigndZ+d3Br3NW1rY4dHQxICRTWDIV3QKub5iIEtGffuT22A2E7dxwxICVQ2DCA1jbNxQZo/76zI6zDhjgGpAQKOwDQzm3H17uGtUr2PUnxANr/tsHVcZEtrMt+TQakBAo7ANCkY9uxWhzavhdI9IBqNPtZ68N2s9d7Hu/5AmrbdrxRR+7TZhdq3zQXAaBlGkR3T2tWyeR13e7OgJRAYW2ALlsyAmrZdqx7UQDQ2qY55oDWjurOVsOcZ9vrno2BASmBwtoAde1BzduO83t9WgHtIb/1h9U65XS0GqfkW94eyUIYkBIoLB6glW3HpoN3dIAax0MuVtsVo4a3VzIbBqQECosHaLntWN9SHgRUj5IYL1i2jta7rfYLmjVvz1xLDEgJFBYN0HLbsZHPxjzojkqyfMFyHhScSeoIC15ur3r7pgJjQEqgsHiAFtuOLxam9MmNaSY1vGI4zdQ1zQmG7VgMUnpJ83jPEtABas2D7nED1GUSHgjbgWfpHZJJkQEpgcIGATQd5G/S3vaUzyHe9QqRLWzXUrqKd1CiTwakBAobBFB1MXQnOWWzWMT98qUxrAuduZc+j7cAOgDQPvJb/55rP9phHencegfnSWZASqCwZijmAmjftR/NsO50Ku/wNN4cSAkU1gyFd0B73CfJk64s+bd7qJWpG5ak8WYtTnea691xmsL26Twv1dE98q4sUFg/NBrE516dQ+Gshe2NZ/SkBArrh0aDOACaLTge3ey9Tj2Vxqbx5kBKoLB+aDSodojfBLhffEceRDcpa18687F75KQECuuHRoMKQPNN8YT74htrP8Y0e+/Os5xaipyUQGE9IllXuGmm1jnniLbrS2f1wlHkpAQKi8kgqDCADl7UadKyK/lCW9Wpz8hJCRQWk0FQVUDVtk/nBKFD62/fgTms7Wr3bXdTfWY+clIChfUCo0kVQE81m2ovk4sG1R+c6BzSdtmpZx8rYhpvDqQECuuHRoNKQPPZJW+j+FGLOk0qR0Y9rJhpvDmQEiisHxoNKgAtN9S55b7pV/+RizoNWrokX2jJcN09clIChfVDo0GVaaa848SeqB+7qNOkxqySoxU7jTcHUgKF9UOjQd4BHbmo06jWpKebFT2NNwdSAoX1Q6NBRIf4vvWH5JR8oS3bqrrISQkU1g+NBhEOkvrU3yrzJaNuq33RZ+SkBArrh0aDDNNMjFPf2C5odlk9pfHmQEqgsH5oNKg1Ue+WtiEIoPbr7R1WX2m8OZASKKwXGE1iueXDIPAecLC1Y0tH5KQECovJIKg4AO1aqwRYfabx5kBKoLCYDIKKAdDupXT2sF7TeHMgJVBYTAZB8QfUZaWnLazLhs3ISQkUFpNBUMwB7ZN8oSXvabw5kBIoLCaDoBgDCo+LusP6T+PNgZRAYTEZBMUX0D6r5A1hndMxRE5KoLCYDILiCmi/PUatsD2yhUROSqCwmAyC4glo3y1wjbBUabw5kBIoLCaDoBgC2n+HZiMsWRpvDqQECovJIChmgPYYGNnC9s0FFjkpgcJiMgiKFaCD4KyHJU3jzYGUQGExGQTFB9BhfWcjLG0abw6kBAqLySAoLoCmdI5v9kGZPiMnJVBYTAZBAYDevVy9eK+f3fx5tTpKkner1erT8+xT1Prr3nNss9On8eZASqCw/snMZAf04fVR8u4z9ezum5Pk5suT5Oyo8jFi/QdsbjeEDZDGmwMpgcL65rKQHdC7b8+Tm69Uh/lBYXp29PDDSeVjrPoP2tzeDjs8j3fkpAQK65vLQnZAb75+r/vOrdJn6SFfH+mT5ONUKNGXPdN127SWPN5TlR3QDy8qgD68PtRH+bIXRfgDHba5va1gabw5dGWBwvonM5NbD3r38jB7tzgPHVv/9qzS0LYLl8abAymBwvqlsiKXc9B0FF8Mj1AANV8vGtZ2+uRTAKUO65fKiqBR/GE2is/4VMf8hx/HTzMN3TtsUtg03hxICRTWP5mZOudB005UzX+q4VH6+LwYyA+sP3C9aEDbBU7jzYGUQGEp2NSivZIEXs3s3Xbl1JIASh0Wk0FQlIA637jdSQzSeHMgJVBYTAZBUQHqsI6uX9txSOPNgZRAYTEZBEUDqNNCpT5t17hwJIBSh8VkEBQBoK7r6NzbrnVdUwClDovJICjvgLqv8nRtOz5pvDmQEigsJoOg/ALa78btbj/GKI03B1IChcVkEJRPQHsukXdqO/OqJQGUOiwmg6C8Adp/B4dD2zFL482BlEBhMRkE5QXQYXszu9uOWxpvDqQECovJICh8QAdvfutqO2BNsgBKHRaTQVDYgGJszTQKXDIvgFKHxWQQFJddnV1elmm8OZASKCwmg6DiALRrx5EASh0Wk0FQMQDavSFOAKUOi8kgKP6AMk7jzYGUQGExGQTFHlDOabw5kBIoLCaDoJgD6rjdXQClDovJICjWgHJP482BlEBhMRkExRlQ9mm8OZASKCwmg6D4AtonmY0ASh0Wk0FQXAHtl2tJAKUOi8kgKKaAxpHGmwMpgcJiMgiKJaC9U9UJoNRhMRkExRDQAZkUBVDqsJgMgmIHaExpvDmQEigsJoOguAEaVRpvDqQECovJIChegA7NkyyAUofFZBAUJ0CjS+PNgZRAYTEZBDUYUHxJGm9RW2x60FF5vKUHpQ6LySAoJoCux+XxFkCpw2IyCIoHoOsR3pHW2EkJFBaTQVAcAB2fx1sApQ6LySCo8IAWY3cGzU7ojTwsJoOgQgNamVpi0OyE3sjDYjIIKjCg1ZlPBs1O6I08LCaDoIICWp+ZZ9DshN7Iw2IyCCogoM0LRwyandAbeVhMBkGFA7R1XZNBsxN6Iw+LySCoUIDi5vEWQKnDYjIIKgygxmUhDJqd0Bt5WEwGQQUB1LxqiUGzE3ojD4vJIKgAgHrI4y2AUofFZBAUOaD2RZ8Mmp3QG3lYTAZBEQMKrUlm0OyE3sjDYjIIihZQcMk8g2Yn9EYeFpNBUJSAdmzpYNDshN7Iw2IyCIoO0M4dRwyandAbeVhMBkGRAdq9IY5BsxN6Iw+LySAoIkA95/EWQKnDYjIIigRQt/3EDJqd0Bt5WEwGQVEA6rjdnUGzE3ojD4vJICj/gFLk8RZAqcNiMgjKN6A9soUwaHZCb+RhMRkE5RfQXslsGDQ7oTfysJgMgvIKaL9cSwyandAbeVhMBkF5BLRvLjAGzU7ojTwsJoOgvAHaP1Udg2Yn9EYeFpNBUL4AHZBJkUGzE3ojD4vJICg/gFLn8RZAqcNiMggKAPTu5erF++qz8o0EBHRgIloGzU7ojTysdzBz2QF9eH2UvPus8qx8Q8lah8F5khk0O6E38rAEaG5lB/Tu2/Pk5qvz8ln5hpKtDoPTeHNodkJv5GFJ4FSyA3rz9fvk7puT8ln5xsepzKa15PEWocoO6IcXOY/Zs/INJdOf2Kg03hz6BUJv5GFJ4FQa1IMqGSowLo03h2Yn9EYelgROJbxzUD04irzZCb2RhyWBUwkaxR8Wo/jD7Sj+0D6KH5/Gm0OzE3ojD0uA5lad86Cqz+yeB0VI482h2Qm9kYelYFML5UpSOfUZebMTeiMPi8kgKARAqzPzkTc7oTfysJgMghoNKFoabw7NTuiNPCwmg6DGAoqXxptDsxN6Iw+LySCocYC2rrtH3uyE3sjDYjIIagyguGm8OTQ7oTfysJgMghoBKHIabw7NTuiNPCwmg6AGA2peVRd5sxN6Iw+LySCowYCaZVnk5FuBws6sukHCCqARxp1TWAE0wrhzCiuARhh3TmGRARWJcCWAilhLABWxlgAqYi0BVMRaGIDCKUi8qYxy8+fV6ihJ3q1Wq0/PO1yYcbOAxNVVUVV9iapb7EMj/XILIQDakYLEl8ooaqvpzZcnydmR75j1uFlA6uoqqS3gNNVNPmR/BaRfbikEQDu2f/pSGeWDaq+zo4cfTro8uHGzgNTVTbZ/kkTVPXv+t21U0i+3FAKgHRvofakeJX2WHnv0kZ4sbhYwQHVVF0ZU3eIQT/rllkIAtCMFiS/Voqgt0eooT9CtlHGzgPTV1Y9E1S0AJf1yS02jB717eZi96//ErFG7syP66n4oRikU56HR96DBz0HTUXzxPfn/xhq1OzuiPwc9y/8cKQGN9xy0IwWJL5VRMj5Vv/Lwo/emK+NmAamrmx3YiapbAEr65ZbCmwe1pSDxpiJsZWLwOcGxp6xuFpC4uvkRlqi6OiT5l1tIriSJWEsAFbGWACpiLQFUxFoCqIi1BFARawmgFt0fL5QevTJ8tnn85vpp+cFvP7U+9lu2OUkAtej+eE89XJhgqxNYZdXwsWiUBFCLMkBv9w/anwmgdBJALSoBvX72l8XjN+qQr8C73V88+m57iFdv7STXu4vFXtL4OHTppyMB1KIM0NOUxd0d9TL95+LJ29v9vRRCDah6S3WwW1brH4cu/XQkgFqUDZJS1q53D7LDdoqjfrzQgOaHdvXY/Dhw4SckAdSirAdNsnPMC43rYi/tJdN3nilA81NN9Xnz43DlnpoEUIuagCrykuzRAGjj4xAlnqYEUIsagG6yCVFN5aZ9iG98HKLE05QAalED0PvjtG9MMbzd36kOkvKBUvPjoEWflARQixqA6kGT6iZb00zpSH+x0/w4YMEnJgFUxFoCqIi1BFARawmgItYSQEWsJYCKWEsAFbGWACpiLQFUxFoCqIi1/h8qSw6RIH65/wAAAABJRU5ErkJggg==" style="display: block; margin: auto;" /></p>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
 <p>Calibration curves close to the 45<span class="math inline">\(^\circ\)</span> line represent agreement between observed and predicted responses and a model that is said to be well calibrated.</p>
 </div>
 <div id="confusion-matrices" class="section level2" number="10.4">
@@ -1988,35 +2000,36 @@ Event
 <span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Label: Trained Generalized Boosted Regression</span></span>
 <span id="cb67-8"><a href="#cb67-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Package: gbm</span></span>
 <span id="cb67-9"><a href="#cb67-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Response types: factor, numeric, PoissonVariate, Surv</span></span>
-<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: TRUE</span></span>
-<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: TRUE</span></span>
-<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Parameters:</span></span>
-<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; List of 5</span></span>
-<span id="cb67-15"><a href="#cb67-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.trees          : num 100</span></span>
-<span id="cb67-16"><a href="#cb67-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ interaction.depth: num 1</span></span>
-<span id="cb67-17"><a href="#cb67-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.minobsinnode   : num 10</span></span>
-<span id="cb67-18"><a href="#cb67-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ shrinkage        : num 0.1</span></span>
-<span id="cb67-19"><a href="#cb67-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ bag.fraction     : num 0.5</span></span>
-<span id="cb67-20"><a href="#cb67-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb67-21"><a href="#cb67-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; TrainStep1 :</span></span>
-<span id="cb67-22"><a href="#cb67-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;TrainStep&quot;</span></span>
-<span id="cb67-23"><a href="#cb67-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb67-24"><a href="#cb67-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Grid (selected = 1):</span></span>
-<span id="cb67-25"><a href="#cb67-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 x 1</span></span>
-<span id="cb67-26"><a href="#cb67-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ModelRecipe$PCA$num_comp</span></span>
-<span id="cb67-27"><a href="#cb67-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      &lt;int&gt;</span></span>
-<span id="cb67-28"><a href="#cb67-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1                        1</span></span>
-<span id="cb67-29"><a href="#cb67-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2                        2</span></span>
-<span id="cb67-30"><a href="#cb67-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3                        3</span></span>
-<span id="cb67-31"><a href="#cb67-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb67-32"><a href="#cb67-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Performance&quot;</span></span>
-<span id="cb67-33"><a href="#cb67-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb67-34"><a href="#cb67-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Metrics: C-Index </span></span>
-<span id="cb67-35"><a href="#cb67-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: 1, 2, 3</span></span>
-<span id="cb67-36"><a href="#cb67-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb67-37"><a href="#cb67-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Selected model: 1 </span></span>
-<span id="cb67-38"><a href="#cb67-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; C-Index value: 0.734361</span></span></code></pre></div>
+<span id="cb67-10"><a href="#cb67-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Case weights support: TRUE</span></span>
+<span id="cb67-11"><a href="#cb67-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: TRUE</span></span>
+<span id="cb67-12"><a href="#cb67-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: TRUE</span></span>
+<span id="cb67-13"><a href="#cb67-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb67-14"><a href="#cb67-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Parameters:</span></span>
+<span id="cb67-15"><a href="#cb67-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; List of 5</span></span>
+<span id="cb67-16"><a href="#cb67-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.trees          : num 100</span></span>
+<span id="cb67-17"><a href="#cb67-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ interaction.depth: num 1</span></span>
+<span id="cb67-18"><a href="#cb67-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.minobsinnode   : num 10</span></span>
+<span id="cb67-19"><a href="#cb67-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ shrinkage        : num 0.1</span></span>
+<span id="cb67-20"><a href="#cb67-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ bag.fraction     : num 0.5</span></span>
+<span id="cb67-21"><a href="#cb67-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb67-22"><a href="#cb67-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; TrainStep1 :</span></span>
+<span id="cb67-23"><a href="#cb67-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;TrainStep&quot;</span></span>
+<span id="cb67-24"><a href="#cb67-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb67-25"><a href="#cb67-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Grid (selected = 1):</span></span>
+<span id="cb67-26"><a href="#cb67-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 x 1</span></span>
+<span id="cb67-27"><a href="#cb67-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ModelRecipe$PCA$num_comp</span></span>
+<span id="cb67-28"><a href="#cb67-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      &lt;int&gt;</span></span>
+<span id="cb67-29"><a href="#cb67-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1                        1</span></span>
+<span id="cb67-30"><a href="#cb67-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2                        2</span></span>
+<span id="cb67-31"><a href="#cb67-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3                        3</span></span>
+<span id="cb67-32"><a href="#cb67-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb67-33"><a href="#cb67-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Performance&quot;</span></span>
+<span id="cb67-34"><a href="#cb67-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb67-35"><a href="#cb67-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Metrics: C-Index </span></span>
+<span id="cb67-36"><a href="#cb67-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: 1, 2, 3</span></span>
+<span id="cb67-37"><a href="#cb67-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb67-38"><a href="#cb67-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Selected model: 1 </span></span>
+<span id="cb67-39"><a href="#cb67-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; C-Index value: 0.734361</span></span></code></pre></div>
 </div>
 <div id="input-selection" class="section level3" number="11.1.2">
 <h3 number="11.1.2"><span class="header-section-number">11.1.2</span> Input Selection</h3>
@@ -2041,54 +2054,55 @@ Event
 <span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Label: Trained Generalized Boosted Regression</span></span>
 <span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Package: gbm</span></span>
 <span id="cb69-9"><a href="#cb69-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Response types: factor, numeric, PoissonVariate, Surv</span></span>
-<span id="cb69-10"><a href="#cb69-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: TRUE</span></span>
-<span id="cb69-11"><a href="#cb69-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: TRUE</span></span>
-<span id="cb69-12"><a href="#cb69-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-13"><a href="#cb69-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Parameters:</span></span>
-<span id="cb69-14"><a href="#cb69-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; List of 5</span></span>
-<span id="cb69-15"><a href="#cb69-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.trees          : num 100</span></span>
-<span id="cb69-16"><a href="#cb69-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ interaction.depth: num 1</span></span>
-<span id="cb69-17"><a href="#cb69-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.minobsinnode   : num 10</span></span>
-<span id="cb69-18"><a href="#cb69-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ shrinkage        : num 0.1</span></span>
-<span id="cb69-19"><a href="#cb69-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ bag.fraction     : num 0.5</span></span>
-<span id="cb69-20"><a href="#cb69-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-21"><a href="#cb69-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; TrainStep1 :</span></span>
-<span id="cb69-22"><a href="#cb69-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;TrainStep&quot;</span></span>
-<span id="cb69-23"><a href="#cb69-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-24"><a href="#cb69-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Grid (selected = 3):</span></span>
-<span id="cb69-25"><a href="#cb69-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 x 1</span></span>
-<span id="cb69-26"><a href="#cb69-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ModelRecipe</span></span>
-<span id="cb69-27"><a href="#cb69-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;fct&gt;      </span></span>
-<span id="cb69-28"><a href="#cb69-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 1          </span></span>
-<span id="cb69-29"><a href="#cb69-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 2          </span></span>
-<span id="cb69-30"><a href="#cb69-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 3          </span></span>
-<span id="cb69-31"><a href="#cb69-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-32"><a href="#cb69-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Performance&quot;</span></span>
-<span id="cb69-33"><a href="#cb69-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-34"><a href="#cb69-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Metrics: C-Index </span></span>
-<span id="cb69-35"><a href="#cb69-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: Recipe.1, Recipe.2, Recipe.3</span></span>
-<span id="cb69-36"><a href="#cb69-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-37"><a href="#cb69-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Selected model: Recipe.3 </span></span>
-<span id="cb69-38"><a href="#cb69-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; C-Index value: 0.7487572 </span></span>
-<span id="cb69-39"><a href="#cb69-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
-<span id="cb69-40"><a href="#cb69-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; TrainStep2 :</span></span>
-<span id="cb69-41"><a href="#cb69-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;TrainStep&quot;</span></span>
-<span id="cb69-42"><a href="#cb69-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-43"><a href="#cb69-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Grid (selected = 1):</span></span>
-<span id="cb69-44"><a href="#cb69-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 x 1</span></span>
-<span id="cb69-45"><a href="#cb69-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ModelRecipe$PCA$num_comp</span></span>
-<span id="cb69-46"><a href="#cb69-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      &lt;int&gt;</span></span>
-<span id="cb69-47"><a href="#cb69-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1                        1</span></span>
-<span id="cb69-48"><a href="#cb69-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2                        2</span></span>
-<span id="cb69-49"><a href="#cb69-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3                        3</span></span>
-<span id="cb69-50"><a href="#cb69-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-51"><a href="#cb69-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Performance&quot;</span></span>
-<span id="cb69-52"><a href="#cb69-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-53"><a href="#cb69-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Metrics: C-Index </span></span>
-<span id="cb69-54"><a href="#cb69-54" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: 1, 2, 3</span></span>
-<span id="cb69-55"><a href="#cb69-55" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb69-56"><a href="#cb69-56" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Selected model: 1 </span></span>
-<span id="cb69-57"><a href="#cb69-57" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; C-Index value: 0.7474176</span></span></code></pre></div>
+<span id="cb69-10"><a href="#cb69-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Case weights support: TRUE</span></span>
+<span id="cb69-11"><a href="#cb69-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: TRUE</span></span>
+<span id="cb69-12"><a href="#cb69-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: TRUE</span></span>
+<span id="cb69-13"><a href="#cb69-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-14"><a href="#cb69-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Parameters:</span></span>
+<span id="cb69-15"><a href="#cb69-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; List of 5</span></span>
+<span id="cb69-16"><a href="#cb69-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.trees          : num 100</span></span>
+<span id="cb69-17"><a href="#cb69-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ interaction.depth: num 1</span></span>
+<span id="cb69-18"><a href="#cb69-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.minobsinnode   : num 10</span></span>
+<span id="cb69-19"><a href="#cb69-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ shrinkage        : num 0.1</span></span>
+<span id="cb69-20"><a href="#cb69-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ bag.fraction     : num 0.5</span></span>
+<span id="cb69-21"><a href="#cb69-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-22"><a href="#cb69-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; TrainStep1 :</span></span>
+<span id="cb69-23"><a href="#cb69-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;TrainStep&quot;</span></span>
+<span id="cb69-24"><a href="#cb69-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-25"><a href="#cb69-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Grid (selected = 3):</span></span>
+<span id="cb69-26"><a href="#cb69-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 x 1</span></span>
+<span id="cb69-27"><a href="#cb69-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ModelRecipe</span></span>
+<span id="cb69-28"><a href="#cb69-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   &lt;fct&gt;      </span></span>
+<span id="cb69-29"><a href="#cb69-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1 1          </span></span>
+<span id="cb69-30"><a href="#cb69-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2 2          </span></span>
+<span id="cb69-31"><a href="#cb69-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3 3          </span></span>
+<span id="cb69-32"><a href="#cb69-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-33"><a href="#cb69-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Performance&quot;</span></span>
+<span id="cb69-34"><a href="#cb69-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-35"><a href="#cb69-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Metrics: C-Index </span></span>
+<span id="cb69-36"><a href="#cb69-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: Recipe.1, Recipe.2, Recipe.3</span></span>
+<span id="cb69-37"><a href="#cb69-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-38"><a href="#cb69-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Selected model: Recipe.3 </span></span>
+<span id="cb69-39"><a href="#cb69-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; C-Index value: 0.7487572 </span></span>
+<span id="cb69-40"><a href="#cb69-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------------ </span></span>
+<span id="cb69-41"><a href="#cb69-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; TrainStep2 :</span></span>
+<span id="cb69-42"><a href="#cb69-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;TrainStep&quot;</span></span>
+<span id="cb69-43"><a href="#cb69-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-44"><a href="#cb69-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Grid (selected = 1):</span></span>
+<span id="cb69-45"><a href="#cb69-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 3 x 1</span></span>
+<span id="cb69-46"><a href="#cb69-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   ModelRecipe$PCA$num_comp</span></span>
+<span id="cb69-47"><a href="#cb69-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;                      &lt;int&gt;</span></span>
+<span id="cb69-48"><a href="#cb69-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1                        1</span></span>
+<span id="cb69-49"><a href="#cb69-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2                        2</span></span>
+<span id="cb69-50"><a href="#cb69-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3                        3</span></span>
+<span id="cb69-51"><a href="#cb69-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-52"><a href="#cb69-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Performance&quot;</span></span>
+<span id="cb69-53"><a href="#cb69-53" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-54"><a href="#cb69-54" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Metrics: C-Index </span></span>
+<span id="cb69-55"><a href="#cb69-55" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: 1, 2, 3</span></span>
+<span id="cb69-56"><a href="#cb69-56" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb69-57"><a href="#cb69-57" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Selected model: 1 </span></span>
+<span id="cb69-58"><a href="#cb69-58" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; C-Index value: 0.7474176</span></span></code></pre></div>
 <p>Selection can also be performed among traditional formulas, design matrices, or model frames.</p>
 <div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Traditional formulas</span></span>
 <span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>fo1 <span class="ot">&lt;-</span> y <span class="sc">~</span> sex <span class="sc">+</span> age <span class="sc">+</span> year <span class="sc">+</span> thickness <span class="sc">+</span> ulcer</span>
@@ -2133,43 +2147,44 @@ Event
 <span id="cb72-13"><a href="#cb72-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Label: Trained Generalized Boosted Regression</span></span>
 <span id="cb72-14"><a href="#cb72-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Package: gbm</span></span>
 <span id="cb72-15"><a href="#cb72-15" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Response types: factor, numeric, PoissonVariate, Surv</span></span>
-<span id="cb72-16"><a href="#cb72-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: TRUE</span></span>
-<span id="cb72-17"><a href="#cb72-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: TRUE</span></span>
-<span id="cb72-18"><a href="#cb72-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb72-19"><a href="#cb72-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Parameters:</span></span>
-<span id="cb72-20"><a href="#cb72-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; List of 5</span></span>
-<span id="cb72-21"><a href="#cb72-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.trees          : num 50</span></span>
-<span id="cb72-22"><a href="#cb72-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ interaction.depth: int 1</span></span>
-<span id="cb72-23"><a href="#cb72-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.minobsinnode   : num 10</span></span>
-<span id="cb72-24"><a href="#cb72-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ shrinkage        : num 0.1</span></span>
-<span id="cb72-25"><a href="#cb72-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ bag.fraction     : num 0.5</span></span>
-<span id="cb72-26"><a href="#cb72-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb72-27"><a href="#cb72-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; TrainStep1 :</span></span>
-<span id="cb72-28"><a href="#cb72-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;TrainStep&quot;</span></span>
-<span id="cb72-29"><a href="#cb72-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb72-30"><a href="#cb72-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Grid (selected = 1):</span></span>
-<span id="cb72-31"><a href="#cb72-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 x 1</span></span>
-<span id="cb72-32"><a href="#cb72-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Model$n.trees $interaction.depth</span></span>
-<span id="cb72-33"><a href="#cb72-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           &lt;dbl&gt;              &lt;int&gt;</span></span>
-<span id="cb72-34"><a href="#cb72-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1            50                  1</span></span>
-<span id="cb72-35"><a href="#cb72-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2           100                  1</span></span>
-<span id="cb72-36"><a href="#cb72-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3           150                  1</span></span>
-<span id="cb72-37"><a href="#cb72-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4            50                  2</span></span>
-<span id="cb72-38"><a href="#cb72-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5           100                  2</span></span>
-<span id="cb72-39"><a href="#cb72-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6           150                  2</span></span>
-<span id="cb72-40"><a href="#cb72-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 7            50                  3</span></span>
-<span id="cb72-41"><a href="#cb72-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 8           100                  3</span></span>
-<span id="cb72-42"><a href="#cb72-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 9           150                  3</span></span>
-<span id="cb72-43"><a href="#cb72-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb72-44"><a href="#cb72-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Performance&quot;</span></span>
-<span id="cb72-45"><a href="#cb72-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb72-46"><a href="#cb72-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Metrics: CIndex, RMSE </span></span>
-<span id="cb72-47"><a href="#cb72-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6,</span></span>
-<span id="cb72-48"><a href="#cb72-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   GBMModel.7, GBMModel.8, GBMModel.9</span></span>
-<span id="cb72-49"><a href="#cb72-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb72-50"><a href="#cb72-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Selected model: GBMModel.1 </span></span>
-<span id="cb72-51"><a href="#cb72-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; CIndex value: 0.7513153</span></span></code></pre></div>
-<p>Grid values may also be given as a Grid function, function call, or object; ParameterGrid object; or data frame containing parameter values at which to evaluate the model, such as that returned by expand_params().</p>
+<span id="cb72-16"><a href="#cb72-16" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Case weights support: TRUE</span></span>
+<span id="cb72-17"><a href="#cb72-17" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Tuning grid: TRUE</span></span>
+<span id="cb72-18"><a href="#cb72-18" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Variable importance: TRUE</span></span>
+<span id="cb72-19"><a href="#cb72-19" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb72-20"><a href="#cb72-20" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Parameters:</span></span>
+<span id="cb72-21"><a href="#cb72-21" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; List of 5</span></span>
+<span id="cb72-22"><a href="#cb72-22" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.trees          : num 50</span></span>
+<span id="cb72-23"><a href="#cb72-23" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ interaction.depth: int 1</span></span>
+<span id="cb72-24"><a href="#cb72-24" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ n.minobsinnode   : num 10</span></span>
+<span id="cb72-25"><a href="#cb72-25" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ shrinkage        : num 0.1</span></span>
+<span id="cb72-26"><a href="#cb72-26" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;  $ bag.fraction     : num 0.5</span></span>
+<span id="cb72-27"><a href="#cb72-27" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb72-28"><a href="#cb72-28" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; TrainStep1 :</span></span>
+<span id="cb72-29"><a href="#cb72-29" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;TrainStep&quot;</span></span>
+<span id="cb72-30"><a href="#cb72-30" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb72-31"><a href="#cb72-31" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Grid (selected = 1):</span></span>
+<span id="cb72-32"><a href="#cb72-32" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; # A tibble: 9 x 1</span></span>
+<span id="cb72-33"><a href="#cb72-33" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Model$n.trees $interaction.depth</span></span>
+<span id="cb72-34"><a href="#cb72-34" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;           &lt;dbl&gt;              &lt;int&gt;</span></span>
+<span id="cb72-35"><a href="#cb72-35" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 1            50                  1</span></span>
+<span id="cb72-36"><a href="#cb72-36" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 2           100                  1</span></span>
+<span id="cb72-37"><a href="#cb72-37" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 3           150                  1</span></span>
+<span id="cb72-38"><a href="#cb72-38" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 4            50                  2</span></span>
+<span id="cb72-39"><a href="#cb72-39" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 5           100                  2</span></span>
+<span id="cb72-40"><a href="#cb72-40" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 6           150                  2</span></span>
+<span id="cb72-41"><a href="#cb72-41" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 7            50                  3</span></span>
+<span id="cb72-42"><a href="#cb72-42" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 8           100                  3</span></span>
+<span id="cb72-43"><a href="#cb72-43" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; 9           150                  3</span></span>
+<span id="cb72-44"><a href="#cb72-44" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb72-45"><a href="#cb72-45" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Object of class &quot;Performance&quot;</span></span>
+<span id="cb72-46"><a href="#cb72-46" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb72-47"><a href="#cb72-47" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Metrics: CIndex, RMSE </span></span>
+<span id="cb72-48"><a href="#cb72-48" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Models: GBMModel.1, GBMModel.2, GBMModel.3, GBMModel.4, GBMModel.5, GBMModel.6,</span></span>
+<span id="cb72-49"><a href="#cb72-49" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   GBMModel.7, GBMModel.8, GBMModel.9</span></span>
+<span id="cb72-50"><a href="#cb72-50" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb72-51"><a href="#cb72-51" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Selected model: GBMModel.1 </span></span>
+<span id="cb72-52"><a href="#cb72-52" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; CIndex value: 0.7513153</span></span></code></pre></div>
+<p>Grid values may also be given as a Grid function, function name, or object; ParameterGrid object; or data frame containing parameter values at which to evaluate the model, such as that returned by expand_params().</p>
 <div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Tune over randomly sampled grid points</span></span>
 <span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fit</span>(surv_fo, <span class="at">data =</span> surv_train,</span>
 <span id="cb73-3"><a href="#cb73-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="fu">TunedModel</span>(</span>
@@ -2223,7 +2238,7 @@ Event
 </div>
 <div id="model-selection" class="section level3" number="11.2.2">
 <h3 number="11.2.2"><span class="header-section-number">11.2.2</span> Model Selection</h3>
-<p>Model selection can be conducted by calling fit() with a SelectedModel to automatically choose from any combination of models and model parameters. Selection has as a special case the just-discussed tuning of a single model over a grid of parameter values. Combinations of model functions, function names, or function calls can be supplied to SelectedModel() in order to define sets of candidate models from which to select. An expand_model() helper function is additionally available to expand a model over a grid of tuning parameters for inclusion in the candidate set if so desired.</p>
+<p>Model selection can be conducted by calling fit() with a SelectedModel to automatically choose from any combination of models and model parameters. Selection has as a special case the just-discussed tuning of a single model over a grid of parameter values. Combinations of model functions, function names, or objects can be supplied to SelectedModel() in order to define sets of candidate models from which to select. An expand_model() helper function is additionally available to expand a model over a grid of tuning parameters for inclusion in the candidate set if so desired.</p>
 <div class="sourceCode" id="cb76"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Model interface for model selection</span></span>
 <span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a>sel_model <span class="ot">&lt;-</span> <span class="fu">SelectedModel</span>(</span>
 <span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expand_model</span>(GBMModel, <span class="at">n.trees =</span> <span class="fu">c</span>(<span class="dv">50</span>, <span class="dv">100</span>), <span class="at">interaction.depth =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>),</span>
@@ -2351,6 +2366,7 @@ Event
 #&gt; Label: Trained Generalized Boosted Regression
 #&gt; Package: gbm
 #&gt; Response types: factor, numeric, PoissonVariate, Surv
+#&gt; Case weights support: TRUE
 #&gt; Tuning grid: TRUE
 #&gt; Variable importance: TRUE
 #&gt; 
@@ -2380,7 +2396,7 @@ Event
 <p>Core default behaviors of functions in the package can be viewed or changed globally through the settings() function. The function accepts one or more character names of settings to view, <code>name = value</code> pairs giving the values of settings to change, or a vector of these, with available settings summarized below.</p>
 <dl>
 <dt><code>control</code></dt>
-<dd>function, function name, or call defining a default resampling method [default: <code>&quot;CVControl&quot;</code>].
+<dd>function, function name, or object defining a default resampling method [default: <code>&quot;CVControl&quot;</code>].
 </dd>
 <dt><code>cutoff</code></dt>
 <dd>numeric (0, 1) threshold above which binary factor probabilities are classified as events and below which survival probabilities are classified [default: 0.5].
@@ -2392,7 +2408,7 @@ Event
 <dd>character string specifying distributional approximations to estimated survival curves for predicting survival events/probabilities. Choices are <code>&quot;empirical&quot;</code> (default) for the Kaplan-Meier estimator, <code>&quot;exponential&quot;</code>, <code>&quot;rayleigh&quot;</code>, or <code>&quot;weibull&quot;</code>.
 </dd>
 <dt><code>grid</code></dt>
-<dd><code>size</code> argument to Grid() indicating the number of parameter-specific values to generate automatically for tuning of models that have pre-defined grids or a Grid() function, function name, or call [default: 3].
+<dd><code>size</code> argument to Grid() indicating the number of parameter-specific values to generate automatically for tuning of models that have pre-defined grids or a Grid() function, function name, or object [default: 3].
 </dd>
 <dt><code>method.EmpiricalSurv</code></dt>
 <dd>character string specifying the empirical method of estimating baseline survival curves for Cox proportional hazards-based models. Choices are <code>&quot;breslow&quot;</code> or <code>&quot;efron&quot;</code> (default).
@@ -2417,12 +2433,6 @@ Event
 </dd>
 <dt><code>require</code></dt>
 <dd>names of installed packages to load during parallel execution of resampling algorithms [default: <code>c(&quot;MachineShop&quot;, &quot;survival&quot;, &quot;recipes&quot;)</code>].
-</dd>
-<dt><code>resample_progress</code></dt>
-<dd>logical indicating whether to display a progress bar during resampling [default: <code>TRUE</code>]. Displayed only if a computing cluster is not registered or is registered with the <strong>doSNOW</strong> package.
-</dd>
-<dt><code>resample_verbose</code></dt>
-<dd>logical indicating whether to enable verbose messages when resampling [default: <code>FALSE</code>].
 </dd>
 <dt><code>reset</code></dt>
 <dd>character names of settings to reset to their default values.
@@ -2510,17 +2520,18 @@ Event
 <span id="cb85-3"><a href="#cb85-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;LogisticModel&quot;</span>,</span>
 <span id="cb85-4"><a href="#cb85-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">label =</span> <span class="st">&quot;Logistic Model&quot;</span>,</span>
 <span id="cb85-5"><a href="#cb85-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">response_types =</span> <span class="st">&quot;binary&quot;</span>,</span>
-<span id="cb85-6"><a href="#cb85-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">fit =</span> <span class="cf">function</span>(formula, data, weights, ...) {</span>
-<span id="cb85-7"><a href="#cb85-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">glm</span>(formula, <span class="at">data =</span> <span class="fu">as.data.frame</span>(data), <span class="at">weights =</span> weights,</span>
-<span id="cb85-8"><a href="#cb85-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> binomial, ...)</span>
-<span id="cb85-9"><a href="#cb85-9" aria-hidden="true" tabindex="-1"></a>  },</span>
-<span id="cb85-10"><a href="#cb85-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">predict =</span> <span class="cf">function</span>(object, newdata, ...) {</span>
-<span id="cb85-11"><a href="#cb85-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">predict</span>(object, <span class="at">newdata =</span> <span class="fu">as.data.frame</span>(newdata), <span class="at">type =</span> <span class="st">&quot;response&quot;</span>)</span>
-<span id="cb85-12"><a href="#cb85-12" aria-hidden="true" tabindex="-1"></a>  },</span>
-<span id="cb85-13"><a href="#cb85-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">varimp =</span> <span class="cf">function</span>(object, ...) {</span>
-<span id="cb85-14"><a href="#cb85-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pchisq</span>(<span class="fu">coef</span>(object)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="fu">diag</span>(<span class="fu">vcov</span>(object)), <span class="dv">1</span>)</span>
-<span id="cb85-15"><a href="#cb85-15" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb85-16"><a href="#cb85-16" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<span id="cb85-6"><a href="#cb85-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">weights =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb85-7"><a href="#cb85-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">fit =</span> <span class="cf">function</span>(formula, data, weights, ...) {</span>
+<span id="cb85-8"><a href="#cb85-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">glm</span>(formula, <span class="at">data =</span> <span class="fu">as.data.frame</span>(data), <span class="at">weights =</span> weights,</span>
+<span id="cb85-9"><a href="#cb85-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">family =</span> binomial, ...)</span>
+<span id="cb85-10"><a href="#cb85-10" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb85-11"><a href="#cb85-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">predict =</span> <span class="cf">function</span>(object, newdata, ...) {</span>
+<span id="cb85-12"><a href="#cb85-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">predict</span>(object, <span class="at">newdata =</span> <span class="fu">as.data.frame</span>(newdata), <span class="at">type =</span> <span class="st">&quot;response&quot;</span>)</span>
+<span id="cb85-13"><a href="#cb85-13" aria-hidden="true" tabindex="-1"></a>  },</span>
+<span id="cb85-14"><a href="#cb85-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">varimp =</span> <span class="cf">function</span>(object, ...) {</span>
+<span id="cb85-15"><a href="#cb85-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pchisq</span>(<span class="fu">coef</span>(object)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> <span class="fu">diag</span>(<span class="fu">vcov</span>(object)), <span class="dv">1</span>)</span>
+<span id="cb85-16"><a href="#cb85-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb85-17"><a href="#cb85-17" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 <div id="custom-metrics" class="section level2" number="13.2">
 <h2 number="13.2"><span class="header-section-number">13.2</span> Custom Metrics</h2>
@@ -3974,9 +3985,6 @@ o
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-andersen:1993:SMB" class="csl-entry">
 Andersen, Per K, Ornulf Borgan, Richard D Gill, and Niels Keiding. 1993. <em>Statistical Models Based on Counting Processes</em>. New York: Springer.
-</div>
-<div id="ref-bache:2014:MFP" class="csl-entry">
-Bache, Stefan Milton, and Hadley Wickham. 2014. <em><span class="nocase">magrittr</span>: A Forward-Pipe Operator for r</em>. <a href="https://CRAN.R-project.org/package=magrittr">https://CRAN.R-project.org/package=magrittr</a>.
 </div>
 <div id="ref-breiman:1996:SR" class="csl-entry">
 Breiman, Leo. 1996. <span>“Stacked Regression.”</span> <em>Machine Learning</em> 24: 49–64.

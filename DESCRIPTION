@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 2.9.0
-Date: 2021-06-17
+Version: 3.0.0
+Date: 2021-08-19
 Authors@R: person(c("Brian", "J"), "Smith",
                   email = "brian-j-smith@uiowa.edu",
                   role = c("aut", "cre"))
@@ -55,16 +55,17 @@ Collate: 'classes.R' 'MLControl.R' 'MLMetric.R' 'MLModel.R'
         'ML_TreeModel.R' 'ML_XGBModel.R' 'MachineShop-package.R'
         'ModelFrame.R' 'ModelRecipe.R' 'ModeledInput.R'
         'TrainedInputs.R' 'TrainedModels.R' 'append.R' 'calibration.R'
-        'case_components.R' 'coerce.R' 'combine.R' 'conditions.R'
+        'case_comps.R' 'coerce.R' 'combine.R' 'conditions.R'
         'confusion.R' 'convert.R' 'data.R' 'dependence.R' 'diff.R'
         'expand.R' 'extract.R' 'fit.R' 'grid.R' 'metricinfo.R'
         'metrics.R' 'metrics_factor.R' 'metrics_numeric.R'
         'modelinfo.R' 'models.R' 'performance.R' 'performance_curve.R'
         'plot.R' 'predict.R' 'predictors.R' 'print.R' 'RcppExports.R'
-        'recipe_roles.R' 'resample.R' 'response.R' 'settings.R'
-        'step_kmeans.R' 'step_kmedoids.R' 'step_lincomp.R' 'step_sbf.R'
-        'step_spca.R' 'summary.R' 'survival.R' 'utils.R' 'varimp.R'
+        'recipe_roles.R' 'reexports.R' 'resample.R' 'response.R'
+        'settings.R' 'step_kmeans.R' 'step_kmedoids.R' 'step_lincomp.R'
+        'step_sbf.R' 'step_spca.R' 'summary.R' 'survival.R' 'utils.R'
+        'varimp.R'
 NeedsCompilation: yes
-Packaged: 2021-06-17 19:51:40 UTC; bjsmith
+Packaged: 2021-08-19 19:39:55 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2021-06-18 08:20:05 UTC
+Date/Publication: 2021-08-19 20:20:02 UTC

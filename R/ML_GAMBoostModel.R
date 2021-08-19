@@ -56,7 +56,7 @@ GAMBoostModel <- function(
   baselearner <- match.arg(baselearner)
   risk <- match.arg(risk)
 
-  args <- params(environment())
+  args <- new_params(environment())
   is_main <- names(args) %in% c("family", "baselearner", "dfbase")
   params <- args[is_main]
   params$control <- as.call(c(.(mboost::boost_control), args[!is_main]))
@@ -67,11 +67,12 @@ GAMBoostModel <- function(
     packages = "mboost",
     response_types = c("binary", "BinomialVariate", "NegBinomialVariate",
                        "numeric", "PoissonVariate", "Surv"),
+    weights = TRUE,
     predictor_encoding = "model.frame",
     params = params,
     gridinfo = new_gridinfo(
       param = "mstop",
-      values = c(
+      get_values = c(
         function(n, ...) round(seq_range(0, 50, c(1, 1000), n + 1))
       )
     ),
@@ -97,12 +98,12 @@ GAMBoostModel <- function(
       mboost::gamboost(formula, data = as.data.frame(data), na.action = na.pass,
                        weights = weights, family = family, ...)
     },
-    predict = function(object, newdata, ...) {
+    predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       if (object$family@name == "Cox Partial Likelihood") {
         lp <- drop(predict(object, type = "link"))
         new_lp <- drop(predict(object, newdata = newdata, type = "link"))
-        predict(object$response, lp, new_lp, ...)
+        predict(object$response, lp, new_lp, weights = case_weights(model), ...)
       } else {
         predict(object, newdata = newdata, type = "response")
       }

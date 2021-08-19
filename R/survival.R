@@ -74,9 +74,10 @@ EmpiricalSurv <- function(x, ...) {
 EmpiricalSurv.Surv <- function(
   x, risks = NULL, weights = NULL, method = c("efron", "breslow"), ...
 ) {
-  event <- as.numeric(x[, "status"] == 1)
+  event <- as.integer(x[, "status"])
   if (is.null(risks)) risks <- 1
-  if (is.null(weights)) weights <- 1
+  weights <- check_weights(weights, x)
+  throw(check_assignment(weights))
   if (is.null(method)) method <- settings("method.EmpiricalSurv")
   method <- match.arg(method)
 
@@ -92,8 +93,7 @@ EmpiricalSurv.Surv <- function(
     "efron" = {
       data <- data.frame(event, wt_eventrisk = data$wt_event * risks)
       sums[names(data)] <- rowsum(data, time(x))
-      hazfit_efron(nrow(sums), sums$event, sums$wt_event, sums$wt_risk,
-                   sums$wt_eventrisk)
+      hazfit_efron(sums$event, sums$wt_event, sums$wt_risk, sums$wt_eventrisk)
     }
   ))
 
@@ -330,11 +330,12 @@ surv_mean <- function(times, surv, max_time = max(times)) {
 }
 
 
-surv_subset <- function(x, keep, time) {
+surv_subset <- function(x, weights, include, time) {
   surv <- 1
-  x <- x[keep]
+  x <- x[include]
+  weights <- weights[include]
   if (length(x) && any(event_time(x) <= time)) {
-    data <- data.frame(event = as.numeric(x[, "status"] == 1), total = 1)
+    data <- data.frame(event = weights * x[, "status"], total = weights)
     sums <- cbind(
       rowsum(data["event"], time(x)),
       risksum(data["total"], x)
@@ -342,7 +343,7 @@ surv_subset <- function(x, keep, time) {
     sums <- sums[sums$stop_time <= time, ]
     surv <- prod(1 - sums$event / sums$total)
   }
-  list(surv = surv, p = mean(keep))
+  list(surv = surv, p = mean(include))
 }
 
 

@@ -50,15 +50,14 @@ LARSModel <- function(
     packages = "lars",
     response_types = "numeric",
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = "step",
-      values = c(
+      get_values = c(
         function(n, data, ...) seq_nvars(data, LARSModel, n)
       )
     ),
     fit = function(formula, data, weights, step = NULL, ...) {
-      throw(check_equal_weights(weights))
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)
       if (is.null(step)) {

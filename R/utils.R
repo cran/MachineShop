@@ -35,7 +35,7 @@ utils::globalVariables(c("i", "x", "y"))
 
 
 attach_objects <- function(
-  what, pos = 2L, name = deparse(substitute(what), backtick = FALSE)
+  what, pos = 2L, name = deparse1(substitute(what), backtick = FALSE)
 ) {
   make_attach <- attach
   make_attach(what, pos, name, warn.conflicts = FALSE)
@@ -55,9 +55,45 @@ combine_dataframes <- function(x, y = NULL) {
 }
 
 
+combine_modelslots <- function(models, types) {
+  init <- data.frame(type = types, weights = FALSE)
+  any_ordered <- any(map_logi(function(model) {
+    "ordered" %in% model@response_types
+  }, models))
+  info_list <- map(function(model) {
+    types <- model@response_types
+    res <- data.frame(type = types, weights = model@weights)
+    factor_match <- match("factor", types, nomatch = 0)
+    if (any_ordered && !("ordered" %in% types) && factor_match) {
+      res <- rbind(
+        res,
+        data.frame(type = "ordered", weights = res$weights[factor_match])
+      )
+    }
+    res
+  }, models)
+  info <- Reduce(function(x, y) {
+    res <- merge(x, y, by = "type")
+    res$weights <- if (nrow(res)) res$weights.x | res$weights.y else logical()
+    res[c("weights.x", "weights.y")] <- NULL
+    res
+  }, info_list, init)
+  list(
+    response_types = info$type,
+    weights = switch(length(unique(info$weights)) + 1,
+                     FALSE, info$weights[1], info@weights)
+  )
+}
+
+
 complete_subset <- function(...) {
   is_complete <- complete.cases(...)
   map(function(x) subset(x, is_complete), list(...))
+}
+
+
+deparse1 <- function(expr, collapse = " ", width.cutoff = 500L, ...) {
+  paste(deparse(expr, width.cutoff, ...), collapse = collapse)
 }
 
 
@@ -155,12 +191,14 @@ is_one_element <- function(x, class = "ANY") {
 }
 
 
-is_response <- function(y, class2) {
-  if (class2 == "binary") {
-    is(y, "factor") && nlevels(y) == 2
-  } else {
-    is(y, class2)
-  }
+is_response <- function(y, types) {
+  map_logi(function(type) {
+    if (type == "binary") {
+      is(y, "factor") && nlevels(y) == 2
+    } else {
+      is(y, type)
+    }
+  }, types)
 }
 
 
@@ -179,16 +217,6 @@ is_trained.step <- function(x, ...) {
 }
 
 
-is_valid_response <- function(y, object) {
-  response_types <- if (is(object, "MLModel")) {
-    object@response_types
-  } else if (is.list(object)) {
-    object$response_types
-  }
-  any(map_logi(is_response, list(y), response_types))
-}
-
-
 label_items <- function(label, x, n = Inf, add_names = FALSE) {
   item_len <- length(x)
   if (add_names && !is.null(names(x))) x <- paste(names(x), x, sep = " = ")
@@ -199,7 +227,7 @@ label_items <- function(label, x, n = Inf, add_names = FALSE) {
 
 
 list_to_function <- function(x) {
-  err_msg <- paste0("'", deparse(substitute(x)), "' must be a function, ",
+  err_msg <- paste0("'", deparse1(substitute(x)), "' must be a function, ",
                       "function name, or vector of these")
   if (is(x, "MLMetric")) x <- list(x)
   if (is(x, "vector")) {
@@ -308,6 +336,17 @@ missing_names <- function(x, data) {
 }
 
 
+new_params <- function(envir, ...) {
+  args <- as.list(envir)
+  is_missing <- map_logi(function(x) is.symbol(x) && !nzchar(x), args)
+  if (any(is_missing)) {
+    missing <- names(args)[is_missing]
+    throw(Error(label_items("missing values for required argument", missing)))
+  }
+  c(args[!map_logi(is.null, args)], list(...))
+}
+
+
 new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
   if (getDoParName() == "doSEQ") index <- as.numeric(index)
   width <- max(10, round(0.25 * getOption("width")))
@@ -339,6 +378,11 @@ new_progress_index <- function(names, max) {
 }
 
 
+ndim <- function(x) {
+  length(size(x))
+}
+
+
 nvars <- function(x, model) {
   stopifnot(is(x, "ModelFrame"))
   model <- get_MLModel(model)
@@ -350,17 +394,6 @@ nvars <- function(x, model) {
     "model.matrix" = ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE))
   )
   if (is.null(res)) NA else res
-}
-
-
-params <- function(envir, ...) {
-  args <- as.list(envir)
-  is_missing <- map_logi(function(x) is.symbol(x) && !nzchar(x), args)
-  if (any(is_missing)) {
-    missing <- names(args)[is_missing]
-    throw(Error(label_items("missing values for required argument", missing)))
-  }
-  c(args[!map_logi(is.null, args)], list(...))
 }
 
 
@@ -396,7 +429,7 @@ require_namespaces <- function(packages) {
       item_names <- package_names[x]
       throw(LocalError("Call ", label_items(msg, items), ".\n",
                        "To address this issue, try running ", fix, "(",
-                       deparse(item_names), ")."))
+                       deparse1(item_names), ")."))
     }
   }
 
@@ -538,6 +571,13 @@ set_model_names <- function(x) {
 }
 
 
+size <- function(x, dim = NULL) {
+  res <- dim(x)
+  if (is.null(res)) res <- length(x)
+  if (is.null(dim)) res else res[dim]
+}
+
+
 stepAIC_args <- function(formula, direction, scope) {
   if (is.null(scope$lower)) scope$lower <- ~ 1
   if (is.null(scope$upper)) scope$upper <- formula[-2]
@@ -567,7 +607,7 @@ unnest <- function(data) {
   df <- data.frame(row.names = seq_len(nrow(data)))
   for (name in names(data)) {
     x <- data[[name]]
-    if (length(dim(x)) > 1) {
+    if (ndim(x) > 1) {
       x <- if (is.data.frame(x)) unnest(x) else as.data.frame(as(x, "matrix"))
       name <- paste0(name, ".", names(x))
     }

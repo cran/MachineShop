@@ -12,7 +12,7 @@
 
 <meta name="author" content="Brian J Smith" />
 
-<meta name="date" content="2021-06-17" />
+<meta name="date" content="2021-07-23" />
 
 <title>Conventions for MLModels Implementation</title>
 
@@ -141,7 +141,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <h1 class="title toc-ignore">Conventions for MLModels Implementation</h1>
 <h4 class="author">Brian J Smith</h4>
-<h4 class="date">2021-06-17</h4>
+<h4 class="date">2021-07-23</h4>
 
 
 
@@ -169,8 +169,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <div id="packages-slot" class="section level3">
 <h3>packages Slot</h3>
 <ul>
-<li><p>Include all packages whose functions are called directly from within the constructor.</p></li>
-<li><p>Use :: or ::: to reference source package functions.</p></li>
+<li><p>Include all external packages whose functions are called directly from within the constructor.</p></li>
+<li><p>Use :: to reference source package functions.</p></li>
 </ul>
 </div>
 <div id="response_types-slot" class="section level3">
@@ -179,23 +179,23 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li>Include all response variable types (<code>&quot;binary&quot;</code>, <code>&quot;factor&quot;</code>, <code>&quot;matrix&quot;</code>, <code>&quot;numeric&quot;</code>, <code>&quot;ordered&quot;</code>, and/or <code>&quot;Surv&quot;</code>) that can be analyzed with the model.</li>
 </ul>
 </div>
+<div id="weights-slot" class="section level3">
+<h3>weights Slot</h3>
+<ul>
+<li>Logical indicating whether the model supports case weights.</li>
+</ul>
+</div>
 <div id="params-slot" class="section level3">
 <h3>params Slot</h3>
 <ul>
-<li>List of parameter values set by the constructor, typically obtained with <code>MachineShop:::params(environment())</code> if all arguments are to be passed to the source package fit function as supplied. Additional steps may be needed to pass the constructor arguments to the source package in a different format; e.g., when some model parameters must be passed in a control structure, as in <code>C50Model</code> and <code>CForestModel</code>.</li>
-</ul>
-</div>
-<div id="nvars-function" class="section level3">
-<h3>nvars Function</h3>
-<ul>
-<li>Should have a single <code>data</code> argument that represents a model frame and return its number of analytic predictor variables.</li>
+<li>List of parameter values set by the constructor, typically obtained internally with <code>new_params(environment())</code> if all arguments are to be passed to the source package fit function as supplied. Additional steps may be needed to pass the constructor arguments to the source package in a different format; e.g., when some model parameters must be passed in a control structure, as in <code>C50Model</code> and <code>CForestModel</code>.</li>
 </ul>
 </div>
 <div id="fit-function" class="section level3">
 <h3>fit Function</h3>
 <ul>
 <li><p>The first three arguments should be <code>formula</code>, <code>data</code>, and <code>weights</code> followed by an ellipsis (<code>...</code>).</p></li>
-<li><p>If weights are not supported, the following should be included in the function:</p></li>
+<li><p>If weights are not supported, the following, or equivalent, should be included in the function:</p></li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span>(<span class="sc">!</span><span class="fu">all</span>(weights <span class="sc">==</span> <span class="dv">1</span>)) <span class="fu">warning</span>(<span class="st">&quot;weights are not supported and will be ignored&quot;</span>)</span></code></pre></div>
 <ul>
@@ -254,7 +254,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li>Include a link to the source package function and the other method functions shown below.</li>
 </ul>
 <pre><code>\code{\link[&lt;source package&gt;]{&lt;fit function&gt;}}, \code{\link{fit}},
-\code{\link{resample}}, \code{\link{tune}}</code></pre>
+\code{\link{resample}}</code></pre>
 </div>
 </div>
 <div id="package-extensions" class="section level2">
@@ -263,7 +263,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><p>If adding a new model to the package, save its source code in a file whose name begins with “ML_” followed by the model name, and ending with a .R extension; e.g., <code>&quot;R/ML_CustomModel.R&quot;</code>.</p></li>
 <li><p>Export the model in <code>NAMESPACE</code>.</p></li>
 <li><p>Add any required packages to the “Suggests” section of <code>DESCRIPTION</code>.</p></li>
-<li><p>Add the model to <code>R/MachineShop-package.R</code>.</p></li>
+<li><p>Add the model to <code>R/models.R</code>.</p></li>
 <li><p>Add the model to <code>R/modelinfo.R</code>.</p></li>
 <li><p>Add a unit testing file to <code>tests/testthat</code>.</p></li>
 </ul>

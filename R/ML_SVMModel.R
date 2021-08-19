@@ -72,9 +72,8 @@ SVMModel <- function(
     packages = "kernlab",
     response_types = c("factor", "numeric"),
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     fit = function(formula, data, weights, ...) {
-      throw(check_equal_weights(weights))
       eval_fit(data,
                formula = kernlab::ksvm(formula, data = as.data.frame(data),
                                        prob.model = TRUE, ...),
@@ -177,7 +176,7 @@ MLModelFunction(SVMTanhModel) <- NULL
 .SVMModel <- function(name, label, kernel, envir, ...) {
   args <- list(...)
   args$kernel <- kernel
-  kpar <- params(envir)
+  kpar <- new_params(envir)
   args$kpar <- if (kernel %in% c("laplacedot", "rbfdot") && length(kpar) == 0) {
     "automatic"
   } else {
@@ -192,7 +191,7 @@ MLModelFunction(SVMTanhModel) <- NULL
 
   gridinfo <- new_gridinfo(
     param = c("C", "degree", "order", "scale", "sigma"),
-    values = c(
+    get_values = c(
       function(n, ...) 2^seq_range(-4, 2, c(-4, 10), n),
       function(n, ...) seq_len(min(n, 3)),
       function(n, ...) seq_len(min(n, 3)),

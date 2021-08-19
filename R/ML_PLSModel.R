@@ -35,17 +35,16 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
     packages = "pls",
     response_types = c("factor", "numeric"),
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = "ncomp",
-      values = c(
+      get_values = c(
         function(n, data, ...) {
           seq_len(min(nrow(data), nvars(data, PLSModel) - 1, n))
         }
       )
     ),
     fit = function(formula, data, weights, ...) {
-      throw(check_equal_weights(weights))
       y <- response(data)
       data <- as.data.frame(data)
       if (is.factor(y)) {
@@ -67,7 +66,7 @@ PLSModel <- function(ncomp = 1, scale = FALSE) {
         eval(list(x = object), asNamespace("pls"))
       vi <- map_num(function(i) {
         drop(as.matrix(abs(beta[, i, ])) %*% prop.table(-diff(perf[, i, ])))
-      }, seq_len(dim(beta)[2]))
+      }, seq_len(ncol(beta)))
       dimnames(vi) <- dimnames(beta)[1:2]
       if (ncol(vi) <= 2) vi <- vi[, 1]
       vi

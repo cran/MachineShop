@@ -1,5 +1,6 @@
 setGeneric("convert_prob",
-           function(object, x, ...) standardGeneric("convert_prob"))
+  function(object, x, ...) standardGeneric("convert_prob")
+)
 
 
 setMethod("convert_prob", c("ANY", "ANY"),
@@ -19,7 +20,7 @@ setMethod("convert_prob", c("BinomialVariate", "ANY"),
 
 setMethod("convert_prob", c("factor", "array"),
   function(object, x, ...) {
-    convert_prob(object, adrop(x, length(dim(x))))
+    convert_prob(object, adrop(x, ndim(x)))
   }
 )
 
@@ -37,7 +38,7 @@ setMethod("convert_prob", c("factor", "matrix"),
 
 setMethod("convert_prob", c("matrix", "array"),
   function(object, x, ...) {
-    convert_prob(object, adrop(x, length(dim(x))))
+    convert_prob(object, adrop(x, ndim(x)))
   }
 )
 
@@ -55,8 +56,8 @@ setMethod("convert_prob", c("matrix", "matrix"),
 
 setMethod("convert_prob", c("numeric", "array"),
   function(object, x, ...) {
-    num_dim <- length(dim(x))
-    x <- if (num_dim == 1) c(x) else adrop(x, num_dim)
+    n <- ndim(x)
+    x <- if (n == 1) c(x) else adrop(x, n)
     convert_prob(object, x)
   }
 )
@@ -85,7 +86,8 @@ setMethod("convert_prob", c("Surv", "numeric"),
 
 
 setGeneric("convert_response",
-           function(object, x, ...) standardGeneric("convert_response"))
+  function(object, x, ...) standardGeneric("convert_response")
+)
 
 
 setMethod("convert_response", c("ANY", "ANY"),

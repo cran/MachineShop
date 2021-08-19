@@ -3,6 +3,7 @@
 
 setOldClass("listof")
 setOldClass(c("tbl_df", "tbl", "data.frame"))
+setOldClass(c("xtabs", "table"))
 
 
 ListOf <- setClass("ListOf",
@@ -102,6 +103,7 @@ setClass("MLModel",
     label = "character",
     packages = "character",
     response_types = "character",
+    weights = "logical",
     predictor_encoding = "character",
     params = "list",
     gridinfo = "tbl_df",
@@ -254,35 +256,29 @@ setClass("CForestModelFit", contains = c("MLModelFit", "RandomForest"))
 
 setClass("MLControl",
   slots = c(
-    strata_breaks = "integer",
-    strata_nunique = "integer",
-    strata_prop = "numeric",
-    strata_size = "integer",
-    times = "ANY",
-    distr = "ANY",
-    method = "ANY",
+    name = "character",
+    label = "character",
+    monitor = "list",
+    predict = "list",
+    strata = "list",
+    weights = "logical",
     seed = "numeric"
   )
 )
 
 
-setClass("MLBootstrapControl",
+setClass("MLBootControl",
   contains = "MLControl",
   slots = c(samples = "integer")
 )
 
 
-setClass("MLBootControl",
-  contains = "MLBootstrapControl"
-)
-
-
 setClass("MLBootOptimismControl",
-  contains = "MLBootstrapControl"
+  contains = "MLBootControl"
 )
 
 
-setClass("MLCrossValidationControl",
+setClass("MLCVControl",
   contains = "MLControl",
   slots = c(
     folds = "integer",
@@ -291,13 +287,8 @@ setClass("MLCrossValidationControl",
 )
 
 
-setClass("MLCVControl",
-  contains = "MLCrossValidationControl"
-)
-
-
 setClass("MLCVOptimismControl",
-  contains = "MLCrossValidationControl"
+  contains = "MLCVControl"
 )
 
 
@@ -405,7 +396,7 @@ setClass("Resamples",
   contains = "data.frame",
   slots = c(
     control = "MLControl",
-    strata = "character"
+    strata = "data.frame"
   )
 )
 

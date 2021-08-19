@@ -46,17 +46,16 @@ RandomForestModel <- function(
     packages = "randomForest",
     response_types = c("factor", "numeric"),
     predictor_encoding = "model.frame",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = c("mtry", "nodesize"),
-      values = c(
+      get_values = c(
         function(n, data, ...) seq_nvars(data, RandomForestModel, n),
         function(n, data, ...) round(seq(1, min(20, nrow(data)), length = n))
       ),
       default = c(TRUE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
-      throw(check_equal_weights(weights))
       eval_fit(data,
                formula = randomForest::randomForest(formula,
                                                     data = as.data.frame(data),

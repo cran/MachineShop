@@ -2,9 +2,9 @@
 #'
 #' Fit a stacked regression model from multiple base learners.
 #'
-#' @param ... \link[=models]{model} functions, function names, calls, or vector
-#'   of these to serve as base learners.
-#' @param control \link[=controls]{control} function, function name, or call
+#' @param ... \link[=models]{model} functions, function names, objects, or
+#'   vector of these to serve as base learners.
+#' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed for the estimation of base
 #'   learner weights.
 #' @param weights optional fixed base learner weights.
@@ -43,12 +43,12 @@ StackedModel <- function(
 
   if (!is.null(weights)) stopifnot(length(weights) == length(base_learners))
 
+  slots <- combine_modelslots(base_learners, settings("response_types"))
   new("StackedModel",
     name = "StackedModel",
     label = "Stacked Regression",
-    response_types =
-      Reduce(intersect, map(slot, base_learners, "response_types"),
-             init = settings("response_types")),
+    response_types = slots$response_types,
+    weights = slots$weights,
     predictor_encoding = NA_character_,
     params = as.list(environment()),
     varimp = function(object, ...) NULL
@@ -80,14 +80,14 @@ MLModelFunction(StackedModel) <- NULL
     weights <- Rsolnp::solnp(rep(1 / num_learners, num_learners),
                              function(weights) mean_stack_list(stack, weights),
                              eqfun = function(x) sum(x), eqB = 1,
-                             LB = rep(0, num_learners),
+                             LB = numeric(num_learners),
                              control = list(trace = FALSE))$pars
   }
 
   list(base_fits = map(function(learner) fit(inputs, model = learner),
                        base_learners),
        weights = weights,
-       times = control@times) %>%
+       times = control@predict$times) %>%
     MLModelFit("StackedModelFit", model = x, x = inputs)
 }
 
@@ -113,7 +113,8 @@ mean_stack_list <- function(x, weights) {
 
 
 setGeneric("stack_loss",
-           function(observed, predicted, x, ...) standardGeneric("stack_loss"))
+  function(observed, predicted, x, ...) standardGeneric("stack_loss")
+)
 
 
 setMethod("stack_loss", c("ANY", "ANY", "Resamples"),

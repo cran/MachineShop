@@ -61,7 +61,11 @@ response.MLModelFit <- function(object, newdata = NULL, ...) {
 #'
 response.ModelFrame <- function(object, newdata = NULL, ...) {
   y <- model.response(object)
-  if (is.null(newdata)) y else response(terms(object), newdata, y)
+  if (!is.null(newdata)) {
+    f <- if (is(newdata, "ModelFrame")) formula else terms
+    y <- response(f(object), newdata, y)
+  }
+  y
 }
 
 
@@ -69,8 +73,7 @@ response.ModelFrame <- function(object, newdata = NULL, ...) {
 #'
 response.recipe <- function(object, newdata = NULL, ...) {
   object <- prep(object)
-  data <- if (is.null(newdata)) juice(object) else bake(object, newdata)
-  response(terms(object), data)
+  response(terms(object), bake(object, newdata))
 }
 
 

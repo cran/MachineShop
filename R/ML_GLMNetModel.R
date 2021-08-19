@@ -64,11 +64,12 @@ GLMNetModel <- function(
     packages = "glmnet",
     response_types = c("BinomialVariate", "factor", "matrix", "numeric",
                        "PoissonVariate", "Surv"),
+    weights = TRUE,
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = c("lambda", "alpha"),
-      values = c(
+      get_values = c(
         function(n, data, ...) {
           lambda <- numeric()
           model <- GLMNetModel(lambda = NULL)

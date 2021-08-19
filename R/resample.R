@@ -8,14 +8,15 @@
 #'
 #' @param x \link[=inputs]{input} specifying a relationship between model
 #'   predictor and response variables.  Alternatively, a \link[=models]{model}
-#'   function or call may be given first followed by the input specification and
-#'   \code{control} value.
+#'   function or object may be given first followed by the input specification
+#'   and \code{control} value.
 #' @param y response variable.
 #' @param data \link[=data.frame]{data frame} containing observed predictors and
 #'   outcomes.
-#' @param model \link[=models]{model} function, function name, or call; ignored
-#'   and can be omitted when resampling \link[=ModeledInput]{modeled inputs}.
-#' @param control \link[=controls]{control} function, function name, or call
+#' @param model \link[=models]{model} function, function name, or object;
+#'   ignored and can be omitted when resampling
+#'   \link[=ModeledInput]{modeled inputs}.
+#' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param ... arguments passed to other methods.
 #'
@@ -66,7 +67,7 @@ resample <- function(x, ...) {
 resample.formula <- function(
   x, data, model, control = MachineShop::settings("control"), ...
 ) {
-  mf <- ModelFrame(x, data, na.rm = FALSE, strata = response(x, data))
+  mf <- do.call(ModelFrame, list(x, data, na.rm = FALSE, strata = response(x)))
   resample(mf, model, control, ...)
 }
 
@@ -141,7 +142,7 @@ Resamples.data.frame <- function(object, ..., strata = NULL, .check = TRUE) {
     object$Model <- droplevels(object$Model)
   }
   rownames(object) <- NULL
-  new("Resamples", object, strata = as.character(strata), ...)
+  new("Resamples", object, strata = as.data.frame(strata), ...)
 }
 
 
@@ -155,15 +156,13 @@ Resamples.list <- function(object, ...) {
 }
 
 
-.resample.MLBootstrapControl <- function(
-  object, x, model, progress_index = 0, ...
-) {
+.resample.MLBootControl <- function(object, x, model, progress_index = 0, ...) {
   presets <- settings()
   set.seed(object@seed)
-  splits <- rsample_sets(bootstraps,
-                         data = x,
-                         times = object@samples,
-                         control = object)$splits
+  splits <- rsample_split(function(...) bootstraps(...)$splits,
+                          data = x,
+                          times = object@samples,
+                          control = object)
   seeds <- sample.int(.Machine$integer.max, length(splits))
 
   is_optimism_control <- is(object, "MLBootOptimismControl")
@@ -173,24 +172,27 @@ Resamples.list <- function(object, ...) {
 
   snow_opts <- list()
   progress <- function(n) NULL
-  if (settings("resample_progress")) {
+  if (object@monitor$progress) {
     pb <- new_progress_bar(length(splits), input = x, model = model,
                            index = progress_index)
-    on.exit(pb$terminate())
     switch(getDoParName(),
       "doSEQ"  = progress <- function(n) pb$tick(),
       "doSNOW" = snow_opts$progress <- function(n) pb$tick()
     )
+    on.exit(pb$terminate())
   }
 
-  foreach(i = seq_along(splits),
-          .packages = settings("require"),
-          .verbose = settings("resample_verbose"),
-          .options.snow = snow_opts) %dopar% {
+  foreach(
+    i = seq_along(splits),
+    .export = c("seq_boot", "subsample", "subsample_data"),
+    .packages = settings("require"),
+    .verbose = object@monitor$verbose,
+    .options.snow = snow_opts
+  ) %dopar% {
     progress(i)
     settings(presets)
     set.seed(seeds[i])
-    train <- analysis(splits[[i]], x)
+    train <- subsample_data(rsample::analysis, splits[[i]], x)
     if (is_optimism_control) {
       subs <- subsample(train, list(x, train), model, object, i)
       df <- subs[[1]]
@@ -203,45 +205,46 @@ Resamples.list <- function(object, ...) {
     } else {
       subsample(train, x, model, object, i)
     }
-  } %>% Resamples(control = object, strata = case_strata_name(x))
+  } %>% Resamples(control = object, strata = attr(splits, "strata"))
 }
 
 
-.resample.MLCrossValidationControl <- function(
-  object, x, model, progress_index = 0, ...
-) {
+.resample.MLCVControl <- function(object, x, model, progress_index = 0, ...) {
   presets <- settings()
   set.seed(object@seed)
-  splits <- rsample_sets(vfold_cv,
-                         data = x,
-                         v = object@folds,
-                         repeats = object@repeats,
-                         control = object)$splits
+  splits <- rsample_split(function(...) vfold_cv(...)$splits,
+                          data = x,
+                          v = object@folds,
+                          repeats = object@repeats,
+                          control = object)
   seeds <- sample.int(.Machine$integer.max, length(splits))
 
   is_optimism_control <- is(object, "MLCVOptimismControl")
 
   snow_opts <- list()
   progress <- function(n) NULL
-  if (settings("resample_progress")) {
+  if (object@monitor$progress) {
     pb <- new_progress_bar(length(splits), input = x, model = model,
                            index = progress_index)
-    on.exit(pb$terminate())
     switch(getDoParName(),
       "doSEQ"  = progress <- function(n) pb$tick(),
       "doSNOW" = snow_opts$progress <- function(n) pb$tick()
     )
+    on.exit(pb$terminate())
   }
 
-  df_list <- foreach(i = seq_along(splits),
-                     .packages = settings("require"),
-                     .verbose = settings("resample_verbose"),
-                     .options.snow = snow_opts) %dopar% {
+  df_list <- foreach(
+    i = seq_along(splits),
+    .export = c("subsample", "subsample_data"),
+    .packages = settings("require"),
+    .verbose = object@monitor$verbose,
+    .options.snow = snow_opts
+  ) %dopar% {
     progress(i)
     settings(presets)
     set.seed(seeds[i])
-    train <- analysis(splits[[i]], x)
-    test <- assessment(splits[[i]], x)
+    train <- subsample_data(rsample::analysis, splits[[i]], x)
+    test <- subsample_data(rsample::assessment, splits[[i]], x)
     if (is_optimism_control) {
       subs <- subsample(train, list(test, x), model, object, i)
       structure(subs[[1]], CV.Predicted = subs[[2]]["Predicted"])
@@ -249,7 +252,7 @@ Resamples.list <- function(object, ...) {
       subsample(train, test, model, object, i)
     }
   }
-  res <- Resamples(df_list, control = object, strata = case_strata_name(x))
+  res <- Resamples(df_list, control = object, strata = attr(splits, "strata"))
 
   if (is_optimism_control) {
     pred_list <- map(attr, df_list, "CV.Predicted")
@@ -270,48 +273,51 @@ Resamples.list <- function(object, ...) {
 .resample.MLOOBControl <- function(object, x, model, progress_index = 0, ...) {
   presets <- settings()
   set.seed(object@seed)
-  splits <- rsample_sets(bootstraps,
-                         data = x,
-                         times = object@samples,
-                         control = object)$splits
+  splits <- rsample_split(function(...) bootstraps(...)$splits,
+                          data = x,
+                          times = object@samples,
+                          control = object)
   seeds <- sample.int(.Machine$integer.max, length(splits))
 
   snow_opts <- list()
   progress <- function(n) NULL
-  if (settings("resample_progress")) {
+  if (object@monitor$progress) {
     pb <- new_progress_bar(length(splits), input = x, model = model,
                            index = progress_index)
-    on.exit(pb$terminate())
     switch(getDoParName(),
       "doSEQ"  = progress <- function(n) pb$tick(),
       "doSNOW" = snow_opts$progress <- function(n) pb$tick()
     )
+    on.exit(pb$terminate())
   }
 
-  foreach(i = seq_along(splits),
-          .packages = settings("require"),
-          .verbose = settings("resample_verbose"),
-          .options.snow = snow_opts) %dopar% {
+  foreach(
+    i = seq_along(splits),
+    .export = c("subsample", "subsample_data"),
+    .packages = settings("require"),
+    .verbose = object@monitor$verbose,
+    .options.snow = snow_opts
+  ) %dopar% {
     progress(i)
     settings(presets)
     set.seed(seeds[i])
-    train <- analysis(splits[[i]], x)
-    test <- assessment(splits[[i]], x)
+    train <- subsample_data(rsample::analysis, splits[[i]], x)
+    test <- subsample_data(rsample::assessment, splits[[i]], x)
     subsample(train, test, model, object, i)
-  } %>% Resamples(control = object, strata = case_strata_name(x))
+  } %>% Resamples(control = object, strata = attr(splits, "strata"))
 }
 
 
 .resample.MLSplitControl <- function(object, x, model, ...) {
   set.seed(object@seed)
-  split <- rsample_sets(initial_split,
-                        data = x,
-                        prop = object@prop,
-                        control = object)
-  train <- training(split, x)
-  test <- testing(split, x)
+  split <- rsample_split(initial_split,
+                         data = x,
+                         prop = object@prop,
+                         control = object)
+  train <- subsample_data(rsample::training, split, x)
+  test <- subsample_data(rsample::testing, split, x)
   subsample(train, test, model, object) %>%
-    Resamples(control = object, strata = case_strata_name(x))
+    Resamples(control = object, strata = attr(split, "strata"))
 }
 
 
@@ -329,58 +335,16 @@ rsample_data.ModelFrame <- function(x, ...) asS3(x)
 rsample_data.ModelRecipe <- function(x, ...) as.data.frame(x)
 
 
-rsample_sets <- function(fun, data, control, ...) {
+rsample_split <- function(fun, data, control, ...) {
   df <- rsample_data(data)
-  df[["(strata)"]] <- case_strata(data,
-                                  breaks = control@strata_breaks,
-                                  nunique = control@strata_nunique,
-                                  prop = control@strata_prop,
-                                  size = control@strata_size)
-  suppressWarnings(fun(df, ..., strata = case_strata_name(df), pool = 0))
-}
-
-
-analysis <- function(x, object, ...) UseMethod("analysis", object)
-
-analysis.ModelFrame <- function(x, object, ...) {
-  as(rsample::analysis(x), class(object)[1])
-}
-
-analysis.ModelRecipe <- function(x, object, ...) {
-  recipe(object, rsample::analysis(x))
-}
-
-
-assessment <- function(x, object, ...) UseMethod("assessment", object)
-
-assessment.ModelFrame <- function(x, object, ...) {
-  as(rsample::assessment(x), class(object)[1])
-}
-
-assessment.ModelRecipe <- function(x, object, ...) {
-  recipe(object, rsample::assessment(x))
-}
-
-
-testing <- function(x, object, ...) UseMethod("testing", object)
-
-testing.ModelFrame <- function(x, object, ...) {
-  as(rsample::testing(x), class(object)[1])
-}
-
-testing.ModelRecipe <- function(x, object, ...) {
-  recipe(object, rsample::testing(x))
-}
-
-
-training <- function(x, object, ...) UseMethod("training", object)
-
-training.ModelFrame <- function(x, object, ...) {
-  as(rsample::training(x), class(object)[1])
-}
-
-training.ModelRecipe <- function(x, object, ...) {
-  recipe(object, rsample::training(x))
+  strata <- do.call(case_strata, c(list(data), control@strata))
+  df[["(strata)"]] <- strata
+  res <- suppressWarnings(fun(df, ..., strata = case_strata_name(df), pool = 0))
+  if (length(strata)) {
+    attr(res, "strata") <- data.frame(strata, row.names = rownames(df))
+    names(attr(res, "strata")) <- case_strata_name(data)
+  }
+  res
 }
 
 
@@ -389,24 +353,33 @@ subsample <- function(train, test, model, control, id = 1) {
 
   model_fit <- fit(train, model)
   times <- time(model_fit)
-  if (length(times)) control@times <- times
+  if (length(times)) control@predict$times <- times
 
   f <- function(test) {
-    if (is(train, "ModelRecipe")) {
-      test <- recipe(as.MLModel(model_fit)@x, as.data.frame(test))
-    }
+    weights <- if (control@weights) "weights"
+    comps <- case_comps(model_fit, test, c("names", weights), response = TRUE)
     df <- data.frame(Model = factor(model@name),
                      Resample = as.integer(id),
-                     Case = as.data.frame(test, original = FALSE)[["(names)"]],
+                     Case = comps$names,
                      stringsAsFactors = FALSE)
-    df$Observed <- response(test)
-    df$Predicted <- predict(model_fit, as.data.frame(test), type = "prob",
-                            times = control@times, method = control@method,
-                            distr = control@distr)
+    df$Observed <- comps$response
+    predict_args <- list(model_fit, as.data.frame(test), type = "prob")
+    df$Predicted <- do.call(predict, c(predict_args, control@predict))
+    df$Weight <- comps$weights
     df
   }
 
   if (class(test)[1] == "list") map(f, test) else f(test)
+}
+
+
+subsample_data <- function(fun, x, object) {
+  classes <- c("ModelFrame", "ModelRecipe")
+  switch(which(c(map_logi(is, list(object), classes), TRUE))[1],
+    as(fun(x), class(object)[1]),
+    recipe(object, fun(x)),
+    throw(TypeError(object, classes))
+  )
 }
 
 

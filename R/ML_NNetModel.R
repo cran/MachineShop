@@ -51,11 +51,12 @@ NNetModel <- function(
     label = "Feed-Forward Neural Networks",
     packages = "nnet",
     response_types = c("factor", "numeric"),
+    weights = TRUE,
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = c("size", "decay"),
-      values = c(
+      get_values = c(
         function(n, ...) round(seq_range(1, 2, c(1, 20), length = n)),
         function(n, ...) c(0, 10^seq_inner(-5, 1, n - 1))
       )

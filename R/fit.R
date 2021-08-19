@@ -7,12 +7,13 @@
 #'
 #' @param x \link[=inputs]{input} specifying a relationship between model
 #'   predictor and response variables.  Alternatively, a \link[=models]{model}
-#'   function or call may be given first followed by the input specification.
+#'   function or object may be given first followed by the input specification.
 #' @param y response variable.
 #' @param data \link[=data.frame]{data frame} containing observed predictors and
 #'   outcomes.
-#' @param model \link[=models]{model} function, function name, or call; ignored
-#'   and can be omitted when fitting \link[=ModeledInput]{modeled inputs}.
+#' @param model \link[=models]{model} function, function name, or object;
+#'   ignored and can be omitted when fitting
+#'   \link[=ModeledInput]{modeled inputs}.
 #' @param ... arguments passed to other methods.
 #'
 #' @return \code{MLModelFit} class object.
@@ -39,7 +40,7 @@ fit <- function(x, ...) {
 #' @rdname fit-methods
 #'
 fit.formula <- function(x, data, model, ...) {
-  mf <- ModelFrame(x, data, na.rm = FALSE, strata = response(x, data))
+  mf <- do.call(ModelFrame, list(x, data, na.rm = FALSE, strata = response(x)))
   fit(mf, model)
 }
 
@@ -99,13 +100,17 @@ fit.MLModelFunction <- function(x, ...) {
 .fit.MLModel <- function(x, inputs, ...) {
   inputs_prep <- prep(inputs)
   mf <- ModelFrame(inputs_prep, na.rm = FALSE)
-  if (is.null(model.weights(mf))) {
-    mf <- ModelFrame(mf, weights = 1, na.rm = FALSE)
-  }
-
   y <- response(mf)
-  if (!is_valid_response(y, x)) {
-    throw(TypeError(y, x@response_types, paste(x@name, "response variable")))
+
+  info <- data.frame(type = x@response_types, weights = x@weights)
+  is_response_types <- is_response(y, info$type)
+  if (!any(is_response_types)) {
+    throw(TypeError(y, info$type, paste(x@name, "response variable")))
+  }
+  weights <- case_weights(mf)
+  if (!all(info$weights[is_response_types]) || is.null(weights)) {
+    throw(check_equal_weights(weights))
+    mf <- ModelFrame(mf, weights = 1, na.rm = FALSE)
   }
 
   require_namespaces(x@packages)
@@ -113,7 +118,7 @@ fit.MLModelFunction <- function(x, ...) {
   params_env <- list2env(list(
     formula = formula(mf),
     data = mf,
-    weights = model.weights(mf),
+    weights = case_weights(mf),
     y = y,
     nobs = nrow(mf),
     nvars = nvars(mf, x)

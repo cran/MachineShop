@@ -89,8 +89,9 @@ XGBModel <- function(
     label = "Extreme Gradient Boosting",
     packages = "xgboost (>= 1.3.0)",
     response_types = c("factor", "numeric", "PoissonVariate", "Surv"),
+    weights = TRUE,
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     fit = function(formula, data, weights, params, ...) {
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)
@@ -159,7 +160,8 @@ XGBModel <- function(
           x <- model.matrix(predictor_frame(model), intercept = FALSE)
           lp <- log(predict(object, newdata = x))
           new_lp <- log(pred)
-          predict(response(model), lp, new_lp, times = times, ...)
+          predict(response(model), lp, new_lp, times = times,
+                  weights = case_weights(model), ...)
         },
         pred
       )
@@ -246,7 +248,7 @@ MLModelFunction(XGBTreeModel) <- NULL
 
 .XGBModel <- function(name, label, booster, envir, ...) {
   args <- list(...)
-  args$params <- as.call(c(.(list), params(envir), booster = booster))
+  args$params <- as.call(c(.(list), new_params(envir), booster = booster))
   model <- do.call(XGBModel, args, quote = TRUE)
   model@name <- name
   model@label <- label
@@ -255,7 +257,7 @@ MLModelFunction(XGBTreeModel) <- NULL
     param = c("nrounds", "max_depth", "eta", "subsample", "colsample_bytree",
               "rate_drop", "skip_drop", "lambda", "alpha", "eta", "gamma",
               "min_child_weight", "colsample_bytree", "rate_drop", "skip_drop"),
-    values = c(
+    get_values = c(
       function(n, ...) round(seq_range(0, 50, c(1, 1000), n + 1)),
       function(n, ...) seq_len(min(n, 10)),
       function(...) c(0.3, 0.4),
@@ -272,7 +274,7 @@ MLModelFunction(XGBTreeModel) <- NULL
       function(n, ...) seq(0.01, 0.50, length = n),
       function(n, ...) seq(0.05, 0.95, length = n)
     ),
-    default = c(rep(TRUE, 9), rep(FALSE, 6))
+    default = rep(c(TRUE, FALSE), c(9, 6))
   )
   params <- switch(booster,
     "dart" = c("nrounds", "max_depth", "eta", "gamma", "min_child_weight",

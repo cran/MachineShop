@@ -43,7 +43,14 @@ ModelRecipe.recipe <- function(object, ...) {
 
 
 bake.ModelRecipe <- function(object, new_data, ...) {
-  bake(as(object, "recipe"), new_data = prep_recipe_data(new_data))
+  new_data <- if (is.null(new_data)) {
+    object$template
+  } else if (is(new_data, "ModelRecipe")) {
+    new_data$template
+  } else {
+    prep_recipe_data(new_data)
+  }
+  bake(as(object, "recipe"), new_data)
 }
 
 
@@ -54,21 +61,6 @@ bake.SelectedInput <- function(object, ...) {
 
 bake.TunedInput <- function(object, ...) {
   throw(Error("cannot create a design matrix from a ", class(object)))
-}
-
-
-juice <- function(x, ...) {
-  UseMethod("juice")
-}
-
-
-juice.default <- function(x, ...) {
-  recipes::juice(x, ...)
-}
-
-
-juice.ModelRecipe <- function(x, ...) {
-  bake(x, x$template)
 }
 
 

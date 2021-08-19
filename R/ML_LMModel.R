@@ -29,8 +29,9 @@ LMModel <- function() {
     label = "Linear Model",
     packages = "stats",
     response_types = c("factor", "matrix", "numeric"),
+    weights = TRUE,
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     fit = function(formula, data, weights, ...) {
       y <- response(data)
       data <- as.data.frame(data)
@@ -44,12 +45,7 @@ LMModel <- function() {
           data[[y_name]] <- mm
         }
       }
-      if (is.numeric(y)) {
-        stats::lm(formula, data = data, weights = weights, ...)
-      } else {
-        throw(check_equal_weights(weights))
-        stats::lm(formula, data = data, ...)
-      }
+      stats::lm(formula, data = data, weights = weights, ...)
     },
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)

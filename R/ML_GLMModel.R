@@ -42,7 +42,7 @@
 #'
 GLMModel <- function(family = NULL, quasi = FALSE, ...) {
 
-  params <- params(environment())
+  params <- new_params(environment())
   params$control <- as.call(c(.(stats::glm.control), list(...)))
 
   MLModel(
@@ -51,6 +51,7 @@ GLMModel <- function(family = NULL, quasi = FALSE, ...) {
     packages = c("MASS", "nnet", "stats"),
     response_types = c("BinomialVariate", "factor", "matrix",
                        "NegBinomialVariate", "numeric", "PoissonVariate"),
+    weights = TRUE,
     predictor_encoding = "model.matrix",
     params = params,
     fit = function(formula, data, weights, family = NULL, quasi = FALSE,
@@ -73,8 +74,7 @@ GLMModel <- function(family = NULL, quasi = FALSE, ...) {
       }
       data <- as.data.frame(data)
       if (identical(family, "mgaussian")) {
-        throw(check_equal_weights(weights))
-        stats::lm(formula, data = data)
+        stats::lm(formula, data = data, weights = weights)
       } else if (identical(family, "multinom")) {
         nnet::multinom(formula, data = data, weights = weights,
                        maxit = 4 * control$maxit, trace = control$trace,
@@ -126,7 +126,7 @@ GLMStepAICModel <- function(
 
   direction <- match.arg(direction)
 
-  args <- params(environment())
+  args <- new_params(environment())
   is_step <- names(args) %in% c("direction", "scope", "k", "trace", "steps")
   params <- args[is_step]
 
@@ -138,6 +138,7 @@ GLMStepAICModel <- function(
     packages = stepmodel@packages,
     response_types = c("binary", "BinomialVariate","NegBinomialVariate",
                        "numeric", "PoissonVariate"),
+    weights = TRUE,
     predictor_encoding = stepmodel@predictor_encoding,
     params = c(stepmodel@params, params),
     fit = function(formula, data, weights, family = NULL, quasi = FALSE,

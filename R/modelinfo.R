@@ -2,7 +2,7 @@
 #'
 #' Display information about models supplied by the \pkg{MachineShop} package.
 #'
-#' @param ... \link[=models]{model} functions, function names, or calls;
+#' @param ... \link[=models]{model} functions, function names, or objects;
 #' \link[=response]{observed responses} for which to display information.  If
 #' none are specified, information is returned on all available models by
 #' default.
@@ -17,6 +17,9 @@
 #'     not be loaded with, for example, the \code{\link{library}} function.}
 #'   \item{response_types}{character vector of response variable types supported
 #'     by the model.}
+#'  \item{weights}{logical value or vector of the same length as
+#'    \code{response_types} indicating whether case weights are supported for
+#'    the responses.}
 #'   \item{arguments}{closure with the argument names and corresponding default
 #'     values of the model function.}
 #'   \item{grid}{logical indicating whether automatic generation of tuning
@@ -60,7 +63,7 @@ modelinfo <- function(...) {
 
 .modelinfo.default <- function(x, ...) {
   info <- list(x)
-  if (length(list(...))) c(info, .modelinfo(...)) else info
+  if (...length()) c(info, .modelinfo(...)) else info
 }
 
 
@@ -79,7 +82,7 @@ modelinfo <- function(...) {
 
 
 .modelinfo.list <- function(x, ...) {
-  if (length(list(...))) .modelinfo(...) else list()
+  if (...length()) .modelinfo(...) else list()
 }
 
 
@@ -88,18 +91,20 @@ modelinfo <- function(...) {
     label = x@label,
     packages = x@packages,
     response_types = x@response_types,
+    weights = x@weights,
     arguments = args(get0(x@name, mode = "function")),
     grid = has_grid(x),
     varimp = has_varimp(x)
   )), names = x@name)
-  if (length(list(...))) c(info, .modelinfo(...)) else info
+  if (...length()) c(info, .modelinfo(...)) else info
 }
 
 
 .modelinfo_types <- function(...) {
   info <- modelinfo()
   check_model <- function(model) {
-    all(map_logi(is_valid_response, list(...), list(model)))
+    check_response <- function(y) any(is_response(y, model$response_types))
+    all(map_logi(check_response, list(...)))
   }
   info[map_logi(check_model, info)]
 }

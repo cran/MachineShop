@@ -50,17 +50,16 @@ LDAModel <- function(
     packages = "MASS",
     response_types = "factor",
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = "dimen",
-      values = c(
+      get_values = c(
         function(n, data, ...) {
           seq_len(min(nlevels(response(data)) - 1, nvars(data, LDAModel), n))
         }
       )
     ),
     fit = function(formula, data, weights, dimen, use, ...) {
-      throw(check_equal_weights(weights))
       model_fit <- MASS::lda(formula, data = as.data.frame(data), ...)
       model_fit$dimen <- if (missing(dimen)) length(model_fit$svd) else dimen
       model_fit$use <- use

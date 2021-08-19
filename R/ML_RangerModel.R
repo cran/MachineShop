@@ -67,11 +67,12 @@ RangerModel <- function(
     label = "Fast Random Forests",
     packages = "ranger",
     response_types = c("factor", "numeric", "Surv"),
+    weights = TRUE,
     predictor_encoding = "model.frame",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = c("mtry", "min.node.size", "splitrule"),
-      values = c(
+      get_values = c(
         function(n, data, ...) seq_nvars(data, RangerModel, n),
         function(n, data, ...) round(seq(1, min(20, nrow(data)), length = n)),
         function(n, data, ...) {

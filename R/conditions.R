@@ -126,10 +126,42 @@ select_call <- function(x, parent_call = NULL, last_call = NULL) {
 #################### Checks ####################
 
 
+check_array <- function(x, type, size = NULL, na.fail = TRUE) {
+  result <- try({
+    storage.mode(x) <- type
+    x
+  }, silent = TRUE)
+
+  n <- length(size)
+  if (is(result, "try-error")) {
+    TypeError(x, type)
+  } else if (n > 0 && (ndim(x) != n || any(na.omit(size(x) != size)))) {
+    msg <- if (n == 1 && size == 1) {
+      "a scalar"
+    } else if (n == 1) {
+      paste("a vector of length", size)
+    } else {
+      paste(if (n == 2) "a matrix" else "an array", "of dimension",
+            paste(size, collapse = "x"))
+    }
+    DomainError(x, paste("must be", msg))
+  } else if (na.fail && anyNA(result)) {
+    msg <- paste0(
+      c("", "must be ", paste("non-missing", type)),
+      if (length(result) == 1) c("", "a ", "") else c("elements ", "", "s"),
+      collapse = ""
+    )
+    DomainError(result, msg)
+  } else {
+    result
+  }
+}
+
+
 check_assignment <- function(x, value = x) {
   if (is(value, "error")) {
-    value$message <- paste0("Failed to assign '", substitute(x), "' value.\n",
-                            value$message)
+    value$message <- paste0("Failed to assign '", deparse1(substitute(x)),
+                            "' value.\n", value$message)
   }
   value
 }
@@ -142,6 +174,11 @@ check_censoring <- function(x, types, ...) {
     Error("Expected survival data censoring type to be ",
           toString(types, conj = "or"), "; got '", type, "' instead.")
   } else x
+}
+
+
+check_character <- function(x, ...) {
+  check_array(x, type = "character", ...)
 }
 
 
@@ -174,22 +211,14 @@ check_grid <- function(x) {
 }
 
 
-check_integer <- function(...) {
-  check_numeric(..., type = "integer")
+check_integer <- function(x, bounds = c(-Inf, Inf), include = TRUE, ...) {
+  include <- include & is.finite(bounds)
+  check_numeric(x, bounds = bounds, include = include, type = "integer", ...)
 }
 
 
-check_logical <- function(x, scalar = TRUE) {
-  result <- try(as.logical(x), silent = TRUE)
-  pass <- is.logical(result) &&
-    length(result) &&
-    (!scalar || length(result) == 1) &&
-    !any(is.na(result))
-  if (!pass) {
-    msg <- "must be one%s logical%s"
-    edits <- if (scalar) character(2) else c(" or more", "s")
-    DomainError(x, sprintf(msg, edits[1], edits[2]))
-  } else result
+check_logical <- function(x, ...) {
+  check_array(x, type = "logical", ...)
 }
 
 
@@ -213,26 +242,24 @@ check_metrics <- function(x) {
 
 
 check_numeric <- function(
-  x, bounds = c(-Inf, Inf), include = FALSE, type = c("numeric", "integer"),
-  scalar = TRUE
+  x, bounds = c(-Inf, Inf), include = TRUE, type = c("double", "integer"), ...
 ) {
-  include <- rep(include, length = 2)
-  type <- match.arg(type)
+  result <- check_array(x, type = match.arg(type), ...)
+  if (is(result, "error")) {
+    return(result)
+  }
 
-  result <- try(suppressWarnings(as(x, type)), silent = TRUE)
-  pass <- is(result, type) &&
-    length(result) &&
-    (!scalar || length(result) == 1) &&
-    !any(is.na(result)) &&
-    all((result > bounds[1] | (include[1] & result == bounds[1]))) &&
-    all((result < bounds[2] | (include[2] & result == bounds[2])))
-  if (!pass) {
-    directions <- ifelse(include, c(">=", "<="), c(">", "<"))
-    msg <- paste0("must be one%s ", type, "%s ",
-                  paste(directions, bounds, collapse = " and "))
-    edits <- if (scalar) character(2) else c(" or more", "s")
-    DomainError(x, sprintf(msg, edits[1], edits[2]))
-  } else result
+  include <- rep(include, length = 2)
+  ops <- paste0(c(">", "<"), ifelse(include, "=", ""))
+  values <- na.omit(c(result))
+  inbounds <- function(op, bound) all(do.call(op, list(values, bound)))
+  if (!(inbounds(ops[1], bounds[1]) && inbounds(ops[2], bounds[2]))) {
+    msg <- paste0(if (length(result) > 1) "elements ", "must be ",
+                  paste(ops, bounds, collapse = " and "))
+    DomainError(result, msg)
+  } else {
+    result
+  }
 }
 
 
@@ -250,4 +277,14 @@ check_stats <- function(x) {
     DomainError(x, "must be a statistics function, function name, ",
                    "or vector of these")
   } else x
+}
+
+
+check_weights <- function(x, along) {
+  n <- length(along)
+  if (is.null(x)) {
+    rep(1, n)
+  } else {
+    check_numeric(x, bounds = c(0, Inf), include = c(TRUE, FALSE), size = n)
+  }
 }

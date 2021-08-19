@@ -44,18 +44,19 @@ CForestModel <- function(
 
   teststat <- match.arg(teststat)
   testtype <- match.arg(testtype)
-  args <- params(environment())
+  args <- new_params(environment())
 
   MLModel(
     name = "CForestModel",
     label = "Conditional Random Forests",
     packages = "party",
     response_types = c("factor", "numeric", "Surv"),
+    weights = TRUE,
     predictor_encoding = "model.frame",
     params = list(controls = as.call(c(.(party::cforest_control), args))),
     gridinfo = new_gridinfo(
       param = "mtry",
-      values = c(
+      get_values = c(
         function(n, data, ...) seq_nvars(data, CForestModel, n)
       )
     ),

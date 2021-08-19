@@ -59,11 +59,12 @@ EarthModel <- function(
     label = "Multivariate Adaptive Regression Splines",
     packages = "earth",
     response_types = c("factor", "numeric"),
+    weights = TRUE,
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     gridinfo = new_gridinfo(
       param = c("nprune", "degree"),
-      values = c(
+      get_values = c(
         function(n, data, ...) {
           model_fit <- fit(data, model = EarthModel(pmethod = "none"))
           max_terms <- min(2 + 0.75 * nrow(model_fit$dirs), 200)

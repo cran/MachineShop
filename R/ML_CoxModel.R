@@ -39,7 +39,7 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
 
   ties <- match.arg(ties)
 
-  args <- params(environment(), ...)
+  args <- new_params(environment(), ...)
   is_main <- names(args) %in% c("ties", "eps", "iter.max")
   params <- args[is_main]
   params$tol <- args$toler.chol
@@ -49,18 +49,19 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
     label = "Cox Regression",
     packages = "survival",
     response_types = "Surv",
+    weights = TRUE,
     predictor_encoding = "model.matrix",
     params = params,
     fit = function(formula, data, weights, ...) {
       survival::coxph(formula, data = as.data.frame(data), weights = weights,
                       ...)
     },
-    predict = function(object, newdata, ...) {
+    predict = function(object, newdata, model, ...) {
       y <- object$y
       newdata <- as.data.frame(newdata)
       lp <- predict(object, type = "lp")
       new_lp <- predict(object, newdata = newdata, type = "lp")
-      predict(y, lp, new_lp, ...)
+      predict(y, lp, new_lp, weights = case_weights(model), ...)
     },
     varimp = function(object, base = exp(1), ...) {
       varimp_pval(object, base = base)
@@ -95,7 +96,7 @@ CoxStepAICModel <- function(
 
   direction <- match.arg(direction)
 
-  args <- params(environment())
+  args <- new_params(environment())
   is_step <- names(args) %in% c("direction", "scope", "k", "trace", "steps")
   params <- args[is_step]
 
@@ -106,6 +107,7 @@ CoxStepAICModel <- function(
     label = "Cox Regression (Stepwise)",
     packages = c(stepmodel@packages, "MASS"),
     response_types = stepmodel@response_types,
+    weights = stepmodel@weights,
     predictor_encoding = stepmodel@predictor_encoding,
     params = c(stepmodel@params, params),
     fit = function(formula, data, weights, direction = "both", scope = list(),

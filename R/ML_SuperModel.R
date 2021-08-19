@@ -2,11 +2,11 @@
 #'
 #' Fit a super learner model to predictions from multiple base learners.
 #'
-#' @param ... \link[=models]{model} functions, function names, calls, or vector
-#'   of these to serve as base learners.
-#' @param model \link[=models]{model} function, function name, or call defining
-#'   the super model.
-#' @param control \link[=controls]{control} function, function name, or call
+#' @param ... \link[=models]{model} functions, function names, objects, or
+#'   vector of these to serve as base learners.
+#' @param model \link[=models]{model} function, function name, or object
+#'   defining the super model.
+#' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed for the estimation of base
 #'   learner weights.
 #' @param all_vars logical indicating whether to include the original
@@ -47,12 +47,12 @@ SuperModel <- function(
 
   control <- get_MLControl(control)
 
+  slots <- combine_modelslots(base_learners, get_MLModel(model)@response_types)
   new("SuperModel",
     name = "SuperModel",
     label = "Super Learner",
-    response_types =
-      Reduce(intersect, map(slot, base_learners, "response_types"),
-             init = get_MLModel(model)@response_types),
+    response_types = slots$response_types,
+    weights = slots$weights,
     predictor_encoding = NA_character_,
     params = as.list(environment()),
     varimp = function(object, ...) NULL
@@ -88,7 +88,7 @@ MLModelFunction(SuperModel) <- NULL
                        base_learners),
        super_fit = fit(super_mf, model = super_learner),
        all_vars = params$all_vars,
-       times = control@times) %>%
+       times = control@predict$times) %>%
     MLModelFit("SuperModelFit", model = x, x = inputs_prep)
 }
 

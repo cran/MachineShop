@@ -2,10 +2,10 @@
 #'
 #' Model selection from a candidate set.
 #'
-#' @param ... \link[=models]{model} functions, function names, calls, or vectors
-#'   of these to serve as the candidate set from which to select, such as that
-#'   returned by \code{\link{expand_model}}.
-#' @param control \link[=controls]{control} function, function name, or call
+#' @param ... \link[=models]{model} functions, function names, objects, or
+#'   vectors of these to serve as the candidate set from which to select, such
+#'   as that returned by \code{\link{expand_model}}.
+#' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
 #'   these with which to calculate performance.  If not specified, default
@@ -51,12 +51,12 @@ SelectedModel <- function(
   }
   names(models) <- make.unique(model_names)
 
+  slots <- combine_modelslots(models, settings("response_types"))
   new("SelectedModel",
       name = "SelectedModel",
       label = "Selected Model",
-      response_types = Reduce(intersect,
-                              map(slot, models, "response_types"),
-                              init = settings("response_types")),
+      response_types = slots$response_types,
+      weights = slots$weights,
       predictor_encoding = NA_character_,
       params = list(models = ListOf(models),
                     control = get_MLControl(control), metrics = metrics,
@@ -82,18 +82,18 @@ MLModelFunction(SelectedModel) <- NULL
 #'
 #' Model tuning over a grid of parameter values.
 #'
-#' @param model \link[=models]{model} function, function name, or call defining
-#'   the model to be tuned.
+#' @param model \link[=models]{model} function, function name, or object
+#'   defining the model to be tuned.
 #' @param grid single integer or vector of integers whose positions or names
 #'   match the parameters in the model's pre-defined tuning grid if one exists
 #'   and which specify the number of values used to construct the grid;
-#'   \code{\link{Grid}} function, function call, or object;
+#'   \code{\link{Grid}} function, function name, or object;
 #'   \code{\link{ParameterGrid}} object; or \link[=data.frame]{data frame}
 #'   containing parameter values at which to evaluate the model, such as that
 #'   returned by \code{\link{expand_params}}.
 #' @param fixed list or one-row data frame with columns of fixed parameter
 #'   values to combine with those in \code{grid}.
-#' @param control \link[=controls]{control} function, function name, or call
+#' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
 #'   these with which to calculate performance.  If not specified, default
@@ -150,9 +150,14 @@ TunedModel <- function(
 
   if (missing(model)) {
     model <- NULL
+    response_types <- settings("response_types")
+    weights <- FALSE
   } else {
     model <- if (is(model, "MLModel")) fget(model@name) else fget(model)
     stopifnot(is(model, "MLModelFunction"))
+    model_call <- model()
+    response_types <- model_call@response_types
+    weights <- model_call@weights
   }
 
   grid <- check_grid(grid)
@@ -175,11 +180,8 @@ TunedModel <- function(
   new("TunedModel",
       name = "TunedModel",
       label = "Grid Tuned Model",
-      response_types = if (is.null(model)) {
-        settings("response_types")
-      } else {
-        model()@response_types
-      },
+      response_types = response_types,
+      weights = weights,
       predictor_encoding = NA_character_,
       params = list(model = model, grid = grid, fixed = fixed,
                     control = get_MLControl(control), metrics = metrics,

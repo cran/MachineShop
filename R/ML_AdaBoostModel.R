@@ -52,7 +52,7 @@ AdaBoostModel <- function(
 
   coeflearn <- match.arg(coeflearn)
 
-  args <- params(environment())
+  args <- new_params(environment())
   is_main <- names(args) %in% c("boos", "mfinal", "coeflearn")
   params <- args[is_main]
   params$control <- as.call(c(.(list), args[!is_main]))
@@ -66,7 +66,7 @@ AdaBoostModel <- function(
     params = params,
     gridinfo = new_gridinfo(
       param = c("mfinal", "maxdepth", "coeflearn"),
-      values = c(
+      get_values = c(
         function(n, ...) round(seq_range(0, 25, c(1, 200), n + 1)),
         function(n, ...) seq_len(min(n, 30)),
         function(n, ...) head(c("Breiman", "Freund", "Zhu"), n)
@@ -74,7 +74,6 @@ AdaBoostModel <- function(
       default = c(TRUE, TRUE, FALSE)
     ),
     fit = function(formula, data, weights, ...) {
-      throw(check_equal_weights(weights))
       adabag::boosting(formula, data = as.data.frame(data), ...)
     },
     predict = function(object, newdata, ...) {

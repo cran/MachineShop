@@ -30,7 +30,6 @@ info <- modelinfo()
 ## Analysis libraries and dataset
 library(MachineShop)
 library(survival)
-library(magrittr)
 data(Melanoma, package = "MASS")
 
 ## Malignant melanoma analysis dataset
@@ -111,7 +110,7 @@ surv_fit <- fit(surv_fo, data = surv_train, model = GBMModel)
 ## Model function name
 fit(surv_fo, data = surv_train, model = "GBMModel")
 
-## Model function call
+## Model object
 fit(surv_fo, data = surv_train, model = GBMModel(n.trees = 100, interaction.depth = 1))
 
 ## ----using_fit_dynamic, results="hide"----------------------------------------
@@ -175,7 +174,7 @@ predict(model_fit, newdata = Pima.te) %>% head
 ## ----using_variables_modelframe_weights, results="hide"-----------------------
 ## Model frame specification with case weights
 mf <- ModelFrame(ncases / (ncases + ncontrols) ~ agegp + tobgp + alcgp, data = esoph,
-                 weights = with(esoph, ncases + ncontrols))
+                 weights = ncases + ncontrols)
 fit(mf, model = GBMModel)
 
 ## ----using_variables_recipe---------------------------------------------------
@@ -417,7 +416,8 @@ kable(conf,
 surv_means_control <- CVControl(folds = 5, repeats = 3, seed = 123)
 
 ## Prediction of survival probabilities
-surv_probs_control <- CVControl(folds = 5, repeats = 3, times = surv_times, seed = 123)
+surv_probs_control <- CVControl(folds = 5, repeats = 3, seed = 123) %>%
+  set_predict(times = surv_times)
 
 ## ----using_resample_parallel--------------------------------------------------
 ## Register multiple cores for parallel computations
@@ -607,6 +607,7 @@ plot(lf, find = 0.75)
 #  #> Label: Trained Generalized Boosted Regression
 #  #> Package: gbm
 #  #> Response types: factor, numeric, PoissonVariate, Surv
+#  #> Case weights support: TRUE
 #  #> Tuning grid: TRUE
 #  #> Variable importance: TRUE
 #  #>
@@ -659,6 +660,7 @@ plot(lf, find = 0.75)
 #  #> Label: Trained Generalized Boosted Regression
 #  #> Package: gbm
 #  #> Response types: factor, numeric, PoissonVariate, Surv
+#  #> Case weights support: TRUE
 #  #> Tuning grid: TRUE
 #  #> Variable importance: TRUE
 #  #>
@@ -747,6 +749,7 @@ plot(lf, find = 0.75)
 #  #> Label: Trained Generalized Boosted Regression
 #  #> Package: gbm
 #  #> Response types: factor, numeric, PoissonVariate, Surv
+#  #> Case weights support: TRUE
 #  #> Tuning grid: TRUE
 #  #> Variable importance: TRUE
 #  #>
@@ -960,6 +963,7 @@ Model name: GBMModel
 Label: Trained Generalized Boosted Regression
 Package: gbm
 Response types: factor, numeric, PoissonVariate, Surv
+Case weights support: TRUE
 Tuning grid: TRUE
 Variable importance: TRUE
 
@@ -994,6 +998,7 @@ LogisticModel <- MLModel(
   name = "LogisticModel",
   label = "Logistic Model",
   response_types = "binary",
+  weights = TRUE,
   fit = function(formula, data, weights, ...) {
     glm(formula, data = as.data.frame(data), weights = weights,
         family = binomial, ...)
@@ -1075,7 +1080,7 @@ kable(df_classes,
                       "m = matrix, n = numeric",
                       "S = Surv"))
 
-## ----reference_metrics, table_metrics, echo=FALSE-----------------------------
+## ----reference_metrics, echo=FALSE--------------------------------------------
 library(MachineShop)
 
 f <- function(x) {

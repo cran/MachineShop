@@ -63,15 +63,14 @@ MDAModel <- function(
     packages = "mda",
     response_types = "factor",
     predictor_encoding = "model.matrix",
-    params = params(environment(), ...),
+    params = new_params(environment(), ...),
     gridinfo = new_gridinfo(
       param = "subclasses",
-      values = c(
+      get_values = c(
         function(n, ...) seq(2, length = min(n, 10))
       )
     ),
     fit = function(formula, data, weights, ...) {
-      throw(check_equal_weights(weights))
       mda::mda(formula, data = as.data.frame(data), ...)
     },
     predict = function(object, newdata, prior = object$prior, ...) {

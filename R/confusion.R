@@ -8,6 +8,9 @@
 #' @param x factor of \link[=response]{observed responses} or \link{resample}
 #'   result containing observed and predicted responses.
 #' @param y \link[=predict]{predicted responses} if not contained in \code{x}.
+#' @param weights numeric vector of non-negative
+#'   \link[=case_weights]{case weights} for the observed \code{x} responses
+#'   [default: equal weights].
 #' @param cutoff numeric (0, 1) threshold above which binary factor
 #'   probabilities are classified as events and below which survival
 #'   probabilities are classified.  If \code{NULL}, then binary responses are
@@ -42,14 +45,16 @@
 #' }
 #'
 confusion <- function(
-  x, y = NULL, cutoff = MachineShop::settings("cutoff"), na.rm = TRUE, ...
+  x, y = NULL, weights = NULL, cutoff = MachineShop::settings("cutoff"),
+  na.rm = TRUE, ...
 ) {
   if (na.rm) {
-    complete <- complete_subset(x = x, y = y)
+    complete <- complete_subset(x = x, y = y, weights = weights)
     x <- complete$x
     y <- complete$y
+    weights <- complete$weights
   }
-  .confusion(x, y, cutoff = cutoff)
+  .confusion(x, y, weights, cutoff = cutoff)
 }
 
 
@@ -73,39 +78,12 @@ ConfusionMatrix <- function(data = NA, ordered = FALSE) {
 }
 
 
-.confusion <- function(x, ...) {
-  UseMethod(".confusion")
-}
+setGeneric(".confusion",
+  function(observed, predicted, ...) standardGeneric(".confusion")
+)
 
 
-.confusion.default <- function(x, y, cutoff, ...) {
-  if (!is.null(cutoff)) y <- convert_response(x, y, cutoff = cutoff)
-  ConfusionMatrix(.confusion_matrix(x, y), ordered = is.ordered(x))
-}
-
-
-.confusion.Resamples <- function(x, cutoff, ...) {
-  conf_list <- by(x, list(Model = x$Model), function(data) {
-   confusion(data$Observed, data$Predicted, cutoff = cutoff, na.rm = FALSE)
-  }, simplify = FALSE)
-  if (all(map_logi(is, conf_list, "ConfusionList"))) {
-    conf_list <- unlist(conf_list, recursive = FALSE)
-  }
-  do.call(c, conf_list)
-}
-
-
-.confusion.Surv <- function(x, y, cutoff, ...) {
-  if (is.null(cutoff)) cutoff <- 0.5
-  do.call(c, .confusion_matrix(x, y, cutoff = cutoff))
-}
-
-
-setGeneric(".confusion_matrix", function(observed, predicted, ...)
-  standardGeneric(".confusion_matrix"))
-
-
-setMethod(".confusion_matrix", c("ANY", "ANY"),
+setMethod(".confusion", c("ANY", "ANY"),
   function(observed, predicted, ...) {
     msg <- "confusion requires a predicted factor or survival probabilities"
     throw(Error(msg))
@@ -113,60 +91,85 @@ setMethod(".confusion_matrix", c("ANY", "ANY"),
 )
 
 
-setMethod(".confusion_matrix", c("factor", "factor"),
-  function(observed, predicted, ...) {
-    table(Predicted = predicted, Observed = observed)
+setMethod(".confusion", c("factor", "factor"),
+  function(observed, predicted, weights, ...) {
+    weights <- check_weights(weights, observed)
+    throw(check_assignment(weights))
+    conf <- xtabs(weights ~ predicted + observed)
+    ConfusionMatrix(conf, ordered = is.ordered(observed))
   }
 )
 
 
-setMethod(".confusion_matrix", c("factor", "matrix"),
-  function(observed, predicted, ...) {
-    df <- aggregate(predicted, list(observed), sum, na.rm = TRUE)
-    df[, -1, drop = FALSE] %>%
-      t %>%
-      as.table %>%
-      structure(dimnames = list(Predicted = df[[1]], Observed = df[[1]]))
+setMethod(".confusion", c("factor", "matrix"),
+  function(observed, predicted, weights, ...) {
+    weights <- check_weights(weights, observed)
+    throw(check_assignment(weights))
+    df <- aggregate(weights * predicted, list(observed), sum, na.rm = TRUE)
+    conf <- as.table(t(df[, -1, drop = FALSE]))
+    dimnames(conf) <- df[c(1, 1)]
+    ConfusionMatrix(conf, ordered = is.ordered(observed))
   }
 )
 
 
-setMethod(".confusion_matrix", c("factor", "numeric"),
-  function(observed, predicted, ...) {
-    .confusion_matrix(observed, cbind(1 - predicted, predicted))
-  }
-)
-
-
-setMethod(".confusion_matrix", c("Surv", "SurvProbs"),
+setMethod(".confusion", c("factor", "numeric"),
   function(observed, predicted, cutoff, ...) {
-    predicted <- convert_response(observed, predicted, cutoff = cutoff)
-    .confusion_matrix(observed, predicted)
+    predicted <- if (is.null(cutoff)) {
+      cbind(1 - predicted, predicted)
+    } else {
+      convert_response(observed, predicted, cutoff = cutoff)
+    }
+    .confusion(observed, predicted, ...)
   }
 )
 
 
-setMethod(".confusion_matrix", c("Surv", "SurvEvents"),
-  function(observed, predicted, ...) {
+setMethod(".confusion", c("Resamples", "ANY"),
+  function(observed, predicted, weights, ...) {
+    conf_list <- by(observed, observed$Model, function(resample) {
+      confusion(resample$Observed, resample$Predicted, resample$Weight,
+                na.rm = FALSE, ...)
+    }, simplify = FALSE)
+    if (all(map_logi(is, conf_list, "ConfusionList"))) {
+      conf_list <- unlist(conf_list, recursive = FALSE)
+    }
+    do.call(c, conf_list)
+  }
+)
 
+
+setMethod(".confusion", c("Surv", "SurvProbs"),
+  function(observed, predicted, cutoff, ...) {
+    if (is.null(cutoff)) cutoff <- 0.5
+    predicted <- convert_response(observed, predicted, cutoff = cutoff)
+    .confusion(observed, predicted, ...)
+  }
+)
+
+
+setMethod(".confusion", c("Surv", "SurvEvents"),
+  function(observed, predicted, weights, ...) {
+
+    weights <- check_weights(weights, observed)
+    throw(check_assignment(weights))
     times <- predicted@times
     conf_tbl <- table(Predicted = 0:1, Observed = 0:1)
 
-    structure(
-      map(function(i) {
-        pos <- predicted[, i, drop = TRUE] == 1
-        pos_pred <- surv_subset(observed, pos, times[i])
-        neg_pred <- surv_subset(observed, !pos, times[i])
+    conf_list <- map(function(i) {
+      pos <- predicted[, i, drop = TRUE] == 1
+      pos_pred <- surv_subset(observed, weights, pos, times[i])
+      neg_pred <- surv_subset(observed, weights, !pos, times[i])
 
-        conf_tbl[1, 1] <- neg_pred$surv * neg_pred$p
-        conf_tbl[2, 1] <- pos_pred$surv * pos_pred$p
-        conf_tbl[1, 2] <- (1 - neg_pred$surv) * neg_pred$p
-        conf_tbl[2, 2] <- (1 - pos_pred$surv) * pos_pred$p
+      conf_tbl[1, 1] <- neg_pred$surv * neg_pred$p
+      conf_tbl[2, 1] <- pos_pred$surv * pos_pred$p
+      conf_tbl[1, 2] <- (1 - neg_pred$surv) * neg_pred$p
+      conf_tbl[2, 2] <- (1 - pos_pred$surv) * pos_pred$p
 
-        ConfusionMatrix(length(observed) * conf_tbl)
-      }, seq_along(times)),
-      names = paste0("time", seq_along(times))
-    )
+      ConfusionMatrix(length(observed) * conf_tbl)
+    }, seq_along(times))
+    names(conf_list) <- paste0("time", seq_along(times))
+    do.call(c, conf_list)
 
   }
 )

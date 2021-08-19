@@ -44,7 +44,7 @@ AdaBagModel <- function(
   surrogatestyle = 0, maxdepth = 30
 ) {
 
-  args <- params(environment())
+  args <- new_params(environment())
   is_main <- names(args) %in% "mfinal"
   params <- args[is_main]
   params$control <- as.call(c(.(list), args[!is_main]))
@@ -58,13 +58,12 @@ AdaBagModel <- function(
     params = params,
     gridinfo = new_gridinfo(
       param = c("mfinal", "maxdepth"),
-      values = c(
+      get_values = c(
         function(n, ...) round(seq_range(0, 25, c(1, 200), n + 1)),
         function(n, ...) seq_len(min(n, 30))
       )
     ),
     fit = function(formula, data, weights, ...) {
-      throw(check_equal_weights(weights))
       adabag::bagging(formula, data = as.data.frame(data), ...)
     },
     predict = function(object, newdata, ...) {

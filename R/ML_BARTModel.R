@@ -73,15 +73,15 @@ BARTModel <- function(
     label = "Bayesian Additive Regression Trees",
     packages = "BART",
     response_types = c("factor", "numeric", "Surv"),
+    weights = c(FALSE, TRUE, FALSE),
     predictor_encoding = "model.matrix",
-    params = params(environment()),
+    params = new_params(environment()),
     fit = function(formula, data, weights, K = NULL, sigest = NA, sigdf = 3,
                    sigquant = 0.90, lambda = NA, ...) {
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)
       switch_class(y,
         "factor" = {
-          throw(check_equal_weights(weights))
           if (nlevels(y) <= 2) {
             f <- BART::gbart
             y <- as.numeric(y) - 1
@@ -97,13 +97,12 @@ BARTModel <- function(
         },
         "Surv" = {
           throw(check_censoring(y, "right"))
-          throw(check_equal_weights(weights))
           BART::surv.bart(x.train = x, times = y[, "time"],
                           delta = y[, "status"], K = K, ...)
         }
       )
     },
-    predict = function(object, newdata, weights, ...) {
+    predict = function(object, newdata, ...) {
       newx <- model.matrix(newdata, intercept = FALSE)
       if (is(object, "mbart")) {
         predict(object, newdata = newx)$prob.test.mean %>%
