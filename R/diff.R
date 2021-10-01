@@ -55,7 +55,7 @@ diff.Performance <- function(x, ...) {
   model_names <- dimnames(x)[[3]]
   dimnames(xdiff)[[3]] <-
     paste(model_names[indices1], "-", model_names[indices2])
-  PerformanceDiff(xdiff, model_names = model_names)
+  PerformanceDiff(xdiff, model_names = model_names, control = x@control)
 }
 
 
@@ -80,10 +80,39 @@ diff.Resamples <- function(x, ...) {
 #'   implemented by \code{\link[stats]{p.adjust}}.
 #' @param ... arguments passed to other methods.
 #'
+#' @details
+#' The t-test statistic for pairwise model differences of \eqn{R} resampled
+#' performance metric values is calculated as
+#' \deqn{
+#'   t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
+#' }
+#' where \eqn{\bar{x}_R} and \eqn{s^2_R} are the sample mean and variance.
+#' Statistical testing for a mean difference is then performed by comparing
+#' \eqn{t} to a \eqn{t_{R-1}} null distribution.  The sample variance in the
+#' t statistic is known to underestimate the true variances of cross-validation
+#' mean estimators.  Underestimation of these variances will lead to increased
+#' probabilities of false-positive statistical conclusions.  Thus, an additional
+#' factor \eqn{F} is included in the t statistic to allow for variance
+#' corrections.  A correction of \eqn{F = 1 + K / (K - 1)} was found by
+#' Nadeau and Bengio (2003) to be a good choice for cross-validation with
+#' \eqn{K} folds and is thus used for that resampling method.  The extension of
+#' this correction by Bouchaert and Frank (2004) to \eqn{F = 1 + T K / (K - 1)}
+#' is used for cross-validation with \eqn{K} folds repeated \eqn{T} times.  For
+#' other resampling methods \eqn{F = 1}.
+#'
 #' @return \code{PerformanceDiffTest} class object that inherits from
 #' \code{array}.  p-values and mean differences are contained in the lower and
 #' upper triangular portions, respectively, of the first two dimensions.  Model
-#' pairs are contined in the third dimension.
+#' pairs are contained in the third dimension.
+#'
+#' @references
+#' Nadeau, C., & Bengio, Y. (2003). Inference for the generalization error.
+#' \emph{Machine Learning}, \emph{52}, 239–81.
+#'
+#' Bouckaert, R. R., & Frank, E. (2004). Evaluating the replicability of
+#' significance tests for comparing learning algorithms. In H. Dai, R. Srikant,
+#' & C. Zhang (Eds.), \emph{Advances in knowledge discovery and data mining}
+#' (pp. 3–12). Springer.
 #'
 #' @examples
 #' \donttest{
@@ -104,8 +133,17 @@ diff.Resamples <- function(x, ...) {
 #'
 t.test.PerformanceDiff <- function(x, adjust = "holm", ...)
 {
+  vadj <- if (is(x@control, "MLCVControl")) 1 / (x@control@folds - 1) else 0
+
+  t_test <- function(x) {
+    x <- na.omit(x)
+    n <- length(x)
+    stat <- mean(x) / sqrt(var(x) * (1 / n + vadj))
+    2 * pt(abs(stat), n - 1, lower.tail = FALSE)
+  }
+
   pvalues <- x %>%
-    apply(c(3, 2), function(resample) t.test(resample)$p.value) %>%
+    apply(c(3, 2), t_test) %>%
     apply(2, p.adjust, method = adjust)
   meandiffs <- apply(x, c(3, 2), mean, na.rm = TRUE)
 

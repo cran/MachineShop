@@ -22,6 +22,8 @@ PartialDependence <- function(object) {
 #' @param stats function, function name, or vector of these with which to
 #'   compute response variable summary statistics over non-selected predictor
 #'   variables.
+#' @param na.rm logical indicating whether to exclude missing predicted response
+#'   values from the calculation of summary statistics.
 #'
 #' @return \code{PartialDependence} class object that inherits from
 #' \code{data.frame}.
@@ -40,7 +42,7 @@ PartialDependence <- function(object) {
 dependence <- function(
   object, data = NULL, select = NULL, interaction = FALSE, n = 10,
   intervals = c("uniform", "quantile"),
-  stats = MachineShop::settings("stats.PartialDependence")
+  stats = MachineShop::settings("stats.PartialDependence"), na.rm = TRUE
 ) {
 
   stopifnot(is(object, "MLModelFit"))
@@ -48,16 +50,15 @@ dependence <- function(
   x <- as.MLModel(object)@x
   if (is.null(data)) data <- x
   data <- as.data.frame(data)
-  vars <- all.vars(predictors(terms(x, original = TRUE)))
+  pred_names <- all.vars(predictors(terms(x, original = TRUE)))
+  pred_names <- do.call(subset_names, list(pred_names, substitute(select)),
+                        envir = parent.frame())
 
-  indices <- structure(match(vars, names(data)), names = vars)
-  select <- eval(substitute(select), as.list(indices), parent.frame())
-  if (is.null(select)) select <- indices
-  data_select <- data[, select, drop = FALSE]
+  data_select <- data[, pred_names, drop = FALSE]
 
   intervals <- match.arg(intervals)
 
-  stats <- list_to_function(stats)
+  stats <- list_to_function(stats, "stat")
 
   select_values <- function(x) {
     if (is.factor(x)) {
@@ -81,10 +82,10 @@ dependence <- function(
   }
 
   predict_stats <- function(data) {
-    stats_list <- predict(object, newdata = data, type = "prob")  %>%
-      as.data.frame %>%
-      as.list %>%
-      map(stats, .)
+    stats_list <- map(
+      function(x) stats(if (na.rm) na.omit(x) else x),
+      as.data.frame(predict(object, newdata = data, type = "prob"))
+    )
     x <- do.call(cbind, stats_list)
     if (is.null(rownames(x))) rownames(x) <- make.unique(rep("stat", nrow(x)))
     if (is.null(colnames(x))) colnames(x) <- make.unique(rep("y", ncol(x)))

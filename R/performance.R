@@ -111,7 +111,7 @@ performance.Surv <- function(
     args <- list(x, y, weights = weights, ...)
     metric <- if (is_one_element(metrics)) metrics[[1]] else metrics
     if (is(get0(metric), "MLMetric")) args <- c(args, dots)
-    do.call(list_to_function(metrics), args)
+    do.call(list_to_function(metrics, "metric"), args)
   } else {
     NA_real_
   }
@@ -133,7 +133,7 @@ performance.ConfusionMatrix <- function(
   args <- list(x)
   metric <- if (is_one_element(metrics)) metrics[[1]] else metrics
   if (is(get0(metric), "MLMetric")) args <- c(args, ...)
-  do.call(list_to_function(metrics), args)
+  do.call(list_to_function(metrics, "metric"), args)
 }
 
 
@@ -141,7 +141,7 @@ performance.ConfusionMatrix <- function(
 #'
 performance.Resamples <- function(x, ...) {
   perf_list <- by(x, x$Model, function(resamples) {
-    Performance(performance(x@control, resamples, ...))
+    Performance(performance(x@control, resamples, ...), control = x@control)
   }, simplify = FALSE)
   do.call(c, perf_list)
 }
@@ -182,12 +182,14 @@ performance.MLCVOptimismControl <- function(x, resamples, ...) {
   test_perf <- NextMethod()
 
   resamples_split <- split(resamples, ceiling(resamples$Resample / x@folds))
-  vars <- paste0("CV.Predicted.", seq_len(x@folds))
+  pred_names <- paste0("CV.Predicted.", seq_len(x@folds))
   perf_list <- map(function(resample) {
-    f <- function(p, pred) {
-      p * performance(resample$Observed, pred, resample$Weight, ...)
+    f <- function(prop, pred) {
+      prop * performance(resample$Observed, pred, resample$Weight, ...)
     }
-    Reduce("+", map(f, prop.table(table(resample$Resample)), resample[vars]))
+    props <- prop.table(table(resample$Resample))
+    preds <- resample[pred_names]
+    Reduce("+", map(f, props, preds))
   }, resamples_split)
   cv_perf <- do.call(rbind, rep(perf_list, each = x@folds))
   train_perf <- performance(resamples_split[[1]]$Observed,

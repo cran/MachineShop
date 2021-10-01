@@ -2,6 +2,20 @@
 
 ## Version Updates
 
+## 3.1.0
+* Add argument `na.rm` to `dependence()`.
+* Add global setting `stats.VarImp` for summary statistics to compute on permutation-based variable importance.
+* Add permutation-based variable importance to `varimp()`.
+* Sort variable importance by first column only if not scaled.
+* Correct the estimated variances for cross-validation estimators of mean performance difference in `t.test.PerformanceDiff()`.
+* Rename argument `metric` to `type` in `varimp()` functions for `BartMachineModel`, `C50Model`,  `EarthModel`,  `RFSRCModel`, and `XGBModel`.  
+* Set argument `type` default to `"nsubsets"` in `EarthModel` `varimp()`.
+* Expand case weighted metrics support.
+  * Fix weights used in survival event-specific metrics.
+  * Use weights for `cross_entropy()` `numeric` method.
+  * Use weights for predicted survival probabilities.
+* Fix error with argument `f` in `roc_index()` `Surv` method.
+
 ## 3.0.0
 * Add slot `weights` to `MLModel` classes.
 * Allow case weights in `LMModel` for all response types.

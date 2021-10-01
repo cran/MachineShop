@@ -102,7 +102,7 @@ SelectedInput.ModelFrame <- function(
 
   inputs <- list(...)
 
-  input_classes <- map_chr(function(x) class(x)[1], inputs)
+  input_classes <- map_chr(function(x) class1(x), inputs)
   if (!all(input_classes %in% c("ModelFrame", "ModeledFrame"))) {
     throw(Error("inputs must be ModelFrames or ModeledFrames"))
   }
@@ -114,7 +114,7 @@ SelectedInput.ModelFrame <- function(
   names(inputs) <- make_list_names(inputs, "ModelFrame")
   data <- NULL
   for (i in seq_along(inputs)) {
-    data <- combine_dataframes(as.data.frame(inputs[[i]]), data)
+    data <- combine_data_frames(as.data.frame(inputs[[i]]), data)
   }
 
   new("SelectedModelFrame", ModelFrame(data),
@@ -151,7 +151,7 @@ SelectedInput.recipe <- function(
   names(inputs) <- make_list_names(inputs, "Recipe")
   data <- NULL
   for (i in seq_along(inputs)) {
-    data <- combine_dataframes(as.data.frame(inputs[[i]]), data)
+    data <- combine_data_frames(as.data.frame(inputs[[i]]), data)
     inputs[[i]] <- recipe(inputs[[i]], tibble())
   }
 

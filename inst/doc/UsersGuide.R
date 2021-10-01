@@ -518,6 +518,10 @@ SVMModel
 
 modelinfo(SVMModel)[[1]]$varimp
 
+## ----using_analysis_vi_permute------------------------------------------------
+## Permutation-based variable importance
+varimp(surv_fit, method = "permute")
+
 ## ----using_analyses_pd, results = "hide"--------------------------------------
 ## Partial dependence plots
 pd <- dependence(surv_fit, select = c(thickness, age))

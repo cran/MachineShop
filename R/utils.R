@@ -1,4 +1,4 @@
-utils::globalVariables(c("i", "x", "y"))
+utils::globalVariables(c("x", "y"))
 
 
 .onLoad <- function(libname, pkgname) {
@@ -43,7 +43,12 @@ attach_objects <- function(
 }
 
 
-combine_dataframes <- function(x, y = NULL) {
+class1 <- function(x) {
+  class(x)[1]
+}
+
+
+combine_data_frames <- function(x, y = NULL) {
   if (is.null(y)) return(x)
   common_cols <- intersect(names(x), names(y))
   if (!identical(x[common_cols], y[common_cols])) {
@@ -55,7 +60,7 @@ combine_dataframes <- function(x, y = NULL) {
 }
 
 
-combine_modelslots <- function(models, types) {
+combine_model_slots <- function(models, types) {
   init <- data.frame(type = types, weights = FALSE)
   any_ordered <- any(map_logi(function(model) {
     "ordered" %in% model@response_types
@@ -152,15 +157,18 @@ get_MLModel <- function(x) {
 }
 
 
-get_S3method <- function(generic, object) {
-  generic_name <- as.character(substitute(generic))[1]
+get_perf_metrics <- function(x, y) {
+  generic_name <- "performance"
   classes <- substring(methods(generic_name), nchar(generic_name) + 2)
-  class <- match_class(object, classes)
-  if (is.na(class)) {
-    throw(Error(generic_name, " method not found for '", class(object)[1],
-                "' class"))
-  }
-  fget(paste0(generic_name, ".", class))
+  class <- match_class(x, classes)
+  method <- fget(paste0(generic_name, ".", class))
+  metrics <- c(eval(formals(method)$metrics))
+  is_defined <- map_logi(function(metric) {
+    types <- metricinfo(metric)[[1]]$response_types
+    any(map_logi(is, list(x), types$observed) &
+          map_logi(is, list(y), types$predicted))
+  }, metrics)
+  metrics[is_defined]
 }
 
 
@@ -226,29 +234,28 @@ label_items <- function(label, x, n = Inf, add_names = FALSE) {
 }
 
 
-list_to_function <- function(x) {
+list_to_function <- function(x, type) {
   err_msg <- paste0("'", deparse1(substitute(x)), "' must be a function, ",
                       "function name, or vector of these")
   if (is(x, "MLMetric")) x <- list(x)
   if (is(x, "vector")) {
     x <- as.list(x)
-    metric_names <- character()
+    x_names <- character()
     for (i in seq_along(x)) {
       if (is(x[[i]], "character")) {
-        metric_name <- x[[i]]
-        x[[i]] <- fget(metric_name)
+        x_name <- x[[i]]
+        x[[i]] <- fget(x_name)
       } else if (is(x[[i]], "MLMetric")) {
-        metric_name <- x[[i]]@name
+        x_name <- x[[i]]@name
       } else if (is(x[[i]], "function")) {
-        metric_name <- "metric"
+        x_name <- type
       } else {
         throw(Error(err_msg))
       }
       name <- names(x)[i]
-      metric_names[i] <-
-        if (is.null(name) || !nzchar(name)) metric_name else name
+      x_names[i] <- if (is.null(name) || !nzchar(name)) x_name else name
     }
-    names(x) <- make.unique(metric_names)
+    names(x) <- make.unique(x_names)
     function(...) unlist(map(function(fun) fun(...), x))
   } else if (is(x, "function")) {
     x
@@ -271,35 +278,35 @@ make_list_names <- function(x, prefix) {
 }
 
 
-map <- function(f, ...) {
+map <- function(FUN, ...) {
   all_args <- all(lengths(list(...)))
-  if (all_args) mapply(FUN = f, ..., SIMPLIFY = FALSE) else list()
+  if (all_args) mapply(FUN = FUN, ..., SIMPLIFY = FALSE) else list()
 }
 
 
-map_chr <- function(f, ...) {
-  res <- map_simplify(f, ...)
+map_chr <- function(FUN, ...) {
+  res <- map_simplify(FUN, ...)
   storage.mode(res) <- "character"
   res
 }
 
 
-map_logi <- function(f, ...) {
-  res <- map_simplify(f, ...)
+map_logi <- function(FUN, ...) {
+  res <- map_simplify(FUN, ...)
   storage.mode(res) <- "logical"
   res
 }
 
 
-map_num <- function(f, ...) {
-  res <- map_simplify(f, ...)
+map_num <- function(FUN, ...) {
+  res <- map_simplify(FUN, ...)
   storage.mode(res) <- "numeric"
   res
 }
 
 
-map_simplify <- function(f, ...) {
-  res <- map(f, ...)
+map_simplify <- function(FUN, ...) {
+  res <- map(FUN, ...)
   if (length(res)) simplify2array(res, higher = TRUE) else res
 }
 
@@ -350,7 +357,7 @@ new_params <- function(envir, ...) {
 new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
   if (getDoParName() == "doSEQ") index <- as.numeric(index)
   width <- max(10, round(0.25 * getOption("width")))
-  if (!is.null(input)) input <- substr(class(input)[1], 1, width)
+  if (!is.null(input)) input <- substr(class1(input), 1, width)
   if (!is.null(model)) {
     model <- substr(get_MLModel(model)@name, 1, width)
   }
@@ -413,6 +420,11 @@ push.TrainStep <- function(x, object, ...) {
     object$mlmodel@train_steps <- train_steps
   }
   object
+}
+
+
+rand_int <- function(n = 1) {
+  sample.int(.Machine$integer.max, n)
 }
 
 
@@ -583,6 +595,21 @@ stepAIC_args <- function(formula, direction, scope) {
   if (is.null(scope$upper)) scope$upper <- formula[-2]
   formula[-2] <- if (direction == "backward") scope$upper else scope$lower
   list(formula = formula, scope = scope)
+}
+
+
+subset_names <- function(x, select = NULL) {
+  indices <- seq_along(x)
+  names(indices) <- x
+  select <- eval(substitute(select), as.list(indices), parent.frame())
+  if (is.character(select)) {
+    x <- intersect(x, select)
+  } else if (is.numeric(select)) {
+    x <- x[select]
+  } else if (!is.null(select)) {
+    throw(Warning("invalid 'select' value of class ", class1(select)))
+  }
+  x
 }
 
 
