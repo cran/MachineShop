@@ -2,9 +2,10 @@
 #'
 #' Expand a model over all combinations of a grid of tuning parameters.
 #'
-#' @param x \link[=models]{model} function, function name, or object.
+#' @param object \link[=models]{model} function, function name, or object; or
+#'   another object that can be \link[=as.MLModel]{coerced} to a model.
 #' @param ... named vectors or factors or a list of these containing the
-#'   parameter values over which to expand \code{x}.
+#'   parameter values over which to expand \code{object}.
 #' @param random number of points to be randomly sampled from the parameter grid
 #'   or \code{FALSE} if all points are to be returned.
 #'
@@ -24,33 +25,32 @@
 #' fit(medv ~ ., data = Boston, model = SelectedModel(models))
 #' }
 #'
-expand_model <- function(x, ..., random = FALSE) {
-  .expand_model(x, random, ...)
+expand_model <- function(object, ..., random = FALSE) {
+  .expand_model(object, ..., random = random)
 }
 
 
-.expand_model <- function(x, ...) {
+.expand_model <- function(object, ...) {
   UseMethod(".expand_model")
 }
 
 
-.expand_model.default <- function(x, random, ...) {
-  expand_model(get_MLModel(x), ..., random = random)
+.expand_model.default <- function(object, ..., random) {
+  expand_model(as.MLModel(object), ..., random = random)
 }
 
 
-.expand_model.list <- function(x, ...) {
-  grid <- x[[2]]
-  models <- map(function(args) do.call(x[[1]], args),
-                split(grid, seq_len(max(1, nrow(grid)))))
+.expand_model.tbl_df <- function(object, model, ...) {
+  models <- map(function(params) {
+    do.call(update, list(model, params, new_id = TRUE), quote = TRUE)
+  }, split(object, seq_len(max(nrow(object), 1))))
   names(models) <- paste0(models[[1]]@name, ".", names(models))
   models
 }
 
 
-.expand_model.MLModel <- function(x, random, ...) {
-  grid <- expand_params(..., random = random)
-  expand_model(list(fget(x@name), grid))
+.expand_model.MLModel <- function(object, ..., random) {
+  expand_model(expand_params(..., random = random), object)
 }
 
 
@@ -61,17 +61,20 @@ expand_model <- function(x, ..., random = FALSE) {
 #' @name expand_modelgrid
 #' @rdname expand_modelgrid-methods
 #'
-#' @param x \link[=inputs]{input} specifying a relationship between model
-#'   predictor and response variables.  Alternatively, a
-#'   \code{\link{TunedModel}} object may be given first followed optionally by
-#'   an input specification.
-#' @param y response variable.
-#' @param data \link[=data.frame]{data frame} containing observed predictors and
-#'   outcomes.
-#' @param model \code{\link{TunedModel}} object.
+#' @param ... arguments passed from the generic function to its methods and from
+#'   the \code{TunedModel} method to others.  The first arguments of
+#'   \code{expand_modelgrid} methods are positional and, as such, must be
+#'   given first in calls to them.
+#' @param formula,data \link[=formula]{formula} defining the model predictor and
+#'   response variables and a \link[=data.frame]{data frame} containing them.
+#' @param x,y \link{matrix} and object containing predictor and response
+#'   variables.
+#' @param input \link[=inputs]{input} object defining and containing the model
+#'   predictor and response variables.
+#' @param model \code{\link{TunedModel}} object.  Can be given first followed by
+#'   any of the variable specifications.
 #' @param info logical indicating whether to return model-defined grid
 #'   construction information rather than the grid values.
-#' @param ... arguments passed to other methods.
 #'
 #' @details
 #' The \code{expand_modelgrid} function enables manual extraction and viewing of
@@ -103,15 +106,15 @@ expand_model <- function(x, ..., random = FALSE) {
 #' expand_modelgrid(TunedModel(RandomForestModel, grid = rf_grid),
 #'                  sale_amount ~ ., data = ICHomes)
 #'
-expand_modelgrid <- function(x, ...) {
+expand_modelgrid <- function(...) {
   UseMethod("expand_modelgrid")
 }
 
 
 #' @rdname expand_modelgrid-methods
 #'
-expand_modelgrid.formula <- function(x, data, model, info = FALSE, ...) {
-  expand_modelgrid(model, x, data, info = info)
+expand_modelgrid.formula <- function(formula, data, model, info = FALSE, ...) {
+  expand_modelgrid(model, formula, data, info = info)
 }
 
 
@@ -124,27 +127,25 @@ expand_modelgrid.matrix <- function(x, y, model, info = FALSE, ...) {
 
 #' @rdname expand_modelgrid-methods
 #'
-expand_modelgrid.ModelFrame <- function(x, model, info = FALSE, ...) {
-  expand_modelgrid(model, x, info = info)
+expand_modelgrid.ModelFrame <- function(input, model, info = FALSE, ...) {
+  expand_modelgrid(model, input, info = info)
 }
 
 
 #' @rdname expand_modelgrid-methods
 #'
-expand_modelgrid.recipe <- function(x, model, info = FALSE, ...) {
-  expand_modelgrid(model, x, info = info)
+expand_modelgrid.recipe <- function(input, model, info = FALSE, ...) {
+  expand_modelgrid(model, input, info = info)
 }
 
 
 #' @rdname expand_modelgrid-methods
 #'
-expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
-  params <- x@params
-  model <- params$model()
+expand_modelgrid.TunedModel <- function(model, ..., info = FALSE) {
   if (info) {
     model@gridinfo
   } else {
-    .expand_modelgrid(params$grid, ..., model = model, fixed = params$fixed)
+    .expand_modelgrid(model@grid, ..., model = model@model)
   }
 }
 
@@ -154,7 +155,7 @@ expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
 }
 
 
-.expand_modelgrid.Grid <- function(grid, x, ..., model, fixed) {
+.expand_modelgrid.TuningGrid <- function(grid, input, ..., model) {
   gridinfo <- model@gridinfo
   size <- grid@size
   random <- grid@random
@@ -162,35 +163,19 @@ expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
 
   not_dup <- function(x) !duplicated(x, fromLast = TRUE)
   if (!is.null(names(size))) {
-    if (!all(names(size) %in% gridinfo$param)) {
-      throw(LocalWarning(
-        "Unmatched model parameters in expand_modelgrid() argument 'size'.\n",
-        "x Existing ", model@name, " has ",
-        label_items("parameter", gridinfo$param), ".\n",
-        "x Assigned data has ", label_items("name", names(size)), "."
-      ))
-    }
     size <- size[gridinfo$param] * not_dup(gridinfo$param)
     size[is.na(size)] <- 0L
   } else if (length(size) == 1) {
     if (!random) gridinfo <- gridinfo[gridinfo$default, ]
     size <- size * not_dup(gridinfo$param)
-  } else if (length(size) != nrow(gridinfo)) {
-    throw(LocalError(
-      "Length of expand_modelgrid() argument 'size' must equal 1 ",
-      "or the number of model parameters.\n",
-      "x Existing ", model@name, " has ", nrow(gridinfo), " ",
-      label_items("parameter", gridinfo$param), ".\n",
-      "x Assigned data has ", length(size), " ", label_items("size", size), "."
-    ))
   }
   gridinfo$size <- size
   gridinfo <- gridinfo[gridinfo$size >= 1, ]
 
   has_data_arg <- function(fun) "data" %in% names(formals(fun))
-  needs_data <- any(map_logi(has_data_arg, gridinfo$get_values))
+  needs_data <- any(map("logi", has_data_arg, gridinfo$get_values))
   if (needs_data && has_grid(model)) {
-    if (!missing(x)) mf <- ModelFrame(x, ..., na.rm = FALSE)
+    if (!missing(input)) mf <- ModelFrame(input, ..., na.rm = FALSE)
     if (is.null(mf)) {
       return(NULL)
     }
@@ -199,8 +184,8 @@ expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
       throw(LocalWarning(
         "Invalid model response type in expand_modelgrid().\n",
         "x Exising ", model@name, " supports ",
-        label_items("type", model@response_types), ".\n",
-        "x Supplied response is of ", label_items("type", class(y)), "."
+        note_items("type{?s}: ", model@response_types), ".\n",
+        "x Supplied response is of ", note_items("type{?s}: ", class(y)), "."
       ))
       return(NULL)
     }
@@ -216,17 +201,17 @@ expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
   params[lengths(params) == 0] <- NULL
   grid <- expand_params(params, random = random)
 
-  .expand_modelgrid(grid, fixed = fixed)
+  .expand_modelgrid(grid)
 }
 
 
-.expand_modelgrid.ParameterGrid <- function(grid, x, ..., model, fixed) {
+.expand_modelgrid.ParameterGrid <- function(grid, input, ..., model) {
   grid <- if (nrow(grid)) {
     needs_data <- any(dials::has_unknowns(grid$object))
     if (needs_data) {
-      if (missing(x)) return(NULL)
-      mf <- ModelFrame(x, ..., na.rm = FALSE)
-      model <- get_MLModel(model)
+      if (missing(input)) return(NULL)
+      mf <- ModelFrame(input, ..., na.rm = FALSE)
+      model <- as.MLModel(model)
       data <- switch(model@predictor_encoding,
         "model.frame" = {
           mf_terms <- attributes(terms(mf))
@@ -244,13 +229,12 @@ expand_modelgrid.TunedModel <- function(x, ..., info = FALSE) {
     tibble()
   }
 
-  .expand_modelgrid(grid, fixed = fixed)
+  .expand_modelgrid(grid)
 }
 
 
-.expand_modelgrid.tbl_df <- function(grid, fixed, ...) {
+.expand_modelgrid.tbl_df <- function(grid, ...) {
   if (!nrow(grid)) grid <- tibble(.rows = 1)
-  grid[names(fixed)] <- fixed
   if (ncol(grid)) grid[!duplicated(grid), ] else grid
 }
 
@@ -333,8 +317,8 @@ expand_steps <- function(..., random = FALSE) {
     step_names <- names(steps)
   }
 
-  if (!all(map_logi(is.list, steps))) {
-    throw(Error("step arguments must be lists"))
+  if (!all(map("logi", is.list, steps))) {
+    throw(Error("Step arguments must be lists."))
   }
 
   get_names <- function(x) {
@@ -350,9 +334,9 @@ expand_steps <- function(..., random = FALSE) {
   }
 
   if (!all(nzchar(get_names(steps)))) {
-    throw(Error("all steps and their parameters must be named"))
+    throw(Error("All steps and their parameters must be named."))
   } else if (any(duplicated(step_names))) {
-    throw(Error("step names must be unique"))
+    throw(Error("Step names must be unique."))
   }
 
   grid <- expand_params(unlist(steps, recursive = FALSE), random = random)

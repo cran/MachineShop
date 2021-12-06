@@ -9,17 +9,20 @@ ModelRecipe.ModelRecipe <- function(object, ...) {
 
 
 ModelRecipe.recipe <- function(object, ...) {
-  if (any(map_logi(function(step) isTRUE(step$trained), object$steps))) {
-    throw(Error("recipe must be untrained"))
+  if (any(map("logi", function(step) isTRUE(step$trained), object$steps))) {
+    throw(Error("Recipe must be untrained."))
   }
 
   cases_name <- "(names)"
   cases_fo <- ~ -`(names)`
 
-  reserved <- intersect(c(cases_name, "(strata)"), summary(object)$variable)
+  reserved <- intersect(
+    c("(groups)", "(names)", "(strata)"), summary(object)$variable
+  )
   if (length(reserved)) {
-    msg <- label_items("supplied recipe contains reserved variable", reserved)
-    throw(Error(msg))
+    throw(Error(note_items(
+      "Supplied recipe contains reserved variable{?s}: ", reserved, "."
+    )))
   }
   cases_info <- data.frame(
     variable = cases_name,
@@ -55,12 +58,12 @@ bake.ModelRecipe <- function(object, new_data, ...) {
 
 
 bake.SelectedInput <- function(object, ...) {
-  throw(Error("cannot create a design matrix from a ", class(object)))
+  throw(Error("Cannot create a design matrix from a ", class(object), "."))
 }
 
 
 bake.TunedInput <- function(object, ...) {
-  throw(Error("cannot create a design matrix from a ", class(object)))
+  throw(Error("Cannot create a design matrix from a ", class(object), "."))
 }
 
 
@@ -68,7 +71,7 @@ prep.ModelFrame <- function(x, ...) x
 
 
 prep.ModelRecipe <- function(x, ...) {
-  if (!recipes::fully_trained(x)) {
+  if (!is_trained(x)) {
     template <- x$template
     x <- new(class(x), prep(as(x, "recipe"), retain = FALSE))
     x$template <- template
@@ -80,18 +83,18 @@ prep.ModelRecipe <- function(x, ...) {
 
 
 prep.SelectedInput <- function(x, ...) {
-  throw(Error("cannot train a ", class(x)))
+  throw(Error("Cannot train a ", class(x), "."))
 }
 
 
 prep.TunedInput <- function(x, ...) {
-  throw(Error("cannot train a ", class(x)))
+  throw(Error("Cannot train a ", class(x), "."))
 }
 
 
 prep_recipe_data <- function(x) {
   if (is.null(x[["(names)"]])) x[["(names)"]] <- rownames(x)
-  x[["(strata)"]] <- NULL
+  x[c("(groups)", "(strata)")] <- NULL
   x
 }
 
@@ -103,14 +106,14 @@ recipe.ModelRecipe <- function(x, data, ...) {
 }
 
 
-update.recipe <- function(object, ...) {
-  args <- list(...)
+update.ModelRecipe <- function(object, params = list(), new_id = FALSE, ...) {
   for (i in seq_along(object$steps)) {
     step <- object$steps[[i]]
-    params <- args[[step$id]]
-    if (!is.null(params)) {
-      object$steps[[i]] <- do.call(update, c(list(step), params))
+    step_params <- params[[step$id]]
+    if (length(step_params)) {
+      object$steps[[i]] <- do.call(update, c(list(step), step_params))
     }
   }
+  if (new_id) object@id <- make_id()
   object
 }

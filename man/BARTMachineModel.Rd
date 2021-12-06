@@ -54,8 +54,8 @@ Builds a BART model for regression or classification.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{binary factor}, \code{numeric}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{Response types:}{\code{binary factor}, \code{numeric}}
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \code{alpha}, \code{beta}, \code{k}, \code{nu}
   }
 }
@@ -77,7 +77,8 @@ below.
 ## Requires prior installation of suggested package bartMachine to run
 
 model_fit <- fit(sale_amount ~ ., data = ICHomes, model = BARTMachineModel)
-varimp(model_fit, type = "splits", num_replicates = 20, scale = FALSE)
+varimp(model_fit, method = "model", type = "splits", num_replicates = 20,
+       scale = FALSE)
 }
 
 }

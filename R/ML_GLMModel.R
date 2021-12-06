@@ -14,16 +14,16 @@
 #'
 #' @details
 #' \describe{
-#'   \item{\code{GLMModel} Response Types:}{\code{BinomialVariate},
+#'   \item{\code{GLMModel} Response types:}{\code{BinomialVariate},
 #'     \code{factor}, \code{matrix}, \code{NegBinomialVariate},
 #'     \code{numeric}, \code{PoissonVariate}}
-#'   \item{\code{GLMStepAICModel} Response Types:}{\code{binary factor},
+#'   \item{\code{GLMStepAICModel} Response types:}{\code{binary factor},
 #'     \code{BinomialVariate}, \code{NegBinomialVariate}, \code{numeric},
 #'     \code{PoissonVariate}}
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' In calls to \code{\link{varimp}} for \code{GLMModel} and
 #' \code{GLMStepAICModel}, numeric argument \code{base} may be specified for the
@@ -42,10 +42,8 @@
 #'
 GLMModel <- function(family = NULL, quasi = FALSE, ...) {
 
-  params <- new_params(environment())
-  params$control <- as.call(c(.(stats::glm.control), list(...)))
-
   MLModel(
+
     name = "GLMModel",
     label = "Generalized Linear Models",
     packages = c("MASS", "nnet", "stats"),
@@ -53,9 +51,9 @@ GLMModel <- function(family = NULL, quasi = FALSE, ...) {
                        "NegBinomialVariate", "numeric", "PoissonVariate"),
     weights = TRUE,
     predictor_encoding = "model.matrix",
-    params = params,
-    fit = function(formula, data, weights, family = NULL, quasi = FALSE,
-                   control = stats::glm.control(), ...) {
+    params = new_params(environment(), ...),
+
+    fit = function(formula, data, weights, family = NULL, quasi, ...) {
       if (is.null(family)) {
         quasi_prefix <- function(x) if (quasi) paste0("quasi", x) else x
         y <- response(data)
@@ -73,12 +71,14 @@ GLMModel <- function(family = NULL, quasi = FALSE, ...) {
         )
       }
       data <- as.data.frame(data)
+      control <- stats::glm.control(...)
       if (identical(family, "mgaussian")) {
         stats::lm(formula, data = data, weights = weights)
       } else if (identical(family, "multinom")) {
-        nnet::multinom(formula, data = data, weights = weights,
-                       maxit = 4 * control$maxit, trace = control$trace,
-                       reltol = control$epsilon)
+        nnet::multinom(
+          formula, data = data, weights = weights, maxit = 4 * control$maxit,
+          trace = control$trace, reltol = control$epsilon
+        )
       } else if (identical(family, "negbin")) {
         model_fit <- MASS::glm.nb(formula, data = data, weights = weights,
                                   control = control)
@@ -88,14 +88,17 @@ GLMModel <- function(family = NULL, quasi = FALSE, ...) {
                    control = control)
       }
     },
+
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata,
               type = if (is(object, "multinom")) "probs" else "response")
     },
+
     varimp = function(object, base = exp(1), ...) {
       varimp_pval(object, base = base)
     }
+
   )
 
 }
@@ -120,19 +123,18 @@ MLModelFunction(GLMModel) <- NULL
 #'
 GLMStepAICModel <- function(
   family = NULL, quasi = FALSE, ...,
-  direction = c("both", "backward", "forward"), scope = NULL, k = 2,
+  direction = c("both", "backward", "forward"), scope = list(), k = 2,
   trace = FALSE, steps = 1000
 ) {
 
   direction <- match.arg(direction)
 
-  args <- new_params(environment())
-  is_step <- names(args) %in% c("direction", "scope", "k", "trace", "steps")
-  params <- args[is_step]
-
+  params <- new_params(environment())
   stepmodel <- GLMModel(family = family, quasi = quasi, ...)
+  params <- params[setdiff(names(params), names(stepmodel@params))]
 
   MLModel(
+
     name = "GLMStepAICModel",
     label = "Generalized Linear Models (Stepwise)",
     packages = stepmodel@packages,
@@ -141,9 +143,11 @@ GLMStepAICModel <- function(
     weights = TRUE,
     predictor_encoding = stepmodel@predictor_encoding,
     params = c(stepmodel@params, params),
-    fit = function(formula, data, weights, family = NULL, quasi = FALSE,
-                   direction = "both", scope = list(), k = 2, trace = 1,
-                   steps = 1000, ...) {
+
+    fit = function(
+      formula, data, weights, family = NULL, quasi, ...,
+      direction, scope = list(), k, trace, steps
+    ) {
       environment(formula) <- environment()
       if (is.null(family)) {
         quasi_prefix <- function(x) if (quasi) paste0("quasi", x) else x
@@ -157,9 +161,11 @@ GLMStepAICModel <- function(
       }
       stepargs <- stepAIC_args(formula, direction, scope)
       data <- as.data.frame(data)
+      control <- stats::glm.control(...)
       if (family == "negbin") {
         model_fit <- MASS::stepAIC(
-          MASS::glm.nb(stepargs$formula, data = data, weights = weights, ...),
+          MASS::glm.nb(stepargs$formula, data = data, weights = weights,
+                       control = control),
           direction = direction, scope = stepargs$scope, k = k, trace = trace,
           steps = steps
         )
@@ -167,14 +173,17 @@ GLMStepAICModel <- function(
       } else {
         MASS::stepAIC(
           stats::glm(stepargs$formula, data = data, weights = weights,
-                     family = family, ...),
+                     family = family, control = control),
           direction = direction, scope = stepargs$scope, k = k, trace = trace,
           steps = steps
         )
       }
     },
+
     predict = stepmodel@predict,
+
     varimp = stepmodel@varimp
+
   )
 
 }

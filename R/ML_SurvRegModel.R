@@ -11,11 +11,11 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{Surv}}
+#'   \item{Response types:}{\code{Surv}}
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -26,27 +26,28 @@
 SurvRegModel <- function(
   dist = c("weibull", "exponential", "gaussian", "logistic", "lognormal",
            "logloglogistic"),
-  scale = NULL, parms = NULL, ...
+  scale = 0, parms = list(), ...
 ) {
 
   dist <- match.arg(dist)
 
-  args <- new_params(environment(), ...)
-  is_main <- names(args) %in% c("dist", "scale", "parms")
-  params <- args[is_main]
-  params$control <- as.call(c(.(survival::survreg.control), args[!is_main]))
-
   MLModel(
+
     name = "SurvRegModel",
     label = "Parametric Survival",
     packages = c("rms", "Hmisc"),
     response_types = "Surv",
     weights = TRUE,
     predictor_encoding = "model.matrix",
-    params = params,
-    fit = function(formula, data, weights, ...) {
-      rms::psm(formula, data = as.data.frame(data), weights = weights, ...)
+    params = new_params(environment(), ...),
+
+    fit = function(formula, data, weights, dist, scale, parms = NULL, ...) {
+      rms::psm(
+        formula, data = as.data.frame(data), weights = weights, dist = dist,
+        scale = scale, parms = parms, control = survival::survreg.control(...)
+      )
     },
+
     predict = function(object, newdata, times, ...) {
       newdata <- as.data.frame(newdata)
       pred <- if (length(times)) {
@@ -55,11 +56,13 @@ SurvRegModel <- function(
         Hmisc::Mean(object)(predict(object, newdata = newdata, type = "lp"))
       }
       if (is(pred, "survest.psm")) pred <- as.matrix(pred$surv)
-      structure(pred, surv_distr = object$dist)
+      SurvPrediction(pred, times = times, distr = object$dist)
     },
+
     varimp = function(object, base = exp(1), ...) {
       varimp_pval(object, base = base)
     }
+
   )
 
 }
@@ -97,20 +100,19 @@ MLModelFunction(SurvRegModel) <- NULL
 SurvRegStepAICModel <- function(
   dist = c("weibull", "exponential", "gaussian", "logistic", "lognormal",
            "logloglogistic"),
-  scale = NULL, parms = NULL, ...,
-  direction = c("both", "backward", "forward"), scope = NULL, k = 2,
+  scale = 0, parms = list(), ...,
+  direction = c("both", "backward", "forward"), scope = list(), k = 2,
   trace = FALSE, steps = 1000
 ) {
 
   direction <- match.arg(direction)
 
-  args <- new_params(environment())
-  is_step <- names(args) %in% c("direction", "scope", "k", "trace", "steps")
-  params <- args[is_step]
-
+  params <- new_params(environment())
   stepmodel <- SurvRegModel(dist = dist, scale = scale, parms = parms, ...)
+  params <- params[setdiff(names(params), names(stepmodel@params))]
 
   MLModel(
+
     name = "SurvRegStepAICModel",
     label = "Parametric Survival (Stepwise)",
     packages = c(stepmodel@packages, "MASS"),
@@ -118,19 +120,28 @@ SurvRegStepAICModel <- function(
     weights = stepmodel@weights,
     predictor_encoding = stepmodel@predictor_encoding,
     params = c(stepmodel@params, params),
-    fit = function(formula, data, weights, direction = "both", scope = list(),
-                   k = 2, trace = 1, steps = 1000, ...) {
+
+    fit = function(
+      formula, data, weights, dist, scale, parms = NULL, ...,
+      direction, scope = list(), k, trace, steps
+    ) {
       environment(formula) <- environment()
       stepargs <- stepAIC_args(formula, direction, scope)
       data <- as.data.frame(data)
       MASS::stepAIC(
-        rms::psm(stepargs$formula, data = data, weights = weights, ...),
+        rms::psm(
+          stepargs$formula, data = data, weights = weights, dist = dist,
+          scale = scale, parms = parms, control = survival::survreg.control(...)
+        ),
         direction = direction, scope = stepargs$scope, k = k, trace = trace,
         steps = steps
       )
     },
+
     predict = stepmodel@predict,
+
     varimp = stepmodel@varimp
+
   )
 
 }

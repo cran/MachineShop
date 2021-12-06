@@ -26,8 +26,8 @@
 #'   Defaults to the distribution that was used in predicting mean survival
 #'   times.
 #' @param f function to calculate a desired sensitivity-specificity tradeoff.
-#' @param metrics list of two performance metrics for the calculation [default:
-#'   ROC metrics].
+#' @param metrics vector of two metric functions or function names that define a
+#'   curve under which to calculate area [default: ROC metrics].
 #' @param power power to which positional distances of off-diagonals from the
 #'   main diagonal in confusion matrices are raised to calculate
 #'   \code{weighted_kappa2}.
@@ -51,7 +51,7 @@ setMetric_auc <- function(f, metrics) {
   setMetricGeneric(f)
   setMetricMethod(f, c("factor", "factor"))
   setMetricMethod(f, c("factor", "numeric"), definition)
-  setMetricMethod_Resamples(f)
+  setMetricMethod_Resample(f)
   setMetricMethod(f, c("Surv", "SurvProbs"), definition)
 }
 
@@ -61,7 +61,7 @@ setMetric_BinaryConfusionMatrix <- function(f, definition) {
   setMetricMethod(f, c("BinaryConfusionMatrix", "NULL"), definition)
   setMetricMethod_factor_factor(f)
   setMetricMethod_factor_numeric(f)
-  setMetricMethod_Resamples(f)
+  setMetricMethod_Resample(f)
   setMetricMethod_Surv_SurvEvents(f)
   setMetricMethod_Surv_SurvProbs(f)
 }
@@ -73,7 +73,7 @@ setMetric_ConfusionMatrix <- function(f, definition) {
   setMetricMethod_factor_factor(f)
   setMetricMethod_factor_matrix(f)
   setMetricMethod_factor_numeric(f)
-  setMetricMethod_Resamples(f)
+  setMetricMethod_Resample(f)
   setMetricMethod_Surv_SurvEvents(f)
   setMetricMethod_Surv_SurvProbs(f)
 }
@@ -87,7 +87,7 @@ setMetric_OrderedConfusionMatrix <- function(f, definition) {
   }
   setMetricMethod(f, c("ordered", "ordered"), definition_ordered)
   setMetricMethod(f, c("ordered", "matrix"), definition_ordered)
-  setMetricMethod_Resamples(f)
+  setMetricMethod_Resample(f)
 }
 
 
@@ -96,7 +96,7 @@ setMetric_numeric <- function(f, definition) {
   setMetricMethod(f, c("numeric", "numeric"), definition)
   setMetricMethod_BinomialMatrix_numeric(f)
   setMetricMethod_matrix_matrix(f)
-  setMetricMethod_Resamples(f)
+  setMetricMethod_Resample(f)
   setMetricMethod_Surv_numeric(f)
 }
 
@@ -165,8 +165,8 @@ setMetricMethod_matrix_matrix <- function(f) {
 }
 
 
-setMetricMethod_Resamples <- function(f) {
-  setMetricMethod(f, c("Resamples", "NULL"),
+setMetricMethod_Resample <- function(f) {
+  setMetricMethod(f, c("Resample", "NULL"),
     function(observed, predicted, weights, ...) {
       performance(observed, metrics = get(f), ...)
     }
@@ -177,7 +177,7 @@ setMetricMethod_Resamples <- function(f) {
 setMetricMethod_Surv_numeric <- function(f) {
   setMetricMethod(f, c("Surv", "numeric"),
     function(observed, predicted, ...) {
-      metric_SurvMean(get(f), observed, predicted, ...)
+      metric_SurvTimes(get(f), observed, predicted, ...)
     }
   )
 }
@@ -214,26 +214,27 @@ metric_method_name <- function(f) {
 }
 
 
-metric_matrix <- function(FUN, observed, predicted, ...) {
-  mean(map_num(function(i) {
-    FUN(observed[, i], predicted[, i], ...)
+metric_matrix <- function(.fun, observed, predicted, ...) {
+  mean(map("num", function(i) {
+    .fun(observed[, i], predicted[, i], ...)
   }, seq_len(ncol(observed))))
 }
 
 
 metric_SurvMatrix <- function(
-  FUN, observed, predicted, weights, cutoff = NULL, ...
+  .fun, observed, predicted, weights, cutoff = numeric(), ...
 ) {
   conf_list <- confusion(observed, predicted, weights, cutoff = cutoff)
-  x <- map_num(function(conf) FUN(conf, ...), conf_list)
+  x <- map("num", function(conf) .fun(conf, ...), conf_list)
   times <- predicted@times
   if (length(times) > 1) c("mean" = survmetric_mean(x, times), x) else x[[1]]
 }
 
 
-metric_SurvMean <- function(FUN, observed, predicted, weights = NULL, ...) {
+metric_SurvTimes <- function(.fun, observed, predicted, weights = NULL, ...) {
   events <- observed[, "status"] == 1
-  FUN(time(observed[events]), predicted[events], weights = weights[events], ...)
+  .fun(time(observed[events]), predicted[events], weights = weights[events],
+       ...)
 }
 
 

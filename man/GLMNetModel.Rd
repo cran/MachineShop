@@ -9,7 +9,7 @@ GLMNetModel(
   alpha = 1,
   lambda = 0,
   standardize = TRUE,
-  intercept = NULL,
+  intercept = logical(),
   penalty.factor = .(rep(1, nvars)),
   standardize.response = FALSE,
   thresh = 1e-07,
@@ -59,15 +59,15 @@ Fit a generalized linear model via penalized maximum likelihood.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{BinomialVariate}, \code{factor},
+  \item{Response types:}{\code{BinomialVariate}, \code{factor},
     \code{matrix}, \code{numeric}, \code{PoissonVariate}, \code{Surv}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \code{lambda}, \code{alpha}
   }
 }
 
-Default values for the \code{NULL} arguments and further model details can be
-found in the source link below.
+Default values and further model details can be found in the source link
+below.
 }
 \examples{
 \donttest{

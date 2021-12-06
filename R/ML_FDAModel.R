@@ -22,8 +22,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters}{
+#'   \item{Response types:}{\code{factor}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \itemize{
 #'       \item FDAModel: \code{nprune}, \code{degree}*
 #'       \item PDAModel: \code{lambda}
@@ -39,8 +39,8 @@
 #'     data if different from the training set.}
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source links below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -55,11 +55,12 @@
 #' }
 #'
 FDAModel <- function(
-  theta = NULL, dimension = NULL, eps = .Machine$double.eps,
+  theta = matrix(NA, 0, 0), dimension = integer(), eps = .Machine$double.eps,
   method = .(mda::polyreg), ...
 ) {
 
   MLModel(
+
     name = "FDAModel",
     label = "Flexible Discriminant Analysis",
     packages = "mda",
@@ -67,6 +68,7 @@ FDAModel <- function(
     weights = TRUE,
     predictor_encoding = "model.matrix",
     params = new_params(environment(), ...),
+
     gridinfo = new_gridinfo(
       param = c("nprune", "degree"),
       get_values = c(
@@ -79,13 +81,16 @@ FDAModel <- function(
       ),
       default = c(TRUE, FALSE)
     ),
+
     fit = function(formula, data, weights, ...) {
       mda::fda(formula, data = as.data.frame(data), weights = weights, ...)
     },
+
     predict = function(object, newdata, prior = object$prior, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "posterior", prior = prior)
     }
+
   )
 
 }
@@ -106,10 +111,10 @@ MLModelFunction(FDAModel) <- NULL
 #' fit(Species ~ ., data = iris, model = PDAModel)
 #' }
 #'
-PDAModel <- function(lambda = 1, df = NULL, ...) {
-  args <- new_params(environment(), ...)
-  args$method <- .(mda::gen.ridge)
-  model <- do.call(FDAModel, args, quote = TRUE)
+PDAModel <- function(lambda = 1, df = numeric(), ...) {
+  params <- new_params(environment(), ...)
+  params$method <- .(mda::gen.ridge)
+  model <- do.call(FDAModel, params, quote = TRUE)
   model@name <- "PDAModel"
   model@label <- "Penalized Discriminant Analysis"
   model@gridinfo <- new_gridinfo(

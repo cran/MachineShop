@@ -12,7 +12,7 @@ GLMStepAICModel(
   quasi = FALSE,
   ...,
   direction = c("both", "backward", "forward"),
-  scope = NULL,
+  scope = list(),
   k = 2,
   trace = FALSE,
   steps = 1000
@@ -54,16 +54,16 @@ the linear predictor and a description of the error distribution.
 }
 \details{
 \describe{
-  \item{\code{GLMModel} Response Types:}{\code{BinomialVariate},
+  \item{\code{GLMModel} Response types:}{\code{BinomialVariate},
     \code{factor}, \code{matrix}, \code{NegBinomialVariate},
     \code{numeric}, \code{PoissonVariate}}
-  \item{\code{GLMStepAICModel} Response Types:}{\code{binary factor},
+  \item{\code{GLMStepAICModel} Response types:}{\code{binary factor},
     \code{BinomialVariate}, \code{NegBinomialVariate}, \code{numeric},
     \code{PoissonVariate}}
 }
 
-Default values for the \code{NULL} arguments and further model details can be
-found in the source link below.
+Default values and further model details can be found in the source links
+below.
 
 In calls to \code{\link{varimp}} for \code{GLMModel} and
 \code{GLMStepAICModel}, numeric argument \code{base} may be specified for the

@@ -42,11 +42,11 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#'   \item{Response types:}{\code{factor}, \code{numeric}, \code{Surv}}
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source links below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -61,14 +61,16 @@
 #' }
 #'
 BARTModel <- function(
-  K = NULL, sparse = FALSE, theta = 0, omega = 1, a = 0.5, b = 1, rho = NULL,
-  augment = FALSE, xinfo = NULL, usequants = FALSE, sigest = NA, sigdf = 3,
-  sigquant = 0.90, lambda = NA, k = 2, power = 2, base = 0.95, tau.num = NULL,
-  offset = NULL, ntree = NULL, numcut = 100, ndpost = 1000, nskip = NULL,
-  keepevery = NULL, printevery = 1000
+  K = integer(), sparse = FALSE, theta = 0, omega = 1, a = 0.5, b = 1,
+  rho = numeric(), augment = FALSE, xinfo = matrix(NA, 0, 0), usequants = FALSE,
+  sigest = NA, sigdf = 3, sigquant = 0.90, lambda = NA, k = 2, power = 2,
+  base = 0.95, tau.num = numeric(), offset = numeric(), ntree = integer(),
+  numcut = 100, ndpost = 1000, nskip = integer(), keepevery = integer(),
+  printevery = 1000
 ) {
 
   MLModel(
+
     name = "BARTModel",
     label = "Bayesian Additive Regression Trees",
     packages = "BART",
@@ -76,8 +78,10 @@ BARTModel <- function(
     weights = c(FALSE, TRUE, FALSE),
     predictor_encoding = "model.matrix",
     params = new_params(environment()),
-    fit = function(formula, data, weights, K = NULL, sigest = NA, sigdf = 3,
-                   sigquant = 0.90, lambda = NA, ...) {
+
+    fit = function(
+      formula, data, weights, K = NULL, sigest, sigdf, sigquant, lambda, ...
+    ) {
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)
       switch_class(y,
@@ -102,6 +106,7 @@ BARTModel <- function(
         }
       )
     },
+
     predict = function(object, newdata, ...) {
       newx <- model.matrix(newdata, intercept = FALSE)
       if (is(object, "mbart")) {
@@ -120,6 +125,7 @@ BARTModel <- function(
         colMeans(predict(object, newdata = newx))
       }
     }
+
   )
 
 }

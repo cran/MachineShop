@@ -10,7 +10,7 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}}
+#'   \item{Response types:}{\code{factor}}
 #' }
 #'
 #' The \code{\link{predict}} function for this model additionally accepts the
@@ -20,8 +20,8 @@
 #'     if different from the training set.}
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source links below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -32,7 +32,7 @@
 #' fit(Species ~ ., data = iris, model = QDAModel)
 #'
 QDAModel <- function(
-  prior = NULL, method = c("moment", "mle", "mve", "t"), nu = 5,
+  prior = numeric(), method = c("moment", "mle", "mve", "t"), nu = 5,
   use = c("plug-in", "predictive", "debiased", "looCV")
 ) {
 
@@ -40,12 +40,14 @@ QDAModel <- function(
   use <- match.arg(use)
 
   MLModel(
+
     name = "QDAModel",
     label = "Quadratic Discriminant Analysis",
     packages = "MASS",
     response_types = "factor",
     predictor_encoding = "model.matrix",
     params = new_params(environment()),
+
     fit = function(formula, data, weights, use, ...) {
       model_fit <- eval_fit(
         data,
@@ -55,11 +57,13 @@ QDAModel <- function(
       model_fit$use <- use
       model_fit
     },
+
     predict = function(object, newdata, prior = object$prior, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, prior = prior,
               method = object$use)$posterior
     }
+
   )
 
 }

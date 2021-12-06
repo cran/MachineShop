@@ -4,7 +4,7 @@ case_comps <- function(object, ...) {
 
 
 case_comps.MLModel <- function(object, ...) {
-  case_comps(object@x, ...)
+  case_comps(object@input, ...)
 }
 
 
@@ -14,8 +14,10 @@ case_comps.MLModelFit <- function(object, ...) {
 
 
 case_comps.ModelFrame <- function(
-  object, newdata = NULL, types = c("names", "weights"), response = FALSE, ...
+  object, newdata = NULL, types = c("names", "weights"), response = FALSE,
+  original = FALSE, ...
 ) {
+  stopifnot(!original)
   data <- if (is.null(newdata)) object else newdata
   res <- map(function(type) {
     name <- case_comp_name(object, type)
@@ -27,8 +29,10 @@ case_comps.ModelFrame <- function(
 
 
 case_comps.recipe <- function(
-  object, newdata = NULL, types = c("names", "weights"), response = FALSE, ...
+  object, newdata = NULL, types = c("names", "weights"), response = FALSE,
+  original = FALSE, ...
 ) {
+  stopifnot(!original)
   names <- map(function(type) case_comp_name(object, type), types)
   data <- if (any(lengths(names)) || response) bake(prep(object), newdata)
   res <- map(function(type) {
@@ -53,6 +57,7 @@ case_comp_name.data.frame <- function(object, type, ...) {
 
 case_comp_name.recipe <- function(object, type, ...) {
   type <- switch(type,
+    "groups" = "group",
     "names" = "name",
     "strata" = "stratum",
     "weights" = "weight",
@@ -64,8 +69,14 @@ case_comp_name.recipe <- function(object, type, ...) {
   if (length(name) == 1) {
     name
   } else if (length(name) > 1) {
-    throw(Error("multiple ", role, " variables"))
+    throw(Error("Multiple ", role, " variables."))
   }
+}
+
+
+case_groups <- function(object, ...) {
+  name <- case_comp_name(object, type = "groups")
+  if (length(name)) as.data.frame(object)[[name]]
 }
 
 
@@ -93,7 +104,7 @@ case_strata.character <- function(object, ...) {
 
 case_strata.factor <- function(object, prop = 0.1, size = 20, ...) {
   object <- sample_replace(object, is.na(object))
-  min_count <- max(1, prop * length(object), size)
+  min_count <- max(prop * length(object), size, 1)
   while (nlevels(object) > 1 && any((counts <- table(object)) < min_count)) {
     if (is.ordered(object)) {
       i <- which.min(head(counts, -1) + tail(counts, -1))
@@ -120,13 +131,13 @@ case_strata.matrix <- function(object, ...) {
 
 
 case_strata.ModelFrame <- function(object, ...) {
-  name <- case_strata_name(object)
+  name <- case_comp_name(object, "strata")
   if (length(name)) case_strata(object[[name]], ...)
 }
 
 
 case_strata.recipe <- function(object, ...) {
-  name <- case_strata_name(object)
+  name <- case_comp_name(object, "strata")
   if (length(name)) case_strata(as.data.frame(object)[[name]], ...)
 }
 
@@ -135,13 +146,13 @@ case_strata.numeric <- function(
   object, breaks = 4, nunique = 5, prop = 0.1, size = 20, ...
 ) {
   object <- sample_replace(object, is.na(object))
-  if (length(unique(object)) <= max(1, nunique)) {
+  if (length(unique(object)) <= max(nunique, 1)) {
     object <- ordered(object)
-    levels(object) <- paste0("V", seq_len(nlevels(object)))
+    levels(object) <- make_names_len(nlevels(object), "V")
     res <- case_strata(object, prop = prop, size = size)
   } else {
-    min_count <- max(1, prop * length(object), size)
-    breaks <- max(1, breaks)
+    min_count <- max(prop * length(object), 1, size)
+    breaks <- max(breaks, 1)
     while (breaks > 0) {
       quants <- quantile(object, 0:breaks / breaks)
       res <- cut(object, unique(quants), include.lowest = TRUE)
@@ -174,11 +185,6 @@ case_strata.Surv <- function(
   }
 
   factor(unsplit(strata_split, status), levels = strata_levels)
-}
-
-
-case_strata_name <- function(object) {
-  case_comp_name(object, "strata")
 }
 
 
@@ -215,10 +221,5 @@ case_strata_name <- function(object) {
 #'      case_weights(rec_fit, testset))
 #'
 case_weights <- function(object, newdata = NULL) {
-  case_comps(object, newdata, "weights")$weights
-}
-
-
-case_weights_name <- function(object) {
-  case_comp_name(object, "weights")
+  case_comps(object, newdata, "weights")[[1]]
 }

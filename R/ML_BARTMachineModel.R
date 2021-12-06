@@ -22,8 +22,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{binary factor}, \code{numeric}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{binary factor}, \code{numeric}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \code{alpha}, \code{beta}, \code{k}, \code{nu}
 #'   }
 #' }
@@ -50,7 +50,8 @@
 #' ## Requires prior installation of suggested package bartMachine to run
 #'
 #' model_fit <- fit(sale_amount ~ ., data = ICHomes, model = BARTMachineModel)
-#' varimp(model_fit, type = "splits", num_replicates = 20, scale = FALSE)
+#' varimp(model_fit, method = "model", type = "splits", num_replicates = 20,
+#'        scale = FALSE)
 #' }
 #'
 BARTMachineModel <- function(
@@ -60,12 +61,14 @@ BARTMachineModel <- function(
 ) {
 
   MLModel(
+
     name = "BARTMachineModel",
     label = "Bayesian Additive Regression Trees",
     packages = "bartMachine",
     response_types = c("binary", "numeric"),
     predictor_encoding = "model.matrix",
     params = new_params(environment(), ...),
+
     gridinfo = new_gridinfo(
       param = c("alpha", "beta", "k", "nu"),
       get_values = c(
@@ -77,23 +80,28 @@ BARTMachineModel <- function(
         }
       )
     ),
+
     fit = function(formula, data, weights, ...) {
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)
       if (is_response(y, "binary")) y <- factor(y, levels = rev(levels(y)))
       bartMachine::bartMachine(as.data.frame(x), y, ...)
     },
+
     predict = function(object, newdata, ...) {
       newx <- model.matrix(newdata, intercept = FALSE)
       predict(object, new_data = as.data.frame(newx))
     },
-    varimp = function(object, type = c("splits", "trees"), num_replicates = 5,
-                      ...) {
-      bartMachine::investigate_var_importance(object,
-                                              type = match.arg(type),
-                                              num_replicates = num_replicates,
-                                              plot = FALSE)$avg_var_props
+
+    varimp = function(
+      object, type = c("splits", "trees"), num_replicates = 5, ...
+    ) {
+      bartMachine::investigate_var_importance(
+        object, type = match.arg(type), num_replicates = num_replicates,
+        plot = FALSE
+      )$avg_var_props
     }
+
   )
 
 }

@@ -8,7 +8,7 @@ EarthModel(
   pmethod = c("backward", "none", "exhaustive", "forward", "seqrep", "cv"),
   trace = 0,
   degree = 1,
-  nprune = NULL,
+  nprune = integer(),
   nfold = 0,
   ncross = 1,
   stratify = TRUE
@@ -40,15 +40,15 @@ Build a regression model using the techniques in Friedman's papers
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}, \code{numeric}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{Response types:}{\code{factor}, \code{numeric}}
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \code{nprune}, \code{degree}*
   }
 }
 * excluded from grids by default
 
-Default values for the \code{NULL} arguments and further model details can be
-found in the source link below.
+Default values and further model details can be found in the source link
+below.
 
 In calls to \code{\link{varimp}} for \code{EarthModel}, argument
 \code{type} may be specified as \code{"nsubsets"} (default) for the number of
@@ -64,7 +64,7 @@ below.
 ## Requires prior installation of suggested package earth to run
 
 model_fit <- fit(Species ~ ., data = iris, model = EarthModel)
-varimp(model_fit, type = "gcv", scale = FALSE)
+varimp(model_fit, method = "model", type = "gcv", scale = FALSE)
 }
 
 }

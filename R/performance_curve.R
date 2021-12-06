@@ -39,8 +39,8 @@ lift <- function(x, y = NULL, weights = NULL, na.rm = TRUE, ...) {
 
 LiftCurve <- function(...) {
   object <- as(PerformanceCurve(...), "LiftCurve")
-  if (!all(map_logi(identical, object@metrics, c(tpr, rpp)))) {
-    throw(Error("incorrect LiftCurve metrics"))
+  if (!all(map("logi", identical, object@metrics, c(tpr, rpp)))) {
+    throw(Error("Incorrect LiftCurve metrics."))
   }
   object
 }
@@ -115,7 +115,7 @@ performance_curve.default <- function(
 
 #' @rdname performance_curve
 #'
-performance_curve.Resamples <- function(
+performance_curve.Resample <- function(
   x, metrics = c(MachineShop::tpr, MachineShop::fpr), na.rm = TRUE, ...
 ) {
   if (na.rm) x <- na.omit(x)
@@ -123,8 +123,8 @@ performance_curve.Resamples <- function(
 
   curves <- NULL
   for (model in unique(x$Model)) {
-    for (resample in unique(x$Resample)) {
-      df <- x[x$Model == model & x$Resample == resample, ]
+    for (iter in unique(x$Iteration)) {
+      df <- x[x$Model == model & x$Iteration == iter, ]
       curve <- .performance_curve(df$Observed, df$Predicted, df$Weight,
                                   metrics = metrics)
       curve <- if (is(curve, "listof")) {
@@ -133,7 +133,7 @@ performance_curve.Resamples <- function(
         structure(list(curve), names = model)
       }
       curve <- do.call(c, curve)
-      curve$Resample <- resample
+      curve$Iteration <- iter
       curves <- rbind(curves, curve)
     }
   }
@@ -144,7 +144,7 @@ performance_curve.Resamples <- function(
 
 get_curve_metrics <- function(metrics) {
   metrics <- map(fget, metrics)
-  if (length(metrics) != 2 || !all(map_logi(is, metrics, "MLMetric"))) {
+  if (length(metrics) != 2 || !all(map("logi", is, metrics, "MLMetric"))) {
     metrics <- Error("Value must be a list of two performance metrics.")
     throw(check_assignment(metrics))
   }
@@ -157,12 +157,15 @@ PerformanceCurve <- function(object, ..., metrics, .check = TRUE) {
     if (is.null(object$Model)) object$Model <- factor("Model")
     missing <- missing_names(c("Cutoff", "x", "y"), object)
     if (length(missing)) {
-      throw(Error(label_items("missing performance curve variable", missing)))
+      throw(Error(note_items(
+        "Missing performance curve variable{?s}: ", missing, "."
+      )))
     }
 
-    if (!all(map_logi(is, metrics[1:2], "MLMetric"))) {
-      msg <- "missing performance metrics in PerformanceCurve constructor"
-      throw(Error(msg))
+    if (!all(map("logi", is, metrics[1:2], "MLMetric"))) {
+      throw(Error(
+        "Missing performance metrics in PerformanceCurve constructor."
+      ))
     }
     metrics <- c(y = metrics[[1]], x = metrics[[2]])
 
@@ -185,8 +188,8 @@ setGeneric(".performance_curve",
 
 setMethod(".performance_curve", c("ANY", "ANY"),
   function(observed, predicted, ...) {
-    throw(Error("performance_curve requires a predicted binary factor or ",
-                "survival probabilities"))
+    throw(Error("Performance_curve requires a predicted binary factor or ",
+                "survival probabilities."))
   }
 )
 
@@ -239,7 +242,7 @@ setMethod(".performance_curve", c("Surv", "SurvProbs"),
         PerformanceCurve(data.frame(Cutoff = cutoffs, x = x, y = y),
                          metrics = metrics)
       }, seq_along(times)),
-      names = paste0("time", seq_along(times)),
+      names = make_names_len(length(times), "time"),
       class = "listof"
     )
 

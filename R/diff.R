@@ -39,15 +39,15 @@ NULL
 #' @rdname diff-methods
 #'
 diff.MLModel <- function(x, ...) {
-  if (!is_trained(x)) throw(Error("no training results to diff"))
-  map(function(train_step) diff(train_step@performance), x@train_steps)
+  if (!is_trained(x)) throw(Error("No training results to diff."))
+  map(function(step) diff(step@performance), x@steps)
 }
 
 
 #' @rdname diff-methods
 #'
 diff.Performance <- function(x, ...) {
-  if (ndim(x) <= 2) throw(Error("more than one model needed to diff"))
+  if (ndim(x) <= 2) throw(Error("More than one model needed to diff."))
   indices <- combn(size(x, 3), 2)
   indices1 <- indices[1, ]
   indices2 <- indices[2, ]
@@ -61,7 +61,7 @@ diff.Performance <- function(x, ...) {
 
 #' @rdname diff-methods
 #'
-diff.Resamples <- function(x, ...) {
+diff.Resample <- function(x, ...) {
   diff(performance(x))
 }
 
@@ -133,7 +133,7 @@ diff.Resamples <- function(x, ...) {
 #'
 t.test.PerformanceDiff <- function(x, adjust = "holm", ...)
 {
-  vadj <- if (is(x@control, "MLCVControl")) 1 / (x@control@folds - 1) else 0
+  vadj <- if (is(x@control, "CVControl")) 1 / (x@control@folds - 1) else 0
 
   t_test <- function(x) {
     x <- na.omit(x)

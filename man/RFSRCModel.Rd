@@ -7,22 +7,22 @@
 \usage{
 RFSRCModel(
   ntree = 1000,
-  mtry = NULL,
-  nodesize = NULL,
-  nodedepth = NULL,
-  splitrule = NULL,
+  mtry = integer(),
+  nodesize = integer(),
+  nodedepth = integer(),
+  splitrule = character(),
   nsplit = 10,
-  block.size = NULL,
+  block.size = integer(),
   samptype = c("swor", "swr"),
   membership = FALSE,
   sampsize = if (samptype == "swor") function(x) 0.632 * x else function(x) x,
   nimpute = 1,
-  ntime = NULL,
+  ntime = integer(),
   proximity = c(FALSE, TRUE, "inbag", "oob", "all"),
   distance = c(FALSE, TRUE, "inbag", "oob", "all"),
   forest.wt = c(FALSE, TRUE, "inbag", "oob", "all"),
-  xvar.wt = NULL,
-  split.wt = NULL,
+  xvar.wt = numeric(),
+  split.wt = numeric(),
   var.used = c(FALSE, "all.trees", "by.tree"),
   split.depth = c(FALSE, "all.trees", "by.tree"),
   do.trace = FALSE,
@@ -31,7 +31,7 @@ RFSRCModel(
 
 RFSRCFastModel(
   ntree = 500,
-  sampsize = function(x) min(0.632 * x, max(150, x^0.75)),
+  sampsize = function(x) min(0.632 * x, max(x^0.75, 150)),
   ntime = 50,
   terminal.qualts = FALSE,
   ...
@@ -43,7 +43,7 @@ RFSRCFastModel(
 \item{mtry}{number of variables randomly selected as candidates for splitting
 a node.}
 
-\item{nodesize}{forest average number of unique cases in a terminal node.}
+\item{nodesize}{minumum size of terminal nodes.}
 
 \item{nodedepth}{maximum depth to which a tree should be grown.}
 
@@ -104,15 +104,15 @@ settings including right-censored survival, regression, and classification.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}, \code{matrix}, \code{numeric},
+  \item{Response types:}{\code{factor}, \code{matrix}, \code{numeric},
     \code{Surv}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \code{mtry}, \code{nodesize}
   }
 }
 
-Default values for the \code{NULL} arguments and further model details can be
-found in the source link below.
+Default values and further model details can be found in the source links
+below.
 
 In calls to \code{\link{varimp}} for \code{RFSRCModel}, argument
 \code{type} may be specified as \code{"permute"} (default) for permutation of
@@ -127,7 +127,7 @@ from 0 to 100.  To obtain unscaled importance values, set
 ## Requires prior installation of suggested package randomForestSRC to run
 
 model_fit <- fit(sale_amount ~ ., data = ICHomes, model = RFSRCModel)
-varimp(model_fit, type = "random", scale = TRUE)
+varimp(model_fit, method = "model", type = "random", scale = TRUE)
 }
 
 }

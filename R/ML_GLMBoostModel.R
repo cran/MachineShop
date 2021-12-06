@@ -16,16 +16,16 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{binary factor}, \code{BinomialVariate},
+#'   \item{Response types:}{\code{binary factor}, \code{BinomialVariate},
 #'     \code{NegBinomialVariate}, \code{numeric}, \code{PoissonVariate},
 #'     \code{Surv}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameter:}{
 #'     \code{mstop}
 #'   }
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source links below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -46,12 +46,10 @@ GLMBoostModel <- function(
   stopintern = FALSE, trace = FALSE
 ) {
 
-  args <- new_params(environment())
-  is_main <- names(args) %in% "family"
-  params <- args[is_main]
-  params$control <- as.call(c(.(mboost::boost_control), args[!is_main]))
+  risk <- match.arg(risk)
 
   MLModel(
+
     name = "GLMBoostModel",
     label = "Gradient Boosting with Linear Models",
     packages = "mboost",
@@ -59,13 +57,15 @@ GLMBoostModel <- function(
                        "numeric", "PoissonVariate", "Surv"),
     weights = TRUE,
     predictor_encoding = "model.frame",
-    params = params,
+    params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = "mstop",
       get_values = c(
         function(n, ...) round(seq_range(0, 50, c(1, 1000), n + 1))
       )
     ),
+
     fit = function(formula, data, weights, family = NULL, ...) {
       if (is.null(family)) {
         family <- switch_class(response(data),
@@ -77,14 +77,19 @@ GLMBoostModel <- function(
           "Surv" = mboost::CoxPH()
         )
       }
-      eval_fit(data,
-               formula = mboost::glmboost(formula, data = as.data.frame(data),
-                                          na.action = na.pass,
-                                          weights = weights, family = family,
-                                          ...),
-               matrix = mboost::glmboost(x, y, weights = weights,
-                                         family = family, ...))
+      control <- mboost::boost_control(...)
+      eval_fit(
+        data,
+        formula = mboost::glmboost(
+          formula, data = data, na.action = na.pass, weights = weights,
+          family = family, control = control
+        ),
+        matrix = mboost::glmboost(
+          x, y, weights = weights, family = family, control = control
+        )
+      )
     },
+
     predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       if (object$family@name == "Cox Partial Likelihood") {
@@ -95,9 +100,11 @@ GLMBoostModel <- function(
         predict(object, newdata = newdata, type = "response")
       }
     },
+
     varimp = function(object, ...) {
       structure(mboost::varimp(object), class = "numeric")
     }
+
   )
 
 }

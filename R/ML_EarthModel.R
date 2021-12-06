@@ -15,15 +15,15 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}, \code{numeric}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \code{nprune}, \code{degree}*
 #'   }
 #' }
 #' * excluded from grids by default
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Default values and further model details can be found in the source link
+#' below.
 #'
 #' In calls to \code{\link{varimp}} for \code{EarthModel}, argument
 #' \code{type} may be specified as \code{"nsubsets"} (default) for the number of
@@ -44,17 +44,19 @@
 #' ## Requires prior installation of suggested package earth to run
 #'
 #' model_fit <- fit(Species ~ ., data = iris, model = EarthModel)
-#' varimp(model_fit, type = "gcv", scale = FALSE)
+#' varimp(model_fit, method = "model", type = "gcv", scale = FALSE)
 #' }
 #'
 EarthModel <- function(
   pmethod = c("backward", "none", "exhaustive", "forward", "seqrep", "cv"),
-  trace = 0, degree = 1, nprune = NULL, nfold = 0, ncross = 1, stratify = TRUE
+  trace = 0, degree = 1, nprune = integer(), nfold = 0, ncross = 1,
+  stratify = TRUE
 ) {
 
   pmethod <- match.arg(pmethod)
 
   MLModel(
+
     name = "EarthModel",
     label = "Multivariate Adaptive Regression Splines",
     packages = "earth",
@@ -62,6 +64,7 @@ EarthModel <- function(
     weights = TRUE,
     predictor_encoding = "model.matrix",
     params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = c("nprune", "degree"),
       get_values = c(
@@ -74,26 +77,36 @@ EarthModel <- function(
       ),
       default = c(TRUE, FALSE)
     ),
+
     fit = function(formula, data, weights, ...) {
       attach_objects(list(
         contr.earth.response = earth::contr.earth.response
       ), name = "earth_exports")
 
-      glm <- list(family = switch_class(response(data),
-                                        "factor" = "binomial",
-                                        "numeric" = "gaussian"))
-      eval_fit(data,
-               formula = earth::earth(formula, data = as.data.frame(data),
-                                      weights = weights, glm = glm, ...),
-               matrix = earth::earth(x, y, weights = weights, glm = glm, ...))
+      glm <- list(
+        family = switch_class(response(data),
+          "factor" = "binomial",
+          "numeric" = "gaussian"
+        )
+      )
+      eval_fit(
+        data,
+        formula = earth::earth(
+          formula, data = data, weights = weights, glm = glm, ...
+        ),
+        matrix = earth::earth(x, y, weights = weights, glm = glm, ...)
+      )
     },
+
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "response")
     },
+
     varimp = function(object, type = c("nsubsets", "gcv", "rss"), ...) {
       earth::evimp(object)[, match.arg(type), drop = FALSE]
     }
+
   )
 
 }

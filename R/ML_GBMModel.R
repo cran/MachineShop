@@ -16,17 +16,17 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric},
+#'   \item{Response types:}{\code{factor}, \code{numeric},
 #'     \code{PoissonVariate}, \code{Surv}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \code{n.trees}, \code{interaction.depth}, \code{shrinkage}*,
 #'     \code{n.minobsinnode}*
 #'   }
 #' }
 #' * excluded from grids by default
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Default values and further model details can be found in the source link
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -40,11 +40,12 @@
 #' }
 #'
 GBMModel <- function(
-  distribution = NULL, n.trees = 100, interaction.depth = 1,
+  distribution = character(), n.trees = 100, interaction.depth = 1,
   n.minobsinnode = 10, shrinkage = 0.1, bag.fraction = 0.5
 ) {
 
   MLModel(
+
     name = "GBMModel",
     label = "Generalized Boosted Regression",
     packages = "gbm",
@@ -52,6 +53,7 @@ GBMModel <- function(
     weights = TRUE,
     predictor_encoding = "model.frame",
     params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = c("n.trees", "interaction.depth", "shrinkage", "n.minobsinnode"),
       get_values = c(
@@ -62,6 +64,7 @@ GBMModel <- function(
       ),
       default = c(TRUE, TRUE, FALSE, FALSE)
     ),
+
     fit = function(formula, data, weights, distribution = NULL, ...) {
       if (is.null(distribution)) {
         y <- response(data)
@@ -77,14 +80,31 @@ GBMModel <- function(
           "Surv" = "coxph"
         )
       }
-      eval_fit(data,
-               formula = gbm::gbm(formula, data = as.data.frame(data),
-                                  weights = weights,
-                                  distribution = distribution, ...),
-               matrix = gbm::gbm.fit(x, y, offset = model.offset(data),
-                                     w = weights, distribution = distribution,
-                                     verbose = FALSE, ...))
+      cnd <- NULL
+      suppressWarnings(withCallingHandlers(
+        model_fit <- eval_fit(
+          data,
+          formula = gbm::gbm(
+            formula, data = data, weights = weights,
+            distribution = distribution, ...
+          ),
+          matrix = gbm::gbm.fit(
+            x, y, offset = model.offset(data), w = weights,
+            distribution = distribution, verbose = FALSE, ...
+          )
+        ),
+        warning = function(cnd) cnd <<- cnd
+      ))
+      if (is(cnd, "warning")) {
+        if (distribution == "multinomial") {
+          throw(Warning(conditionMessage(cnd)), call = call("gbm"), times = 3)
+        } else {
+          warning(cnd)
+        }
+      }
+      model_fit
     },
+
     predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       n <- object$n.trees
@@ -98,9 +118,11 @@ GBMModel <- function(
         predict(object, newdata = newdata, n.trees = n, type = "response")
       }
     },
+
     varimp = function(object, ...) {
       gbm::relative.influence(object, n.trees = object$n.trees)
     }
+
   )
 
 }

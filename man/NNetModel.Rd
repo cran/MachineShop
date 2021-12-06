@@ -6,9 +6,9 @@
 \usage{
 NNetModel(
   size = 1,
-  linout = NULL,
-  entropy = NULL,
-  softmax = NULL,
+  linout = logical(),
+  entropy = logical(),
+  softmax = logical(),
   censored = FALSE,
   skip = FALSE,
   rang = 0.7,
@@ -61,14 +61,14 @@ Fit single-hidden-layer neural network, possibly with skip-layer connections.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}, \code{numeric}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{Response types:}{\code{factor}, \code{numeric}}
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \code{size}, \code{decay}
   }
 }
 
-Default values for the \code{NULL} arguments and further model details can be
-found in the source link below.
+Default values and further model details can be found in the source link
+below.
 }
 \examples{
 fit(sale_amount ~ ., data = ICHomes, model = NNetModel)

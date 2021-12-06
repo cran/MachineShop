@@ -2,10 +2,12 @@
 #'
 #' Fit a super learner model to predictions from multiple base learners.
 #'
-#' @param ... \link[=models]{model} functions, function names, objects, or
-#'   vector of these to serve as base learners.
+#' @param ... \link[=models]{model} functions, function names, objects; other
+#'   objects that can be \link[=as.MLModel]{coerced} to models; or vector of
+#'   these to serve as base learners.
 #' @param model \link[=models]{model} function, function name, or object
-#'   defining the super model.
+#'   defining the super model; or another object that can be
+#'   \link[=as.MLModel]{coerced} to the model.
 #' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed for the estimation of base
 #'   learner weights.
@@ -14,7 +16,7 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
+#'   \item{Response types:}{\code{factor}, \code{numeric}, \code{ordered},
 #'     \code{Surv}}
 #' }
 #'
@@ -41,84 +43,82 @@ SuperModel <- function(
   all_vars = FALSE
 ) {
 
-  base_learners <- ListOf(map(get_MLModel, unlist(list(...))))
-  names(base_learners) <- paste0(if (length(base_learners)) "Learner",
-                                 seq_along(base_learners))
+  base_learners <- ListOf(map(as.MLModel, unlist(list(...))))
+  names(base_learners) <- make_names_len(length(base_learners), "Learner")
 
-  control <- get_MLControl(control)
+  control <- as.MLControl(control)
+  params <- as.list(environment())
 
-  slots <- combine_model_slots(base_learners, get_MLModel(model)@response_types)
-  new("SuperModel",
+  slots <- combine_model_slots(base_learners, as.MLModel(model)@response_types)
+  new("SuperModel", MLModel(
     name = "SuperModel",
     label = "Super Learner",
     response_types = slots$response_types,
     weights = slots$weights,
-    predictor_encoding = NA_character_,
-    params = as.list(environment()),
-    varimp = function(object, ...) NULL
-  )
+    params = params
+  ))
 
 }
 
 MLModelFunction(SuperModel) <- NULL
 
 
-.fit.SuperModel <- function(x, inputs, ...) {
-  inputs_prep <- prep(inputs)
-  mf <- ModelFrame(inputs_prep, na.rm = FALSE)
+.fit.SuperModel <- function(object, input, ...) {
+  input_prep <- prep(input)
+  mf <- ModelFrame(input_prep, na.rm = FALSE)
 
-  params <- x@params
+  params <- object@params
   base_learners <- params$base_learners
   super_learner <- params$model
   control <- params$control
 
   predictors <- list()
-  i <- new_progress_index(names = x@name, max = length(base_learners))
-  while (i < max(i)) {
-    i <- i + 1
-    res <- resample(inputs, model = base_learners[[i]], control = control,
-                    progress_index = i)
-    predictors[[i]] <- res$Predicted
+  ind <- new_progress_index(name = object@name, max = length(base_learners))
+  while (ind < max(ind)) {
+    ind <- ind + 1
+    res <- resample(input, model = base_learners[[ind]], control = control,
+                    progress_index = ind)
+    predictors[[ind]] <- res$Predicted
   }
 
   df <- super_df(res$Observed, predictors, res$Case, if (params$all_vars) mf)
   super_mf <- ModelFrame(formula(df), df)
 
-  list(base_fits = map(function(learner) fit(inputs, model = learner),
+  list(base_fits = map(function(learner) fit(input, model = learner),
                        base_learners),
        super_fit = fit(super_mf, model = super_learner),
        all_vars = params$all_vars,
        times = control@predict$times) %>%
-    MLModelFit("SuperModelFit", model = x, x = inputs_prep)
+    MLModelFit("SuperModelFit", model = object, input = input_prep)
 }
 
 
-.predict.SuperModel <- function(x, object, newdata, times, ...) {
+.predict.SuperModel <- function(object, model_fit, newdata, times, ...) {
   predictors <- map(function(fit) {
-    predict(fit, newdata = newdata, times = object$times, type = "prob")
-  }, object$base_fits)
+    predict(fit, newdata = newdata, times = model_fit$times, type = "prob")
+  }, model_fit$base_fits)
 
-  df <- if (object$all_vars) {
-    newdata <- predictor_frame(x, newdata)
+  df <- if (model_fit$all_vars) {
+    newdata <- predictor_frame(object, newdata)
     newdata[["(names)"]] <- rownames(newdata)
     super_df(NA, predictors, newdata[["(names)"]], newdata)
   } else {
     super_df(NA, predictors)
   }
 
-  predict(object$super_fit, newdata = df, times = times, type = "prob")
+  predict(model_fit$super_fit, newdata = df, times = times, type = "prob")
 }
 
 
 super_df <- function(y, predictors, case_names = NULL, data = NULL) {
-  names(predictors) <- make.names(seq_along(predictors))
+  names(predictors) <- make_names_len(length(predictors), "X")
   df <- data.frame(y = y, unnest(as.data.frame(predictors)))
 
   if (!is.null(data)) {
     df[["(names)"]] <- case_names
 
     data_predictors <- predictors(data)
-    unique_names <- make.unique(c(names(df), names(data_predictors)))
+    unique_names <- make_unique(c(names(df), names(data_predictors)))
     names(data_predictors) <- tail(unique_names, length(data_predictors))
     data_predictors[["(names)"]] <- data[["(names)"]]
 

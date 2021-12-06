@@ -18,7 +18,7 @@ SelectedInput(...)
   data,
   control = MachineShop::settings("control"),
   metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 )
 
@@ -27,7 +27,7 @@ SelectedInput(...)
   y,
   control = MachineShop::settings("control"),
   metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 )
 
@@ -35,7 +35,7 @@ SelectedInput(...)
   ...,
   control = MachineShop::settings("control"),
   metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 )
 
@@ -43,19 +43,19 @@ SelectedInput(...)
   ...,
   control = MachineShop::settings("control"),
   metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 )
 
 \method{SelectedInput}{list}(x, ...)
 }
 \arguments{
-\item{...}{\link{inputs} specifying relationships between model predictor
+\item{...}{\link{inputs} defining relationships between model predictor
 and response variables.  Supplied inputs must all be of the same type and
 may be named or unnamed.}
 
-\item{data}{\link[=data.frame]{data frame} or an object that can be converted
-to one.}
+\item{data}{\link[=data.frame]{data frame} containing predictor and response
+variables.}
 
 \item{control}{\link[=controls]{control} function, function name, or object
 defining the resampling method to be employed.}

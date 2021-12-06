@@ -2,8 +2,9 @@
 #'
 #' Fit a stacked regression model from multiple base learners.
 #'
-#' @param ... \link[=models]{model} functions, function names, objects, or
-#'   vector of these to serve as base learners.
+#' @param ... \link[=models]{model} functions, function names, objects; other
+#'   objects that can be \link[=as.MLModel]{coerced} to models; or vector of
+#'   these to serve as base learners.
 #' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed for the estimation of base
 #'   learner weights.
@@ -11,7 +12,7 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
+#'   \item{Response types:}{\code{factor}, \code{numeric}, \code{ordered},
 #'     \code{Surv}}
 #' }
 #'
@@ -33,48 +34,47 @@
 #' }
 #'
 StackedModel <- function(
-  ..., control = MachineShop::settings("control"), weights = NULL
+  ..., control = MachineShop::settings("control"), weights = numeric()
 ) {
 
-  base_learners <- ListOf(map(get_MLModel, unlist(list(...))))
-  names(base_learners) <- paste0(if (length(base_learners)) "Learner",
-                                 seq_along(base_learners))
+  base_learners <- ListOf(map(as.MLModel, unlist(list(...))))
+  names(base_learners) <- make_names_len(length(base_learners), "Learner")
 
-  control <- get_MLControl(control)
-
-  if (!is.null(weights)) stopifnot(length(weights) == length(base_learners))
+  params <- list(base_learners = base_learners, control = as.MLControl(control))
+  if (length(weights)) {
+    stopifnot(length(weights) == length(base_learners))
+    params$weights <- weights
+  }
 
   slots <- combine_model_slots(base_learners, settings("response_types"))
-  new("StackedModel",
+  new("StackedModel", MLModel(
     name = "StackedModel",
     label = "Stacked Regression",
     response_types = slots$response_types,
     weights = slots$weights,
-    predictor_encoding = NA_character_,
-    params = as.list(environment()),
-    varimp = function(object, ...) NULL
-  )
+    params = params
+  ))
 
 }
 
 MLModelFunction(StackedModel) <- NULL
 
 
-.fit.StackedModel <- function(x, inputs, ...) {
-  base_learners <- x@params$base_learners
-  weights <- x@params$weights
-  control <-  x@params$control
+.fit.StackedModel <- function(object, input, ...) {
+  base_learners <- object@params$base_learners
+  weights <- object@params$weights
+  control <-  object@params$control
 
   if (is.null(weights)) {
     num_learners <- length(base_learners)
     stack <- list()
     complete_cases <- TRUE
-    i <- new_progress_index(names = x@name, max = num_learners)
-    while (i < max(i)) {
-      i <- i + 1
-      stack[[i]] <- resample(inputs, model = base_learners[[i]],
-                             control = control, progress_index = i)
-      complete_cases <- complete_cases & complete.cases(stack[[i]])
+    ind <- new_progress_index(name = object@name, max = num_learners)
+    while (ind < max(ind)) {
+      ind <- ind + 1
+      stack[[ind]] <- resample(input, model = base_learners[[ind]],
+                               control = control, progress_index = ind)
+      complete_cases <- complete_cases & complete.cases(stack[[ind]])
     }
     stack <- map(function(res) res[complete_cases, ], stack)
 
@@ -85,20 +85,20 @@ MLModelFunction(StackedModel) <- NULL
                              control = list(trace = FALSE))$pars
   }
 
-  list(base_fits = map(function(learner) fit(inputs, model = learner),
+  list(base_fits = map(function(learner) fit(input, model = learner),
                        base_learners),
        weights = weights,
        times = control@predict$times) %>%
-    MLModelFit("StackedModelFit", model = x, x = inputs)
+    MLModelFit("StackedModelFit", model = object, input = input)
 }
 
 
-.predict.StackedModel <- function(x, object, newdata, ...) {
+.predict.StackedModel <- function(object, model_fit, newdata, ...) {
   pred <- 0
-  for (i in seq_along(object$base_fits)) {
-    base_pred <- predict(object$base_fits[[i]], newdata = newdata,
-                         times = object$times, type = "prob")
-    pred <- pred + object$weights[i] * base_pred
+  for (i in seq_along(model_fit$base_fits)) {
+    base_pred <- predict(model_fit$base_fits[[i]], newdata = newdata,
+                         times = model_fit$times, type = "prob")
+    pred <- pred + model_fit$weights[i] * base_pred
   }
   pred
 }
@@ -118,21 +118,21 @@ setGeneric("stack_loss",
 )
 
 
-setMethod("stack_loss", c("ANY", "ANY", "Resamples"),
+setMethod("stack_loss", c("ANY", "ANY", "Resample"),
   function(observed, predicted, x, ...) mse(x)
 )
 
 
-setMethod("stack_loss", c("factor", "ANY", "Resamples"),
+setMethod("stack_loss", c("factor", "ANY", "Resample"),
   function(observed, predicted, x, ...) brier(x)
 )
 
 
-setMethod("stack_loss", c("Surv", "numeric", "Resamples"),
+setMethod("stack_loss", c("Surv", "numeric", "Resample"),
   function(observed, predicted, x, ...) -cindex(x)
 )
 
 
-setMethod("stack_loss", c("Surv", "SurvProbs", "Resamples"),
+setMethod("stack_loss", c("Surv", "SurvProbs", "Resample"),
   function(observed, predicted, x, ...) brier(x)[, 1]
 )

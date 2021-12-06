@@ -30,10 +30,11 @@
 #'     events/probabilities.  Choices are \code{"empirical"} (default) for the
 #'     Kaplan-Meier estimator, \code{"exponential"}, \code{"rayleigh"}, or
 #'     \code{"weibull"}.}
-#'   \item{\code{grid}}{\code{size} argument to \code{\link{Grid}} indicating
-#'     the number of parameter-specific values to generate automatically for
-#'     \link[=TunedModel]{tuning} of models that have pre-defined grids or a
-#'     \code{\link{Grid}} function, function name, or object [default: 3].}
+#'   \item{\code{grid}}{\code{size} argument to \code{\link{TuningGrid}}
+#'     indicating the number of parameter-specific values to generate
+#'     automatically for \link[=TunedModel]{tuning} of models that have
+#'     pre-defined grids or a \code{\link{TuningGrid}} function, function name,
+#'     or object [default: 3].}
 #'   \item{\code{method.EmpiricalSurv}}{character string specifying the
 #'     empirical method of estimating baseline survival curves for Cox
 #'     proportional hazards-based models.  Choices are \code{"breslow"} or
@@ -71,10 +72,10 @@
 #'     to compute one \link{summary} statistic at each cutoff value of resampled
 #'     metrics in performance curves, or \code{NULL} for resample-specific
 #'     metrics [default: \code{"base::mean"}].}
-#'   \item{\code{stat.Resamples}}{function or character string naming a function
+#'   \item{\code{stat.Resample}}{function or character string naming a function
 #'     to compute one summary statistic to control the ordering of models in
 #'     \link[=plot]{plots} [default: \code{"base::mean"}].}
-#'   \item{\code{stat.Trained}}{function or character string naming a function
+#'   \item{\code{stat.TrainingParams}}{function or character string naming a function
 #'     to compute one summary statistic on resampled performance metrics for
 #'     input \link[=SelectedInput]{selection} or \link[=TunedInput]{tuning} or
 #'     for model \link[=SelectedModel]{selection} or \link[=TunedModel]{tuning}
@@ -82,13 +83,10 @@
 #'   \item{\code{stats.PartialDependence}}{function, function name, or vector of
 #'     these with which to compute \link[=dependence]{partial dependence}
 #'     summary statistics [default: \code{c(Mean = "base::mean")}].}
-#'   \item{\code{stats.Resamples}}{function, function name, or vector of these
+#'   \item{\code{stats.Resample}}{function, function name, or vector of these
 #'     with which to compute \link{summary} statistics on resampled performance
 #'     metrics [default: \code{c(Mean = "base::mean", Median = "stats::median",
 #'     SD = "stats::sd", Min = "base::min", Max = "base::max")}].}
-#'   \item{\code{stats.VarImp}}{function, function name, or vector of these with
-#'     which to compute \link[=varimp]{variable importance} summary statistics
-#'     [default: \code{c(Mean = "base::mean")}].}
 #' }
 #'
 #' @examples
@@ -135,14 +133,14 @@ settings <- function(...) {
   settings_pmatch <- pmatch(arg_names, names(global_settings))
   valid_settings <- !is.na(settings_pmatch)
   for (name in arg_names[!valid_settings]) {
-    throw(Warning("'", name, "' is not a MachineShop setting"))
+    throw(Warning("Value '", name, "' is not a MachineShop setting."))
   }
 
   presets <- global_values[settings_pmatch[valid_settings]]
 
   which_set_args <- which(arg_names_nzchar & valid_settings)
   for (index in which_set_args) {
-    global_name <- names(global_settings)[settings_pmatch[index]]
+    global_name <- as.name(names(global_settings)[settings_pmatch[index]])
     value <- global_checks[[global_name]](args[[index]])
     eval(substitute(
       throw(check_assignment(global_name, value), call = sys.call(-2))
@@ -173,7 +171,7 @@ MachineShop_global <- as.environment(list(
     control = list(
       value = "CVControl",
       check = function(x) {
-        result <- try(get_MLControl(x), silent = TRUE)
+        result <- try(as.MLControl(x), silent = TRUE)
         if (is(result, "try-error")) {
           DomainError(x, "must be an MLControl object, function, ",
                          "or function name")
@@ -190,12 +188,16 @@ MachineShop_global <- as.environment(list(
 
     distr.SurvMeans = list(
       value = "weibull",
-      check = check_match(c("weibull", "exponential", "rayleigh", "empirical"))
+      check = function(x) {
+        check_match(x, c("weibull", "exponential", "rayleigh", "empirical"))
+      }
     ),
 
     distr.SurvProbs = list(
       value = "empirical",
-      check = check_match(c("empirical", "weibull", "exponential", "rayleigh"))
+      check = function(x) {
+        check_match(x, c("empirical", "weibull", "exponential", "rayleigh"))
+      }
     ),
 
     grid = list(
@@ -205,7 +207,9 @@ MachineShop_global <- as.environment(list(
 
     method.EmpiricalSurv = list(
       value = "efron",
-      check = check_match(c("efron", "breslow"))
+      check = function(x) {
+        check_match(x, c("efron", "breslow"))
+      }
     ),
 
     metrics = list(
@@ -240,7 +244,7 @@ MachineShop_global <- as.environment(list(
         "tpr",
         "weighted_kappa2"
       ),
-      check = function(x) check_const_setting(x, "metrics")
+      check = function(x) throw(check_const_setting(x, "metrics"))
     ),
 
     metrics.ConfusionMatrix = list(
@@ -321,6 +325,7 @@ MachineShop_global <- as.environment(list(
         "MDAModel",
         "NaiveBayesModel",
         "NNetModel",
+        "ParsnipModel",
         "PDAModel",
         "PLSModel",
         "POLRModel",
@@ -350,7 +355,7 @@ MachineShop_global <- as.environment(list(
         "XGBLinearModel",
         "XGBTreeModel"
       ),
-      check = function(x) check_const_setting(x, "models")
+      check = function(x) throw(check_const_setting(x, "models"))
     ),
 
     print_max = list(
@@ -366,10 +371,11 @@ MachineShop_global <- as.environment(list(
       value = c("MachineShop", "survival", "recipes"),
       check = function(x) {
         x <- setdiff(x, .global_defaults$require)
-        available <- vapply(x, requireNamespace, logical(1), quietly = TRUE)
-        if (!all(available)) {
-          missing <- x[!available]
-          DomainError(x, label_items("includes unavailable package", missing))
+        unavailable <- !vapply(x, requireNamespace, logical(1), quietly = TRUE)
+        if (any(unavailable)) {
+          DomainError(x, note_items(
+            "includes unavailable package{?s}: ", x[unavailable]
+          ))
         } else c(x, .global_defaults$require)
       }
     ),
@@ -396,7 +402,7 @@ MachineShop_global <- as.environment(list(
         "binary", "BinomialVariate", "DiscreteVariate", "factor", "matrix",
         "NegBinomialVariate", "numeric", "ordered", "PoissonVariate", "Surv"
       ),
-      check = function(x) check_const_setting(x, "response_types")
+      check = function(x) throw(check_const_setting(x, "response_types"))
     ),
 
     RHS.formula = list(
@@ -411,7 +417,7 @@ MachineShop_global <- as.environment(list(
         "cosh", "sinh", "tanh", "acosh", "asinh", "atanh",
         "lgamma", "gamma", "digamma", "trigamma"
       )),
-      check = function(x) check_const_setting(x, "RHS.formula")
+      check = function(x) throw(check_const_setting(x, "RHS.formula"))
     ),
 
     stat.Curve = list(
@@ -424,12 +430,12 @@ MachineShop_global <- as.environment(list(
       }
     ),
 
-    stat.Resamples = list(
+    stat.Resample = list(
       value = "base::mean",
       check = check_stat
     ),
 
-    stat.Trained = list(
+    stat.TrainingParams = list(
       value = "base::mean",
       check = check_stat
     ),
@@ -440,7 +446,7 @@ MachineShop_global <- as.environment(list(
 
     ),
 
-    stats.Resamples = list(
+    stats.Resample = list(
       value = c(
         "Mean" = "base::mean",
         "Median" = "stats::median",
@@ -449,15 +455,11 @@ MachineShop_global <- as.environment(list(
         "Max" = "base::max"
       ),
       check = check_stats
-    ),
-
-    stats.VarImp = list(
-      value = c("Mean" = "base::mean"),
-      check = check_stats
-
     )
 
-  )
+  ),
+
+  throw_times = list()
 
 ))
 

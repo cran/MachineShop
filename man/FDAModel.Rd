@@ -6,14 +6,14 @@
 \title{Flexible and Penalized Discriminant Analysis Models}
 \usage{
 FDAModel(
-  theta = NULL,
-  dimension = NULL,
+  theta = matrix(NA, 0, 0),
+  dimension = integer(),
   eps = .Machine$double.eps,
   method = .(mda::polyreg),
   ...
 )
 
-PDAModel(lambda = 1, df = NULL, ...)
+PDAModel(lambda = 1, df = numeric(), ...)
 }
 \arguments{
 \item{theta}{optional matrix of class scores, typically with number of
@@ -49,8 +49,8 @@ Performs flexible discriminant analysis.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters}{
+  \item{Response types:}{\code{factor}}
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \itemize{
       \item FDAModel: \code{nprune}, \code{degree}*
       \item PDAModel: \code{lambda}
@@ -66,8 +66,8 @@ following argument.
     data if different from the training set.}
 }
 
-Default values for the \code{NULL} arguments and further model details can be
-found in the source links below.
+Default values and further model details can be found in the source links
+below.
 }
 \examples{
 \donttest{

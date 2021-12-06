@@ -5,7 +5,7 @@
 \title{Generalized Boosted Regression Model}
 \usage{
 GBMModel(
-  distribution = NULL,
+  distribution = character(),
   n.trees = 100,
   interaction.depth = 1,
   n.minobsinnode = 10,
@@ -39,17 +39,17 @@ Fits generalized boosted regression models.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}, \code{numeric},
+  \item{Response types:}{\code{factor}, \code{numeric},
     \code{PoissonVariate}, \code{Surv}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \code{n.trees}, \code{interaction.depth}, \code{shrinkage}*,
     \code{n.minobsinnode}*
   }
 }
 * excluded from grids by default
 
-Default values for the \code{NULL} arguments and further model details can be
-found in the source link below.
+Default values and further model details can be found in the source link
+below.
 }
 \examples{
 \donttest{

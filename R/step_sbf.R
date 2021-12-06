@@ -100,8 +100,9 @@ new_step_sbf <- function(
   )
   invalid_names <- intersect(names(options), names(step_args))
   if (length(invalid_names)) {
-    msg <- "options list contains reserved step name"
-    throw(Error(label_items(msg, invalid_names)))
+    throw(Error(note_items(
+      "Options list contains reserved step name{?s}: ", invalid_names, "."
+    )))
   }
   do.call(recipes::step, c(step_args, options))
 }
@@ -115,16 +116,18 @@ prep.step_sbf <- function(x, training, info = NULL, ...) {
     x$filter(x = x_vars, y = y_var, step = x)
   } else {
     res_list <- map(x$filter, x = x_vars, y = list(y_var), step = list(x))
-    if (all(map_logi(is.list, res_list))) {
+    if (all(map("logi", is.list, res_list))) {
       do.call(rbind, map(as_tibble, res_list))
     } else unlist(res_list)
   }
   if (!is.list(res)) res <- list(selected = res)
   if (!is.logical(res$selected)) {
-    throw(Error("filter function should return logical values"))
+    throw(Error("Filter function should return logical values."))
   }
   if (length(res$selected) != length(x_vars)) {
-    throw(Error("filter function should return one logical value per variable"))
+    throw(Error(
+      "Filter function should return one logical value per variable."
+    ))
   }
   x$res <- tibble(
     terms = col_names,
@@ -152,9 +155,9 @@ bake.step_sbf <- function(object, new_data, ...) {
 }
 
 
-print.step_sbf <- function(x, width = getOption("width"), ...) {
+print.step_sbf <- function(x, width = console_width(), ...) {
   msg <- paste(x$prefix, "selection by filtering for ")
-  width <- max(20, width - nchar(msg))
+  width <- max(width - nchar(msg), 20)
   cat(msg)
   recipes::printer(x$res$terms, x$terms, x$trained, width = width)
   invisible(x)

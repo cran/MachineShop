@@ -24,6 +24,7 @@ auc <- function(
   metrics = c(MachineShop::tpr, MachineShop::fpr),
   stat = MachineShop::settings("stat.Curve"), ...
 ) {
+  metrics <- map(as.MLMetric, metrics)
   call_metric_method("auc", environment())
 }
 
@@ -38,7 +39,7 @@ setMetricMethod("auc", c("factor", "factor"))
 
 setMetricMethod("auc", c("factor", "numeric"),
   function(observed, predicted, weights, metrics, ...) {
-    if (all(map_logi(identical, metrics[1:2], c(tpr, fpr)))) {
+    if (all(map("logi", identical, metrics[1:2], c(tpr, fpr)))) {
       cindex(observed, predicted, weights)
     } else {
       unname(auc(performance_curve(observed, predicted, weights,
@@ -60,7 +61,7 @@ setMetricMethod("auc", c("PerformanceCurve", "NULL"),
 )
 
 
-setMetricMethod("auc", c("Resamples", "NULL"),
+setMetricMethod("auc", c("Resample", "NULL"),
   function(observed, predicted, weights, metrics, ...) {
     auc@.Data <- function(...) MachineShop::auc(..., metrics = metrics)
     performance(observed, metrics = auc, ...)
@@ -112,7 +113,7 @@ setMetricMethod("brier", c("factor", "numeric"),
 )
 
 
-setMetricMethod_Resamples("brier")
+setMetricMethod_Resample("brier")
 
 
 setMetricMethod("brier", c("Surv", "SurvProbs"),
@@ -126,12 +127,12 @@ setMetricMethod("brier", c("Surv", "SurvProbs"),
                         se.fit = FALSE)
 
     start_time <- function(x) if (is_counting(x)) x[, "start"] else -Inf
-    x <- map_num(function(i) {
+    x <- map("num", function(i) {
       time <- times[i]
       start_by <- start_time(observed) <= time
       stop_after <- time(observed) > time
       known_status <- start_by & (observed[, "status"] == 0 | stop_after)
-      cens <- predict(cens_fit, pmin(time(observed), time))
+      cens <- predict(cens_fit, pmin(time, time(observed)))
       cens_weights <- prop.table(ifelse(known_status, weights / cens, 0))
       sum(cens_weights * (stop_after - predicted[, i, drop = TRUE])^2)
     }, seq_along(times))
@@ -167,7 +168,7 @@ setMetricMethod("cindex", c("factor", "numeric"),
 )
 
 
-setMetricMethod_Resamples("cindex")
+setMetricMethod_Resample("cindex")
 
 
 setMetricMethod("cindex", c("Surv", "numeric"),
@@ -196,7 +197,7 @@ setMetricMethod("cross_entropy", c("factor", "matrix"),
   function(observed, predicted, weights, ...) {
     observed <- model.matrix(~ observed - 1)
     eps <- 1e-15
-    predicted <- pmax(eps, pmin(predicted, 1 - eps))
+    predicted <- pmin(pmax(predicted, eps), 1 - eps)
     n <- ncol(observed)
     -weighted_mean(observed * log(predicted), rep(weights, n)) * n
   }
@@ -210,7 +211,7 @@ setMetricMethod("cross_entropy", c("factor", "numeric"),
 )
 
 
-setMetricMethod_Resamples("cross_entropy")
+setMetricMethod_Resample("cross_entropy")
 
 
 #' @rdname metrics

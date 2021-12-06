@@ -31,7 +31,7 @@
 #' The return value is a \code{ConfusionMatrix} class object that inherits from
 #' \code{table} if \code{x} and \code{y} responses are specified or a
 #' \code{ConfusionList} object that inherits from \code{list} if \code{x} is a
-#' \code{Resamples} object.
+#' \code{Resample} object.
 #'
 #' @seealso \code{\link{c}}, \code{\link{plot}}, \code{\link{summary}}
 #'
@@ -64,7 +64,7 @@ ConfusionMatrix <- function(data = NA, ordered = FALSE) {
   data <- as.matrix(data)
 
   n <- nrow(data)
-  if (n != ncol(data)) throw(Error("unequal number of rows and columns"))
+  if (n != ncol(data)) throw(Error("Unequal number of rows and columns."))
 
   data_dimnames <- dimnames(data)
   if (is.null(data_dimnames)) data_dimnames <- list(NULL, NULL)
@@ -85,8 +85,9 @@ setGeneric(".confusion",
 
 setMethod(".confusion", c("ANY", "ANY"),
   function(observed, predicted, ...) {
-    msg <- "confusion requires a predicted factor or survival probabilities"
-    throw(Error(msg))
+    throw(Error(
+      "Confusion requires a predicted factor or survival probabilities."
+    ))
   }
 )
 
@@ -115,7 +116,7 @@ setMethod(".confusion", c("factor", "matrix"),
 
 setMethod(".confusion", c("factor", "numeric"),
   function(observed, predicted, cutoff, ...) {
-    predicted <- if (is.null(cutoff)) {
+    predicted <- if (is_empty(cutoff)) {
       cbind(1 - predicted, predicted)
     } else {
       convert_response(observed, predicted, cutoff = cutoff)
@@ -125,13 +126,13 @@ setMethod(".confusion", c("factor", "numeric"),
 )
 
 
-setMethod(".confusion", c("Resamples", "ANY"),
+setMethod(".confusion", c("Resample", "ANY"),
   function(observed, predicted, weights, ...) {
     conf_list <- by(observed, observed$Model, function(resample) {
       confusion(resample$Observed, resample$Predicted, resample$Weight,
                 na.rm = FALSE, ...)
     }, simplify = FALSE)
-    if (all(map_logi(is, conf_list, "ConfusionList"))) {
+    if (all(map("logi", is, conf_list, "ConfusionList"))) {
       conf_list <- unlist(conf_list, recursive = FALSE)
     }
     do.call(c, conf_list)
@@ -141,7 +142,7 @@ setMethod(".confusion", c("Resamples", "ANY"),
 
 setMethod(".confusion", c("Surv", "SurvProbs"),
   function(observed, predicted, cutoff, ...) {
-    if (is.null(cutoff)) cutoff <- 0.5
+    if (is_empty(cutoff)) cutoff <- 0.5
     predicted <- convert_response(observed, predicted, cutoff = cutoff)
     .confusion(observed, predicted, ...)
   }
@@ -168,7 +169,7 @@ setMethod(".confusion", c("Surv", "SurvEvents"),
 
       ConfusionMatrix(length(observed) * conf_tbl)
     }, seq_along(times))
-    names(conf_list) <- paste0("time", seq_along(times))
+    names(conf_list) <- make_names_len(length(times), "time")
     do.call(c, conf_list)
 
   }

@@ -4,41 +4,44 @@
 \alias{extract}
 \alias{[.BinomialVariate}
 \alias{[,DiscreteVariate,ANY,missing,missing-method}
-\alias{[.ModelFrame}
+\alias{[,ListOf,ANY,missing,missing-method}
 \alias{[,ModelFrame,ANY,ANY,ANY-method}
 \alias{[,ModelFrame,ANY,missing,ANY-method}
+\alias{[,ModelFrame,missing,ANY,ANY-method}
 \alias{[,ModelFrame,missing,missing,ANY-method}
 \alias{[,RecipeGrid,ANY,ANY,ANY-method}
-\alias{[,Resamples,ANY,ANY,ANY-method}
-\alias{[,Resamples,ANY,missing,ANY-method}
-\alias{[,Resamples,missing,missing,ANY-method}
+\alias{[,Resample,ANY,ANY,ANY-method}
+\alias{[,Resample,ANY,missing,ANY-method}
+\alias{[,Resample,missing,missing,ANY-method}
 \alias{[,SurvMatrix,ANY,ANY,ANY-method}
-\alias{[,SurvMeans,ANY,missing,missing-method}
+\alias{[,SurvTimes,ANY,missing,missing-method}
 \title{Extract Elements of an Object}
 \usage{
 \method{[}{BinomialVariate}(x, i, j, ..., drop = FALSE)
 
 \S4method{[}{DiscreteVariate,ANY,missing,missing}(x, i)
 
-\method{[}{ModelFrame}(x, i, j, ..., drop = FALSE)
+\S4method{[}{ListOf,ANY,missing,missing}(x, i)
 
 \S4method{[}{ModelFrame,ANY,ANY,ANY}(x, i, j, ..., drop = FALSE)
 
 \S4method{[}{ModelFrame,ANY,missing,ANY}(x, i, j, ..., drop = FALSE)
 
+\S4method{[}{ModelFrame,missing,ANY,ANY}(x, i, j, ..., drop = FALSE)
+
 \S4method{[}{ModelFrame,missing,missing,ANY}(x, i, j, ..., drop = FALSE)
 
 \S4method{[}{RecipeGrid,ANY,ANY,ANY}(x, i, j, ..., drop = FALSE)
 
-\S4method{[}{Resamples,ANY,ANY,ANY}(x, i, j, ..., drop = FALSE)
+\S4method{[}{Resample,ANY,ANY,ANY}(x, i, j, ..., drop = FALSE)
 
-\S4method{[}{Resamples,ANY,missing,ANY}(x, i, j, ..., drop = FALSE)
+\S4method{[}{Resample,ANY,missing,ANY}(x, i, j, ..., drop = FALSE)
 
-\S4method{[}{Resamples,missing,missing,ANY}(x, i, j, ..., drop = FALSE)
+\S4method{[}{Resample,missing,missing,ANY}(x, i, j, ..., drop = FALSE)
 
 \S4method{[}{SurvMatrix,ANY,ANY,ANY}(x, i, j, ..., drop = FALSE)
 
-\S4method{[}{SurvMeans,ANY,missing,missing}(x, i)
+\S4method{[}{SurvTimes,ANY,missing,missing}(x, i)
 }
 \arguments{
 \item{x}{object from which to extract elements.}

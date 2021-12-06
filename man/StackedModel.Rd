@@ -4,11 +4,16 @@
 \alias{StackedModel}
 \title{Stacked Regression Model}
 \usage{
-StackedModel(..., control = MachineShop::settings("control"), weights = NULL)
+StackedModel(
+  ...,
+  control = MachineShop::settings("control"),
+  weights = numeric()
+)
 }
 \arguments{
-\item{...}{\link[=models]{model} functions, function names, objects, or
-vector of these to serve as base learners.}
+\item{...}{\link[=models]{model} functions, function names, objects; other
+objects that can be \link[=as.MLModel]{coerced} to models; or vector of
+these to serve as base learners.}
 
 \item{control}{\link[=controls]{control} function, function name, or object
 defining the resampling method to be employed for the estimation of base
@@ -24,7 +29,7 @@ Fit a stacked regression model from multiple base learners.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
+  \item{Response types:}{\code{factor}, \code{numeric}, \code{ordered},
     \code{Surv}}
 }
 }

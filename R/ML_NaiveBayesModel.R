@@ -7,7 +7,7 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}}
+#'   \item{Response types:}{\code{factor}}
 #' }
 #'
 #' Further model details can be found in the source link below.
@@ -27,22 +27,27 @@
 NaiveBayesModel <- function(laplace = 0) {
 
   MLModel(
+
     name = "NaiveBayesModel",
     label = "Naive Bayes Classifier",
     packages = "e1071",
     response_types = "factor",
     predictor_encoding = "model.frame",
     params = new_params(environment()),
+
     fit = function(formula, data, weights, ...) {
-      eval_fit(data,
-               formula = e1071::naiveBayes(formula, data = as.data.frame(data),
-                                           ...),
-               matrix = e1071::naiveBayes(x, y, ...))
+      eval_fit(
+        data,
+        formula = e1071::naiveBayes(formula, data = data, ...),
+        matrix = e1071::naiveBayes(x, y, ...)
+      )
     },
+
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "raw")
     }
+
   )
 
 }

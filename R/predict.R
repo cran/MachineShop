@@ -39,27 +39,34 @@
 #' }
 #'
 predict.MLModelFit <- function(
-  object, newdata = NULL, times = NULL, type = c("response", "prob"),
-  cutoff = MachineShop::settings("cutoff"), distr = NULL, method = NULL, ...
+  object, newdata = NULL, times = numeric(), type = c("response", "prob"),
+  cutoff = MachineShop::settings("cutoff"), distr = character(),
+  method = character(), ...
 ) {
+  times <- check_numeric(times, bounds = c(0, Inf), include = FALSE, size = NA,
+                         nonempty = FALSE)
+  throw(check_assignment(times))
+
   model <- as.MLModel(object)
-  require_namespaces(model@packages)
+  throw(check_packages(model@packages))
   obs <- response(object)
-  pred <- .predict(model, object, newdata, times = times, distr = distr,
-                   method = method, ...)
-  pred <- convert_prob(obs, pred, times = times)
+  pred <- .predict(model, model_fit = object, newdata = newdata, times = times,
+                   distr = distr, method = method, ...)
+  pred <- convert_prob(obs, pred)
   if (match.arg(type) == "response") {
     convert_response(obs, pred, cutoff = cutoff)
   } else pred
 }
 
 
-.predict <- function(x, ...) {
+.predict <- function(object, ...) {
   UseMethod(".predict")
 }
 
 
-.predict.MLModel <- function(x, object, newdata, ...) {
-  newdata <- predictor_frame(x, newdata)
-  x@predict(unMLModelFit(object), newdata, model = x, ...)
+.predict.MLModel <- function(object, model_fit, newdata, ...) {
+  object@predict(
+    unMLModelFit(model_fit), newdata = predictor_frame(object, newdata),
+    model = object, ...
+  )
 }

@@ -16,8 +16,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameter:}{
 #'     \code{cp}
 #'   }
 #' }
@@ -43,13 +43,15 @@ RPartModel <- function(
 ) {
 
   MLModel(
+
     name = "RPartModel",
     label = "Recursive Partitioning and Regression Trees",
     packages = c("rpart", "partykit"),
     response_types = c("factor", "numeric", "Surv"),
     weights = TRUE,
     predictor_encoding = "model.frame",
-    params = list(control = as.call(c(.(list), new_params(environment())))),
+    params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = "cp",
       get_values = c(
@@ -60,6 +62,7 @@ RPartModel <- function(
         }
       )
     ),
+
     fit = function(formula, data, weights, ...) {
       method <- switch_class(response(data),
         "factor" = "class",
@@ -67,8 +70,9 @@ RPartModel <- function(
         "Surv" = "exp"
       )
       rpart::rpart(formula, data = as.data.frame(data), weights = weights,
-                   na.action = na.pass, method = method, ...)
+                   na.action = na.pass, method = method, control = list(...))
     },
+
     predict = function(object, newdata, model, ...) {
       y <- response(model)
       newdata <- as.data.frame(newdata)
@@ -80,9 +84,11 @@ RPartModel <- function(
         predict(object, newdata = newdata)
       }
     },
+
     varimp = function(object, ...) {
       object$variable.importance
     }
+
   )
 
 }

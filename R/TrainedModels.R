@@ -2,9 +2,10 @@
 #'
 #' Model selection from a candidate set.
 #'
-#' @param ... \link[=models]{model} functions, function names, objects, or
-#'   vectors of these to serve as the candidate set from which to select, such
-#'   as that returned by \code{\link{expand_model}}.
+#' @param ... \link[=models]{model} functions, function names, objects; other
+#'   objects that can be \link[=as.MLModel]{coerced} to models; or vectors of
+#'   these to serve as the candidate set from which to select, such as that
+#'   returned by \code{\link{expand_model}}.
 #' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
@@ -17,7 +18,7 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
+#'   \item{Response types:}{\code{factor}, \code{numeric}, \code{ordered},
 #'     \code{Surv}}
 #' }
 #'
@@ -29,52 +30,64 @@
 #' \donttest{
 #' ## Requires prior installation of suggested package gbm and glmnet to run
 #'
-#' model_fit <- fit(sale_amount ~ ., data = ICHomes,
-#'                  model = SelectedModel(GBMModel, GLMNetModel, SVMRadialModel))
+#' model_fit <- fit(
+#'   sale_amount ~ ., data = ICHomes,
+#'   model = SelectedModel(GBMModel, GLMNetModel, SVMRadialModel)
+#' )
 #' (selected_model <- as.MLModel(model_fit))
 #' summary(selected_model)
 #' }
 #'
 SelectedModel <- function(
   ..., control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 ) {
 
   models <- as.list(unlist(list(...)))
-  model_names <- character()
-  for (i in seq_along(models)) {
-    models[[i]] <- get_MLModel(models[[i]])
-    name <- names(models)[i]
-    model_names[i] <-
-      if (!is.null(name) && nzchar(name)) name else models[[i]]@name
+  for (i in seq_along(models)) models[[i]] <- as.MLModel(models[[i]])
+
+  if (length(models) == 1) {
+    return(models[[1]])
   }
-  names(models) <- make.unique(model_names)
+
+  default_names <- map("char", training_names.MLModel, models)
+  names(models) <- make_names_along(models, default_names)
 
   slots <- combine_model_slots(models, settings("response_types"))
-  new("SelectedModel",
-      name = "SelectedModel",
-      label = "Selected Model",
-      response_types = slots$response_types,
-      weights = slots$weights,
-      predictor_encoding = NA_character_,
-      params = list(models = ListOf(models),
-                    control = get_MLControl(control), metrics = metrics,
-                    stat = stat, cutoff = cutoff)
-  )
+  new("SelectedModel", MLModel(
+    name = "SelectedModel",
+    label = "Selected Model",
+    response_types = slots$response_types,
+    weights = slots$weights,
+    params = TrainingParams(
+      control = as.MLControl(control),
+      metrics = metrics,
+      stat = stat,
+      cutoff = cutoff
+    )
+  ), models = ListOf(models))
 
 }
 
 MLModelFunction(SelectedModel) <- NULL
 
 
-.fit.SelectedModel <- function(x, inputs, ...) {
-  models <- x@params$models
-  train_step <- resample_selection(models, identity, x@params, inputs,
-                                   class = "SelectedModel")
-  train_step$grid <- tibble(Model = factor(seq_along(models)))
-  model <- models[[train_step$selected]]
-  push(do.call(TrainStep, train_step), fit(inputs, model = model))
+.fit.SelectedModel <- function(object, ...) {
+  grid <- tibble(id = map("char", slot, object@models, "id"))
+  step <- resample_selection(
+    object, ..., grid = grid, params = object@params, id = object@id,
+    name = "SelectedModel"
+  )
+  model <- update(object, grid[step@grid$selected, ])
+  push(step, fit(model, ...))
+}
+
+
+update.SelectedModel <- function(object, params = list(), ...) {
+  object <- subset_selected(object, "models", params$id)
+  params$id <- NULL
+  NextMethod()
 }
 
 
@@ -82,17 +95,19 @@ MLModelFunction(SelectedModel) <- NULL
 #'
 #' Model tuning over a grid of parameter values.
 #'
-#' @param model \link[=models]{model} function, function name, or object
+#' @param object \link[=models]{model} function, function name, or object
 #'   defining the model to be tuned.
 #' @param grid single integer or vector of integers whose positions or names
 #'   match the parameters in the model's pre-defined tuning grid if one exists
 #'   and which specify the number of values used to construct the grid;
-#'   \code{\link{Grid}} function, function name, or object;
+#'   \code{\link{TuningGrid}} function, function name, or object;
 #'   \code{\link{ParameterGrid}} object; or \link[=data.frame]{data frame}
 #'   containing parameter values at which to evaluate the model, such as that
 #'   returned by \code{\link{expand_params}}.
 #' @param fixed list or one-row data frame with columns of fixed parameter
-#'   values to combine with those in \code{grid}.
+#'   values to combine with those in \code{grid}.  This argument is deprecated
+#'   and will be removed in a future version.  Fixed parameters may be specified
+#'   directly in the model \code{object} instead.
 #' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
@@ -108,7 +123,7 @@ MLModelFunction(SelectedModel) <- NULL
 #' viewing of grids created automatically when a \code{TunedModel} is fit.
 #'
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
+#'   \item{Response types:}{\code{factor}, \code{numeric}, \code{ordered},
 #'     \code{Surv}}
 #' }
 #'
@@ -131,75 +146,110 @@ MLModelFunction(SelectedModel) <- NULL
 #'
 #' # Randomly sampled grid points
 #' fit(sale_amount ~ ., data = ICHomes,
-#'     model = TunedModel(GBMModel, grid = Grid(size = 1000, random = 5)))
+#'     model = TunedModel(
+#'       GBMModel,
+#'       grid = TuningGrid(size = 1000, random = 5)
+#'     ))
 #'
 #' # User-specified grid
 #' fit(sale_amount ~ ., data = ICHomes,
-#'     model = TunedModel(GBMModel,
-#'                        grid = expand_params(n.trees = c(50, 100),
-#'                                             interaction.depth = 1:2,
-#'                                             n.minobsinnode = c(5, 10))))
+#'     model = TunedModel(
+#'       GBMModel,
+#'       grid = expand_params(
+#'         n.trees = c(50, 100),
+#'         interaction.depth = 1:2,
+#'         n.minobsinnode = c(5, 10)
+#'       )
+#'     ))
 #' }
 #'
 TunedModel <- function(
-  model, grid = MachineShop::settings("grid"), fixed = list(),
+  object, grid = MachineShop::settings("grid"), fixed = list(),
   control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 ) {
 
-  if (missing(model)) {
-    model <- NULL
+  fixed <- as_tibble(dep_fixedarg(fixed))
+  if (nrow(fixed) > 1) {
+    throw(Error("Only single values allowed for fixed parameters."))
+  }
+
+  if (missing(object)) {
+    object <- NullModel()
     response_types <- settings("response_types")
     weights <- FALSE
   } else {
-    model <- if (is(model, "MLModel")) fget(model@name) else fget(model)
-    stopifnot(is(model, "MLModelFunction"))
-    model_call <- model()
-    response_types <- model_call@response_types
-    weights <- model_call@weights
+    object <- update(as.MLModel(object), fixed)
+    response_types <- object@response_types
+    weights <- object@weights
   }
 
+  params <- names(formals(fget(object@name)))
+  params_type <- "function"
   grid <- check_grid(grid)
   if (is(grid, "DomainError")) {
     value <- grid$value
     if (is(value, "data.frame")) {
       grid <- as_tibble(value)
+      grid_params <- names(grid)
     } else {
-      grid$message <- paste0(grid$message,
-                             "; a ParameterGrid object; or a data frame")
+      grid$message <- paste0(
+        grid$message, "; a ParameterGrid object; or a data frame"
+      )
       throw(check_assignment(grid))
     }
+  } else if (is(grid, "ParameterGrid")) {
+    grid_params <- grid$id
+  } else {
+    params <- object@gridinfo$param
+    params_type <- "grid"
+    if (!grid@random) params <- params[object@gridinfo$default]
+    grid_params <- names(grid@size)
+    if (is.null(grid_params)) {
+      if (length(grid@size) == 1) {
+        grid_params <- params
+        grid@size <- rep(grid@size, max(length(grid_params), 1))
+        names(grid@size) <- grid_params
+      } else {
+        grid_params <- params[seq_along(grid@size)]
+        names(grid@size) <- grid_params
+      }
+    }
+  }
+  if (!("..." %in% params || all(grid_params %in% params))) {
+    begin <- function(subject) paste0("x ", subject, " has parameter{?s}: ")
+    throw(Error(
+      "Unmatched tuning parameters.\n",
+      note_items(begin(paste(object@name, params_type)), params, ".\n"),
+      note_items(begin("Argument 'grid'"), grid_params, ".")
+    ))
   }
 
-  fixed <- as_tibble(fixed)
-  if (nrow(fixed) > 1) {
-    throw(Error("only single values allowed for fixed parameters"))
-  }
-
-  new("TunedModel",
-      name = "TunedModel",
-      label = "Grid Tuned Model",
-      response_types = response_types,
-      weights = weights,
-      predictor_encoding = NA_character_,
-      params = list(model = model, grid = grid, fixed = fixed,
-                    control = get_MLControl(control), metrics = metrics,
-                    stat = stat, cutoff = cutoff)
-  )
+  new("TunedModel", MLModel(
+    name = "TunedModel",
+    label = "Grid Tuned Model",
+    response_types = response_types,
+    weights = weights,
+    params = TrainingParams(
+      control = as.MLControl(control),
+      metrics = metrics,
+      stat = stat,
+      cutoff = cutoff
+    )
+  ), model = object, grid = grid)
 
 }
 
 MLModelFunction(TunedModel) <- NULL
 
 
-.fit.TunedModel <- function(x, inputs, ...) {
-  params <- x@params
-  grid <- expand_modelgrid(x, inputs)
-  models <- expand_model(list(params$model, grid))
-  train_step <- resample_selection(models, identity, params, inputs,
-                                   class = "TunedModel")
-  train_step$grid <- tibble(Model = grid)
-  model <- models[[train_step$selected]]
-  push(do.call(TrainStep, train_step), fit(inputs, model = model))
+.fit.TunedModel <- function(object, ...) {
+  grid <- expand_modelgrid(object, ...)
+  step <- resample_selection(
+    object@model, ..., grid = grid, params = object@params, id = object@id,
+    name = "TunedModel"
+  )
+  model <- update(object@model, grid[step@grid$selected, ])
+  push(step, fit(model, ...))
 }

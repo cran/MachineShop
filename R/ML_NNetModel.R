@@ -24,14 +24,14 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}, \code{numeric}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \code{size}, \code{decay}
 #'   }
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Default values and further model details can be found in the source link
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -41,12 +41,13 @@
 #' fit(sale_amount ~ ., data = ICHomes, model = NNetModel)
 #'
 NNetModel <- function(
-  size = 1, linout = NULL, entropy = NULL, softmax = NULL, censored = FALSE,
-  skip = FALSE, rang = 0.7, decay = 0, maxit = 100, trace = FALSE,
-  MaxNWts = 1000, abstol = 1e-4, reltol = 1e-8
+  size = 1, linout = logical(), entropy = logical(), softmax = logical(),
+  censored = FALSE, skip = FALSE, rang = 0.7, decay = 0, maxit = 100,
+  trace = FALSE, MaxNWts = 1000, abstol = 1e-4, reltol = 1e-8
 ) {
 
   MLModel(
+
     name = "NNetModel",
     label = "Feed-Forward Neural Networks",
     packages = "nnet",
@@ -54,6 +55,7 @@ NNetModel <- function(
     weights = TRUE,
     predictor_encoding = "model.matrix",
     params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = c("size", "decay"),
       get_values = c(
@@ -61,6 +63,7 @@ NNetModel <- function(
         function(n, ...) c(0, 10^seq_inner(-5, 1, n - 1))
       )
     ),
+
     fit = function(formula, data, weights, linout = NULL, ...) {
       y <- response(data)
       if (is.null(linout)) linout <- is_response(y, "numeric")
@@ -84,10 +87,12 @@ NNetModel <- function(
                    linout = linout, ...)
       }
     },
+
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "raw")
     },
+
     varimp = function(object, ...) {
       nvars <- object$n[1]
       size <- object$n[2]
@@ -105,7 +110,7 @@ NNetModel <- function(
       labels <- paste0("h", idx$hidden, "->o", idx$output)
       h2o <- matrix(beta[match(labels, nms)], size, nresp)
 
-      vi <- map_num(function(output) {
+      vi <- map("num", function(output) {
         100 * ((i2h * h2o[, output]) %>%
           prop.table(margin = 1) %>%
           colSums %>%
@@ -114,6 +119,7 @@ NNetModel <- function(
       dimnames(vi) <- list(object$coefnames, colnames(object$residuals))
       drop(vi)
     }
+
   )
 
 }

@@ -67,16 +67,16 @@ trees are utilized as base-learners.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{binary factor}, \code{BinomialVariate},
+  \item{Response types:}{\code{binary factor}, \code{BinomialVariate},
     \code{NegBinomialVariate}, \code{numeric}, \code{PoissonVariate},
     \code{Surv}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \code{mstop}, \code{maxdepth}
   }
 }
 
-Default values for the \code{NULL} arguments and further model details can be
-found in the source links below.
+Default values and further model details can be found in the source links
+below.
 }
 \examples{
 \donttest{

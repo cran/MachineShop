@@ -19,8 +19,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameter:}{
 #'     \code{mtry}
 #'   }
 #' }
@@ -44,26 +44,29 @@ CForestModel <- function(
 
   teststat <- match.arg(teststat)
   testtype <- match.arg(testtype)
-  args <- new_params(environment())
 
   MLModel(
+
     name = "CForestModel",
     label = "Conditional Random Forests",
     packages = "party",
     response_types = c("factor", "numeric", "Surv"),
     weights = TRUE,
     predictor_encoding = "model.frame",
-    params = list(controls = as.call(c(.(party::cforest_control), args))),
+    params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = "mtry",
       get_values = c(
         function(n, data, ...) seq_nvars(data, CForestModel, n)
       )
     ),
+
     fit = function(formula, data, weights, ...) {
       party::cforest(formula, data = as.data.frame(data), weights = weights,
-                     ...)
+                     controls = party::cforest_control(...))
     },
+
     predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       if (object@responses@is_censored) {
@@ -76,9 +79,11 @@ CForestModel <- function(
           matrix(nrow = nrow(newdata), byrow = TRUE)
       }
     },
+
     varimp = function(object, ...) {
       party::varimp(object, ...)
     }
+
   )
 
 }

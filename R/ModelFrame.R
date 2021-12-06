@@ -6,24 +6,29 @@
 #' @name ModelFrame
 #' @rdname ModelFrame-methods
 #'
-#' @param x model \code{\link{formula}} or \code{\link{matrix}} of predictor
-#'   variables.  In the case of a formula, arguments \code{weights} and
-#'   \code{strata} are evaluated as expressions, whose objects are searched for
-#'   first in the accompanying \code{data} environment and, if not found there,
-#'   next in the calling environment.
-#' @param y response variable.
-#' @param data \link[=data.frame]{data frame} or an object that can be converted
-#'   to one.
-#' @param na.rm logical indicating whether to remove cases with \code{NA} values
-#'   for any of the model variables.
+#' @param ... arguments passed from the generic function to its methods.  The
+#'   first arguments of \code{ModelFrame} methods are positional and, as such,
+#'   must be given first in calls to them.
+#' @param formula,data \link[=formula]{formula} defining the model predictor and
+#'   response variables and a \link[=data.frame]{data frame} containing them.
+#'   In the associated method, arguments \code{groups}, \code{strata}, and
+#'   \code{weights} will be evaluated as expressions, whose objects are searched
+#'   for first in the accompanying \code{data} environment and, if not found
+#'   there, next in the calling environment.
+#' @param x,y \link{matrix} and object containing predictor and response
+#'   variables.
 #' @param offsets numeric vector, matrix, or data frame of values to be added
 #'   with a fixed coefficient of 1 to linear predictors in compatible regression
 #'   models.
-#' @param weights numeric vector of non-negative case weights for the \code{y}
-#'   response variable [default: equal weights].
+#' @param groups vector of values defining groupings of cases to keep together
+#'   when folds are constructed for \link[=controls]{cross-validation}
+#'   [default: none].
 #' @param strata vector of values to use in conducting stratified
 #'   \link{resample} estimation of model performance [default: none].
-#' @param ... arguments passed to other methods.
+#' @param weights numeric vector of non-negative case weights for the \code{y}
+#'   response variable [default: equal weights].
+#' @param na.rm logical indicating whether to remove cases with \code{NA} values
+#'   for any of the model variables.
 #'
 #' @return \code{ModelFrame} class object that inherits from \code{data.frame}.
 #'
@@ -40,55 +45,69 @@
 #' varimp(gbm_fit)
 #' }
 #'
-ModelFrame <- function(x, ...) {
+ModelFrame <- function(...) {
   UseMethod("ModelFrame")
 }
 
 
-ModelFrame.data.frame <- function(x, ...) {
-  case_names <- x[["(names)"]]
-  weights <- x[["(weights)"]]
-  strata <- x[["(strata)"]]
-  x[c("(names)", "(weights)", "(strata)")] <- NULL
-  model_terms <- terms(map(as.name, names(x)[-1]), names(x)[1],
-                       all_numeric = all(map_logi(is.numeric, x[-1])))
-  ModelFrame(model_terms, x, na.rm = FALSE,
-             names = if (is.null(case_names)) rownames(x) else case_names,
-             weights = weights, strata = strata)
+ModelFrame.data.frame <- function(data, ...) {
+  args <- list()
+  for (type in c("groups", "names", "strata", "weights")) {
+    name <- paste0("(", type, ")")
+    args[[type]] <- data[[name]]
+    data[[name]] <- NULL
+  }
+  if (is.null(args$names)) args$names <- rownames(data)
+  args$na.rm <- FALSE
+
+  model_terms <- terms(map(as.name, names(data)[-1]), names(data)[1],
+                       all_numeric = all(map("logi", is.numeric, data[-1])))
+
+  do.call(ModelFrame, c(list(model_terms, data), args))
 }
 
 
 #' @rdname ModelFrame-methods
 #'
 ModelFrame.formula <- function(
-  x, data, na.rm = TRUE, weights = NULL, strata = NULL, ...
+  formula, data, groups = NULL, strata = NULL, weights = NULL, na.rm = TRUE, ...
 ) {
-  invalid_calls <- setdiff(inline_calls(predictors(x)), settings("RHS.formula"))
+  invalid_calls <- setdiff(inline_calls(predictors(formula)),
+                           settings("RHS.formula"))
   if (length(invalid_calls)) {
-    throw(Error(
-      label_items("unsupported predictor variable function", invalid_calls),
-      "; use a recipe or include transformed predictors in the data frame"
-    ))
+    throw(Error(note_items(
+      "Unsupported predictor variable function{?s}: ", invalid_calls,
+      "; use a recipe or include transformed predictors in the data frame."
+    )))
   }
 
   data <- as.data.frame(data)
 
-  weights <- eval(substitute(weights), data, parent.frame())
-  strata <- eval(substitute(strata), data, parent.frame())
+  args <- map(
+    function(x) eval(x, data, parent.frame()),
+    eval(substitute(alist(
+      groups = groups,
+      strata = strata,
+      weights = weights,
+      ...
+    )))
+  )
+  args$names <- rownames(data)
+  args$na.rm <- na.rm
 
-  model_terms <- terms(x, data = data)
+  model_terms <- terms(formula, data = data)
   data[[deparse1(response(model_terms))]] <- response(model_terms, data)
   data <- data[all.vars(model_formula(model_terms))]
 
-  ModelFrame(model_terms, data, na.rm = na.rm, names = rownames(data),
-             weights = weights, strata = strata, ...)
+  do.call(ModelFrame, c(list(model_terms, data), args))
 }
 
 
 #' @rdname ModelFrame-methods
 #'
 ModelFrame.matrix <- function(
-  x, y = NULL, na.rm = TRUE, offsets = NULL, weights = NULL, strata = NULL, ...
+  x, y = NULL, offsets = NULL, groups = NULL, strata = NULL, weights = NULL,
+  na.rm = TRUE, ...
 ) {
   data <- as.data.frame(x)
   colnames(x) <- names(data)
@@ -101,7 +120,9 @@ ModelFrame.matrix <- function(
       }
       data.frame(offsets)
     } else if (!is.data.frame(offsets)) {
-      throw(Error("'offsets' must be a numeric vector, matrix, or data frame"))
+      throw(Error(
+        "Value of 'offsets' must be a numeric vector, matrix, or data frame."
+      ))
     }
     data <- data.frame(data, offsets)
     offsets <- tail(names(data), length(offsets))
@@ -111,43 +132,45 @@ ModelFrame.matrix <- function(
   end <- length(data)
   data <- data[c(end, seq_len(end - 1))]
 
-  ModelFrame(model_terms, data, na.rm = na.rm, names = rownames(data),
-             weights = weights, strata = strata, ...)
+  ModelFrame(model_terms, data, names = rownames(data), groups = groups,
+             strata = strata, weights = weights, na.rm = na.rm, ...)
 }
 
 
-ModelFrame.ModelFrame <- function(x, na.rm = TRUE, ...) {
-  extras <- list(...)
-  for (name in names(extras)) {
-    x[[paste0("(", name, ")")]] <- extras[[name]]
+ModelFrame.ModelFrame <- function(input, na.rm = TRUE, ...) {
+  comps <- list(...)
+  for (type in names(comps)) {
+    input[[paste0("(", type, ")")]] <- comps[[type]]
   }
-  if (na.rm) na.omit(x) else x
+  if (na.rm) na.omit(input) else input
 }
 
 
-ModelFrame.ModelTerms <- function(x, data, ...) {
-  ModelFrame(structure(
-    as.data.frame(data), terms = x, class = c("ModelFrame", "data.frame")
-  ), ...)
+ModelFrame.ModelTerms <- function(object, data, ...) {
+  mf <- new("ModelFrame", as.data.frame(data))
+  object@id <- mf@id
+  attr(mf, "terms") <- object
+  ModelFrame(mf, ...)
 }
 
 
-ModelFrame.recipe <- function(x, ...) {
-  x <- prep(x)
-  data <- bake(x, NULL)
+ModelFrame.recipe <- function(input, ...) {
+  input <- prep(input)
+  data <- bake(input, NULL)
 
-  weights_name <- case_weights_name(x)
-  weights <- if (length(weights_name)) data[[weights_name]]
-  strata_name <- case_strata_name(x)
-  strata <- if (length(strata_name)) data[[strata_name]]
+  args <- list()
+  for (type in c("groups", "names", "strata", "weights")) {
+    name <- case_comp_name(input, type)
+    args[[type]] <- if (length(name)) data[[name]]
+  }
+  if (is.null(args$names)) args$names <- rownames(data)
+  args$na.rm <- FALSE
 
-  model_terms <- terms(x)
+  model_terms <- terms(input)
   data[[deparse1(response(model_terms))]] <- response(model_terms, data)
   data <- data[all.vars(model_formula(model_terms))]
 
-  ModelFrame(model_terms, data, na.rm = FALSE,
-             names = if (is.null(data[["(names)"]])) rownames(data),
-             weights = weights, strata = strata)
+  do.call(ModelFrame, c(list(model_terms, data), args))
 }
 
 
@@ -197,19 +220,19 @@ terms.list <- function(
   if (is.character(y)) y <- as.name(y)
   has_y <- 1L - is.null(y)
 
-  is_names <- map_logi(is.name, x)
+  is_names <- map("logi", is.name, x)
   name_inds <- which(is_names)
   noname_inds <- which(!is_names)
 
   x_char <- character(length(x))
   x_char[name_inds] <- as.character(x[name_inds])
-  x_char[noname_inds] <- map_chr(deparse, x[noname_inds])
+  x_char[noname_inds] <- map("char", deparse, x[noname_inds])
 
-  valid_calls <- map_logi(function(var) {
+  valid_calls <- map("logi", function(var) {
     is.call(var) && var[[1]] == "offset"
   }, x[noname_inds])
   if (!all(valid_calls)) {
-    throw(Error("non-offset calls in variable specifications"))
+    throw(Error("Non-offset calls in variable specifications."))
   }
   offsets <- has_y + noname_inds
 
@@ -223,7 +246,7 @@ terms.list <- function(
   fo[[2]] <- y
 
   class <- if (all_numeric) {
-    x_char[name_inds] <- map_chr(as.character, x[name_inds])
+    x_char[name_inds] <- map("char", as.character, x[name_inds])
     "ModelDesignTerms"
   } else {
     "ModelFormulaTerms"
@@ -262,7 +285,7 @@ terms.matrix <- function(x, y = NULL, offsets = NULL, ...) {
   stopifnot(!anyDuplicated(colnames(x)))
 
   labels <- colnames(x)
-  response <- if (!is.null(y)) make.unique(c(labels, "y"))[length(labels) + 1]
+  response <- if (!is.null(y)) make_unique(c(labels, "y"))[length(labels) + 1]
   labels <- map(as.name, labels)
 
   if (length(offsets)) {
@@ -307,9 +330,9 @@ terms.recipe <- function(x, original = FALSE, ...) {
 terms.recipe_info <- function(x, ...) {
 
   first <- function(x) head(x, 1)
-  get_vars <- function(roles = NULL, types = NULL) {
+  get_vars <- function(roles = character(), types = character()) {
     is_match <- by(x, x$variable, function(split) {
-      valid_types <- if (is.null(types)) TRUE else any(types %in% split$type)
+      valid_types <- if (length(types)) any(types %in% split$type) else TRUE
       all(roles %in% split$role) && valid_types
     })
     names(is_match)[is_match]
@@ -329,10 +352,10 @@ terms.recipe_info <- function(x, ...) {
 
   num_roles <- sum(lengths(list(binom, surv, matrix, other)) > 0)
   if (num_roles > 1 || length(other) > 1) {
-    throw(Error("specified outcome is not a single variable, binomial ",
+    throw(Error("Specified outcome is not a single variable, binomial ",
                 "variable with roles 'binom_x' and 'binom_size', survival ",
                 "variables with roles 'surv_time' and 'surv_event', or ",
-                "multiple numeric variables"))
+                "multiple numeric variables."))
   }
 
   outcome <- if (length(other)) {
@@ -342,12 +365,13 @@ terms.recipe_info <- function(x, ...) {
     if (!is.na(surv["event"])) args <- c(args, as.name(surv["event"]))
     as.call(c(.(Surv), args))
   } else if (length(surv)) {
-    msg <- "survival outcome role 'surv_event' specified without 'surv_time'"
-    throw(Error(msg))
+    throw(Error(
+      "Survival outcome role 'surv_event' specified without 'surv_time'."
+    ))
   } else if (all(!is.na(binom[c("count", "size")]))) {
     call("BinomialVariate", as.name(binom["count"]), as.name(binom["size"]))
   } else if (length(binom)) {
-    throw(Error("binomial outcome must have 'binom_x' and 'binom_size' roles"))
+    throw(Error("Binomial outcome must have 'binom_x' and 'binom_size' roles."))
   } else if (length(matrix)) {
     as.call(c(.(cbind), map(as.name, matrix)))
   }
@@ -388,9 +412,9 @@ model.matrix.ModelFormulaTerms <- function(object, data, ...) {
 }
 
 
-model.matrix.ModelFrame <- function(object, intercept = NULL, ...) {
+model.matrix.ModelFrame <- function(object, intercept = logical(), ...) {
   model_terms <- terms(object)
-  if (!is.null(intercept)) {
+  if (length(intercept)) {
     attr(model_terms, "intercept") <- as.integer(intercept)
   }
   model.matrix(model_terms, object, ...)
@@ -398,7 +422,7 @@ model.matrix.ModelFrame <- function(object, intercept = NULL, ...) {
 
 
 model.matrix.SelectedInput <- function(object, ...) {
-  throw(Error("cannot create a design matrix from a ", class(object)))
+  throw(Error("Cannot create a design matrix from a ", class(object), "."))
 }
 
 

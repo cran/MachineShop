@@ -10,35 +10,40 @@
 \alias{fit.MLModelFunction}
 \title{Model Fitting}
 \usage{
-fit(x, ...)
+fit(...)
 
-\method{fit}{formula}(x, data, model, ...)
+\method{fit}{formula}(formula, data, model, ...)
 
 \method{fit}{matrix}(x, y, model, ...)
 
-\method{fit}{ModelFrame}(x, model, ...)
+\method{fit}{ModelFrame}(input, model = NULL, ...)
 
-\method{fit}{recipe}(x, model, ...)
+\method{fit}{recipe}(input, model = NULL, ...)
 
-\method{fit}{MLModel}(x, ...)
+\method{fit}{MLModel}(model, ...)
 
-\method{fit}{MLModelFunction}(x, ...)
+\method{fit}{MLModelFunction}(model, ...)
 }
 \arguments{
-\item{x}{\link[=inputs]{input} specifying a relationship between model
-predictor and response variables.  Alternatively, a \link[=models]{model}
-function or object may be given first followed by the input specification.}
+\item{...}{arguments passed from the generic function to its methods and from
+the \code{MLModel} and \code{MLModelFunction} methods to others.  The
+first arguments of \code{fit} methods are positional and, as such, must be
+given first in calls to them.}
 
-\item{...}{arguments passed to other methods.}
+\item{formula, data}{\link[=formula]{formula} defining the model predictor and
+response variables and a \link[=data.frame]{data frame} containing them.}
 
-\item{data}{\link[=data.frame]{data frame} containing observed predictors and
-outcomes.}
-
-\item{model}{\link[=models]{model} function, function name, or object;
-ignored and can be omitted when fitting
+\item{model}{\link[=models]{model} function, function name, or object; or
+another object that can be \link[=as.MLModel]{coerced} to a model.  A model
+can be given first followed by any of the variable specifications, and the
+argument can be omitted altogether in the case of
 \link[=ModeledInput]{modeled inputs}.}
 
-\item{y}{response variable.}
+\item{x, y}{\link{matrix} and object containing predictor and response
+variables.}
+
+\item{input}{\link[=inputs]{input} object defining and containing the model
+predictor and response variables.}
 }
 \value{
 \code{MLModelFit} class object.

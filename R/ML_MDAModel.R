@@ -23,8 +23,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameter:}{
 #'     \code{subclasses}
 #'   }
 #' }
@@ -36,8 +36,8 @@
 #'     if different from the training set.}
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source links below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -52,31 +52,36 @@
 #' }
 #'
 MDAModel <- function(
-  subclasses = 3, sub.df = NULL, tot.df = NULL, dimension = sum(subclasses) - 1,
-  eps = .Machine$double.eps, iter = 5, method = .(mda::polyreg), trace = FALSE,
-  ...
+  subclasses = 3, sub.df = numeric(), tot.df = numeric(),
+  dimension = sum(subclasses) - 1, eps = .Machine$double.eps, iter = 5,
+  method = .(mda::polyreg), trace = FALSE, ...
 ) {
 
   MLModel(
+
     name = "MDAModel",
     label = "Mixture Discriminant Analysis",
     packages = "mda",
     response_types = "factor",
     predictor_encoding = "model.matrix",
     params = new_params(environment(), ...),
+
     gridinfo = new_gridinfo(
       param = "subclasses",
       get_values = c(
         function(n, ...) seq(2, length = min(n, 10))
       )
     ),
+
     fit = function(formula, data, weights, ...) {
       mda::mda(formula, data = as.data.frame(data), ...)
     },
+
     predict = function(object, newdata, prior = object$prior, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "posterior", prior = prior)
     }
+
   )
 
 }

@@ -15,7 +15,6 @@
 #' @param weights logical indicating whether to return case weights in resampled
 #'   output for the calculation of performance \link{metrics}.
 #' @param seed integer to set the seed at the start of resampling.
-#' @param ...  arguments passed to other methods.
 #'
 #' @return Object that inherits from the \code{MLControl} class.
 #'
@@ -44,16 +43,15 @@ NULL
 #' BootControl(samples = 100)
 #'
 BootControl <- function(
-  samples = 25, weights = TRUE, seed = sample(.Machine$integer.max, 1), ...
+  samples = 25, weights = TRUE, seed = sample(.Machine$integer.max, 1)
 ) {
   samples <- check_integer(samples, bounds = c(1, Inf), size = 1)
   throw(check_assignment(samples))
 
-  new_control("MLBootControl",
-    name = "BootControl", label = "Bootstrap Resampling",
+  new_control("BootControl",
+    label = "Bootstrap Resampling",
     samples = samples, weights = weights, seed = seed
-  ) %>% set_monitor %>% set_strata %>%
-    dep_predictargs(...) %>% dep_strataargs(...)
+  ) %>% set_monitor %>% set_strata
 }
 
 
@@ -79,13 +77,11 @@ BootControl <- function(
 #' BootOptimismControl(samples = 100)
 #'
 BootOptimismControl <- function(
-  samples = 25, weights = TRUE, seed = sample(.Machine$integer.max, 1), ...
+  samples = 25, weights = TRUE, seed = sample(.Machine$integer.max, 1)
 ) {
-  new_control("MLBootOptimismControl",
-    BootControl(samples = samples, ...),
-    name = "BootOptimismControl",
-    label = "Optimism-Corrected Bootstrap Resampling",
-    weights = weights, seed = seed
+  new("BootOptimismControl",
+    BootControl(samples = samples, weights = weights, seed = seed),
+    label = "Optimism-Corrected Bootstrap Resampling"
   )
 }
 
@@ -110,7 +106,7 @@ BootOptimismControl <- function(
 #'
 CVControl <- function(
   folds = 10, repeats = 1, weights = TRUE,
-  seed = sample(.Machine$integer.max, 1), ...
+  seed = sample(.Machine$integer.max, 1)
 ) {
   folds <- check_integer(folds, bounds = c(2, Inf), size = 1)
   throw(check_assignment(folds))
@@ -118,11 +114,10 @@ CVControl <- function(
   repeats <- check_integer(repeats, bounds = c(1, Inf), size = 1)
   throw(check_assignment(repeats))
 
-  new_control("MLCVControl",
-    name = "CVControl", label = "K-Fold Cross-Validation",
+  new_control("CVControl",
+    label = "K-Fold Cross-Validation",
     folds = folds, repeats = repeats, weights = weights, seed = seed
-  ) %>% set_monitor %>% set_strata %>%
-    dep_predictargs(...) %>% dep_strataargs(...)
+  ) %>% set_monitor %>% set_strata
 }
 
 
@@ -143,13 +138,11 @@ CVControl <- function(
 #'
 CVOptimismControl <- function(
   folds = 10, repeats = 1, weights = TRUE,
-  seed = sample(.Machine$integer.max, 1), ...
+  seed = sample(.Machine$integer.max, 1)
 ) {
-  new("MLCVOptimismControl",
-    CVControl(folds = folds, repeats = repeats, ...),
-    name = "CVOptimismControl",
-    label = "Optimism-Corrected K-Fold Cross-Validation",
-    weights = weights, seed = seed
+  new("CVOptimismControl",
+    CVControl(folds = folds, repeats = repeats, weights = weights, seed = seed),
+    label = "Optimism-Corrected K-Fold Cross-Validation"
   )
 }
 
@@ -166,16 +159,15 @@ CVOptimismControl <- function(
 #' OOBControl(samples = 100)
 #'
 OOBControl <- function(
-  samples = 25, weights = TRUE, seed = sample(.Machine$integer.max, 1), ...
+  samples = 25, weights = TRUE, seed = sample(.Machine$integer.max, 1)
 ) {
   samples <- check_integer(samples, bounds = c(1, Inf), size = 1)
   throw(check_assignment(samples))
 
-  new_control("MLOOBControl",
-    name = "OOBControl", label = "Out-of-Bootstrap Resampling",
+  new_control("OOBControl",
+    label = "Out-of-Bootstrap Resampling",
     samples = samples, weights = weights, seed = seed
-  ) %>% set_monitor %>% set_strata %>%
-    dep_predictargs(...) %>% dep_strataargs(...)
+  ) %>% set_monitor %>% set_strata
 }
 
 
@@ -195,15 +187,15 @@ OOBControl <- function(
 #' SplitControl(prop = 2/3)
 #'
 SplitControl <- function(
-  prop = 2/3, weights = TRUE, seed = sample(.Machine$integer.max, 1), ...
+  prop = 2/3, weights = TRUE, seed = sample(.Machine$integer.max, 1)
 ) {
   prop <- check_numeric(prop, bounds = c(0, 1), include = FALSE, size = 1)
   throw(check_assignment(prop))
 
-  new_control("MLSplitControl",
-    name = "SplitControl", label = "Split Training and Test Samples",
+  new_control("SplitControl",
+    label = "Split Training and Test Samples",
     prop = prop, weights = weights, seed = seed
-  ) %>% set_strata %>% dep_predictargs(...) %>% dep_strataargs(...)
+  ) %>% set_strata
 }
 
 
@@ -223,12 +215,12 @@ SplitControl <- function(
 #' TrainControl()
 #'
 TrainControl <- function(
-  weights = TRUE, seed = sample(.Machine$integer.max, 1), ...
+  weights = TRUE, seed = sample(.Machine$integer.max, 1)
 ) {
-  new_control("MLTrainControl",
-    name = "TrainControl", label = "Training Resubstitution",
+  new_control("TrainControl",
+    label = "Training Resubstitution",
     weights = weights, seed = seed
-  ) %>% dep_predictargs(...) %>% dep_strataargs(...)
+  )
 }
 
 
@@ -243,61 +235,19 @@ new_control <- function(class, ..., weights, seed) {
 }
 
 
-dep_predictargs <- function(x, times, distr, method, ...) {
-  args <- list()
-  if (!missing(times)) args$times <- times
-  if (!missing(distr)) args$distr <- distr
-  if (!missing(method)) args$method <- method
-  if (length(args)) {
-    throw(
-      DeprecatedCondition(
-        "Argument 'times', 'distr', and 'method' to MLControl()",
-        "'set_predict()'", expired = Sys.Date() >= "2021-10-01"
-      ),
-      call = FALSE
-    )
-    x <- do.call(set_predict, c(list(x), args))
-  }
-  x
-}
-
-
-dep_strataargs <- function(
-  x, strata_breaks, strata_nunique, strata_prop, strata_size, ...
-) {
-  args <- list()
-  if (!missing(strata_breaks)) args$breaks <- strata_breaks
-  if (!missing(strata_nunique)) args$nunique <- strata_nunique
-  if (!missing(strata_prop)) args$prop <- strata_prop
-  if (!missing(strata_size)) args$size <- strata_size
-  if (length(args)) {
-    old <- paste("Argument 'strata_breaks', 'strata_nunique', 'strata_prop',",
-                 "and 'strata_size' to MLControl()")
-    throw(
-      DeprecatedCondition(
-        old, "'set_strata()'", expired = Sys.Date() >= "2021-10-01"
-      ),
-      call = FALSE
-    )
-    x <- do.call(set_strata, c(list(x), args))
-  }
-  x
-}
-
-
 #' Resampling Monitoring Control
 #'
 #' Set parameters that control the monitoring of resample estimation of model
 #' performance.
 #'
-#' @param x \link[=controls]{control} object.
+#' @param control \link[=controls]{control} object.
 #' @param progress logical indicating whether to display a progress bar during
 #'   resampling if a computing cluster is not registered or is registered with
 #'   the \pkg{doSNOW} package.
 #' @param verbose logical indicating whether to enable verbose messages which
 #'   may be useful for trouble shooting.
 #'
-#' @return Argument \code{x} updated with the supplied parameters.
+#' @return Argument \code{control} updated with the supplied parameters.
 #'
 #' @seealso \code{\link{set_predict}}, \code{\link{set_strata}},
 #' \code{\link{resample}}, \code{\link{SelectedInput}},
@@ -307,8 +257,8 @@ dep_strataargs <- function(
 #' @examples
 #' CVControl() %>% set_monitor(verbose = TRUE)
 #'
-set_monitor <- function(x, progress = TRUE, verbose = FALSE) {
-  stopifnot(is(x, "MLControl"))
+set_monitor <- function(control, progress = TRUE, verbose = FALSE) {
+  stopifnot(is(control, "MLControl"))
 
   progress <- check_logical(progress, size = 1)
   throw(check_assignment(progress))
@@ -316,8 +266,8 @@ set_monitor <- function(x, progress = TRUE, verbose = FALSE) {
   verbose <- check_logical(verbose, size = 1)
   throw(check_assignment(verbose))
 
-  x@monitor <- list(progress = progress, verbose = verbose)
-  x
+  control@monitor <- list(progress = progress, verbose = verbose)
+  control
 }
 
 
@@ -326,10 +276,10 @@ set_monitor <- function(x, progress = TRUE, verbose = FALSE) {
 #' Set parameters that control prediction during resample estimation of model
 #' performance.
 #'
-#' @param x \link[=controls]{control} object.
+#' @param control \link[=controls]{control} object.
 #' @param times,distr,method arguments passed to \code{\link{predict}}.
 #'
-#' @return Argument \code{x} updated with the supplied parameters.
+#' @return Argument \code{control} updated with the supplied parameters.
 #'
 #' @seealso \code{\link{set_monitor}}, \code{\link{set_strata}},
 #' \code{\link{resample}}, \code{\link{SelectedInput}},
@@ -339,21 +289,23 @@ set_monitor <- function(x, progress = TRUE, verbose = FALSE) {
 #' @examples
 #' CVControl() %>% set_predict(times = 1:3)
 #'
-set_predict <- function(x, times = NULL, distr = NULL, method = NULL) {
-  stopifnot(is(x, "MLControl"))
+set_predict <- function(
+  control, times = numeric(), distr = character(), method = character()
+) {
+  stopifnot(is(control, "MLControl"))
 
-  if (!is.null(times)) times <- check_numeric(times, bounds = c(0, Inf),
-                                              include = FALSE, size = NA)
+  times <- check_numeric(times, bounds = c(0, Inf), include = FALSE, size = NA,
+                         nonempty = FALSE)
   throw(check_assignment(times))
 
-  if (!is.null(distr)) distr <- check_character(distr, size = 1)
+  if (length(distr)) distr <- check_character(distr, size = 1)
   throw(check_assignment(distr))
 
-  if (!is.null(method)) method <- check_character(method, size = 1)
+  if (length(method)) method <- check_character(method, size = 1)
   throw(check_assignment(method))
 
-  x@predict <- list(times = times, distr = distr, method = method)
-  x
+  control@predict <- list(times = times, distr = distr, method = method)
+  control
 }
 
 
@@ -362,7 +314,7 @@ set_predict <- function(x, times = NULL, distr = NULL, method = NULL) {
 #' Set parameters that control the construction of strata during resample
 #' estimation of model performance.
 #'
-#' @param x \link[=controls]{control} object.
+#' @param control \link[=controls]{control} object.
 #' @param breaks number of quantile bins desired for stratification of numeric
 #'   data during resampling.
 #' @param nunique number of unique values at or below which numeric data are
@@ -386,7 +338,7 @@ set_predict <- function(x, times = NULL, distr = NULL, method = NULL) {
 #' levels.  Missing values are replaced with non-missing values sampled at
 #' random with replacement.
 #'
-#' @return Argument \code{x} updated with the supplied parameters.
+#' @return Argument \code{control} updated with the supplied parameters.
 #'
 #' @seealso \code{\link{set_monitor}}, \code{\link{set_predict}},
 #' \code{\link{resample}}, \code{\link{SelectedInput}},
@@ -396,8 +348,8 @@ set_predict <- function(x, times = NULL, distr = NULL, method = NULL) {
 #' @examples
 #' CVControl() %>% set_strata(breaks = 3)
 #'
-set_strata <- function(x, breaks = 4, nunique = 5, prop = 0.1, size = 20) {
-  stopifnot(is(x, "MLControl"))
+set_strata <- function(control, breaks = 4, nunique = 5, prop = 0.1, size = 20) {
+  stopifnot(is(control, "MLControl"))
 
   breaks <- check_integer(breaks, bounds = c(1, Inf), size = 1)
   throw(check_assignment(breaks))
@@ -411,6 +363,6 @@ set_strata <- function(x, breaks = 4, nunique = 5, prop = 0.1, size = 20) {
   size <- check_integer(size, bounds = c(1, Inf), size = 1)
   throw(check_assignment(size))
 
-  x@strata <- list(breaks = breaks, nunique = nunique, prop = prop, size = size)
-  x
+  control@strata <- list(breaks = breaks, nunique = nunique, prop = prop, size = size)
+  control
 }

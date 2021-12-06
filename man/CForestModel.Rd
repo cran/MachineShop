@@ -44,8 +44,8 @@ utilizing conditional inference trees as base learners.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{Response types:}{\code{factor}, \code{numeric}, \code{Surv}}
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameter:}{
     \code{mtry}
   }
 }

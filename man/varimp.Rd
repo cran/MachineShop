@@ -4,23 +4,21 @@
 \alias{varimp}
 \title{Variable Importance}
 \usage{
-varimp(object, method = c("model", "permute"), scale = TRUE, ...)
+varimp(object, method = c("permute", "model"), scale = TRUE, ...)
 }
 \arguments{
 \item{object}{model \link{fit} result.}
 
 \item{method}{character string specifying the calculation of variable
-importance as model-specific (\code{"model"}) or permutation-base
-(\code{"permute"}).  If model-specific importance is specified but not
+importance as permutation-base (\code{"permute"}) or model-specific
+(\code{"model"}).  If model-specific importance is specified but not
 defined, the permutation-based method will be used instead with its default
-values (below).  To change the default permutation values, set
-\code{method = "permute"}.  Permutation-based variable importance is
-defined as the relative change in model predictive performances between
-datasets with and without permuted values for the associated variable
-(Fisher et al. 2019).}
+values (below).  Permutation-based variable importance is defined as the
+relative change in model predictive performances between datasets with and
+without permuted values for the associated variable (Fisher et al. 2019).}
 
-\item{scale}{logical indicating whether importance measures should be scaled
-to range from 0 to 100.}
+\item{scale}{logical indicating whether importance values should be scaled to
+a maximum of 100.}
 
 \item{...}{arguments passed to model-specific or permutation-based variable
 importance functions.  These include the following arguments and default
@@ -32,11 +30,14 @@ values for \code{method = "permute"}.
   \item{\code{samples = 1}}{number of times to permute the values of each
     variable.  Larger numbers of samples decrease variability in the
     estimates at the expense of increased computation time.}
-  \item{\code{size = NULL}}{number of observations to sample without
-    replacement at each round of variable permutations [default: all].
-    Subsampling of observations will decrease computation time.}
-  \item{\code{prop = NULL}}{proportion of observations to sample at each
+  \item{\code{prop = numeric()}}{proportion of observations to sample
+    without replacement at each round of variable permutations [default:
+    all].  Subsampling of observations can decrease computation time.}
+  \item{\code{size = integer()}}{number of observations to sample at each
     round of permutations [default: all].}
+  \item{\code{times = numeric()}}{numeric vector of follow-up times at
+    which to predict survival probabilities or \code{NULL} for predicted
+    survival means.}
   \item{\code{metric = NULL}}{\link[=metrics]{metric} function or function
     name with which to calculate performance.  If not specified, the first
     applicable default metric from the \link{performance} functions is
@@ -45,16 +46,15 @@ values for \code{method = "permute"}.
     change to compute in comparing model predictive performances between
     datasets with and without permuted values.  The choices are difference
     (\code{"-"}) and ratio (\code{"/"}).}
-  \item{\code{stats = MachineShop::settings("stats.VarImp")}}{function,
-    function name, or vector of these with which to compute summary
-    statistics on the set of variable importance values from the permuted
-    datasets.}
+  \item{\code{stats = c(mean = "base::mean")}}{function, function name, or
+    vector of these with which to compute summary statistics on the set of
+    variable importance values from the permuted datasets.}
   \item{\code{na.rm = TRUE}}{logical indicating whether to exclude missing
     variable importance values from the calculation of summary statistics.}
 }}
 }
 \value{
-\code{VarImp} class object.
+\code{VariableImportance} class object.
 }
 \description{
 Calculate measures of the relative importance of predictors in a model.

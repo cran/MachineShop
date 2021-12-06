@@ -8,19 +8,23 @@
 #' @aliases ModeledRecipe
 #' @rdname ModeledInput-methods
 #'
-#' @param x \link[=inputs]{input} specifying a relationship between model
-#'   predictor and response variables.  Alternatively, a \link[=models]{model}
-#'   function or object may be given first followed by the input specification.
-#' @param y response variable.
-#' @param data \link[=data.frame]{data frame} or an object that can be converted
-#'   to one.
-#' @param model \link[=models]{model} function, function name, or object.
-#' @param ... arguments passed to other methods.
+#' @param ... arguments passed from the generic function to its methods.  The
+#'   first arguments of \code{ModeledInput} methods are positional and, as such,
+#'   must be given first in calls to them.
+#' @param object \link[=inputs]{input} object defining and containing the model
+#'   predictor and response variables.
+#' @param formula,data \link[=formula]{formula} defining the model predictor and
+#'   response variables and a \link[=data.frame]{data frame} containing them.
+#' @param x,y \link{matrix} and object containing predictor and response
+#'   variables.
+#' @param model \link[=models]{model} function, function name, or object; or
+#'   another object that can be \link[=as.MLModel]{coerced} to a model.  Can
+#'   be given first followed by any of the variable specifications.
 #'
 #' @return \code{ModeledFrame} or \code{ModeledRecipe} class object that
 #' inherits from \code{ModelFrame} or \code{recipe}.
 #'
-#' @seealso \code{\link{fit}}, \code{\link{resample}},
+#' @seealso \code{\link{as.MLModel}}, \code{\link{fit}}, \code{\link{resample}},
 #' \code{\link{SelectedInput}}
 #'
 #' @examples
@@ -35,83 +39,96 @@
 #' mod_rec <- ModeledInput(rec, model = GLMModel)
 #' fit(mod_rec)
 #'
-ModeledInput <- function(x, ...) {
+ModeledInput <- function(...) {
   UseMethod("ModeledInput")
 }
 
 
 #' @rdname ModeledInput-methods
 #'
-ModeledInput.formula <- function(x, data, model, ...) {
-  mf <- do.call(ModelFrame, list(x, data, na.rm = FALSE, strata = response(x)))
-  ModeledInput(mf, model = model)
+ModeledInput.formula <- function(formula, data, model, ...) {
+  ModeledInput(as.MLInput(formula, data), model = model)
 }
 
 
 #' @rdname ModeledInput-methods
 #'
 ModeledInput.matrix <- function(x, y, model, ...) {
-  mf <- ModelFrame(x, y, na.rm = FALSE, strata = y)
-  ModeledInput(mf, model = model)
+  ModeledInput(as.MLInput(x, y), model = model)
 }
 
 
 #' @rdname ModeledInput-methods
 #'
-ModeledInput.ModelFrame <- function(x, model, ...) {
-  model <- get_MLModel(model)
-  switch_class(x,
+ModeledInput.ModelFrame <- function(object, model, ...) {
+  model <- as.MLModel(model)
+  switch_class(object,
     "SelectedModelFrame" = {
-      inputs <- map(ModeledInput, x@inputs, model = list(model))
-      x@inputs <- ListOf(inputs)
-      x
+      inputs <- map(ModeledInput, object@inputs, model = list(model))
+      object@inputs <- ListOf(inputs)
+      object
     },
-    "default" = new("ModeledFrame", as(x, "ModelFrame"), model = model)
+    "default" = new("ModeledFrame", as(object, "ModelFrame"), model = model)
   )
 }
 
 
-ModeledInput.ModelDesignTerms <- function(x, model, ...) {
-  new("ModeledDesignTerms", x, model = model)
+ModeledInput.ModelDesignTerms <- function(object, model, ...) {
+  new("ModeledDesignTerms", object, model = model)
 }
 
 
-ModeledInput.ModelFormulaTerms <- function(x, model, ...) {
-  new("ModeledFormulaTerms", x, model = model)
+ModeledInput.ModelFormulaTerms <- function(object, model, ...) {
+  new("ModeledFormulaTerms", object, model = model)
 }
 
 
-ModeledInput.ModeledTerms <- function(x, model, ...) {
-  x@model <- model
-  x
+ModeledInput.ModeledTerms <- function(object, model, ...) {
+  object@model <- model
+  object
 }
 
 
 #' @rdname ModeledInput-methods
 #'
-ModeledInput.recipe <- function(x, model, ...) {
-  model <- get_MLModel(model)
-  switch_class(x,
+ModeledInput.recipe <- function(object, model, ...) {
+  model <- as.MLModel(model)
+  switch_class(object,
     "SelectedModelRecipe" = {
-      inputs <- map(ModeledInput, x@inputs, model = list(model))
-      x@inputs <- ListOf(inputs)
-      x
+      inputs <- map(ModeledInput, object@inputs, model = list(model))
+      object@inputs <- ListOf(inputs)
+      object
     },
-    "TunedModelRecipe" = new("TunedModeledRecipe", x, model = model),
-    "default" = new("ModeledRecipe", as(x, "ModelRecipe"), model = model)
+    "TunedModelRecipe" = new("TunedModeledRecipe", object, model = model),
+    "default" = new("ModeledRecipe", as(object, "ModelRecipe"), model = model)
   )
 }
 
 
 #' @rdname ModeledInput-methods
 #'
-ModeledInput.MLModel <- function(x, ...) {
-  ModeledInput(..., model = x)
+ModeledInput.MLModel <- function(model, ...) {
+  ModeledInput(..., model = model)
 }
 
 
 #' @rdname ModeledInput-methods
 #'
-ModeledInput.MLModelFunction <- function(x, ...) {
-  ModeledInput(x(), ...)
+ModeledInput.MLModelFunction <- function(model, ...) {
+  ModeledInput(as.MLModel(model), ...)
+}
+
+
+.fit.ModeledFrame <- function(object, ...) {
+  fit(as(object, "ModelFrame"), model = object@model)
+}
+
+
+.fit.ModeledRecipe <- function(object, ...) {
+  fit(as(object, "ModelRecipe"), model = object@model)
+}
+
+
+.fit.TunedModeledRecipe <- function(object, ...) {
+  fit(as(object, "TunedModelRecipe"), model = object@model)
 }

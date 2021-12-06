@@ -17,14 +17,14 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{numeric}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{numeric}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameter:}{
 #'     \code{step}
 #'   }
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Default values and further model details can be found in the source link
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -39,24 +39,27 @@
 #'
 LARSModel <- function(
   type = c("lasso", "lar", "forward.stagewise", "stepwise"), trace = FALSE,
-  normalize = TRUE, intercept = TRUE, step = NULL, use.Gram = TRUE
+  normalize = TRUE, intercept = TRUE, step = numeric(), use.Gram = TRUE
 ) {
 
   type <- match.arg(type)
 
   MLModel(
+
     name = "LARSModel",
     label = "Least Angle Regression",
     packages = "lars",
     response_types = "numeric",
     predictor_encoding = "model.matrix",
     params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = "step",
       get_values = c(
         function(n, data, ...) seq_nvars(data, LARSModel, n)
       )
     ),
+
     fit = function(formula, data, weights, step = NULL, ...) {
       x <- model.matrix(data, intercept = FALSE)
       y <- response(data)
@@ -69,10 +72,12 @@ LARSModel <- function(
       }
       model_fit
     },
+
     predict = function(object, newdata, ...) {
       newx <- model.matrix(newdata, intercept = FALSE)
       predict(object, newx = newx, s = object$step, type = "fit")$fit
     }
+
   )
 
 }

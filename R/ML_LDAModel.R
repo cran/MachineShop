@@ -12,8 +12,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameter:}{
 #'     \code{dimen}
 #'   }
 #' }
@@ -25,8 +25,8 @@
 #'     data if different from the training set.}
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source links below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -37,39 +37,44 @@
 #' fit(Species ~ ., data = iris, model = LDAModel)
 #'
 LDAModel <- function(
-  prior = NULL, tol = 1e-4, method = c("moment", "mle", "mve", "t"), nu = 5,
-  dimen = NULL, use = c("plug-in", "debiased", "predictive")
+  prior = numeric(), tol = 1e-4, method = c("moment", "mle", "mve", "t"),
+  nu = 5, dimen = integer(), use = c("plug-in", "debiased", "predictive")
 ) {
 
   method <- match.arg(method)
   use <- match.arg(use)
 
   MLModel(
+
     name = "LDAModel",
     label = "Linear Discriminant Analysis",
     packages = "MASS",
     response_types = "factor",
     predictor_encoding = "model.matrix",
     params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = "dimen",
       get_values = c(
         function(n, data, ...) {
-          seq_len(min(nlevels(response(data)) - 1, nvars(data, LDAModel), n))
+          seq_len(min(n, nlevels(response(data)) - 1, nvars(data, LDAModel)))
         }
       )
     ),
+
     fit = function(formula, data, weights, dimen, use, ...) {
       model_fit <- MASS::lda(formula, data = as.data.frame(data), ...)
       model_fit$dimen <- if (missing(dimen)) length(model_fit$svd) else dimen
       model_fit$use <- use
       model_fit
     },
+
     predict = function(object, newdata, prior = object$prior, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, prior = prior, dimen = object$dimen,
               method = object$use)$posterior
     }
+
   )
 
 }

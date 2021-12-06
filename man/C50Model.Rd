@@ -59,8 +59,8 @@ algorithm.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}}
-  \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+  \item{Response types:}{\code{factor}}
+  \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
     \code{trials}, \code{rules}, \code{winnow}
   }
 }
@@ -81,7 +81,7 @@ example below.
 ## Requires prior installation of suggested package C50 to run
 
 model_fit <- fit(Species ~ ., data = iris, model = C50Model)
-varimp(model_fit, type = "splits", scale = FALSE)
+varimp(model_fit, method = "model", type = "splits", scale = FALSE)
 }
 
 }

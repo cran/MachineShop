@@ -10,42 +10,46 @@
 \alias{resample.MLModelFunction}
 \title{Resample Estimation of Model Performance}
 \usage{
-resample(x, ...)
+resample(...)
 
-\method{resample}{formula}(x, data, model, control = MachineShop::settings("control"), ...)
+\method{resample}{formula}(formula, data, model, control = MachineShop::settings("control"), ...)
 
 \method{resample}{matrix}(x, y, model, control = MachineShop::settings("control"), ...)
 
-\method{resample}{ModelFrame}(x, model, control = MachineShop::settings("control"), ...)
+\method{resample}{ModelFrame}(input, model = NULL, control = MachineShop::settings("control"), ...)
 
-\method{resample}{recipe}(x, model, control = MachineShop::settings("control"), ...)
+\method{resample}{recipe}(input, model = NULL, control = MachineShop::settings("control"), ...)
 
-\method{resample}{MLModel}(x, ...)
+\method{resample}{MLModel}(model, ...)
 
-\method{resample}{MLModelFunction}(x, ...)
+\method{resample}{MLModelFunction}(model, ...)
 }
 \arguments{
-\item{x}{\link[=inputs]{input} specifying a relationship between model
-predictor and response variables.  Alternatively, a \link[=models]{model}
-function or object may be given first followed by the input specification
-and \code{control} value.}
+\item{...}{arguments passed from the generic function to its methods and from
+the \code{MLModel} and \code{MLModelFunction} methods to others.  The
+first arguments of \code{resample} methods are positional and, as such,
+must be given first in calls to them.}
 
-\item{...}{arguments passed to other methods.}
+\item{formula, data}{\link[=formula]{formula} defining the model predictor and
+response variables and a \link[=data.frame]{data frame} containing them.}
 
-\item{data}{\link[=data.frame]{data frame} containing observed predictors and
-outcomes.}
-
-\item{model}{\link[=models]{model} function, function name, or object;
-ignored and can be omitted when resampling
+\item{model}{\link[=models]{model} function, function name, or object; or
+another object that can be \link[=as.MLModel]{coerced} to a model.  A model
+can be given first followed by any of the variable specifications, and the
+argument can be omitted altogether in the case of
 \link[=ModeledInput]{modeled inputs}.}
 
 \item{control}{\link[=controls]{control} function, function name, or object
 defining the resampling method to be employed.}
 
-\item{y}{response variable.}
+\item{x, y}{\link{matrix} and object containing predictor and response
+variables.}
+
+\item{input}{\link[=inputs]{input} object defining and containing the model
+predictor and response variables.}
 }
 \value{
-\code{Resamples} class object.
+\code{Resample} class object.
 }
 \description{
 Estimation of the predictive performance of a model estimated and evaluated

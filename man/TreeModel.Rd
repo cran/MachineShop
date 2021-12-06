@@ -9,8 +9,8 @@ TreeModel(
   minsize = 10,
   mindev = 0.01,
   split = c("deviance", "gini"),
-  k = NULL,
-  best = NULL,
+  k = numeric(),
+  best = integer(),
   method = c("deviance", "misclass")
 )
 }
@@ -41,7 +41,7 @@ specified formula and choosing splits from the terms of the right-hand-side.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}, \code{numeric}}
+  \item{Response types:}{\code{factor}, \code{numeric}}
 }
 
 Further model details can be found in the source link below.

@@ -7,14 +7,14 @@
 #' @aliases SelectedModelRecipe
 #' @rdname SelectedInput
 #'
-#' @param ... \link{inputs} specifying relationships between model predictor
+#' @param ... \link{inputs} defining relationships between model predictor
 #'   and response variables.  Supplied inputs must all be of the same type and
 #'   may be named or unnamed.
 #' @param x list of inputs followed by arguments passed to their method
 #'   function.
 #' @param y response variable.
-#' @param data \link[=data.frame]{data frame} or an object that can be converted
-#'   to one.
+#' @param data \link[=data.frame]{data frame} containing predictor and response
+#'   variables.
 #' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
@@ -60,15 +60,15 @@ SelectedInput <- function(...) {
 #'
 SelectedInput.formula <- function(
   ..., data, control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 ) {
   inputs <- list(...)
-  if (!all(map_logi(is, inputs, "formula"))) {
-    throw(Error("inputs must be formulas"))
+  if (!all(map("logi", is, inputs, "formula"))) {
+    throw(Error("Inputs must be formulas."))
   }
   mf_list <- map(function(x) {
-    do.call(ModelFrame, list(x, data, na.rm = FALSE, strata = response(x)))
+    do.call(ModelFrame, list(x, data, strata = response(x), na.rm = FALSE))
   }, inputs)
   SelectedInput(mf_list, control = control, metrics = metrics, stat = stat,
                 cutoff = cutoff)
@@ -79,14 +79,14 @@ SelectedInput.formula <- function(
 #'
 SelectedInput.matrix <- function(
   ..., y, control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 ) {
   inputs <- list(...)
-  if (!all(map_logi(is, inputs, "matrix"))) {
-    throw(Error("inputs must be matrices"))
+  if (!all(map("logi", is, inputs, "matrix"))) {
+    throw(Error("Inputs must be matrices."))
   }
-  mf_list <- map(ModelFrame, inputs, list(y), na.rm = FALSE, strata = list(y))
+  mf_list <- map(ModelFrame, inputs, list(y), strata = list(y), na.rm = FALSE)
   SelectedInput(mf_list, control = control, metrics = metrics, stat = stat,
                 cutoff = cutoff)
 }
@@ -96,31 +96,41 @@ SelectedInput.matrix <- function(
 #'
 SelectedInput.ModelFrame <- function(
   ..., control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 ) {
 
   inputs <- list(...)
 
-  input_classes <- map_chr(function(x) class1(x), inputs)
+  if (length(inputs) == 1) {
+    return(inputs[[1]])
+  }
+
+  input_classes <- map("char", function(x) class1(x), inputs)
   if (!all(input_classes %in% c("ModelFrame", "ModeledFrame"))) {
-    throw(Error("inputs must be ModelFrames or ModeledFrames"))
+    throw(Error("Inputs must be ModelFrames or ModeledFrames."))
   }
 
   if (!identical_elements(inputs, function(x) x[[1]])) {
-    throw(Error("ModelFrames have different response variables"))
+    throw(Error("ModelFrames have different response variables."))
   }
 
-  names(inputs) <- make_list_names(inputs, "ModelFrame")
+  default_names <- map("char", training_names.MLInput, inputs)
+  names(inputs) <- make_names_along(inputs, default_names)
   data <- NULL
   for (i in seq_along(inputs)) {
     data <- combine_data_frames(as.data.frame(inputs[[i]]), data)
   }
 
   new("SelectedModelFrame", ModelFrame(data),
-      inputs = ListOf(map(terms, inputs)),
-      params = list(control = get_MLControl(control), metrics = metrics,
-                    stat = stat, cutoff = cutoff))
+    inputs = ListOf(map(terms, inputs)),
+    params = TrainingParams(
+      control = as.MLControl(control),
+      metrics = metrics,
+      stat = stat,
+      cutoff = cutoff
+    )
+  )
 
 }
 
@@ -129,38 +139,58 @@ SelectedInput.ModelFrame <- function(
 #'
 SelectedInput.recipe <- function(
   ..., control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 ) {
 
   inputs <- list(...)
-
   for (i in seq_along(inputs)) inputs[[i]] <- ModelRecipe(inputs[[i]])
 
-  get_info <- function(x) {
+  if (length(inputs) == 1) {
+    return(inputs[[1]])
+  }
+
+  get_info <- function(x, roles = character(), exclude = FALSE) {
     info <- summary(x)
-    info <- info[info$role != "predictor", ]
+    keep <- if (length(roles)) info$role %in% roles else TRUE
+    if (exclude) keep <- !keep
+    info <- info[keep, ]
     info_order <- do.call(order, info)
     info[info_order, ]
   }
-  if (!identical_elements(inputs, get_info)) {
-    throw(Error("recipes have different non-predictor variables"))
+  common_info <- function(x) get_info(x, roles = "predictor", exclude = TRUE)
+  if (!identical_elements(inputs, common_info)) {
+    throw(Error("Recipes have different non-predictor variables."))
   }
-  info <- get_info(inputs[[1]])
 
-  names(inputs) <- make_list_names(inputs, "Recipe")
+  default_names <- map("char", training_names.MLInput, inputs)
+  names(inputs) <- make_names_along(inputs, default_names)
   data <- NULL
   for (i in seq_along(inputs)) {
     data <- combine_data_frames(as.data.frame(inputs[[i]]), data)
-    inputs[[i]] <- recipe(inputs[[i]], tibble())
+    inputs[[i]] <- recipe(inputs[[i]], tibble(.rows = nrow(data)))
   }
 
-  outcome_vars <- info$variable[info$role == "outcome"]
+  outcome_vars <- get_info(inputs[[1]], roles = "outcome")$variable
   fo <- reformulate(".", paste(outcome_vars, collapse = "+"))
-  new("SelectedModelRecipe", new("ModelRecipe", recipe(fo, data = data)),
-      inputs = ListOf(inputs),
-      params = list(control = get_MLControl(control), metrics = metrics,
-                    stat = stat, cutoff = cutoff))
+  rec <- recipe(fo, data = data)
+
+  other_vars <- get_info(inputs[[1]], roles = c("predictor", "outcome"),
+                         exclude = TRUE)$variable
+  if (length(other_vars)) {
+    args <- list(rec, other_vars, new_role = "other")
+    rec <- do.call(recipes::update_role, args)
+  }
+
+  new("SelectedModelRecipe", new("ModelRecipe", rec),
+    inputs = ListOf(inputs),
+    params = TrainingParams(
+      control = as.MLControl(control),
+      metrics = metrics,
+      stat = stat,
+      cutoff = cutoff
+    )
+  )
 
 }
 
@@ -172,33 +202,51 @@ SelectedInput.list <- function(x, ...) {
 }
 
 
-.fit.SelectedInput <- function(x, ...) {
-  inputs <- x@inputs
-  input_class <- class(x)
-  switch(input_class,
-    "SelectedModelFrame" = {
-      grid_name <- "ModelFrame"
-      object <- as(x, "ModelFrame")
-      update_input <- function(x) {
-        input <- structure(object, terms = terms(x))
-        if (is(x, "ModeledTerms")) {
-          ModeledInput(input, model = x@model)
-        } else input
-      }
-    },
-    "SelectedModelRecipe" = {
-      grid_name <- "ModelRecipe"
-      object <- as.data.frame(x)
-      update_input <- function(x) recipe(x, object[unique(summary(x)$variable)])
-    },
-    throw(TypeError(x, c("SelectedModelFrame", "SelectedModelRecipe"), "input"))
+.fit.SelectedInput <- function(object, ...) {
+  grid <- tibble(id = map("char", slot, object@inputs, "id"))
+  step <- resample_selection(
+    object, ..., grid = grid, params = object@params, id = object@id,
+    name = "SelectedInput"
   )
-  train_step <- resample_selection(inputs, update_input, x@params, ...,
-                                   class = "SelectedInput")
-  train_step$grid <- tibble(Input = factor(seq_along(inputs)))
-  names(train_step$grid) <- grid_name
-  input <- update_input(inputs[[train_step$selected]])
-  push(do.call(TrainStep, train_step), fit(input, ...))
+  input <- update(object, grid[step@grid$selected, ])
+  push(step, fit(input, ...))
+}
+
+
+update.SelectedInput <- function(object, params = list(), new_id = FALSE, ...) {
+  object <- as(object, "SelectedInput")
+  new_params <- as(object, "list")
+  new_params[names(params)] <- params
+  objects <- new_params$objects
+  new_params[c("objects", "id")] <- NULL
+  res <- do.call(SelectedInput, c(objects, new_params))
+  if (!new_id) res@id <- object@id
+  res
+}
+
+
+update.SelectedModelFrame <- function(object, params = list(), ...) {
+  object <- subset_selected(object, "inputs", params$id)
+  mf <- as(object, "ModelFrame")
+  object@inputs <- ListOf(map(function(x) {
+    if (is(x, "ModeledTerms")) mf <- ModeledInput(mf, model = x@model)
+    mf@id <- x@id
+    attr(mf, "terms") <- terms(x)
+    mf
+  }, object@inputs))
+  NextMethod()
+}
+
+
+update.SelectedModelRecipe <- function(object, params = list(), ...) {
+  object <- subset_selected(object, "inputs", params$id)
+  data <- as.data.frame(object)
+  object@inputs <- ListOf(map(function(x) {
+    rec <- ModelRecipe(recipe(x, data[unique(summary(x)$variable)]))
+    rec@id <- x@id
+    rec
+  }, object@inputs))
+  NextMethod()
 }
 
 
@@ -210,7 +258,7 @@ SelectedInput.list <- function(x, ...) {
 #'
 #' @rdname TunedInput
 #'
-#' @param x untrained \code{\link[recipes]{recipe}}.
+#' @param object untrained \code{\link[recipes]{recipe}}.
 #' @param grid \code{RecipeGrid} containing parameter values at which to
 #'   evaluate a recipe, such as those returned by \code{\link{expand_steps}}.
 #' @param control \link[=controls]{control} function, function name, or object
@@ -242,7 +290,7 @@ SelectedInput.list <- function(x, ...) {
 #'
 #' fit(TunedInput(rec, grid = grid), model = GLMModel)
 #'
-TunedInput <- function(x, ...) {
+TunedInput <- function(object, ...) {
   UseMethod("TunedInput")
 }
 
@@ -250,44 +298,49 @@ TunedInput <- function(x, ...) {
 #' @rdname TunedInput
 #'
 TunedInput.recipe <- function(
-  x, grid = expand_steps(), control = MachineShop::settings("control"),
-  metrics = NULL, stat = MachineShop::settings("stat.Trained"),
+  object, grid = expand_steps(), control = MachineShop::settings("control"),
+  metrics = NULL, stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff"), ...
 ) {
 
-  object <- new("TunedModelRecipe", ModelRecipe(x),
-                grid = grid,
-                params = list(control = get_MLControl(control),
-                              metrics = metrics, stat = stat, cutoff = cutoff))
+  object <- new("TunedModelRecipe", ModelRecipe(object),
+    grid = grid,
+    params = TrainingParams(
+      control = as.MLControl(control),
+      metrics = metrics,
+      stat = stat,
+      cutoff = cutoff
+    )
+  )
 
   grid_names <- names(object@grid)
-  step_ids <- map_chr(getElement, object$steps, "id")
-  found <- grid_names %in% step_ids
-  if (!all(found)) {
-    missing <- grid_names[!found]
-    throw(Error(label_items("grid step name", missing),
-                label_items("; not found in recipe step id", step_ids)))
+  step_ids <- map("char", getElement, object$steps, "id")
+  missing <- !(grid_names %in% step_ids)
+  if (any(missing)) {
+    throw(Error(
+      note_items("Grid step name{?s}: ", grid_names[missing], "; "),
+      note_items("not found in recipe step id{?s}: ", step_ids, ".")
+    ))
   }
 
-  if (is(x, "ModeledRecipe")) {
-    new("TunedModeledRecipe", object, model = x@model)
+  if (is(object, "ModeledRecipe")) {
+    new("TunedModeledRecipe", object, model = object@model)
   } else object
 
 }
 
 
-.fit.TunedModelRecipe <- function(x, model, ...) {
-  grid <- x@grid
-  recipe <- as(x, "ModelRecipe")
-  if (all(size(grid) > 0)) {
-    grid_split <- split(grid, seq_len(nrow(grid)))
-    update_input <- function(x) do.call(update, c(list(recipe), x))
-    train_step <- resample_selection(grid_split, update_input, x@params, model,
-                                     class = "TunedInput")
-    train_step$grid <- tibble(ModelRecipe = asS3(grid))
-    input <- update_input(grid_split[[train_step$selected]])
-    push(do.call(TrainStep, train_step), fit(input, model = model))
+.fit.TunedModelRecipe <- function(object, ...) {
+  grid <- object@grid
+  object_input <- as(object, "ModelRecipe")
+  if (prod(size(grid)) > 0) {
+    step <- resample_selection(
+      object_input, ..., grid = grid, params = object@params, id = object@id,
+      name = "TunedInput"
+    )
+    input <- update(object_input, grid[step@grid$selected, ])
+    push(step, fit(input, ...))
   } else {
-    fit(recipe, model = model)
+    fit(object_input, ...)
   }
 }

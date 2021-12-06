@@ -27,15 +27,15 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}, \code{Surv}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}, \code{numeric}, \code{Surv}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \code{mtry}, \code{min.node.size}*, \code{splitrule}*
 #'   }
 #' }
 #' * excluded from grids by default
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source link below.
+#' Default values and further model details can be found in the source link
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -50,19 +50,20 @@
 #' }
 #'
 RangerModel <- function(
-  num.trees = 500, mtry = NULL,
+  num.trees = 500, mtry = integer(),
   importance = c("impurity", "impurity_corrected", "permutation"),
-  min.node.size = NULL, replace = TRUE,
-  sample.fraction = if (replace) 1 else 0.632, splitrule = NULL,
+  min.node.size = integer(), replace = TRUE,
+  sample.fraction = if (replace) 1 else 0.632, splitrule = character(),
   num.random.splits = 1, alpha = 0.5, minprop = 0.1,
-  split.select.weights = NULL, always.split.variables = NULL,
-  respect.unordered.factors = NULL, scale.permutation.importance = FALSE,
+  split.select.weights = numeric(), always.split.variables = character(),
+  respect.unordered.factors = character(), scale.permutation.importance = FALSE,
   verbose = FALSE
 ) {
 
   importance <- match.arg(importance)
 
   MLModel(
+
     name = "RangerModel",
     label = "Fast Random Forests",
     packages = "ranger",
@@ -70,6 +71,7 @@ RangerModel <- function(
     weights = TRUE,
     predictor_encoding = "model.frame",
     params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = c("mtry", "min.node.size", "splitrule"),
       get_values = c(
@@ -86,11 +88,14 @@ RangerModel <- function(
       ),
       default = c(TRUE, FALSE, FALSE)
     ),
+
     fit = function(formula, data, weights, ...) {
-      ranger::ranger(formula, data = as.data.frame(data),
-                     case.weights = weights,
-                     probability = is(response(data), "factor"), ...)
+      ranger::ranger(
+        formula, data = as.data.frame(data), case.weights = weights,
+        probability = is(response(data), "factor"), ...
+      )
     },
+
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       pred <- predict(object, data = newdata)
@@ -100,9 +105,11 @@ RangerModel <- function(
         pred$predictions
       }
     },
+
     varimp = function(object, ...) {
       ranger::importance(object)
     }
+
   )
 
 }

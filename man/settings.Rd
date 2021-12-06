@@ -40,10 +40,11 @@ behaviors of functions in the \pkg{MachineShop} package.
     events/probabilities.  Choices are \code{"empirical"} (default) for the
     Kaplan-Meier estimator, \code{"exponential"}, \code{"rayleigh"}, or
     \code{"weibull"}.}
-  \item{\code{grid}}{\code{size} argument to \code{\link{Grid}} indicating
-    the number of parameter-specific values to generate automatically for
-    \link[=TunedModel]{tuning} of models that have pre-defined grids or a
-    \code{\link{Grid}} function, function name, or object [default: 3].}
+  \item{\code{grid}}{\code{size} argument to \code{\link{TuningGrid}}
+    indicating the number of parameter-specific values to generate
+    automatically for \link[=TunedModel]{tuning} of models that have
+    pre-defined grids or a \code{\link{TuningGrid}} function, function name,
+    or object [default: 3].}
   \item{\code{method.EmpiricalSurv}}{character string specifying the
     empirical method of estimating baseline survival curves for Cox
     proportional hazards-based models.  Choices are \code{"breslow"} or
@@ -81,10 +82,10 @@ behaviors of functions in the \pkg{MachineShop} package.
     to compute one \link{summary} statistic at each cutoff value of resampled
     metrics in performance curves, or \code{NULL} for resample-specific
     metrics [default: \code{"base::mean"}].}
-  \item{\code{stat.Resamples}}{function or character string naming a function
+  \item{\code{stat.Resample}}{function or character string naming a function
     to compute one summary statistic to control the ordering of models in
     \link[=plot]{plots} [default: \code{"base::mean"}].}
-  \item{\code{stat.Trained}}{function or character string naming a function
+  \item{\code{stat.TrainingParams}}{function or character string naming a function
     to compute one summary statistic on resampled performance metrics for
     input \link[=SelectedInput]{selection} or \link[=TunedInput]{tuning} or
     for model \link[=SelectedModel]{selection} or \link[=TunedModel]{tuning}
@@ -92,13 +93,10 @@ behaviors of functions in the \pkg{MachineShop} package.
   \item{\code{stats.PartialDependence}}{function, function name, or vector of
     these with which to compute \link[=dependence]{partial dependence}
     summary statistics [default: \code{c(Mean = "base::mean")}].}
-  \item{\code{stats.Resamples}}{function, function name, or vector of these
+  \item{\code{stats.Resample}}{function, function name, or vector of these
     with which to compute \link{summary} statistics on resampled performance
     metrics [default: \code{c(Mean = "base::mean", Median = "stats::median",
     SD = "stats::sd", Min = "base::min", Max = "base::max")}].}
-  \item{\code{stats.VarImp}}{function, function name, or vector of these with
-    which to compute \link[=varimp]{variable importance} summary statistics
-    [default: \code{c(Mean = "base::mean")}].}
 }
 }
 

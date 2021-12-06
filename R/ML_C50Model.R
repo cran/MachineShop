@@ -26,8 +26,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \code{trials}, \code{rules}, \code{winnow}
 #'   }
 #' }
@@ -52,7 +52,7 @@
 #' ## Requires prior installation of suggested package C50 to run
 #'
 #' model_fit <- fit(Species ~ ., data = iris, model = C50Model)
-#' varimp(model_fit, type = "splits", scale = FALSE)
+#' varimp(model_fit, method = "model", type = "splits", scale = FALSE)
 #' }
 #'
 C50Model <- function(
@@ -61,19 +61,16 @@ C50Model <- function(
   sample = 0, earlyStopping = TRUE
 ) {
 
-  args <- new_params(environment())
-  is_main <- names(args) %in% c("trials", "rules")
-  params <- args[is_main]
-  params$control <- as.call(c(.(C50::C5.0Control), args[!is_main]))
-
   MLModel(
+
     name = "C50Model",
     label = "C5.0 Classification",
     packages = "C50",
     response_types = "factor",
     weights = TRUE,
     predictor_encoding = "model.frame",
-    params = params,
+    params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = c("trials", "rules", "winnow"),
       get_values = c(
@@ -82,19 +79,31 @@ C50Model <- function(
         function(...) c(FALSE, TRUE)
       )
     ),
-    fit = function(formula, data, weights, ...) {
-      eval_fit(data,
-               formula = C50::C5.0(formula, data = as.data.frame(data),
-                                   weights = weights, ...),
-               matrix = C50::C5.0(x, y, weights = weights, ...))
+
+    fit = function(formula, data, weights, trials, rules, ...) {
+      control <- C50::C5.0Control(...)
+      eval_fit(
+        data,
+        formula = C50::C5.0(
+          formula, data = data, weights = weights, trials = trials,
+          rules = rules, control = control
+        ),
+        matrix = C50::C5.0(
+          x, y, weights = weights, trials = trials, rules = rules,
+          control = control
+        )
+      )
     },
+
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata, type = "prob")
     },
+
     varimp = function(object, type = c("usage", "splits"), ...) {
       C50::C5imp(object, metric = match.arg(type))
     }
+
   )
 
 }

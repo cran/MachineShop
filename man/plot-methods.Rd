@@ -10,8 +10,8 @@
 \alias{plot.PartialDependence}
 \alias{plot.Performance}
 \alias{plot.PerformanceCurve}
-\alias{plot.Resamples}
-\alias{plot.VarImp}
+\alias{plot.Resample}
+\alias{plot.VariableImportance}
 \title{Model Performance Plots}
 \usage{
 \method{plot}{Calibration}(x, type = c("line", "point"), se = FALSE, ...)
@@ -22,7 +22,7 @@
 
 \method{plot}{LiftCurve}(
   x,
-  find = NULL,
+  find = numeric(),
   diagonal = TRUE,
   stat = MachineShop::settings("stat.Curve"),
   ...
@@ -31,7 +31,7 @@
 \method{plot}{MLModel}(
   x,
   metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   type = c("boxplot", "density", "errorbar", "line", "violin"),
   ...
 )
@@ -41,7 +41,7 @@
 \method{plot}{Performance}(
   x,
   metrics = NULL,
-  stat = MachineShop::settings("stat.Resamples"),
+  stat = MachineShop::settings("stat.Resample"),
   type = c("boxplot", "density", "errorbar", "violin"),
   ...
 )
@@ -54,15 +54,15 @@
   ...
 )
 
-\method{plot}{Resamples}(
+\method{plot}{Resample}(
   x,
   metrics = NULL,
-  stat = MachineShop::settings("stat.Resamples"),
+  stat = MachineShop::settings("stat.Resample"),
   type = c("boxplot", "density", "errorbar", "violin"),
   ...
 )
 
-\method{plot}{VarImp}(x, n = NULL, ...)
+\method{plot}{VariableImportance}(x, n = Inf, ...)
 }
 \arguments{
 \item{x}{\link{calibration}, \link{confusion}, \link{lift},
@@ -84,7 +84,7 @@ line.}
 
 \item{stat}{function or character string naming a function to compute a
 summary statistic on resampled metrics for trained \code{MLModel} line
-plots and \code{Resamples} model ordering.  For \code{LiftCurve} and
+plots and \code{Resample} model ordering.  For \code{LiftCurve} and
 \code{PerformanceCurve} classes, plots are of resampled metrics aggregated
 by the statistic if given or of resample-specific metrics if \code{NULL}.}
 
@@ -94,8 +94,7 @@ metrics to plot.}
 \item{stats}{vector of numeric indexes or character names of partial
 dependence summary statistics to plot.}
 
-\item{n}{number of most important variables to include in the plot
-[default: all].}
+\item{n}{number of most important variables to include in the plot.}
 }
 \description{
 Plot measures of model performance and predictor variable importance.

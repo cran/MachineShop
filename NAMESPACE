@@ -1,5 +1,6 @@
-useDynLib(MachineShop, .registration = TRUE)
+useDynLib(MachineShop, .registration = TRUE, .fixes = "C_")
 
+import(cli)
 import(ggplot2)
 import(methods)
 
@@ -7,6 +8,8 @@ importClassesFrom(kernlab, ksvm)
 importClassesFrom(party, RandomForest)
 
 importFrom(abind, abind, adrop)
+importFrom(cli, ansi_nchar, ansi_strtrim, ansi_strwrap, make_ansi_style,
+           console_width, pluralize, style_bold, style_reset)
 importFrom(dials, parameters)
 importFrom(foreach, "%dopar%", foreach, getDoParName, getDoParRegistered,
            getDoParWorkers, registerDoSEQ)
@@ -14,20 +17,19 @@ importFrom(graphics, plot)
 importFrom(magrittr, "%>%")
 importFrom(polspline, hare, phare)
 importFrom(progress, progress_bar)
-importFrom(Rcpp, evalCpp)
 importFrom(recipes, bake, prep, recipe, tidy)
-importFrom(rsample, bootstraps, initial_split, vfold_cv)
+importFrom(rsample, bootstraps, group_vfold_cv, initial_split, vfold_cv)
 importFrom(stats, aggregate, approx, coef, complete.cases, contr.helmert, cor,
            delete.response, drop1, formula, get_all_vars, loess, lm, median,
            model.frame, model.matrix, model.matrix.default, model.response,
            model.weights, na.fail, na.omit, na.pass, offset, p.adjust, pchisq,
-           predict, pt, quantile, reformulate, reshape, sd, t.test, terms, time,
-           update, var, vcov, xtabs)
+           pnorm, predict, pt, quantile, reformulate, reshape, sd, t.test,
+           terms, time, update, var, vcov, xtabs)
 importFrom(survival, concordance, is.Surv, Surv, survfit, survreg,
            survreg.distributions)
 importFrom(tibble, as_tibble, is_tibble, tibble)
-importFrom(utils, combn, head, methods, packageVersion, relist, stack, str,
-           tail)
+importFrom(utils, capture.output, combn, head, methods, packageVersion, relist,
+           stack, str, tail)
 
 
 export(BinomialVariate,
@@ -46,7 +48,8 @@ export(expand_model,
        expand_params,
        expand_steps,
        Grid,
-       ParameterGrid)
+       ParameterGrid,
+       TuningGrid)
 
 export(MLModel,
        AdaBagModel,
@@ -73,6 +76,7 @@ export(MLModel,
        MDAModel,
        NaiveBayesModel,
        NNetModel,
+       ParsnipModel,
        PDAModel,
        PLSModel,
        POLRModel,
@@ -167,6 +171,7 @@ export(.,
        performance_curve,
        resample,
        response,
+       rfe,
        settings,
        step_kmeans,
        step_kmedoids,
@@ -183,11 +188,21 @@ export(.,
 S3method(as.data.frame, BinomialVariate)
 S3method(as.data.frame, ModelFrame)
 S3method(as.data.frame, PerformanceDiffTest)
-S3method(as.data.frame, Resamples)
+S3method(as.data.frame, Resample)
 S3method(as.data.frame, SurvMatrix)
 S3method(as.data.frame, TabularArray)
 S3method(as.double, BinomialVariate)
+S3method(as.MLControl, character)
+S3method(as.MLControl, "function")
+S3method(as.MLControl, MLControl)
+S3method(as.MLMetric, character)
+S3method(as.MLMetric, MLMetric)
+S3method(as.MLModel, character)
+S3method(as.MLModel, MLModel)
 S3method(as.MLModel, MLModelFit)
+S3method(as.MLModel, MLModelFunction)
+S3method(as.MLModel, ModeledInput)
+S3method(as.MLModel, model_spec)
 S3method(bake, step_lincomp)
 S3method(bake, step_sbf)
 S3method(bake, ModelRecipe)
@@ -201,11 +216,11 @@ S3method(c, DiscreteVariate)
 S3method(c, LiftCurve)
 S3method(c, ListOf)
 S3method(c, PerformanceCurve)
-S3method(c, Resamples)
+S3method(c, Resample)
 S3method(c, SurvMatrix)
 S3method(diff, MLModel)
 S3method(diff, Performance)
-S3method(diff, Resamples)
+S3method(diff, Resample)
 S3method(expand_modelgrid, formula)
 S3method(expand_modelgrid, matrix)
 S3method(expand_modelgrid, ModelFrame)
@@ -239,10 +254,10 @@ S3method(performance, ConfusionMatrix)
 S3method(performance, factor)
 S3method(performance, matrix)
 S3method(performance, numeric)
-S3method(performance, Resamples)
+S3method(performance, Resample)
 S3method(performance, Surv)
 S3method(performance_curve, default)
-S3method(performance_curve, Resamples)
+S3method(performance_curve, Resample)
 S3method(plot, Calibration)
 S3method(plot, ConfusionList)
 S3method(plot, ConfusionMatrix)
@@ -251,8 +266,8 @@ S3method(plot, MLModel)
 S3method(plot, PartialDependence)
 S3method(plot, Performance)
 S3method(plot, PerformanceCurve)
-S3method(plot, Resamples)
-S3method(plot, VarImp)
+S3method(plot, Resample)
+S3method(plot, VariableImportance)
 S3method(predict, MLModelFit)
 S3method(prep, step_lincomp)
 S3method(prep, step_sbf)
@@ -260,13 +275,16 @@ S3method(prep, ModelRecipe)
 S3method(prep, SelectedInput)
 S3method(prep, TunedInput)
 S3method(print, BinomialVariate)
+S3method(print, BootControl)
 S3method(print, Calibration)
 S3method(print, ConfusionList)
 S3method(print, ConfusionMatrix)
 S3method(print, ConfusionSummary)
+S3method(print, CVControl)
 S3method(print, DiscreteVariate)
-S3method(print, Grid)
 S3method(print, ListOf)
+S3method(map, character)
+S3method(map, "function")
 S3method(print, MLControl)
 S3method(print, MLMetric)
 S3method(print, MLModel)
@@ -277,24 +295,28 @@ S3method(print, ModelRecipe)
 S3method(print, ModelTerms)
 S3method(print, ModeledInput)
 S3method(print, ModeledTerms)
+S3method(print, OOBControl)
 S3method(print, ParameterGrid)
+S3method(print, ParsnipModel)
 S3method(print, Performance)
 S3method(print, PerformanceCurve)
 S3method(print, PerformanceDiffTest)
 S3method(print, RecipeGrid)
-S3method(print, Resamples)
+S3method(print, Resample)
 S3method(print, SelectedInput)
 S3method(print, SelectedModel)
+S3method(print, SplitControl)
 S3method(print, StackedModel)
 S3method(print, step_lincomp)
 S3method(print, step_sbf)
 S3method(print, SuperModel)
 S3method(print, SurvMatrix)
-S3method(print, SurvMeans)
-S3method(print, TrainStep)
+S3method(print, SurvTimes)
+S3method(print, TrainingStep)
 S3method(print, TunedInput)
 S3method(print, TunedModel)
-S3method(print, VarImp)
+S3method(print, TuningGrid)
+S3method(print, VariableImportance)
 S3method(resample, formula)
 S3method(resample, matrix)
 S3method(resample, MLModel)
@@ -304,18 +326,26 @@ S3method(resample, recipe)
 S3method(response, MLModelFit)
 S3method(response, ModelFrame)
 S3method(response, recipe)
+S3method(rfe, formula)
+S3method(rfe, matrix)
+S3method(rfe, ModelFrame)
+S3method(rfe, recipe)
+S3method(rfe, MLModel)
+S3method(rfe, MLModelFunction)
 S3method(SelectedInput, formula)
 S3method(SelectedInput, list)
 S3method(SelectedInput, matrix)
 S3method(SelectedInput, ModelFrame)
 S3method(SelectedInput, recipe)
+S3method(subsample_input, ModelFrame)
+S3method(subsample_input, ModelRecipe)
 S3method(summary, ConfusionList)
 S3method(summary, ConfusionMatrix)
 S3method(summary, MLModel)
 S3method(summary, MLModelFit)
 S3method(summary, Performance)
 S3method(summary, PerformanceCurve)
-S3method(summary, Resamples)
+S3method(summary, Resample)
 S3method(t.test, PerformanceDiff)
 S3method(terms, ModelFrame)
 S3method(terms, ModeledFrame)
@@ -324,4 +354,3 @@ S3method(tidy, step_lincomp)
 S3method(tidy, step_sbf)
 S3method(TunedInput, recipe)
 S3method("[", BinomialVariate)
-S3method("[", ModelFrame)

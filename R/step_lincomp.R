@@ -118,8 +118,9 @@ new_step_lincomp <- function(
   )
   invalid_names <- intersect(names(options), names(step_args))
   if (length(invalid_names)) {
-    msg <- "options list contains reserved step name"
-    throw(Error(label_items(msg, invalid_names)))
+    throw(Error(note_items(
+      "Options list contains reserved step name{?s}: ", invalid_names, "."
+    )))
   }
   do.call(recipes::step, c(step_args, options))
 }
@@ -135,16 +136,17 @@ prep.step_lincomp <- function(x, training, info = NULL, ...) {
   if (is.function(x$scale)) x$scale <- apply(training, 2, x$scale)
   training <- scale(training, center = x$center, scale = x$scale)
 
-  x$num_comp <- max(min(x$num_comp, ncol(training)), 1)
+  x$num_comp <- min(max(x$num_comp, 1), ncol(training))
 
   res <- x$transform(x = training, step = x)
   if (!is.list(res)) res <- list(weights = res)
   if (!(is(res$weights, "matrix") || is(res$weights, "Matrix"))) {
-    throw(Error("transform matrix should return a matrix or Matrix object"))
+    throw(Error("Transform matrix should return a matrix or Matrix object."))
   }
   if (nrow(res$weights) != ncol(training)) {
-    msg <- "transform matrix row length should equal the number of variables"
-    throw(Error(msg))
+    throw(Error(
+      "Transform matrix row length should equal the number of variables."
+    ))
   }
   dimnames(res$weights) <- list(
     terms = colnames(training),
@@ -175,9 +177,9 @@ bake.step_lincomp <- function(object, new_data, ...) {
 }
 
 
-print.step_lincomp <- function(x, width = getOption("width"), ...) {
+print.step_lincomp <- function(x, width = console_width(), ...) {
   msg <- paste(x$prefix, "variable reduction for ")
-  width <- max(20, width - nchar(msg))
+  width <- max(width - nchar(msg), 20)
   cat(msg)
   recipes::printer(rownames(x$res$weights), x$terms, x$trained, width = width)
   invisible(x)

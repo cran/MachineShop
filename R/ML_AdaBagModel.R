@@ -18,8 +18,8 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{Response types:}{\code{factor}}
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \code{mfinal}, \code{maxdepth}
 #'   }
 #' }
@@ -44,18 +44,15 @@ AdaBagModel <- function(
   surrogatestyle = 0, maxdepth = 30
 ) {
 
-  args <- new_params(environment())
-  is_main <- names(args) %in% "mfinal"
-  params <- args[is_main]
-  params$control <- as.call(c(.(list), args[!is_main]))
-
   MLModel(
+
     name = "AdaBagModel",
     label = "Bagging with Classification Trees",
     packages = "adabag",
     response_types = "factor",
     predictor_encoding = "model.frame",
-    params = params,
+    params = new_params(environment()),
+
     gridinfo = new_gridinfo(
       param = c("mfinal", "maxdepth"),
       get_values = c(
@@ -63,16 +60,21 @@ AdaBagModel <- function(
         function(n, ...) seq_len(min(n, 30))
       )
     ),
-    fit = function(formula, data, weights, ...) {
-      adabag::bagging(formula, data = as.data.frame(data), ...)
+
+    fit = function(formula, data, weights, mfinal, ...) {
+      adabag::bagging(formula, data = as.data.frame(data), mfinal = mfinal,
+                      control = list(...))
     },
+
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata)$prob
     },
+
     varimp = function(object, ...) {
       object$importance
     }
+
   )
 
 }

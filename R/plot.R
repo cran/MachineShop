@@ -15,12 +15,11 @@
 #'   identifying the corresponding rates of positive predictions.
 #' @param metrics vector of numeric indexes or character names of performance
 #'   metrics to plot.
-#' @param n number of most important variables to include in the plot
-#'   [default: all].
+#' @param n number of most important variables to include in the plot.
 #' @param se logical indicating whether to include standard error bars.
 #' @param stat function or character string naming a function to compute a
 #'   summary statistic on resampled metrics for trained \code{MLModel} line
-#'   plots and \code{Resamples} model ordering.  For \code{LiftCurve} and
+#'   plots and \code{Resample} model ordering.  For \code{LiftCurve} and
 #'   \code{PerformanceCurve} classes, plots are of resampled metrics aggregated
 #'   by the statistic if given or of resample-specific metrics if \code{NULL}.
 #' @param stats vector of numeric indexes or character names of partial
@@ -124,19 +123,18 @@ plot.ConfusionMatrix <- function(x, ...) {
 #' @rdname plot-methods
 #'
 plot.LiftCurve <- function(
-  x, find = NULL, diagonal = TRUE, stat = MachineShop::settings("stat.Curve"),
-  ...
+  x, find = numeric(), diagonal = TRUE,
+  stat = MachineShop::settings("stat.Curve"), ...
 ) {
   x <- summary(x, stat = stat)
   p <- plot(as(x, "PerformanceCurve"), diagonal = diagonal, stat = NULL)
 
-  if (!is.null(find)) {
-    if (find < 0 || find > 1) {
-      throw(Warning("'find' rate outside of 0 to 1 range"))
-    }
+  if (length(find)) {
+    find <- check_numeric(find, bounds = c(0, 1), include = FALSE, size = 1)
+    throw(check_assignment(find))
 
     indices <- x["Model"]
-    indices$Resample <- x$Resample
+    indices$Iteration <- x$Iteration
     tested <- by(x, indices, function(data) {
       approx(data$y, data$x, find, ties = "ordered")$y
     })
@@ -146,7 +144,7 @@ plot.LiftCurve <- function(
       y = find,
       Model = dimnames(tested)$Model
     )
-    df$Resample <- rep(dimnames(tested)$Resample, each = size(tested, 1))
+    df$Iteration <- rep(dimnames(tested)$Iteration, each = size(tested, 1))
 
     p <- p +
       geom_segment(aes_(x = ~ x, y = 0, xend = ~ x, yend = ~ y), df) +
@@ -160,18 +158,19 @@ plot.LiftCurve <- function(
 #' @rdname plot-methods
 #'
 plot.MLModel <- function(
-  x, metrics = NULL, stat = MachineShop::settings("stat.Trained"),
+  x, metrics = NULL, stat = MachineShop::settings("stat.TrainingParams"),
   type = c("boxplot", "density", "errorbar", "line", "violin"), ...
 ) {
-  if (!is_trained(x)) throw(Error("no training results to plot"))
+  if (!is_trained(x)) throw(Error("No training results to plot."))
 
-  stat <- fget(stat)
+  stat <- check_stat(stat, convert = TRUE)
+  throw(check_assignment(stat))
   type <- match.arg(type)
 
-  map(function(train_step) {
-    perf <- train_step@performance
+  map(function(step) {
+    perf <- step@performance
     if (type == "line") {
-      grid <- unnest(train_step@grid)
+      grid <- unnest(step@grid$params)
       stats <- apply(perf, c(3, 2), function(x) stat(na.omit(x))) %>%
         TabularArray %>%
         as.data.frame
@@ -190,7 +189,7 @@ plot.MLModel <- function(
       }
       df$Metric <- factor(df$Metric, metrics)
 
-      indices <- map_logi(function(x) length(unique(x)), grid[-1])
+      indices <- map("logi", function(x) length(unique(x)), grid[-1])
       args <- list(~ x, ~ Value)
       if (any(indices)) {
         df$Group <- interaction(grid[-1][indices])
@@ -208,7 +207,7 @@ plot.MLModel <- function(
     } else {
       plot(perf, metrics = metrics, stat = stat, type = type, ...)
     }
-  }, x@train_steps)
+  }, x@steps)
 }
 
 
@@ -216,8 +215,9 @@ plot.MLModel <- function(
 #'
 plot.PartialDependence <- function(x, stats = NULL, ...) {
   if (any(rowSums(!is.na(x$Predictors)) > 1)) {
-    msg <- "partial dependence plots not available for interaction efffects"
-    throw(Error(msg))
+    throw(Error(
+      "Partial dependence plots not available for interaction efffects."
+    ))
   }
 
   if (!is.null(stats)) {
@@ -248,7 +248,7 @@ plot.PartialDependence <- function(x, stats = NULL, ...) {
 #' @rdname plot-methods
 #'
 plot.Performance <- function(
-  x, metrics = NULL, stat = MachineShop::settings("stat.Resamples"),
+  x, metrics = NULL, stat = MachineShop::settings("stat.Resample"),
   type = c("boxplot", "density", "errorbar", "violin"), ...
 ) {
   df <- as.data.frame(x)
@@ -263,7 +263,8 @@ plot.Performance <- function(
   }
   df$Metric <- factor(df$Metric, metrics)
 
-  stat <- fget(stat)
+  stat <- check_stat(stat, convert = TRUE)
+  throw(check_assignment(stat))
 
   firstmetric <- df[df$Metric == metrics[1], , drop = FALSE]
   sortedlevels <- tapply(firstmetric$Value, firstmetric$Model,
@@ -302,7 +303,7 @@ plot.PerformanceCurve <- function(
 
   args <- list(~ x, ~ y)
   if (nlevels(x$Model) > 1) args$color <- ~ Model
-  if (!is.null(x$Resample)) args$group <- ~ interaction(Model, Resample)
+  if (!is.null(x$Iteration)) args$group <- ~ interaction(Model, Iteration)
   mapping <- do.call(aes_, args)
 
   labels <- c(x = x@metrics$x@label, y = x@metrics$y@label)
@@ -336,8 +337,8 @@ plot.PerformanceCurve <- function(
 
 #' @rdname plot-methods
 #'
-plot.Resamples <- function(
-  x, metrics = NULL, stat = MachineShop::settings("stat.Resamples"),
+plot.Resample <- function(
+  x, metrics = NULL, stat = MachineShop::settings("stat.Resample"),
   type = c("boxplot", "density", "errorbar", "violin"), ...
 ) {
   plot(performance(x), metrics = metrics, stat = stat, type = type)
@@ -346,8 +347,8 @@ plot.Resamples <- function(
 
 #' @rdname plot-methods
 #'
-plot.VarImp <- function(x, n = NULL, ...) {
-  if (!is.null(n)) x <- head(x, n)
+plot.VariableImportance <- function(x, n = Inf, ...) {
+  x <- head(x, n)
   var_names <- rownames(x)
   df <- cbind(stack(x), variables = factor(var_names, rev(var_names)))
   p <- ggplot(df, aes_(~ variables, ~ values)) +

@@ -5,29 +5,31 @@
 \title{Tuned Model}
 \usage{
 TunedModel(
-  model,
+  object,
   grid = MachineShop::settings("grid"),
   fixed = list(),
   control = MachineShop::settings("control"),
   metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 )
 }
 \arguments{
-\item{model}{\link[=models]{model} function, function name, or object
+\item{object}{\link[=models]{model} function, function name, or object
 defining the model to be tuned.}
 
 \item{grid}{single integer or vector of integers whose positions or names
 match the parameters in the model's pre-defined tuning grid if one exists
 and which specify the number of values used to construct the grid;
-\code{\link{Grid}} function, function name, or object;
+\code{\link{TuningGrid}} function, function name, or object;
 \code{\link{ParameterGrid}} object; or \link[=data.frame]{data frame}
 containing parameter values at which to evaluate the model, such as that
 returned by \code{\link{expand_params}}.}
 
 \item{fixed}{list or one-row data frame with columns of fixed parameter
-values to combine with those in \code{grid}.}
+values to combine with those in \code{grid}.  This argument is deprecated
+and will be removed in a future version.  Fixed parameters may be specified
+directly in the model \code{object} instead.}
 
 \item{control}{\link[=controls]{control} function, function name, or object
 defining the resampling method to be employed.}
@@ -53,7 +55,7 @@ The \code{\link{expand_modelgrid}} function enables manual extraction and
 viewing of grids created automatically when a \code{TunedModel} is fit.
 
 \describe{
-  \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
+  \item{Response types:}{\code{factor}, \code{numeric}, \code{ordered},
     \code{Surv}}
 }
 }
@@ -72,14 +74,21 @@ plot(tuned_model, type = "l")
 
 # Randomly sampled grid points
 fit(sale_amount ~ ., data = ICHomes,
-    model = TunedModel(GBMModel, grid = Grid(size = 1000, random = 5)))
+    model = TunedModel(
+      GBMModel,
+      grid = TuningGrid(size = 1000, random = 5)
+    ))
 
 # User-specified grid
 fit(sale_amount ~ ., data = ICHomes,
-    model = TunedModel(GBMModel,
-                       grid = expand_params(n.trees = c(50, 100),
-                                            interaction.depth = 1:2,
-                                            n.minobsinnode = c(5, 10))))
+    model = TunedModel(
+      GBMModel,
+      grid = expand_params(
+        n.trees = c(50, 100),
+        interaction.depth = 1:2,
+        n.minobsinnode = c(5, 10)
+      )
+    ))
 }
 
 }

@@ -28,16 +28,16 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{binary factor}, \code{BinomialVariate},
+#'   \item{Response types:}{\code{binary factor}, \code{BinomialVariate},
 #'     \code{NegBinomialVariate}, \code{numeric}, \code{PoissonVariate},
 #'     \code{Surv}}
-#'   \item{\link[=TunedModel]{Automatic Tuning} of Grid Parameters:}{
+#'   \item{\link[=TunedModel]{Automatic tuning} of grid parameters:}{
 #'     \code{mstop}, \code{maxdepth}
 #'   }
 #' }
 #'
-#' Default values for the \code{NULL} arguments and further model details can be
-#' found in the source links below.
+#' Default values and further model details can be found in the source links
+#' below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -62,19 +62,12 @@ BlackBoostModel <- function(
   saveinfo = FALSE, ...
 ) {
 
+  risk <- match.arg(risk)
   teststat <- match.arg(teststat)
   testtype <- match.arg(testtype)
 
-  args <- new_params(environment(), ...)
-  is_main <- names(args) %in% "family"
-  is_control <- names(args) %in% c("mstop", "nu", "risk", "stopintern", "trace")
-
-  params <- args[is_main]
-  params$control <- as.call(c(.(mboost::boost_control), args[is_control]))
-  params$tree_controls <- as.call(c(.(partykit::ctree_control),
-                                    args[!(is_main | is_control)]))
-
   MLModel(
+
     name = "BlackBoostModel",
     label = "Gradient Boosting with Regression Trees",
     packages = c("mboost", "partykit"),
@@ -82,7 +75,8 @@ BlackBoostModel <- function(
                        "numeric", "PoissonVariate", "Surv"),
     weights = TRUE,
     predictor_encoding = "model.frame",
-    params = params,
+    params = new_params(environment(), ...),
+
     gridinfo = new_gridinfo(
       param = c("mstop", "maxdepth"),
       get_values = c(
@@ -90,7 +84,11 @@ BlackBoostModel <- function(
         function(n, ...) seq_len(min(n, 10))
       )
     ),
-    fit = function(formula, data, weights, family = NULL, ...) {
+
+    fit = function(
+      formula, data, weights, family = NULL, mstop, nu, risk, stopintern,
+      trace, ...
+    ) {
       if (is.null(family)) {
         family <- switch_class(response(data),
           "BinomialVariate" = mboost::Binomial(type = "glm"),
@@ -101,10 +99,17 @@ BlackBoostModel <- function(
           "Surv" = mboost::CoxPH()
         )
       }
-      mboost::blackboost(formula, data = as.data.frame(data),
-                         na.action = na.pass, weights = weights,
-                         family = family, ...)
+      mboost::blackboost(
+        formula, data = as.data.frame(data), na.action = na.pass,
+        weights = weights, family = family,
+        control = mboost::boost_control(
+          mstop = mstop, nu = nu, risk = risk, stopintern = stopintern,
+          trace = trace
+        ),
+        tree_controls = partykit::ctree_control(...)
+      )
     },
+
     predict = function(object, newdata, model, ...) {
       newdata <- as.data.frame(newdata)
       if (object$family@name == "Cox Partial Likelihood") {
@@ -115,9 +120,11 @@ BlackBoostModel <- function(
         predict(object, newdata = newdata, type = "response")
       }
     },
+
     varimp = function(object, ...) {
       structure(mboost::varimp(object), class = "numeric")
     }
+
   )
 
 }

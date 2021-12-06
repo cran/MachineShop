@@ -16,7 +16,7 @@
 #'
 #' @details
 #' \describe{
-#'   \item{Response Types:}{\code{factor}, \code{numeric}}
+#'   \item{Response types:}{\code{factor}, \code{numeric}}
 #' }
 #'
 #' Further model details can be found in the source link below.
@@ -35,13 +35,14 @@
 #'
 TreeModel <- function(
   mincut = 5, minsize = 10, mindev = 0.01, split = c("deviance", "gini"),
-  k = NULL, best = NULL, method = c("deviance", "misclass")
+  k = numeric(), best = integer(), method = c("deviance", "misclass")
 ) {
 
   split <- match.arg(split)
-  method <- if (is.null(k) && is.null(best)) NULL else match.arg(method)
+  method <- if (length(k) || length(best)) match.arg(method)
 
   MLModel(
+
     name = "TreeModel",
     label = "Regression and Classification Trees",
     packages = "tree",
@@ -49,18 +50,22 @@ TreeModel <- function(
     weights = TRUE,
     predictor_encoding = "model.frame",
     params = new_params(environment()),
-    fit = function(formula, data, weights, split, k = NULL, best = NULL,
-                   method = NULL, ...) {
+
+    fit = function(
+      formula, data, weights, split, k = NULL, best = NULL, method = NULL, ...
+    ) {
       model_fit <- tree::tree(formula, data = as.data.frame(data),
                               weights = weights, split = split, ...)
       if (!is.null(method)) {
         tree::prune.tree(model_fit, k = k, best = best, method = method)
       } else model_fit
     },
+
     predict = function(object, newdata, ...) {
       newdata <- as.data.frame(newdata)
       predict(object, newdata = newdata)
     }
+
   )
 
 }

@@ -15,7 +15,7 @@ setAsS3Part("ListOf", "listof")
 
 
 as.data.frame.ModelFrame <- function(x, ...) {
-  structure(as(x, "ModelFrame"), terms = NULL, class = "data.frame")
+  structure(asS3(x), terms = NULL)
 }
 
 
@@ -69,7 +69,7 @@ as.data.frame.PerformanceDiffTest <- function(x, ...) {
 }
 
 
-as.data.frame.Resamples <- function(x, ...) {
+as.data.frame.Resample <- function(x, ...) {
   asS3(as(x, "data.frame"))
 }
 
@@ -89,19 +89,145 @@ as.double.BinomialVariate <- function(x, ...) {
 }
 
 
+setAs("MLModel", "list",
+  function(from) as(from@params, "list")
+)
+
+
+setAs("SelectedInput", "list",
+  function(from) c(list(objects = from@inputs), as(from@params, "list"))
+)
+
+
+setAs("SelectedModel", "list",
+  function(from) c(list(objects = from@models), as(from@params, "list"))
+)
+
+
+setAs("TrainingParams", "list",
+  function(from) map(function(name) slot(from, name), slotNames(from))
+)
+
+
+setAs("TunedModel", "list",
+  function(from) {
+    c(list(object = from@model, grid = from@grid), as(from@params, "list"))
+  }
+)
+
+
+as.MLControl <- function(x, ...) {
+  UseMethod("as.MLControl")
+}
+
+
+as.MLControl.default <- function(x, ...) {
+  throw(Error("Cannot coerce class ", class1(x), " to an MLControl."))
+}
+
+
+as.MLControl.character <- function(x, ...) {
+  x <- get0(x)
+  as.MLControl(x)
+}
+
+
+as.MLControl.function <- function(x, ...) {
+  result <- try(x(), silent = TRUE)
+  if (!is(result, "MLControl")) {
+    throw(Error("Cannot coerce specified function to an MLControl"))
+  } else result
+}
+
+
+as.MLControl.MLControl <- function(x, ...) {
+  x
+}
+
+
+as.MLInput <- function(x, ...) {
+  UseMethod("as.MLInput")
+}
+
+
+as.MLInput.default <- function(x, ...) {
+  throw(Error("Cannot coerce class ", class1(x), " to an MLInput."))
+}
+
+
+as.MLInput.formula <- function(x, data, ...) {
+  args <- list(x, data, strata = response(x), na.rm = FALSE)
+  do.call(ModelFrame, args)
+}
+
+
+as.MLInput.matrix <- function(x, y, ...) {
+  ModelFrame(x, y, strata = y, na.rm = FALSE)
+}
+
+
+as.MLInput.ModelFrame <- function(x, ...) {
+  x
+}
+
+
+as.MLInput.recipe <- function(x, ...) {
+  ModelRecipe(x)
+}
+
+
+as.MLMetric <- function(x, ...) {
+  UseMethod("as.MLMetric")
+}
+
+
+as.MLMetric.default <- function(x, ...) {
+  throw(Error("Cannot coerce class ", class1(x), " to an MLMetric."))
+}
+
+
+as.MLMetric.character <- function(x, ...) {
+  x <- get0(x)
+  as.MLMetric(x)
+}
+
+
+as.MLMetric.MLMetric <- function(x, ...) {
+  x
+}
+
+
 #' Coerce to an MLModel
 #'
-#' Function to coerce an \code{MLModelFit} object to an \code{MLModel}.
+#' Function to coerce an object to \code{MLModel}.
 #'
-#' @rdname as.MLModel
-#'
-#' @param x model \link{fit} result.
+#' @param x model \link{fit} result, \link[=ModeledInput]{modeled input}, or
+#'   \link[parsnip:model_spec]{model specification} from the \pkg{parsnip}
+#'   package.
 #' @param ... arguments passed to other methods.
 #'
 #' @return \code{MLModel} class object.
 #'
+#' @seealso \code{\link{ParsnipModel}}
+#'
 as.MLModel <- function(x, ...) {
   UseMethod("as.MLModel")
+}
+
+
+as.MLModel.default <- function(x, ...) {
+  throw(Error("Cannot coerce class ", class1(x), " to an MLModel."))
+}
+
+
+as.MLModel.character <- function(x, ...) {
+  x <- get0(x)
+  as.MLModel(x)
+}
+
+
+as.MLModel.MLModel <- function(x, ...) {
+  x
 }
 
 
@@ -112,10 +238,28 @@ as.MLModel.MLModelFit <- function(x, ...) {
 }
 
 
-setAsS3Part("ModeledFrame", "ModelFrame")
+as.MLModel.MLModelFunction <- function(x, ...) {
+  x()
+}
 
 
-setAsS3Part("SelectedModelFrame", "ModelFrame")
+#' @rdname as.MLModel
+#'
+as.MLModel.ModeledInput <- function(x, ...) {
+  x@model
+}
+
+
+#' @rdname as.MLModel
+#'
+as.MLModel.model_spec <- function(x, ...) {
+  ParsnipModel(x)
+}
+
+
+as.MLModel.NULL <- function(x, ...) {
+  NullModel()
+}
 
 
 setAsS3Part("ModelRecipe", "recipe")

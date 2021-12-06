@@ -78,12 +78,12 @@ summary.ConfusionMatrix <- function(object, ...) {
 #' @rdname summary-methods
 #'
 summary.MLModel <- function(
-  object, stats = MachineShop::settings("stats.Resamples"), na.rm = TRUE, ...
+  object, stats = MachineShop::settings("stats.Resample"), na.rm = TRUE, ...
 ) {
-  if (!is_trained(object)) throw(Error("no training results to summarize"))
-  map(function(train_step) {
-    summary(train_step@performance, stats = stats, na.rm = na.rm, ...)
-  }, object@train_steps)
+  if (!is_trained(object)) throw(Error("No training results to summarize."))
+  map(function(step) {
+    summary(step@performance, stats = stats, na.rm = na.rm, ...)
+  }, object@steps)
 }
 
 
@@ -95,9 +95,10 @@ summary.MLModelFit <- function(object, ...) {
 #' @rdname summary-methods
 #'
 summary.Performance <- function(
-  object, stats = MachineShop::settings("stats.Resamples"), na.rm = TRUE, ...
+  object, stats = MachineShop::settings("stats.Resample"), na.rm = TRUE, ...
 ) {
-  stats <- list_to_function(stats, "stat")
+  stats <- check_stats(stats, convert = TRUE)
+  throw(check_assignment(stats))
 
   f <- function(x) {
     prop_na <- mean(is.na(x))
@@ -124,16 +125,17 @@ summary.Performance <- function(
 summary.PerformanceCurve <- function(
   object, stat = MachineShop::settings("stat.Curve"), ...
 ) {
-  if (!(is.null(object$Resample) || is.null(stat))) {
+  if (!(is.null(object$Iteration) || is.null(stat))) {
 
-    stat <- fget(stat)
+    stat <- check_stat(stat, convert = TRUE)
+    throw(check_assignment(stat))
 
     object_class <- class(object)
     stat_na_omit <- function(x) stat(x[is.finite(x)])
 
     object_list <- by(object, object$Model, function(curves) {
       cutoffs <- unique(curves$Cutoff)
-      curves_split <- split(curves, curves$Resample)
+      curves_split <- split(curves, curves$Iteration)
       x_all <- y_all <- matrix(NA, length(cutoffs), length(curves_split))
       for (j in seq_along(curves_split)) {
         curve <- curves_split[[j]]
@@ -166,8 +168,8 @@ summary.PerformanceCurve <- function(
 
 #' @rdname summary-methods
 #'
-summary.Resamples <- function(
-  object, stats = MachineShop::settings("stats.Resamples"), na.rm = TRUE, ...
+summary.Resample <- function(
+  object, stats = MachineShop::settings("stats.Resample"), na.rm = TRUE, ...
 ) {
   summary(performance(object), stats = stats, na.rm = na.rm)
 }

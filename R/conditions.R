@@ -41,9 +41,10 @@ LocalError <- function(...) {
 }
 
 
-LocalWarning <- function(...) {
+LocalWarning <- function(..., value = NULL) {
   warningCondition(
     message = paste0(...),
+    value = value,
     class = "LocalWarning"
   )
 }
@@ -51,18 +52,20 @@ LocalWarning <- function(...) {
 
 TypeError <- function(value, expected, subject = character(), call = FALSE) {
   errorCondition(
-    message = paste0("Expected ", subject, if (length(subject)) " to be ",
-                     toString(expected, conj = "or"), "; got ", class1(value),
-                     " instead."),
+    message = paste0(
+      "Expected ", subject, if (length(subject)) " to be ",
+      as_string(expected, conj = "or"), "; got ", class1(value), " instead."
+    ),
     call = select_call(call, sys.call(-1)),
     class = "TypeError"
   )
 }
 
 
-Warning <- function(..., call = FALSE) {
+Warning <- function(..., value = NULL, call = FALSE) {
   warningCondition(
     message = paste0(...),
+    value = value,
     call = select_call(call, sys.call(-1))
   )
 }
@@ -71,8 +74,8 @@ Warning <- function(..., call = FALSE) {
 #################### Throw ####################
 
 
-throw <- function(x, call = TRUE) {
-  .throw(x, call = call, parent_call = sys.call(-1))
+throw <- function(x, call = TRUE, ...) {
+  .throw(x, call = call, parent_call = sys.call(-1), ...)
 }
 
 
@@ -102,15 +105,24 @@ throw <- function(x, call = TRUE) {
 
 .throw.LocalWarning <- function(x, ...) {
   warning(x$message, call. = FALSE)
+  x$value
 }
 
 
-.throw.warning <- function(x, call, parent_call, ...) {
-  if (match("warning", class(x)) > 1) {
-    x$message <- paste0(class1(x), ": ", x$message)
-  }
+.throw.warning <- function(x, call, parent_call, times = Inf, ...) {
   x$call <- select_call(call, parent_call, conditionCall(x))
-  warning(x)
+  if (is.call(x$call) && is.finite(times)) {
+    name <- x$call[[1]]
+    times <- min(times, MachineShop_global$throw_times[[name]])
+    MachineShop_global$throw_times[[name]] <- times - 1
+  }
+  if (times > 0) {
+    if (match("warning", class(x)) > 1) {
+      x$message <- paste0(class1(x), ": ", x$message)
+    }
+    warning(x)
+  }
+  x$value
 }
 
 
@@ -126,7 +138,9 @@ select_call <- function(x, parent_call = NULL, last_call = NULL) {
 #################### Checks ####################
 
 
-check_array <- function(x, type, size = NULL, na.fail = TRUE) {
+check_array <- function(
+  x, type, size = integer(), nonempty = TRUE, na.fail = TRUE
+) {
   result <- try({
     storage.mode(x) <- type
     x
@@ -136,7 +150,7 @@ check_array <- function(x, type, size = NULL, na.fail = TRUE) {
   if (is(result, "try-error")) {
     TypeError(x, type)
   } else if (n > 0 && (ndim(x) != n || any(na.omit(size(x) != size)))) {
-    msg <- if (n == 1 && size == 1) {
+    msg <- if (identical(size, 1)) {
       "a scalar"
     } else if (n == 1) {
       paste("a vector of length", size)
@@ -145,6 +159,8 @@ check_array <- function(x, type, size = NULL, na.fail = TRUE) {
             paste(size, collapse = "x"))
     }
     DomainError(x, paste("must be", msg))
+  } else if (nonempty && is_empty(x)) {
+    DomainError(x, "must be non-empty")
   } else if (na.fail && anyNA(result)) {
     msg <- paste0(
       c("", "must be ", paste("non-missing", type)),
@@ -172,7 +188,7 @@ check_censoring <- function(x, types, ...) {
   if (!(type %in% types)) {
     types <- paste0("'", types, "'")
     Error("Expected survival data censoring type to be ",
-          toString(types, conj = "or"), "; got '", type, "' instead.")
+          as_string(types, conj = "or"), "; got '", type, "' instead.")
   } else x
 }
 
@@ -184,29 +200,29 @@ check_character <- function(x, ...) {
 
 check_const_setting <- function(x, name) {
   if (!identical(x, x <- .global_defaults[[name]])) {
-    throw(LocalWarning("MachineShop '", name, "' setting cannot be changed."))
-  }
-  x
+    LocalWarning("MachineShop '", name, "' setting cannot be changed.",
+                 value = x)
+  } else x
 }
 
 
 check_equal_weights <- function(x) {
   if (length(x) && any(diff(x) != 0)) {
-    Warning("Model weights are not supported and will be ignored.")
-  }
+    Warning("Model weights are not supported and will be ignored.", value = x)
+  } else x
 }
 
 
 check_grid <- function(x) {
   if (is(x, "numeric")) {
-    Grid(x)
-  } else if (identical(x, "Grid") || identical(x, Grid)) {
-    Grid()
-  } else if (is(x, "Grid")) {
+    TuningGrid(x)
+  } else if (identical(x, "TuningGrid") || identical(x, TuningGrid)) {
+    TuningGrid()
+  } else if (is(x, "TuningGrid")) {
     x
   } else {
-    DomainError(x, "must be one or more positive integers or a Grid function, ",
-                   "function name, or object")
+    DomainError(x, "must be one or more positive integers or a ",
+                   "TuningGrid function, function name, or object")
   }
 }
 
@@ -222,22 +238,36 @@ check_logical <- function(x, ...) {
 }
 
 
-check_match <- function(choices) {
-  function(x) {
-    tryCatch(match.arg(x, choices), error = function(e) {
-      choices <- paste0("\"", choices, "\"")
-      DomainError(x, "must be one of ", toString(choices, conj = "or"))
-    })
+check_match <- function(x, choices) {
+  tryCatch(match.arg(x, choices), error = function(e) {
+    choices <- paste0("\"", choices, "\"")
+    DomainError(x, "must be one of ", as_string(choices, conj = "or"))
+  })
+}
+
+
+check_metric <- function(x, convert = FALSE) {
+  result <- try(as.MLMetric(x), silent = TRUE)
+  if (is(result, "try-error")) {
+    DomainError(x, "must be a metrics function or function name")
+  } else if (convert) {
+    result
+  } else {
+    x
   }
 }
 
 
-check_metrics <- function(x) {
-  result <- try(map(get_MLMetric, c(x)), silent = TRUE)
+check_metrics <- function(x, convert = FALSE) {
+  result <- try(map(as.MLMetric, c(x)), silent = TRUE)
   if (is(result, "try-error")) {
     DomainError(x, "must be a metrics function, function name, ",
                    "or vector of these")
-  } else x
+  } else if (convert) {
+    vector_to_function(x, "metric")
+  } else {
+    x
+  }
 }
 
 
@@ -264,20 +294,73 @@ check_numeric <- function(
 }
 
 
-check_stat <- function(x) {
-  result <- try(fget(x)(1:5), silent = TRUE)
-  if (!is.numeric(result) || length(result) != 1) {
-    DomainError(x, "must be a statistic function or function name")
-  } else x
+check_packages <- function(x) {
+  paren_pos <- regexpr("\\(([^)]*)\\)", x)
+  paren_len <- attr(paren_pos, "match.length")
+
+  end_pos <- ifelse(paren_pos > 0, paren_pos - 1, nchar(x))
+  pkg_names <- trimws(substr(x, 1, end_pos))
+
+  check <- function(failures, msg, pkgs_fun) {
+    if (any(failures)) {
+      x <- x[failures]
+      pkg_names <- pkg_names[failures]
+      Error("Call ", note_items(msg, x), ".\n",
+            "To address this issue, try running ", pkgs_fun, "(",
+            deparse1(pkg_names), ").")
+    }
+  }
+
+  installed <- map("logi", requireNamespace, pkg_names, quietly = TRUE)
+  result <- check(!installed, "requires prior installation of package{?s}: ",
+                  "install.packages")
+  if (is(result, "error")) return(result)
+
+  end_pos <- paren_pos + paren_len - 2
+  compat_versions <- strsplit(substr(x, paren_pos + 1, end_pos), " ")
+
+  compatible <- map("logi", function(pkg_name, compat_version) {
+    if (length(compat_version) == 2) {
+      version <- packageVersion(pkg_name)
+      eval(call(compat_version[1], version, compat_version[2]))
+    } else TRUE
+  }, pkg_names, compat_versions)
+  result <- check(!compatible, "requires updated package version{?s}: ",
+                  "update.packages")
+  if (is(result, "error")) return(result)
+
+  x
 }
 
 
-check_stats <- function(x) {
-  result <- try(list_to_function(x, "stat")(1:5), silent = TRUE)
+check_stat <- function(x, convert = FALSE) {
+  result <- try({
+    stat <- fget(x)
+    stat(1:5)
+  }, silent = TRUE)
+  if (!is.numeric(result) || length(result) != 1) {
+    DomainError(x, "must be a statistic function or function name")
+  } else if (convert) {
+    stat
+  } else {
+    x
+  }
+}
+
+
+check_stats <- function(x, convert = FALSE) {
+  result <- try({
+    stats <- vector_to_function(x, "stat")
+    stats(1:5)
+  }, silent = TRUE)
   if (!is.numeric(result)) {
     DomainError(x, "must be a statistics function, function name, ",
                    "or vector of these")
-  } else x
+  } else if (convert) {
+    stats
+  } else {
+    x
+  }
 }
 
 
@@ -288,4 +371,57 @@ check_weights <- function(x, along) {
   } else {
     check_numeric(x, bounds = c(0, Inf), include = c(TRUE, FALSE), size = n)
   }
+}
+
+
+#################### Deprecations ####################
+
+
+#' Deprecated Functions
+#'
+#' Functions that have been deprecated and will be removed in a future version
+#' of the package.
+#'
+#' @name deprecated
+#' @rdname deprecated
+#'
+#' @param ... arguments passed to non-deprecated equivalent.
+#'
+NULL
+
+
+#' @rdname deprecated
+#'
+#' @details
+#' Use \code{\link[=TuningGrid]{TuningGrid()}} instead of \code{Grid()}.
+#'
+Grid <- function(...) {
+  throw(DeprecatedCondition(
+    "Grid()", "TuningGrid()", expired = Sys.Date() >= "2022-02-01"
+  ))
+  TuningGrid(...)
+}
+
+
+dep_fixedarg <- function(x) {
+  if (length(x)) {
+    throw(DeprecatedCondition(
+      "Argument 'fixed' to TunedModel()", "the model 'object'",
+      expired = Sys.Date() >= "2022-02-01"
+    ), call = FALSE)
+  }
+  x
+}
+
+
+dep_varimpargs <- function(metric, ...) {
+  args <- list(...)
+  if (!missing(metric)) {
+    throw(DeprecatedCondition(
+      "Argument 'metric' to varimp()", "'type'",
+      expired = Sys.Date() >= "2021-12-01"
+    ), call = FALSE)
+    args$type <- metric
+  }
+  args
 }

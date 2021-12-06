@@ -27,6 +27,7 @@ setMethod("convert_prob", c("factor", "array"),
 
 setMethod("convert_prob", c("factor", "matrix"),
   function(object, x, ...) {
+    stopifnot(ncol(x) > 0)
     if (nlevels(object) == 2) {
       convert_prob(object, x[, ncol(x)])
     } else {
@@ -48,7 +49,7 @@ setMethod("convert_prob", c("matrix", "matrix"),
     stopifnot(ncol(object) == ncol(x))
     var_names <- colnames(x)
     if (is.null(var_names)) var_names <- colnames(object)
-    if (is.null(var_names)) var_names <- paste0("y", seq_len(ncol(x)))
+    if (is.null(var_names)) var_names <- make_names_len(ncol(x), "y")
     structure(x, dimnames = list(NULL, var_names))
   }
 )
@@ -67,20 +68,6 @@ setMethod("convert_prob", c("numeric", "matrix"),
   function(object, x, ...) {
     stopifnot(ncol(x) == 1)
     convert_prob(object, x[, 1])
-  }
-)
-
-
-setMethod("convert_prob", c("Surv", "matrix"),
-  function(object, x, times, ...) {
-    SurvProbs(x, times, distr = attr(x, "surv_distr"))
-  }
-)
-
-
-setMethod("convert_prob", c("Surv", "numeric"),
-  function(object, x, ...) {
-    SurvMeans(x, distr = attr(x, "surv_distr"))
   }
 )
 

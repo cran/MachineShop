@@ -8,14 +8,15 @@ SelectedModel(
   ...,
   control = MachineShop::settings("control"),
   metrics = NULL,
-  stat = MachineShop::settings("stat.Trained"),
+  stat = MachineShop::settings("stat.TrainingParams"),
   cutoff = MachineShop::settings("cutoff")
 )
 }
 \arguments{
-\item{...}{\link[=models]{model} functions, function names, objects, or
-vectors of these to serve as the candidate set from which to select, such
-as that returned by \code{\link{expand_model}}.}
+\item{...}{\link[=models]{model} functions, function names, objects; other
+objects that can be \link[=as.MLModel]{coerced} to models; or vectors of
+these to serve as the candidate set from which to select, such as that
+returned by \code{\link{expand_model}}.}
 
 \item{control}{\link[=controls]{control} function, function name, or object
 defining the resampling method to be employed.}
@@ -38,7 +39,7 @@ Model selection from a candidate set.
 }
 \details{
 \describe{
-  \item{Response Types:}{\code{factor}, \code{numeric}, \code{ordered},
+  \item{Response types:}{\code{factor}, \code{numeric}, \code{ordered},
     \code{Surv}}
 }
 }
@@ -46,8 +47,10 @@ Model selection from a candidate set.
 \donttest{
 ## Requires prior installation of suggested package gbm and glmnet to run
 
-model_fit <- fit(sale_amount ~ ., data = ICHomes,
-                 model = SelectedModel(GBMModel, GLMNetModel, SVMRadialModel))
+model_fit <- fit(
+  sale_amount ~ ., data = ICHomes,
+  model = SelectedModel(GBMModel, GLMNetModel, SVMRadialModel)
+)
 (selected_model <- as.MLModel(model_fit))
 summary(selected_model)
 }

@@ -81,7 +81,9 @@ setMetric_numeric("msle",
 
 #' @rdname metrics
 #'
-r2 <- function(observed, predicted = NULL, weights = NULL, distr = NULL, ...) {
+r2 <- function(
+  observed, predicted = NULL, weights = NULL, distr = character(), ...
+) {
   call_metric_method("r2", environment())
 }
 
@@ -105,7 +107,7 @@ setMetricMethod("r2", c("numeric", "numeric"),
 )
 
 
-setMetricMethod_Resamples("r2")
+setMetricMethod_Resample("r2")
 
 
 setMetricMethod("r2", c("Surv", "numeric"),

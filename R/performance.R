@@ -18,7 +18,7 @@
 #'   probabilities are classified.
 #' @param na.rm logical indicating whether to remove observed or predicted
 #'   responses that are \code{NA} when calculating metrics.
-#' @param ... arguments passed from the \code{Resamples} method to the response
+#' @param ... arguments passed from the \code{Resample} method to the response
 #'   type-specific methods or from the method for \code{ConfusionList} to
 #'   \code{ConfusionMatrix}.  Elliptical arguments in the response
 #'   type-specific methods are passed to \code{metrics} supplied as a single
@@ -100,7 +100,7 @@ performance.Surv <- function(
 }
 
 
-.performance <- function(x, y, weights, metrics, na.rm, ..., dots = NULL) {
+.performance <- function(x, y, weights, metrics, na.rm, ..., dots = list()) {
   if (na.rm) {
     complete <- complete_subset(x = x, y = y, weights = weights)
     x <- complete$x
@@ -111,7 +111,9 @@ performance.Surv <- function(
     args <- list(x, y, weights = weights, ...)
     metric <- if (is_one_element(metrics)) metrics[[1]] else metrics
     if (is(get0(metric), "MLMetric")) args <- c(args, dots)
-    do.call(list_to_function(metrics, "metric"), args)
+    metrics <- check_metrics(metrics, convert = TRUE)
+    throw(check_assignment(metrics))
+    do.call(metrics, args)
   } else {
     NA_real_
   }
@@ -133,13 +135,15 @@ performance.ConfusionMatrix <- function(
   args <- list(x)
   metric <- if (is_one_element(metrics)) metrics[[1]] else metrics
   if (is(get0(metric), "MLMetric")) args <- c(args, ...)
-  do.call(list_to_function(metrics, "metric"), args)
+  metrics <- check_metrics(metrics, convert = TRUE)
+  throw(check_assignment(metrics))
+  do.call(metrics, args)
 }
 
 
 #' @rdname performance
 #'
-performance.Resamples <- function(x, ...) {
+performance.Resample <- function(x, ...) {
   perf_list <- by(x, x$Model, function(resamples) {
     Performance(performance(x@control, resamples, ...), control = x@control)
   }, simplify = FALSE)
@@ -148,17 +152,17 @@ performance.Resamples <- function(x, ...) {
 
 
 performance.MLControl <- function(x, resamples, ...) {
-  perf_list <- by(resamples, resamples$Resample, function(resample) {
+  perf_list <- by(resamples, resamples$Iteration, function(resample) {
     performance(resample$Observed, resample$Predicted, resample$Weight, ...)
   }, simplify = FALSE)
   do.call(rbind, perf_list)
 }
 
 
-performance.MLBootOptimismControl <- function(x, resamples, ...) {
+performance.BootOptimismControl <- function(x, resamples, ...) {
   test_perf_list <- list()
   boot_perf_list <- list()
-  resamples_split <- split(resamples, resamples$Resample)
+  resamples_split <- split(resamples, resamples$Iteration)
   for (name in names(resamples_split)) {
     resample <- resamples_split[[name]]
     test_perf_list[[name]] <- performance(resample$Observed,
@@ -178,16 +182,16 @@ performance.MLBootOptimismControl <- function(x, resamples, ...) {
 }
 
 
-performance.MLCVOptimismControl <- function(x, resamples, ...) {
+performance.CVOptimismControl <- function(x, resamples, ...) {
   test_perf <- NextMethod()
 
-  resamples_split <- split(resamples, ceiling(resamples$Resample / x@folds))
-  pred_names <- paste0("CV.Predicted.", seq_len(x@folds))
+  resamples_split <- split(resamples, ceiling(resamples$Iteration / x@folds))
+  pred_names <- make_names_len(x@folds, "CV.Predicted.")
   perf_list <- map(function(resample) {
     f <- function(prop, pred) {
       prop * performance(resample$Observed, pred, resample$Weight, ...)
     }
-    props <- prop.table(table(resample$Resample))
+    props <- prop.table(table(resample$Iteration))
     preds <- resample[pred_names]
     Reduce("+", map(f, props, preds))
   }, resamples_split)
@@ -203,7 +207,7 @@ performance.MLCVOptimismControl <- function(x, resamples, ...) {
 
 Performance <- function(...) {
   object <- new("Performance", ...)
-  names <- c("Resample", "Metric")
+  names <- c("Iteration", "Metric")
   if (ndim(object) == 3) names <- c(names, "Model")
   names(dimnames(object)) <- names
   object

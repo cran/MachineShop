@@ -19,6 +19,7 @@ PartialDependence <- function(object) {
 #' @param intervals character string specifying whether the \code{n} values are
 #'   spaced uniformly (\code{"uniform"}) or according to variable quantiles
 #'   (\code{"quantile"}).
+#' @param distr,method arguments passed to \code{\link{predict}}.
 #' @param stats function, function name, or vector of these with which to
 #'   compute response variable summary statistics over non-selected predictor
 #'   variables.
@@ -41,16 +42,17 @@ PartialDependence <- function(object) {
 #'
 dependence <- function(
   object, data = NULL, select = NULL, interaction = FALSE, n = 10,
-  intervals = c("uniform", "quantile"),
+  intervals = c("uniform", "quantile"), distr = character(),
+  method = character(),
   stats = MachineShop::settings("stats.PartialDependence"), na.rm = TRUE
 ) {
 
   stopifnot(is(object, "MLModelFit"))
 
-  x <- as.MLModel(object)@x
-  if (is.null(data)) data <- x
+  input <- as.MLModel(object)@input
+  if (is.null(data)) data <- input
   data <- as.data.frame(data)
-  pred_names <- all.vars(predictors(terms(x, original = TRUE)))
+  pred_names <- all.vars(predictors(terms(input, original = TRUE)))
   pred_names <- do.call(subset_names, list(pred_names, substitute(select)),
                         envir = parent.frame())
 
@@ -58,7 +60,8 @@ dependence <- function(
 
   intervals <- match.arg(intervals)
 
-  stats <- list_to_function(stats, "stat")
+  stats <- check_stats(stats, convert = TRUE)
+  throw(check_assignment(stats))
 
   select_values <- function(x) {
     if (is.factor(x)) {
@@ -84,11 +87,12 @@ dependence <- function(
   predict_stats <- function(data) {
     stats_list <- map(
       function(x) stats(if (na.rm) na.omit(x) else x),
-      as.data.frame(predict(object, newdata = data, type = "prob"))
+      as.data.frame(predict(object, newdata = data, type = "prob",
+                            distr = distr, method = method))
     )
     x <- do.call(cbind, stats_list)
-    if (is.null(rownames(x))) rownames(x) <- make.unique(rep("stat", nrow(x)))
-    if (is.null(colnames(x))) colnames(x) <- make.unique(rep("y", ncol(x)))
+    if (is.null(rownames(x))) rownames(x) <- make_unique(rep("stat", nrow(x)))
+    if (is.null(colnames(x))) colnames(x) <- make_unique(rep("y", ncol(x)))
     names(dimnames(x)) <- c("Statistic", "Response")
     as.data.frame(TabularArray(x))
   }
