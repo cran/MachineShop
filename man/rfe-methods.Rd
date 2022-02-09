@@ -2,50 +2,20 @@
 % Please edit documentation in R/rfe.R
 \name{rfe}
 \alias{rfe}
+\alias{rfe.default}
 \alias{rfe.formula}
 \alias{rfe.matrix}
 \alias{rfe.ModelFrame}
 \alias{rfe.recipe}
+\alias{rfe.ModelSpecification}
 \alias{rfe.MLModel}
 \alias{rfe.MLModelFunction}
 \title{Recursive Feature Elimination}
 \usage{
 rfe(...)
 
-\method{rfe}{formula}(
-  formula,
-  data,
-  model,
-  control = MachineShop::settings("control"),
-  props = 4,
-  sizes = integer(),
-  random = FALSE,
-  recompute = TRUE,
-  optimize = c("global", "local"),
-  samples = c(rfe = 1, varimp = 1),
-  metrics = NULL,
-  stat = "base::mean",
-  ...
-)
-
-\method{rfe}{matrix}(
-  x,
-  y,
-  model,
-  control = MachineShop::settings("control"),
-  props = 4,
-  sizes = integer(),
-  random = FALSE,
-  recompute = TRUE,
-  optimize = c("global", "local"),
-  samples = c(rfe = 1, varimp = 1),
-  metrics = NULL,
-  stat = "base::mean",
-  ...
-)
-
-\method{rfe}{ModelFrame}(
-  input,
+\method{rfe}{default}(
+  object,
   model = NULL,
   control = MachineShop::settings("control"),
   props = 4,
@@ -55,37 +25,33 @@ rfe(...)
   optimize = c("global", "local"),
   samples = c(rfe = 1, varimp = 1),
   metrics = NULL,
-  stat = "base::mean",
+  stat = c(resample = MachineShop::settings("stat.Resample"), permute =
+    MachineShop::settings("stat.TrainingParams")),
+  progress = FALSE,
   ...
 )
 
-\method{rfe}{recipe}(
-  input,
-  model = NULL,
-  control = MachineShop::settings("control"),
-  props = 4,
-  sizes = integer(),
-  random = FALSE,
-  recompute = TRUE,
-  optimize = c("global", "local"),
-  samples = c(rfe = 1, varimp = 1),
-  metrics = NULL,
-  stat = "base::mean",
-  ...
-)
+\method{rfe}{formula}(formula, data, model, ...)
+
+\method{rfe}{matrix}(x, y, model, ...)
+
+\method{rfe}{ModelFrame}(input, model = NULL, ...)
+
+\method{rfe}{recipe}(input, model = NULL, ...)
+
+\method{rfe}{ModelSpecification}(object, ...)
 
 \method{rfe}{MLModel}(model, ...)
 
 \method{rfe}{MLModelFunction}(model, ...)
 }
 \arguments{
-\item{...}{arguments passed from the generic function to its methods and from
-the \code{MLModel} and \code{MLModelFunction} methods to others.  The
-first arguments of \code{rfe} methods are positional and, as such, must be
-given first in calls to them.}
+\item{...}{arguments passed to the default method from the others.  The
+first argument of each \code{rfe} method is positional and, as such, must
+be given first in calls to them.}
 
-\item{formula, data}{\link[=formula]{formula} defining the model predictor and
-response variables and a \link[=data.frame]{data frame} containing them.}
+\item{object}{model \link[=inputs]{input} or
+\link[=ModelSpecification]{specification}.}
 
 \item{model}{\link[=models]{model} function, function name, or object; or
 another object that can be \link[=as.MLModel]{coerced} to a model.  A model
@@ -125,8 +91,16 @@ computationally for \code{rfe} than for \code{varimp}.}
 these with which to calculate performance.  If not specified, default
 metrics defined in the \link{performance} functions are used.}
 
-\item{stat}{function or character string naming a function to compute a
-summary statistic on resampled metric values and permuted samples.}
+\item{stat}{functions or character strings naming functions to compute
+summary statistics on resampled metric values and permuted samples.  One or
+both of the values may be specified as named arguments or in the order in
+which their defaults appear.}
+
+\item{progress}{logical indicating whether to display iterative progress
+during elimination.}
+
+\item{formula, data}{\link[=formula]{formula} defining the model predictor and
+response variables and a \link[=data.frame]{data frame} containing them.}
 
 \item{x, y}{\link{matrix} and object containing predictor and response
 variables.}
@@ -135,10 +109,10 @@ variables.}
 predictor and response variables.}
 }
 \value{
-A data frame with columns for the numbers of predictor variables
-retained (size), their names (terms), logical indicators to identify the
-optimal model (optimal), and associated predictive performances
-(performance).
+\code{TrainingStep} class object containing a summary of the numbers
+of predictor variables retained (size), their names (terms), logical
+indicators for the optimal model selected (selected), and associated
+performance metrics (metrics).
 }
 \description{
 A wrapper method of backward feature selection in which a given model is fit
@@ -149,10 +123,14 @@ the subset whose resampled predictive performance is optimal.
 \donttest{
 ## Requires prior installation of suggested package gbm to run
 
-rfe(sale_amount ~ ., data = ICHomes, model = GBMModel)
+(res <- rfe(sale_amount ~ ., data = ICHomes, model = GBMModel))
+summary(res)
+summary(performance(res))
+plot(res, type = "line")
 }
 
 }
 \seealso{
-\code{\link{varimp}}
+\code{\link{performance}}, \code{\link{plot}},
+\code{\link{summary}}, \code{\link{varimp}}
 }

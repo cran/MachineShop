@@ -71,14 +71,9 @@ setMetricMethod("auc", c("Resample", "NULL"),
 
 setMetricMethod("auc", c("Surv", "SurvProbs"),
   function(observed, predicted, weights, metrics, ...) {
-    x <- unname(auc(performance_curve(observed, predicted, weights,
-                                      metrics = metrics)))
-    times <- predicted@times
-    if (length(times) > 1) {
-      c("mean" = survmetric_mean(x, times), "time" = x)
-    } else {
-      x
-    }
+    x <- auc(performance_curve(observed, predicted, weights, metrics = metrics))
+    names(x) <- colnames(predicted)
+    survmetric_mean(x, predicted@times)
   }
 )
 
@@ -137,11 +132,8 @@ setMetricMethod("brier", c("Surv", "SurvProbs"),
       sum(cens_weights * (stop_after - predicted[, i, drop = TRUE])^2)
     }, seq_along(times))
 
-    if (length(times) > 1) {
-      c("mean" = survmetric_mean(x, times), "time" = x)
-    } else {
-      x
-    }
+    names(x) <- colnames(predicted)
+    survmetric_mean(x, times)
   }
 )
 
@@ -398,7 +390,7 @@ setMetric_auc("roc_auc", c(tpr, fpr))
 roc_index <- function(
   observed, predicted = NULL, weights = NULL,
   cutoff = MachineShop::settings("cutoff"),
-  f = function(sensitivity, specificity) (sensitivity + specificity) / 2, ...
+  fun = function(sensitivity, specificity) (sensitivity + specificity) / 2, ...
 ) {
   call_metric_method("roc_index", environment())
 }
@@ -407,8 +399,8 @@ MLMetric(roc_index) <- list("roc_index", "ROC Index", TRUE)
 
 
 setMetric_BinaryConfusionMatrix("roc_index",
-  function(observed, predicted, f, ...) {
-    f(sensitivity(observed), specificity(observed))
+  function(observed, predicted, fun, ...) {
+    fun(sens = sensitivity(observed), spec = specificity(observed))
   }
 )
 

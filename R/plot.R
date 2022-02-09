@@ -7,7 +7,7 @@
 #'
 #' @param x \link{calibration}, \link{confusion}, \link{lift},
 #'   trained model \link{fit}, partial \link{dependence}, \link{performance},
-#'   \link[=curves]{performance curve}, \link{resample}, or
+#'   \link[=curves]{performance curve}, \link{resample}, \link{rfe}, or
 #'   \link[=varimp]{variable importance} result.
 #' @param diagonal logical indicating whether to include a diagonal reference
 #'   line.
@@ -19,7 +19,8 @@
 #' @param se logical indicating whether to include standard error bars.
 #' @param stat function or character string naming a function to compute a
 #'   summary statistic on resampled metrics for trained \code{MLModel} line
-#'   plots and \code{Resample} model ordering.  For \code{LiftCurve} and
+#'   plots and \code{Resample} model ordering.  The original ordering is
+#'   preserved if a value of \code{NULL} is given.  For \code{LiftCurve} and
 #'   \code{PerformanceCurve} classes, plots are of resampled metrics aggregated
 #'   by the statistic if given or of resample-specific metrics if \code{NULL}.
 #' @param stats vector of numeric indexes or character names of partial
@@ -162,51 +163,8 @@ plot.MLModel <- function(
   type = c("boxplot", "density", "errorbar", "line", "violin"), ...
 ) {
   if (!is_trained(x)) throw(Error("No training results to plot."))
-
-  stat <- check_stat(stat, convert = TRUE)
-  throw(check_assignment(stat))
-  type <- match.arg(type)
-
   map(function(step) {
-    perf <- step@performance
-    if (type == "line") {
-      grid <- unnest(step@grid$params)
-      stats <- apply(perf, c(3, 2), function(x) stat(na.omit(x))) %>%
-        TabularArray %>%
-        as.data.frame
-      df <- data.frame(
-        x = grid[[1]],
-        Value = stats$Value,
-        Metric = stats$Metric
-      )
-
-      metriclevels <- levels(df$Metric)
-      if (is.null(metrics)) {
-        metrics <- metriclevels
-      } else {
-        metrics <- match_indices(metrics, metriclevels)
-        df <- df[df$Metric %in% metrics, , drop = FALSE]
-      }
-      df$Metric <- factor(df$Metric, metrics)
-
-      indices <- map("logi", function(x) length(unique(x)), grid[-1])
-      args <- list(~ x, ~ Value)
-      if (any(indices)) {
-        df$Group <- interaction(grid[-1][indices])
-        args$color <- args$shape <- ~ Group
-      } else {
-        args$group <- 1
-      }
-      mapping <- do.call(aes_, args)
-
-      ggplot(df, mapping) +
-        geom_line(stat = "summary", fun = mean) +
-        geom_point(stat = "summary", fun = mean) +
-        labs(x = names(grid)[1]) +
-        facet_wrap(~ Metric, scales = "free")
-    } else {
-      plot(perf, metrics = metrics, stat = stat, type = type, ...)
-    }
+    plot(step, metrics = metrics, stat = stat, type = type, ...)
   }, x@steps)
 }
 
@@ -254,22 +212,23 @@ plot.Performance <- function(
   df <- as.data.frame(x)
   if (is.null(df$Model)) df$Model <- factor("Model")
 
-  metriclevels <- levels(df$Metric)
+  metric_levels <- levels(df$Metric)
   if (is.null(metrics)) {
-    metrics <- metriclevels
+    metrics <- metric_levels
   } else {
-    metrics <- match_indices(metrics, metriclevels)
+    metrics <- match_indices(metrics, metric_levels)
     df <- df[df$Metric %in% metrics, , drop = FALSE]
   }
   df$Metric <- factor(df$Metric, metrics)
 
+  if (is.null(stat)) stat <- function(x) 0
   stat <- check_stat(stat, convert = TRUE)
   throw(check_assignment(stat))
 
-  firstmetric <- df[df$Metric == metrics[1], , drop = FALSE]
-  sortedlevels <- tapply(firstmetric$Value, firstmetric$Model,
+  df_metric <- df[df$Metric == metrics[1], , drop = FALSE]
+  sorted_levels <- tapply(df_metric$Value, df_metric$Model,
                          function(x) stat(na.omit(x))) %>% sort %>% names
-  df$Model <- factor(df$Model, sortedlevels)
+  df$Model <- factor(df$Model, sorted_levels)
 
   p <- ggplot(df)
   switch(match.arg(type),
@@ -342,6 +301,58 @@ plot.Resample <- function(
   type = c("boxplot", "density", "errorbar", "violin"), ...
 ) {
   plot(performance(x), metrics = metrics, stat = stat, type = type)
+}
+
+
+#' @rdname plot-methods
+#'
+plot.TrainingStep <- function(
+  x, metrics = NULL, stat = MachineShop::settings("stat.TrainingParams"),
+  type = c("boxplot", "density", "errorbar", "line", "violin"), ...
+) {
+  type <- match.arg(type)
+  if (type == "line") {
+    stat <- check_stat(stat, convert = TRUE)
+    throw(check_assignment(stat))
+
+    params <- unnest_params(summary(x)$params)
+    stats <- performance(x) %>%
+      apply(c(3, 2), function(x) stat(na.omit(x))) %>%
+      TabularArray %>%
+      as.data.frame
+    df <- data.frame(
+      x = params[[1]],
+      Value = stats$Value,
+      Metric = stats$Metric
+    )
+
+    metric_levels <- levels(df$Metric)
+    if (is.null(metrics)) {
+      metrics <- metric_levels
+    } else {
+      metrics <- match_indices(metrics, metric_levels)
+      df <- df[df$Metric %in% metrics, , drop = FALSE]
+    }
+    df$Metric <- factor(df$Metric, metrics)
+
+    indices <- map("logi", function(x) length(unique(x)), params[-1])
+    args <- list(~ x, ~ Value)
+    if (any(indices)) {
+      df$Group <- interaction(params[-1][indices])
+      args$color <- args$shape <- ~ Group
+    } else {
+      args$group <- 1
+    }
+    mapping <- do.call(aes_, args)
+
+    ggplot(df, mapping) +
+      geom_line(stat = "summary", fun = mean) +
+      geom_point(stat = "summary", fun = mean) +
+      labs(x = names(params)[1]) +
+      facet_wrap(~ Metric, scales = "free")
+  } else {
+    plot(performance(x), metrics = metrics, stat = stat, type = type, ...)
+  }
 }
 
 

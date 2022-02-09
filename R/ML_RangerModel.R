@@ -76,7 +76,9 @@ RangerModel <- function(
       param = c("mtry", "min.node.size", "splitrule"),
       get_values = c(
         function(n, data, ...) seq_nvars(data, RangerModel, n),
-        function(n, data, ...) round(seq(1, min(20, nrow(data)), length = n)),
+        function(n, data, ...) {
+          round_int(seq(1, min(20, nrow(data)), length = n))
+        },
         function(n, data, ...) {
           methods <- switch_class(response(data),
             "factor" = c("gini", "extratrees"),
@@ -91,7 +93,7 @@ RangerModel <- function(
 
     fit = function(formula, data, weights, ...) {
       ranger::ranger(
-        formula, data = as.data.frame(data), case.weights = weights,
+        formula, data = as.data.frame(formula, data), case.weights = weights,
         probability = is(response(data), "factor"), ...
       )
     },

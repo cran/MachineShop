@@ -111,13 +111,15 @@ RFSRCModel <- function(
       param = c("mtry", "nodesize"),
       get_values = c(
         function(n, data, ...) seq_nvars(data, RFSRCModel, n),
-        function(n, data, ...) round(seq(1, min(20, nrow(data)), length = n))
+        function(n, data, ...) {
+          round_int(seq(1, min(20, nrow(data)), length = n))
+        }
       )
     ),
 
     fit = function(formula, data, weights, ...) {
       y <- response(data)
-      data <- as.data.frame(data)
+      data <- as.data.frame(formula, data)
       family <- switch_class(y,
         "matrix" = {
           colnames(y) <- make_names_len(ncol(y), "y")

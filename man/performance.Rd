@@ -9,7 +9,9 @@
 \alias{performance.Surv}
 \alias{performance.ConfusionList}
 \alias{performance.ConfusionMatrix}
+\alias{performance.MLModel}
 \alias{performance.Resample}
+\alias{performance.TrainingStep}
 \title{Model Performance Metrics}
 \usage{
 performance(x, ...)
@@ -65,11 +67,15 @@ performance(x, ...)
 
 \method{performance}{ConfusionMatrix}(x, metrics = MachineShop::settings("metrics.ConfusionMatrix"), ...)
 
+\method{performance}{MLModel}(x, ...)
+
 \method{performance}{Resample}(x, ...)
+
+\method{performance}{TrainingStep}(x, ...)
 }
 \arguments{
-\item{x}{\link[=response]{observed responses}; or \link{confusion} or
-\link{resample} result containing observed and predicted responses.}
+\item{x}{\link[=response]{observed responses}; or \link{confusion}, trained
+model \link{fit}, \link{resample}, or \link{rfe} result.}
 
 \item{...}{arguments passed from the \code{Resample} method to the response
 type-specific methods or from the method for \code{ConfusionList} to
@@ -111,7 +117,7 @@ library(survival)
 gbm_fit <- fit(Surv(time, status) ~ ., data = veteran, model = GBMModel)
 
 obs <- response(gbm_fit, newdata = veteran)
-pred <- predict(gbm_fit, newdata = veteran, type = "prob")
+pred <- predict(gbm_fit, newdata = veteran)
 performance(obs, pred)
 }
 

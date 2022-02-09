@@ -37,23 +37,27 @@ StackedModel <- function(
   ..., control = MachineShop::settings("control"), weights = numeric()
 ) {
 
-  base_learners <- ListOf(map(as.MLModel, unlist(list(...))))
-  names(base_learners) <- make_names_len(length(base_learners), "Learner")
+  models <- map(as.MLModel, unlist(list(...)))
+  names(models) <- make_names_len(length(models), "BaseLearner")
 
-  params <- list(base_learners = base_learners, control = as.MLControl(control))
+  options <- list()
   if (length(weights)) {
-    stopifnot(length(weights) == length(base_learners))
-    params$weights <- weights
+    stopifnot(length(weights) == length(models))
+    options$weights <- weights
   }
 
-  slots <- combine_model_slots(base_learners, settings("response_types"))
+  slots <- combine_model_slots(models, settings("response_types"))
   new("StackedModel", MLModel(
     name = "StackedModel",
     label = "Stacked Regression",
     response_types = slots$response_types,
     weights = slots$weights,
-    params = params
-  ))
+    params = TrainingParams(
+      optim = NullOptimization(),
+      control = control,
+      options = options
+    )
+  ), models = ListOf(models))
 
 }
 
@@ -61,15 +65,15 @@ MLModelFunction(StackedModel) <- NULL
 
 
 .fit.StackedModel <- function(object, input, ...) {
-  base_learners <- object@params$base_learners
-  weights <- object@params$weights
-  control <-  object@params$control
+  base_learners <- object@models
+  control <-  object@params@control
+  weights <- object@params@options$weights
 
   if (is.null(weights)) {
     num_learners <- length(base_learners)
     stack <- list()
     complete_cases <- TRUE
-    ind <- new_progress_index(name = object@name, max = num_learners)
+    ind <- new_progress_index(max = num_learners, name = object@name)
     while (ind < max(ind)) {
       ind <- ind + 1
       stack[[ind]] <- resample(input, model = base_learners[[ind]],
@@ -97,7 +101,7 @@ MLModelFunction(StackedModel) <- NULL
   pred <- 0
   for (i in seq_along(model_fit$base_fits)) {
     base_pred <- predict(model_fit$base_fits[[i]], newdata = newdata,
-                         times = model_fit$times, type = "prob")
+                         times = model_fit$times, type = "default")
     pred <- pred + model_fit$weights[i] * base_pred
   }
   pred

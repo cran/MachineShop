@@ -7,14 +7,15 @@
 #'
 #' @param ... arguments passed from the generic function to its methods and from
 #'   the \code{MLModel} and \code{MLModelFunction} methods to others.  The
-#'   first arguments of \code{fit} methods are positional and, as such, must be
-#'   given first in calls to them.
+#'   first argument of each \code{fit} method is positional and, as such, must
+#'   be given first in calls to them.
 #' @param formula,data \link[=formula]{formula} defining the model predictor and
 #'   response variables and a \link[=data.frame]{data frame} containing them.
 #' @param x,y \link{matrix} and object containing predictor and response
 #'   variables.
 #' @param input \link[=inputs]{input} object defining and containing the model
 #'   predictor and response variables.
+#' @param object model \link[=ModelSpecification]{specification}.
 #' @param model \link[=models]{model} function, function name, or object; or
 #'   another object that can be \link[=as.MLModel]{coerced} to a model.  A model
 #'   can be given first followed by any of the variable specifications, and the
@@ -81,6 +82,17 @@ fit.recipe <- function(input, model = NULL, ...) {
 
 #' @rdname fit-methods
 #'
+fit.ModelSpecification <- function(object, ...) {
+  if (is_optim_method(object)) {
+    fit_optim(object)
+  } else {
+    fit(as.MLInput(object), model = as.MLModel(object))
+  }
+}
+
+
+#' @rdname fit-methods
+#'
 fit.MLModel <- function(model, ...) {
   fit(..., model = model)
 }
@@ -138,19 +150,43 @@ fit.MLModelFunction <- function(model, ...) {
 }
 
 
-eval_fit <- function(data, formula, matrix) {
-  use_model_matrix <- if (missing(formula)) TRUE else
-    if (missing(matrix)) FALSE else
-      is(terms(data), "ModelDesignTerms")
-
-  if (use_model_matrix) {
-    envir <- list(
-      x = model.matrix(data, intercept = FALSE),
-      y = response(data)
-    )
-    eval(substitute(matrix), envir, parent.frame())
+eval_fit <- function(data = NULL, formula, matrix) {
+  expr <- if (is(data, "ModelFrame") && is(terms(data), "ModelDesignTerms")) {
+    bquote({
+      x <- model.matrix(data, intercept = FALSE)
+      y <- response(data)
+      .(substitute(matrix))
+    })
   } else {
-    envir <- list(data = as.data.frame(data))
-    eval(substitute(formula), envir, parent.frame())
+    bquote({
+      data <- as.data.frame(formula, data)
+      .(substitute(formula))
+    })
   }
+  eval.parent(expr)
+}
+
+
+fit_optim <- function(object, ...) {
+  mloptim <- get_optim_field(object)
+  throw(check_packages(mloptim@packages))
+  tryCatch(
+    optim(mloptim@fun, object, ...),
+    error = function(cond) {
+      msg <- conditionMessage(cond)
+      if (is(mloptim, "SequentialOptimization")) {
+        object <- set_optim_grid(
+          object, random = mloptim@random, progress = mloptim@monitor$progress
+        )
+        throw(LocalWarning(
+          mloptim@label, " failed: ", msg, "\n",
+          "Performing a ", tolower(get_optim_field(object, "label")),
+          " instead."
+        ), immediate = TRUE)
+        fit(object, ...)
+      } else {
+        throw(Error(msg), call = sys.call(-4))
+      }
+    }
+  )
 }

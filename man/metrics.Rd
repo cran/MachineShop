@@ -131,7 +131,7 @@ roc_index(
   predicted = NULL,
   weights = NULL,
   cutoff = MachineShop::settings("cutoff"),
-  f = function(sensitivity, specificity) (sensitivity + specificity)/2,
+  fun = function(sensitivity, specificity) (sensitivity + specificity)/2,
   ...
 )
 
@@ -205,7 +205,8 @@ equal weights].}
 
 \item{cutoff}{numeric (0, 1) threshold above which binary factor
 probabilities are classified as events and below which survival
-probabilities are classified.}
+probabilities are classified.  If \code{NULL}, then confusion matrix-based
+metrics are computed on predicted class probabilities if given.}
 
 \item{...}{arguments passed to or from other methods.}
 
@@ -219,7 +220,7 @@ curves, or \code{NULL} for resample-specific metrics.}
 \item{beta}{relative importance of recall to precision in the calculation of
 \code{f_score} [default: F1 score].}
 
-\item{f}{function to calculate a desired sensitivity-specificity tradeoff.}
+\item{fun}{function to calculate a desired sensitivity-specificity tradeoff.}
 
 \item{power}{power to which positional distances of off-diagonals from the
 main diagonal in confusion matrices are raised to calculate

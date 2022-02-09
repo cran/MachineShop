@@ -123,34 +123,44 @@ deparse1 <- function(expr, collapse = " ", width.cutoff = 500L, ...) {
 }
 
 
-fget <- function(x) {
-  f <- get0(x, mode = "function")
-  if (is.null(f)) {
-    msg <- if (is.character(x)) {
-      paste0("Function '", x, "' not found.")
-    } else {
-      "Invalid function."
-    }
-    throw(Error(msg))
+fget <- function(x, package = character()) {
+  throw(check_packages(package))
+  if (is.character(x)) {
+    x <- paste(c(package, x), collapse = "::")
+    err_msg <- paste0("Function '", x, "' not found.")
+  } else {
+    err_msg <- "Invalid function."
   }
-  f
+  res <- get0(x, mode = "function")
+  if (is.null(res)) throw(Error(err_msg))
+  if (length(package)) {
+    envir <- environment(res)
+    if (!isNamespace(envir) || getNamespaceName(envir) != package) {
+      throw(Error("Function is not from the ", package, " package."))
+    }
+  }
+  res
 }
 
 
 get0 <- function(x, mode = "any") {
   if (is.character(x) && length(x) == 1) {
-    x_expr <- str2lang(x)
-    x_name <- x
-    if (is.symbol(x_expr)) {
-      base::get0(x_name, mode = mode)
-    } else if (is.call(x_expr) && x_expr[[1]] == "::") {
-      base::get0(as.character(x_expr[[3]]),
-                 envir = asNamespace(x_expr[[2]]),
-                 mode = mode)
+    expr <- str2lang(x)
+    if (is.name(expr)) {
+      base::get0(x, mode = mode)
+    } else if (is.call(expr) && any(expr[[1]] == c("::", ":::"))) {
+      base::get0(as.character(expr[[3]]), mode = mode,
+                 envir = asNamespace(expr[[2]]))
     }
   } else if (mode %in% c("any", mode(x))) {
     x
   }
+}
+
+
+get_optim_field <- function(object, name = NULL) {
+  object <- object@params@optim
+  if (is.null(name)) object else slot(object, name)
 }
 
 
@@ -170,7 +180,8 @@ get_perf_metrics <- function(x, y) {
 
 
 has_grid <- function(object) {
-  nrow(object@gridinfo) > 0
+  is(object, "TunedInput") || is(object, "TunedModel") ||
+    (is(object, "MLModel") && nrow(object@gridinfo))
 }
 
 
@@ -192,7 +203,7 @@ is_counting <- function(x) {
 
 
 is_empty <- function(x) {
-  length(x) == 0
+  prod(size(x)) == 0
 }
 
 
@@ -201,12 +212,52 @@ is_one_element <- function(x, class = "ANY") {
 }
 
 
-is_response <- function(y, types) {
+is_optim_method <- function(x, ...) {
+  UseMethod("is_optim_method")
+}
+
+
+is_optim_method.default <- function(x, ...) {
+  FALSE
+}
+
+
+is_optim_method.MLInput <- function(x, ...) {
+  is_optim_method(x@params, ...)
+}
+
+
+is_optim_method.MLModel <- function(x, ...) {
+  is_optim_method(x@params, ...)
+}
+
+
+is_optim_method.MLOptimization <- function(x, type = "ANY", ...) {
+  is(x, type)
+}
+
+
+is_optim_method.ModelSpecification <- function(x, ...) {
+  is_optim_method(x@params, ...)
+}
+
+
+is_optim_method.NullOptimization <- function(x, ...) {
+  is_optim_method.default(x, ...)
+}
+
+
+is_optim_method.TrainingParams <- function(x, ...) {
+  is_optim_method(x@optim, ...)
+}
+
+
+is_response <- function(x, types) {
   map("logi", function(type) {
     if (type == "binary") {
-      is(y, "factor") && nlevels(y) == 2
+      is(x, "factor") && nlevels(x) == 2
     } else {
-      is(y, type)
+      is(x, type)
     }
   }, types)
 }
@@ -232,25 +283,26 @@ is_trained.step <- function(x, ...) {
 }
 
 
-make_id <- function(n = 8) {
-  paste(sample(c(letters, 0:9), n, replace = TRUE), collapse = "")
+make_id <- function(prefix = character(), n = 4, sep = ".") {
+  suffix <- sample(c(letters, LETTERS, 0:9), n, replace = TRUE)
+  paste(c(prefix, paste(suffix, collapse = "")), collapse = sep)
 }
 
 
-make_names_along <- function(x, default = "..", sep = ".") {
-  if (length(default) == 1) default <- rep(default, length = length(x))
+make_names_along <- function(x, default = "..", unique = TRUE, sep = ".") {
+  if (length(default) == 1) default <- rep_len(default, length(x))
   old_names <- names(x)
   names(x) <- default
   if (!is.null(old_names)) {
     keep <- nzchar(old_names) & !is.na(old_names)
     names(x)[keep] <- old_names[keep]
   }
-  make_unique(names(x), sep = sep)
+  if (unique) make_unique(names(x), sep = sep) else names(x)
 }
 
 
 make_names_len <- function(n, prefix) {
-  paste0(rep(prefix, n), seq_len(n))
+  paste0(rep_len(prefix, n), seq_len(n))
 }
 
 
@@ -318,9 +370,14 @@ missing_names <- function(x, data) {
 }
 
 
+ndim <- function(x) {
+  length(size(x))
+}
+
+
 new_params <- function(envir, ...) {
   args <- c(as.list(envir), ...)
-  missing <- map("logi", function(x) is.symbol(x) && !nzchar(x), args)
+  missing <- map("logi", function(x) is.name(x) && !nzchar(x), args)
   if (any(missing)) {
     throw(Error(note_items(
       "Missing values for required argument{?s}: ", names(args)[missing], "."
@@ -330,14 +387,14 @@ new_params <- function(envir, ...) {
 }
 
 
-new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
+new_progress_bar <- function(total, object = NULL, model = NULL, index = 0) {
   if (getDoParName() == "doSEQ") index <- as.numeric(index)
   width <- max(round(0.25 * console_width()), 10)
-  if (!is.null(input)) input <- substr(class1(input), 1, width)
+  if (!is.null(object)) object <- substr(class1(object), 1, width)
   if (!is.null(model)) {
     model <- substr(as.MLModel(model)@name, 1, width)
   }
-  format <- paste(input, "|", model)
+  format <- paste(object, "|", model)
   if (index > 0) format <- paste0(index, ": ", format)
   if (getDoParName() %in% c("doSEQ", "doSNOW")) {
     format <- paste(format, "[:bar] :percent | :eta")
@@ -349,20 +406,35 @@ new_progress_bar <- function(total, input = NULL, model = NULL, index = 0) {
     show_after = 0
   )
   if (is(index, "progress_index") && index == 1) {
-    pb$message(paste0(names(index), "(", max(index), ")"))
+    pb$message(paste0(
+      names(index), if (is.finite(max(index))) paste0("(", max(index), ")")
+    ))
   }
   pb$tick(0)
   pb
 }
 
 
-new_progress_index <- function(name, max) {
-  structure(0, names = name, max = max, class = c("progress_index", "numeric"))
+new_progress_index <- function(init = 0, max = Inf, name = character()) {
+  structure(init, max = max, names = name, class = "progress_index")
 }
 
 
-ndim <- function(x) {
-  length(size(x))
+note_items <- function(
+  begin, values, end = character(), add_names = FALSE, add_size = FALSE,
+  sep = ", ", conj = character()
+) {
+  if (add_names && length(names(values))) {
+    values <- paste(names(values), values, sep = " = ")
+  }
+  size <- length(values)
+  if (add_size && size) {
+    values <- c(
+      paste0("[1", if (size > 1) paste0(":", size), "] ", values[1]), values[-1]
+    )
+  }
+  end <- paste0(end, "{qty(size)}")
+  pluralize(begin, as_string(values, sep = sep, conj = conj), end)
 }
 
 
@@ -377,18 +449,6 @@ nvars <- function(x, model) {
     "model.matrix" = ncol(model.matrix(x[1, , drop = FALSE], intercept = FALSE))
   )
   if (is.null(res)) NA else res
-}
-
-
-note_items <- function(
-  begin, values, end = character(), add_names = FALSE, sep = ", ",
-  conj = character()
-) {
-  if (add_names && length(names(values))) {
-    values <- paste(names(values), values, sep = " = ")
-  }
-  qty <- "{qty(length(values))}"
-  pluralize(paste0(begin, as_string(values, sep = sep, conj = conj), end, qty))
 }
 
 
@@ -426,39 +486,19 @@ rand_int <- function(n = 1) {
 }
 
 
-sample_params <- function(x, size = integer(), replace = FALSE) {
-  stopifnot(is.list(x))
-
-  n <- length(x)
-  if (n == 0) return(tibble())
-
-  names(x) <- make_names_along(x, make_names_len(length(x), "Var"))
-
-  max_size <- prod(lengths(x))
-  if (is_empty(size)) size <- max_size
-  if (!replace) size <- min(size, max_size)
-
-  grid <- as_tibble(matrix(nrow = 0, ncol = n, dimnames = list(NULL, names(x))))
-  iter <- 0
-  while (nrow(grid) < size && iter < 100) {
-    iter <- iter + 1
-    new_grid <- as_tibble(map(sample, x, size = size, replace = TRUE))
-    grid <- rbind(grid, new_grid)
-    if (!replace) grid <- unique(grid)
+required_packages <- function(object) {
+  input <- as.MLInput(object)
+  require <- if (is(input, "ModelRecipe")) {
+    c("survival", "recipes")
+  } else if (is(response(input), "Surv")) {
+    "survival"
   }
+  union(settings("require"), require)
+}
 
-  grid <- head(grid, size)
-  sortable_types <- c("character", "complex", "Date", "factor", "logical",
-                      "numeric")
-  is_sortable <- map("logi", function(column) {
-    any(map("logi", is, list(column), sortable_types))
-  }, grid)
-  if (any(is_sortable)) {
-    sort_order <- do.call(order, rev(grid[is_sortable]))
-    grid <- grid[sort_order, ]
-  }
 
-  grid
+round_int <- function(...) {
+  as.integer(round(...))
 }
 
 
@@ -490,14 +530,8 @@ seq_inner <- function(from, to, length) {
 }
 
 
-seq_range <- function(from, by, lim, length) {
-  if (length > 0) {
-    to <- min(from + by * (length - 1), lim[2])
-    x <- seq(from, to, length = length)
-    x[x >= lim[1]]
-  } else {
-    seq(from, length = length)
-  }
+seq_int <- function(...) {
+  as.integer(seq(...))
 }
 
 
@@ -513,7 +547,18 @@ seq_nvars <- function(x, model, length) {
   } else {
     numeric()
   }
-  round(vals)
+  round_int(vals)
+}
+
+
+seq_range <- function(from, by, bounds, length) {
+  if (length > 0) {
+    to <- min(from + by * (length - 1), bounds[2])
+    x <- seq(from, to, length = length)
+    x[x >= bounds[1]]
+  } else {
+    seq(from, length = length)
+  }
 }
 
 
@@ -595,7 +640,7 @@ unnest <- function(data) {
     x <- data[[name]]
     if (ndim(x) > 1) {
       x <- if (is.data.frame(x)) unnest(x) else as.data.frame(as(x, "matrix"))
-      name <- paste0(name, ".", names(x))
+      name <- paste0(name, "$", names(x))
     }
     df[name] <- x
   }
@@ -613,8 +658,8 @@ vector_to_function <- function(x, type) {
     x_names <- character()
     for (i in seq_along(x)) {
       if (is(x[[i]], "character")) {
-        x_name <- x[[i]]
-        x[[i]] <- fget(x_name)
+        x_name <- gsub("^.*[:]{2}(?!.*[:]{2})", "", x[[i]], perl = TRUE)
+        x[[i]] <- fget(x[[i]])
       } else if (is(x[[i]], "MLMetric")) {
         x_name <- x[[i]]@name
       } else if (is(x[[i]], "function")) {

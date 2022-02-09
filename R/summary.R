@@ -6,14 +6,19 @@
 #' @rdname summary-methods
 #'
 #' @param object \link{confusion}, \link{lift}, trained model \link{fit},
-#'   \link{performance}, \link[=curves]{performance curve}, or \link{resample}
-#'   result.
+#'   \link{performance}, \link[=curves]{performance curve}, \link{resample}, or
+#'   \link{rfe} result.
 #' @param stat function or character string naming a function to compute a
 #'   summary statistic at each cutoff value of resampled metrics in
 #'   \code{PerformanceCurve}, or \code{NULL} for resample-specific metrics.
 #' @param stats function, function name, or vector of these with which to
 #'   compute summary statistics.
 #' @param na.rm logical indicating whether to exclude missing values.
+#' @param .type character string specifying that
+#'   \code{\link[=unMLModelFit]{unMLModelFit(object)}} be passed to
+#'   \code{\link[base:summary]{summary}} (\code{"default"}),
+#'   \code{\link[generics:glance]{glance}}, or
+#'   \code{\link[generics:tidy]{tidy}}.
 #' @param ... arguments passed to other methods.
 #'
 #' @return An object of summmary statistics.
@@ -80,15 +85,20 @@ summary.ConfusionMatrix <- function(object, ...) {
 summary.MLModel <- function(
   object, stats = MachineShop::settings("stats.Resample"), na.rm = TRUE, ...
 ) {
-  if (!is_trained(object)) throw(Error("No training results to summarize."))
-  map(function(step) {
-    summary(step@performance, stats = stats, na.rm = na.rm, ...)
-  }, object@steps)
+  if (!is_trained(object)) throw(Warning("No training results to summarize."))
+  ListOf(map(summary, object@steps))
 }
 
 
-summary.MLModelFit <- function(object, ...) {
-  summary(unMLModelFit(object))
+#' @rdname summary-methods
+#'
+summary.MLModelFit <- function(
+  object, .type = c("default", "glance", "tidy"), ...
+) {
+  switch(match.arg(.type),
+    "default" = summary,
+    fget(.type, package = "generics")
+  )(unMLModelFit(object), ...)
 }
 
 
@@ -158,11 +168,10 @@ summary.PerformanceCurve <- function(
 
 
 .curve_approx <- function(...) {
-  values <- try(
-    approx(..., method = "constant", rule = 2, f = 0.5),
-    silent = TRUE
+  tryCatch(
+    approx(..., method = "constant", rule = 2, f = 0.5)$y,
+    error = function(cond) NA
   )
-  if (is(values, "try-error")) NA else values$y
 }
 
 
@@ -172,4 +181,11 @@ summary.Resample <- function(
   object, stats = MachineShop::settings("stats.Resample"), na.rm = TRUE, ...
 ) {
   summary(performance(object), stats = stats, na.rm = na.rm)
+}
+
+
+#' @rdname summary-methods
+#'
+summary.TrainingStep <- function(object, ...) {
+  object@log
 }

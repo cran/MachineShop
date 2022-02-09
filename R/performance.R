@@ -5,8 +5,8 @@
 #' @name performance
 #' @rdname performance
 #'
-#' @param x \link[=response]{observed responses}; or \link{confusion} or
-#'   \link{resample} result containing observed and predicted responses.
+#' @param x \link[=response]{observed responses}; or \link{confusion}, trained
+#'   model \link{fit}, \link{resample}, or \link{rfe} result.
 #' @param y \link[=predict]{predicted responses} if not contained in \code{x}.
 #' @param weights numeric vector of non-negative
 #'   \link[=case_weights]{case weights} for the observed \code{x} responses
@@ -41,7 +41,7 @@
 #' gbm_fit <- fit(Surv(time, status) ~ ., data = veteran, model = GBMModel)
 #'
 #' obs <- response(gbm_fit, newdata = veteran)
-#' pred <- predict(gbm_fit, newdata = veteran, type = "prob")
+#' pred <- predict(gbm_fit, newdata = veteran)
 #' performance(obs, pred)
 #' }
 #'
@@ -143,11 +143,26 @@ performance.ConfusionMatrix <- function(
 
 #' @rdname performance
 #'
+performance.MLModel <- function(x, ...) {
+  if (!is_trained(x)) throw(Warning("No training results with performance."))
+  ListOf(map(performance, x@steps))
+}
+
+
+#' @rdname performance
+#'
 performance.Resample <- function(x, ...) {
   perf_list <- by(x, x$Model, function(resamples) {
     Performance(performance(x@control, resamples, ...), control = x@control)
   }, simplify = FALSE)
   do.call(c, perf_list)
+}
+
+
+#' @rdname performance
+#'
+performance.TrainingStep <- function(x, ...) {
+  x@performance
 }
 
 
@@ -207,8 +222,9 @@ performance.CVOptimismControl <- function(x, resamples, ...) {
 
 Performance <- function(...) {
   object <- new("Performance", ...)
-  names <- c("Iteration", "Metric")
-  if (ndim(object) == 3) names <- c(names, "Model")
-  names(dimnames(object)) <- names
+  ndim <- length(dimnames(object))
+  if (ndim) {
+    names(dimnames(object)) <- head(c("Iteration", "Metric", "Model"), ndim)
+  }
   object
 }

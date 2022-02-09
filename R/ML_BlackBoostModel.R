@@ -80,7 +80,7 @@ BlackBoostModel <- function(
     gridinfo = new_gridinfo(
       param = c("mstop", "maxdepth"),
       get_values = c(
-        function(n, ...) round(seq_range(0, 50, c(1, 1000), n + 1)),
+        function(n, ...) round_int(seq_range(0, 50, c(1, 1000), n + 1)),
         function(n, ...) seq_len(min(n, 10))
       )
     ),
@@ -100,7 +100,7 @@ BlackBoostModel <- function(
         )
       }
       mboost::blackboost(
-        formula, data = as.data.frame(data), na.action = na.pass,
+        formula, data = as.data.frame(formula, data), na.action = na.pass,
         weights = weights, family = family,
         control = mboost::boost_control(
           mstop = mstop, nu = nu, risk = risk, stopintern = stopintern,

@@ -7,6 +7,7 @@
 #'
 #' @param x object to print.
 #' @param n integer number of models or data frame rows to show.
+#' @param id logical indicating whether to show object identifiers.
 #' @param ... arguments passed to other methods, including the one described
 #'   below.
 #'   \describe{
@@ -102,6 +103,34 @@ print.DiscreteVariate <- function(
 setShowDefault("DiscreteVariate")
 
 
+print.EnsembleModel <- function(
+  x, n = MachineShop::settings("print_max"), id = FALSE, ...
+) {
+  title(x, ...)
+  level <- nesting_level(...)
+  nextlevel <- level + 1
+  trained <- is_trained(x)
+  print_modelinfo(x, trained = trained, ...)
+  if (level < 1) {
+    hline(level)
+    print_train_label("Models:")
+    newline()
+    print(x@models, n = n, level = nextlevel, id = id)
+    hline(level)
+    print(x@params, n = n, level = nextlevel)
+    if (trained) {
+      hline(level)
+      print(x@steps, n = n, level = nextlevel)
+    }
+  } else if (level == 1) {
+    newline()
+    print_train_label("Models:")
+    print(x@models, n = n, level = nextlevel, id = id)
+  }
+  invisible(x)
+}
+
+
 #' @rdname print-methods
 #'
 print.ListOf <- function(x, n = MachineShop::settings("print_max"), ...) {
@@ -132,6 +161,13 @@ print.BootControl <- function(x, ...) {
 print.CVControl <- function(x, ...) {
   fields <- list("Folds: " = x@folds, "Repeats: " = x@repeats)
   NextMethod(fields = fields)
+}
+
+
+print.NullControl <- function(x, ...) {
+  title(x, ...)
+  print_fields(list("Label: " = x@label))
+  invisible(x)
 }
 
 
@@ -175,15 +211,16 @@ setShowDefault("MLMetric")
 
 #' @rdname print-methods
 #'
-print.MLModel <- function(x, n = MachineShop::settings("print_max"), ...) {
+print.MLModel <- function(
+  x, n = MachineShop::settings("print_max"), id = FALSE, ...
+) {
   title(x, ...)
   level <- nesting_level(...)
   trained <- is_trained(x)
-  print_modelinfo(x, trained = trained, ...)
+  print_modelinfo(x, trained = trained, id = id, ...)
   if (level < 1) {
     newline()
-    print_label("Parameters:")
-    cat(str(x@params, give.attr = FALSE, list.len = n))
+    print_str(x@params, label = "Parameter{?s}:", n = n)
     if (trained) {
       newline()
       print(x@steps, n = n, level = level + 1)
@@ -223,11 +260,34 @@ print.MLModelFunction <- function(x, ...) {
 setShowDefault("MLModelFunction")
 
 
-#' @rdname print-methods
-#'
-print.ModelFrame <- function(x, n = MachineShop::settings("print_max"), ...) {
+print.MLOptimization <- function(
+  x, n = MachineShop::settings("print_max"), ...
+) {
   title(x, ...)
   level <- nesting_level(...)
+  print_fields(list("Label: " = x@label))
+  if (level < 1) {
+    print_fields(list(
+      "Package{?s}: " = unname(x@packages),
+      "Monitor: " = x@monitor
+    ), add_names = TRUE)
+    if (length(x@params)) print_str(x@params, label = "Parameter{?s}:", n = n)
+  }
+  invisible(x)
+}
+
+
+setShowDefault("MLOptimization")
+
+
+#' @rdname print-methods
+#'
+print.ModelFrame <- function(
+  x, n = MachineShop::settings("print_max"), id = FALSE, ...
+) {
+  title(x, ...)
+  level <- nesting_level(...)
+  if (id) print_id(x)
   label <- if (level < 2) style_label("Terms: ")
   print_items(formula(x), n = n, label = label)
   if (level < 1) {
@@ -245,22 +305,31 @@ setShowDefault("ModelFrame")
 
 #' @rdname print-methods
 #'
-print.ModelRecipe <- function(x, n = MachineShop::settings("print_max"), ...) {
+print.ModelRecipe <- function(
+  x, n = MachineShop::settings("print_max"), id = FALSE, ...
+) {
   title(x, ...)
   level <- nesting_level(...)
+  if (id) print_id(x)
   tbl <- summary(x, original = TRUE)
   print_fields(list(
     "Outcome{?s}: " = tbl$variable[tbl$role == "outcome"],
     "Predictor{?s}: " = tbl$variable[tbl$role == "predictor"]
   ), n = n)
   if (level < 2) {
-    status <- if (is_trained(x)) "Prepared" else "Unprepared"
+    steps <- map("char", class1, x$steps)
+    step_label <- paste(if (is_trained(x)) "Prepared" else "Unprepared", "step")
+    if (id) {
+      steps <- structure(map("char", getElement, x$steps, "id"), names = steps)
+      step_label <- paste(step_label, "ID")
+    }
     print_fields(
-      list(steps = if (length(x$steps)) map("char", class1, x$steps)),
-      labels = c(steps = paste(status, "step{?s}: "))
+      list(steps = steps), labels = c(steps = paste0(step_label, "{?s}: ")),
+      add_names = TRUE, n = n
     )
   }
   if (level < 1) {
+    print_fields(list("Tuning grid: " = has_grid(x)))
     print_label("Data:")
     print_items(within(x$template, remove("(names)")), n = n)
   } else if (level == 1) {
@@ -271,6 +340,31 @@ print.ModelRecipe <- function(x, n = MachineShop::settings("print_max"), ...) {
 
 
 setShowDefault("ModelRecipe")
+
+
+#' @rdname print-methods
+#'
+print.ModelSpecification <- function(
+  x, n = MachineShop::settings("print_max"), ...
+) {
+  title(x, ...)
+  level <- nesting_level(...)
+  nextlevel <- level + 1
+  show_all <- length(x@grid) && level < 1
+  print(x@input, n = n, level = nextlevel, id = show_all)
+  newline()
+  print(x@model, n = n, level = nextlevel, id = show_all)
+  if (show_all) {
+    newline()
+    heading("Grid", level = nextlevel)
+    print_items(x@grid, n = n)
+    newline()
+    print(x@params, n = n, level = nextlevel)
+  }
+}
+
+
+setShowDefault("ModelSpecification")
 
 
 print.ModelTerms <- function(x, n = MachineShop::settings("print_max"), ...) {
@@ -322,11 +416,15 @@ print.ParsnipModel <- function(x, ...) {
 #'
 print.Performance <- function(x, n = MachineShop::settings("print_max"), ...) {
   title(x, ...)
+  level <- nesting_level(...)
   dn <- dimnames(x)
   print_fields(list("Metric{?s}: " = dn[[2]]))
   if (length(dn) > 2) {
     print_fields(list("Model{?s}: " = dn[[3]]), n = n)
   }
+  newline()
+  print(x@control, level = level + 1)
+
   invisible(x)
 }
 
@@ -337,10 +435,15 @@ print.PerformanceCurve <- function(
   x, n = MachineShop::settings("print_max"), ...
 ) {
   title(x, ...)
+  level <- nesting_level(...)
   xy_labels <- c(x@metrics$x@label, x@metrics$y@label)
   print_fields(list("Metrics: " = paste(c("x", "y"), "=", xy_labels)))
   newline()
   print_items(as(x, "data.frame"), n = n)
+  if (!is(x@control, "NullControl")) {
+    newline()
+    print(x@control, level = level + 1)
+  }
   invisible(x)
 }
 
@@ -357,6 +460,13 @@ print.PerformanceDiffTest <- function(x, ...) {
   ))
   newline()
   print(as(x, "array"))
+  invisible(x)
+}
+
+
+print.RandomGridSearch <- function(x, ...) {
+  NextMethod()
+  print_fields(list("Samples: " = x@size))
   invisible(x)
 }
 
@@ -379,10 +489,15 @@ print.Resample <- function(x, n = MachineShop::settings("print_max"), ...) {
   title(x, ...)
   level <- nesting_level(...)
   print_fields(list("Model{?s}: " = levels(x$Model)), n = n)
-  print_fields(map(names, x@case_comps), labels = c(
-    groups = "Grouping variable: ",
-    strata = "Stratification variable: "
-  ))
+  if (level >= 1) {
+    print_fields(list(
+      "Grouping variable: " = names(x@vars[["Grouping"]]),
+      "Stratification variable: " = names(x@vars[["Stratification"]])
+    ))
+  } else if (length(x@vars) > 1) {
+    print_label("Sampling variables:")
+    print_items(x@vars, n = n)
+  }
   newline()
   print(x@control, n = n, level = level + 1)
   invisible(x)
@@ -393,7 +508,7 @@ setShowDefault("Resample")
 
 
 print.SelectedInput <- function(
-  x, n = MachineShop::settings("print_max"), ...
+  x, n = MachineShop::settings("print_max"), id = FALSE, ...
 ) {
   NextMethod()
   level <- nesting_level(...)
@@ -402,101 +517,23 @@ print.SelectedInput <- function(
     hline(level)
     print_train_label("Selection set:")
     newline()
-    print(x@inputs, n = n, level = nextlevel)
+    print(x@inputs, n = n, level = nextlevel, id = id)
     hline(level)
-    print(x@params@control, n = n, level = nextlevel)
+    print(x@params, n = n, level = nextlevel)
   } else if (level == 1) {
     newline()
     print_train_label("Selection set:")
-    print(x@inputs, n = n, level = nextlevel)
+    print(x@inputs, n = n, level = nextlevel, id = id)
   }
   invisible(x)
 }
 
 
-print.SelectedModel <- function(
-  x, n = MachineShop::settings("print_max"), ...
-) {
-  title(x, ...)
+print.SequentialOptimization <- function(x, ...) {
+  NextMethod()
   level <- nesting_level(...)
-  nextlevel <- level + 1
-  trained <- is_trained(x)
-  print_modelinfo(x, trained = trained, ...)
   if (level < 1) {
-    hline(level)
-    print_train_label("Selection set:")
-    newline()
-    print(x@models, n = n, level = nextlevel)
-    hline(level)
-    print(x@params@control, n = n, level = nextlevel)
-    if (trained) {
-      hline(level)
-      print(x@steps, n = n, level = nextlevel)
-    }
-  } else if (level == 1) {
-    newline()
-    print_train_label("Selection set:")
-    print(x@models, n = n, level = nextlevel)
-  }
-  invisible(x)
-}
-
-
-print.StackedModel <- function(x, n = MachineShop::settings("print_max"), ...) {
-  title(x, ...)
-  level <- nesting_level(...)
-  nextlevel <- level + 1
-  trained <- is_trained(x)
-  print_modelinfo(x, trained = trained, ...)
-  if (level < 1) {
-    newline()
-    print_label("Parameters:")
-    subset <- setdiff(names(x@params), c("base_learners", "control"))
-    cat(str(x@params[subset], give.attr = FALSE, list.len = n))
-    hline(level)
-    print_train_label("Base learners:")
-    newline()
-    print(x@params$base_learners, n = n, level = nextlevel)
-    hline(level)
-    print(x@params$control, n = n, level = nextlevel)
-    if (trained) {
-      hline(level)
-      print(x@steps, n = n, level = nextlevel)
-    }
-  }
-  invisible(x)
-}
-
-
-print.SuperModel <- function(x, n = MachineShop::settings("print_max"), ...) {
-  title(x, ...)
-  level <- nesting_level(...)
-  nextlevel <- level + 1
-  trained <- is_trained(x)
-  print_modelinfo(x, trained = trained, ...)
-  if (level < 1) {
-    newline()
-    print_label("Parameters:")
-    subset <- setdiff(names(x@params), c("base_learners", "control", "model"))
-    cat(str(x@params[subset], give.attr = FALSE, list.len = n))
-    hline(level)
-    print_train_label("Super learner:")
-    newline()
-    print(x@params$model, n = n, level = nextlevel)
-    newline()
-    print_train_label("Base learners:")
-    newline()
-    print(x@params$base_learners, n = n, level = nextlevel)
-    hline(level)
-    print(x@params$control, n = n, level = nextlevel)
-    if (trained) {
-      hline(level)
-      print(x@steps, n = n, level = nextlevel)
-    }
-  } else if (level == 1) {
-    newline()
-    print_train_label("Super learner:")
-    print(x@params$model, n = n, level = nextlevel)
+    print_fields(list("Fallback grid samples: " = if (x@random) x@random))
   }
   invisible(x)
 }
@@ -545,22 +582,55 @@ print.TabularArray <- function(x, ...) {
 setShowDefault("TabularArray")
 
 
+print.TrainingParams <- function(
+  x, n = MachineShop::settings("print_max"), ...
+) {
+  title(x, ...)
+  level <- nesting_level(...)
+  nextlevel <- level + 1
+  if (length(x@options)) {
+    print_str(x@options, label = "Option{?s}:", n = n)
+    newline()
+  }
+  if (is_optim_method(x)) {
+    print(x@optim, n = n, level = nextlevel)
+    newline()
+    print(x@control, n = n, level = nextlevel)
+    if (nextlevel < 0) {
+      newline()
+      print_label("Metrics:")
+      print(x@metrics)
+      newline()
+      print_fields(list("Cutoff: " = x@cutoff))
+      newline()
+      print_label("Stat:")
+      print(x@stat)
+    }
+  } else {
+    print(x@control, n = n, level = nextlevel)
+  }
+  invisible(x)
+}
+
+
+setShowDefault("TrainingParams")
+
+
 #' @rdname print-methods
 #'
 print.TrainingStep <- function(x, n = MachineShop::settings("print_max"), ...) {
   title(x, ...)
   level <- nesting_level(...)
-  selected <- which(x@grid$selected)
-  if (length(x@grid$params)) {
-    print_label(x@name, " grid:")
-    print_items(x@grid, n = n)
-  }
-  if (size(x@performance, 3) > 1) {
+  selected <- which(x@log$selected)
+  print_fields(list("Optimization method: " = x@method))
+  print_label(x@name, " log:")
+  print_items(x@log, n = n)
+  if (ndim(x@performance) > 2) {
     newline()
-    print_fields(list("Selected grid row: " = selected))
-    print_fields(list(value = x@grid$metrics[[1]][selected]), labels = c(
-      value = paste(names(x@grid$metrics)[1], "value: ")
-    ))
+    print_fields(list(
+      "Selected row: " = selected,
+      "Metric: " = unlist(x@log$metrics[selected, 1])
+    ), add_name = TRUE)
   }
   invisible(x)
 }
@@ -583,7 +653,7 @@ print.TunedInput <- function(x, n = MachineShop::settings("print_max"), ...) {
       print_items(grid, n = n)
     }
     newline()
-    print(x@params@control, n = n, level = nextlevel)
+    print(x@params, n = n, level = nextlevel)
   }
   invisible(x)
 }
@@ -608,7 +678,7 @@ print.TunedModel <- function(x, n = MachineShop::settings("print_max"), ...) {
         print_items(grid, n = n)
       }
       newline()
-      print(x@params@control, n = n, level = nextlevel)
+      print(x@params, n = n, level = nextlevel)
       if (trained) {
         newline()
         print(x@steps, n = n, level = nextlevel)
@@ -622,7 +692,7 @@ print.TunedModel <- function(x, n = MachineShop::settings("print_max"), ...) {
 print.TuningGrid <- function(x, ...) {
   title(x, ...)
   print_fields(list("Grid size{?s}: " = x@size), add_names = TRUE)
-  print_fields(list("Random sample: " = x@random))
+  print_fields(list("Random samples: " = x@random))
   invisible(x)
 }
 
@@ -692,6 +762,11 @@ nesting_level <- function(level = 0, ...) {
 }
 
 
+new_print_progress <- function(start_time = Sys.time()) {
+  eval(bquote(function(...) print_progress(..., start_time = .(start_time))))
+}
+
+
 newline <- function() {
   cat("\n")
 }
@@ -717,11 +792,10 @@ print_control <- function(x, fields = NULL, n = Inf, ...) {
       prop = "Minimum proportion: ",
       size = "Minimum size: "
     ), "Stratification parameters")
-    monitor <- x@monitor[map("logi", isTRUE, x@monitor)]
-    if (length(monitor)) {
-      print_fields(list("Monitor: " = names(monitor)))
-    }
-    print_fields(list("Seed: " = x@seed))
+    print_fields(list(
+      "Monitor: " = x@monitor,
+      "Seed: " = unname(x@seed)
+    ), add_names = TRUE)
   }
   invisible(x)
 }
@@ -753,6 +827,11 @@ print_fields <- function(x, labels = character(), heading = character(), ...) {
 }
 
 
+print_id <- function(x) {
+  print_fields(list("ID: " = x@id))
+}
+
+
 print_items <- function(x, ...) {
   UseMethod("print_items")
 }
@@ -764,11 +843,11 @@ print_items.default <- function(x, ...) {
 
 
 print_items.character <- function(
-  x, n = Inf, label = "", indent = 0, exdent = 0, add_names = FALSE, sep = ", ",
-  style = NULL, ...
+  x, n = Inf, label = "", indent = 0, exdent = 0, add_names = FALSE,
+  add_size = FALSE, sep = ", ", style = NULL, ...
 ) {
   lines <- ansi_strwrap(
-    note_items(label, x, add_names = add_names, sep = sep),
+    note_items(label, x, add_names = add_names, add_size = add_size, sep = sep),
     indent = indent, exdent = exdent
   )
   max_lines <- ceiling(log(n))
@@ -817,23 +896,34 @@ print_items.list <- function(x, n = Inf, ...) {
 }
 
 
-print_items.ListOf <- function(x, n = Inf, level = 0, ...) {
-  inds <- head(seq_along(x), n)
-  list_names <- names(x)
-  if (is.null(list_names)) list_names <- make_names_len(length(x), "Component ")
-  for (i in inds) {
-    hline(level, label = list_names[i])
-    print(x[[i]], n = n, level = level, na.print = NULL)
-    if (level < 2) newline()
-  }
-  n_more <- max(length(x) - n, 0)
-  if (n_more) {
-    extra <- tail(list_names, n_more)
-    msg <- pluralize(
-      "... with ", format_len(n_more), " more element{?s}: ", "{qty(n_more)}"
-    )
-    print_items(extra, label = msg, n = n, style = style_extra)
-    if (level < 2) newline()
+print_items.ListOf <- function(x, n = Inf, level = 0, id = FALSE, ...) {
+  if (is_empty(x)) {
+    hline(level, label = "ListOf()")
+  } else {
+    labels <- map("char", function(name, i) {
+      if (nzchar(name)) {
+        prefix <- "$"
+        label <- deparse(as.name(name), backtick = TRUE)
+      } else {
+        prefix <- NULL
+        label <- paste0("[[", i, "]]")
+      }
+      if (i <= n) {
+        hline(level, label = paste0(prefix, label))
+        print(x[[i]], n = n, level = level, id = id, na.print = NULL)
+        if (level < 2) newline()
+      }
+      label
+    }, make_names_along(x, "", unique = FALSE), seq_along(x))
+    n_more <- max(length(x) - n, 0)
+    if (n_more) {
+      extra <- tail(labels, n_more)
+      msg <- pluralize(
+        "... with ", format_len(n_more), " more element{?s}: ", "{qty(n_more)}"
+      )
+      print_items(extra, label = msg, n = n, style = style_extra)
+      if (level < 2) newline()
+    }
   }
 }
 
@@ -896,7 +986,7 @@ print_label <- function(...) {
 }
 
 
-print_modelinfo <- function(x, trained = FALSE, level = 0, ...) {
+print_modelinfo <- function(x, trained = FALSE, level = 0, id = FALSE, ...) {
   info_list <- modelinfo(x)
   if (is_empty(info_list)) return(NULL)
   info <- info_list[[1]]
@@ -904,6 +994,7 @@ print_modelinfo <- function(x, trained = FALSE, level = 0, ...) {
     "Model name: " =  names(info_list),
     "Label: " = paste0(if (trained) "Trained ", info$label)
   ))
+  if (id) print_id(x)
   if (level < 1) {
     print_fields(info, labels = c(
       packages = "Package{?s}: ",
@@ -913,6 +1004,36 @@ print_modelinfo <- function(x, trained = FALSE, level = 0, ...) {
       varimp = "Variable importance: "
     ))
   }
+}
+
+
+print_progress <- function(
+  scores, max_iter = Inf, method = character(), items = list(),
+  n = MachineShop::settings("print_max"), metric = numeric(),
+  start_time = Sys.time(), pad = TRUE
+) {
+  iter <- length(scores)
+  hline(label = paste0(
+    "Iteration ", iter, if (is.finite(max_iter)) paste0(" of ", max_iter)
+  ))
+  newline()
+  selected <- which.max(scores)
+  if (selected == iter) selected <- paste0(">", selected, "<")
+  print_fields(list("Optimization method: " = method))
+  print_fields(items, add_size = TRUE, add_names = TRUE, n = n)
+  print_fields(list(
+    "Metric: " = metric,
+    "Current maximum score (iteration): " =
+      as_string(list(max(scores), " (", selected, ")"), sep = ""),
+    "Elapsed time: " = round(difftime(Sys.time(), start_time), 1)
+  ), add_names = TRUE)
+  if (pad && iter < max_iter) newline()
+}
+
+
+print_str <- function(x, label, n = Inf) {
+  print_label(pluralize(label, "{qty(length(x))}"))
+  cat(str(x, give.attr = FALSE, list.len = n))
 }
 
 

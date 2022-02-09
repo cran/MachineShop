@@ -11,6 +11,7 @@
 \alias{plot.Performance}
 \alias{plot.PerformanceCurve}
 \alias{plot.Resample}
+\alias{plot.TrainingStep}
 \alias{plot.VariableImportance}
 \title{Model Performance Plots}
 \usage{
@@ -62,12 +63,20 @@
   ...
 )
 
+\method{plot}{TrainingStep}(
+  x,
+  metrics = NULL,
+  stat = MachineShop::settings("stat.TrainingParams"),
+  type = c("boxplot", "density", "errorbar", "line", "violin"),
+  ...
+)
+
 \method{plot}{VariableImportance}(x, n = Inf, ...)
 }
 \arguments{
 \item{x}{\link{calibration}, \link{confusion}, \link{lift},
 trained model \link{fit}, partial \link{dependence}, \link{performance},
-\link[=curves]{performance curve}, \link{resample}, or
+\link[=curves]{performance curve}, \link{resample}, \link{rfe}, or
 \link[=varimp]{variable importance} result.}
 
 \item{type}{type of plot to construct.}
@@ -84,7 +93,8 @@ line.}
 
 \item{stat}{function or character string naming a function to compute a
 summary statistic on resampled metrics for trained \code{MLModel} line
-plots and \code{Resample} model ordering.  For \code{LiftCurve} and
+plots and \code{Resample} model ordering.  The original ordering is
+preserved if a value of \code{NULL} is given.  For \code{LiftCurve} and
 \code{PerformanceCurve} classes, plots are of resampled metrics aggregated
 by the statistic if given or of resample-specific metrics if \code{NULL}.}
 

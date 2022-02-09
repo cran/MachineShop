@@ -7,7 +7,7 @@
 #' @rdname ModelFrame-methods
 #'
 #' @param ... arguments passed from the generic function to its methods.  The
-#'   first arguments of \code{ModelFrame} methods are positional and, as such,
+#'   first argument of each \code{ModelFrame} method is positional and, as such,
 #'   must be given first in calls to them.
 #' @param formula,data \link[=formula]{formula} defining the model predictor and
 #'   response variables and a \link[=data.frame]{data frame} containing them.
@@ -171,6 +171,15 @@ ModelFrame.recipe <- function(input, ...) {
   data <- data[all.vars(model_formula(model_terms))]
 
   do.call(ModelFrame, c(list(model_terms, data), args))
+}
+
+
+update.ModelFrame <- function(object, data = NULL, ...) {
+  if (is.data.frame(data)) {
+    attr(data, "terms") <- terms(object)
+    S3Part(object) <- data
+  }
+  object
 }
 
 

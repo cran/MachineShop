@@ -11,11 +11,14 @@ as.data.frame.BinomialVariate <- function(x, ...) {
 }
 
 
-setAsS3Part("ListOf", "listof")
+as.data.frame.formula <- function(x, data, ...) {
+  eval.parent(substitute(environment(x) <- environment()))
+  as.data.frame(data, ...)
+}
 
 
 as.data.frame.ModelFrame <- function(x, ...) {
-  structure(asS3(x), terms = NULL)
+  structure(asS3(S3Part(x)), terms = NULL)
 }
 
 
@@ -29,17 +32,6 @@ setAs("ModeledFrame", "data.frame",
 )
 
 
-setAsS3Part("ParameterGrid", "parameters")
-
-
-setAs("recipe", "ModelRecipe",
-  function(from) ModelRecipe(from)
-)
-
-
-setAsS3Part("RecipeGrid", "tbl_df")
-
-
 setAs("SelectedModelFrame", "data.frame",
   function(from) as.data.frame(from)
 )
@@ -47,6 +39,11 @@ setAs("SelectedModelFrame", "data.frame",
 
 as.data.frame.ModelRecipe <- function(x, ...) {
   as.data.frame(x$template)
+}
+
+
+as.data.frame.ModelSpecification <- function(x, ...) {
+  as.data.frame(as.MLInput(x))
 }
 
 
@@ -104,16 +101,39 @@ setAs("SelectedModel", "list",
 )
 
 
-setAs("TrainingParams", "list",
-  function(from) map(function(name) slot(from, name), slotNames(from))
-)
-
-
-setAs("TunedModel", "list",
+setAs("StackedModel", "list",
   function(from) {
-    c(list(object = from@model, grid = from@grid), as(from@params, "list"))
+    c(list(
+      objects = from@models,
+      control = from@params@control),
+      from@params@options
+    )
   }
 )
+
+
+setAs("SuperModel", "list",
+  function(from) {
+    res <- callNextMethod()
+    res$model <- res$objects[[1]]
+    res$objects[1] <- NULL
+    res
+  }
+)
+
+
+setAs("TrainingParams", "list",
+  function(from) {
+    res <- map(function(name) slot(from, name), slotNames(from))
+    options <- res$options
+    res$optim <- NULL
+    res$options <- NULL
+    c(new_params(res), options)
+  }
+)
+
+
+setAsS3Part("ListOf", "listof")
 
 
 as.MLControl <- function(x, ...) {
@@ -145,6 +165,11 @@ as.MLControl.MLControl <- function(x, ...) {
 }
 
 
+as.MLControl.NULL <- function(x, ...) {
+  NullControl()
+}
+
+
 as.MLInput <- function(x, ...) {
   UseMethod("as.MLInput")
 }
@@ -166,8 +191,13 @@ as.MLInput.matrix <- function(x, y, ...) {
 }
 
 
-as.MLInput.ModelFrame <- function(x, ...) {
+as.MLInput.MLInput <- function(x, ...) {
   x
+}
+
+
+as.MLInput.ModelSpecification <- function(x, ...) {
+  x@input
 }
 
 
@@ -257,9 +287,22 @@ as.MLModel.model_spec <- function(x, ...) {
 }
 
 
+as.MLModel.ModelSpecification <- function(x, ...) {
+  x@model
+}
+
+
 as.MLModel.NULL <- function(x, ...) {
   NullModel()
 }
+
+
+setAs("recipe", "ModelRecipe",
+  function(from) ModelRecipe(from)
+)
+
+
+setAsS3Part("ParameterGrid", "parameters")
 
 
 setAsS3Part("ModelRecipe", "recipe")
@@ -272,3 +315,6 @@ setAsS3Part("SelectedModelRecipe", "recipe")
 
 
 setAsS3Part("TunedModelRecipe", "recipe")
+
+
+setAsS3Part("RecipeGrid", "tbl_df")

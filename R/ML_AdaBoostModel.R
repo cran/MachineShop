@@ -64,7 +64,7 @@ AdaBoostModel <- function(
     gridinfo = new_gridinfo(
       param = c("mfinal", "maxdepth", "coeflearn"),
       get_values = c(
-        function(n, ...) round(seq_range(0, 25, c(1, 200), n + 1)),
+        function(n, ...) round_int(seq_range(0, 25, c(1, 200), n + 1)),
         function(n, ...) seq_len(min(n, 30)),
         function(n, ...) head(c("Breiman", "Freund", "Zhu"), n)
       ),
@@ -73,8 +73,8 @@ AdaBoostModel <- function(
 
     fit = function(formula, data, weights, boos, mfinal, coeflearn, ...) {
       adabag::boosting(
-        formula, data = as.data.frame(data), boos = boos, mfinal = mfinal,
-        coeflearn = coeflearn, control = list(...)
+        formula, data = as.data.frame(formula, data), boos = boos,
+        mfinal = mfinal, coeflearn = coeflearn, control = list(...)
       )
     },
 

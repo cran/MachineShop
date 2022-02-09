@@ -115,6 +115,9 @@ setClass("CVOptimismControl",
 )
 
 
+setClass("NullControl", contains = "MLControl")
+
+
 setClass("OOBControl",
   contains = "MLControl",
   slots = c(samples = "integer")
@@ -138,12 +141,39 @@ setClass("TrainControl",
 setOldClass(c("parameters", "tbl_df"))
 
 
-TrainingParams <- setClass("TrainingParams",
+setClass("MLOptimization",
   slots = c(
+    label = "character",
+    packages = "character",
+    params = "list",
+    monitor = "list",
+    fun = "function"
+  )
+)
+
+
+setClass("GridSearch", contains = "MLOptimization")
+setClass("NullOptimization", contains = "MLOptimization")
+
+setClass("RandomGridSearch",
+  contains = "GridSearch",
+  slots = c(size = "integer")
+)
+
+setClass("SequentialOptimization",
+  contains = "MLOptimization",
+  slots = c(random = "IntegerOrLogical")
+)
+
+
+setClass("TrainingParams",
+  slots = c(
+    optim = "MLOptimization",
     control = "MLControl",
     metrics = "ANY",
-    stat = "ANY",
-    cutoff = "numeric"
+    cutoff = "numeric",
+    stat = "function",
+    options = "list"
   )
 )
 
@@ -180,14 +210,10 @@ setClassUnion("Grid",
 
 
 setClass("MLInput",
-  slots = c(id = "character")
-)
-
-
-setMethod("initialize", "MLInput",
-  function(.Object, ..., id = make_id()) {
-    callNextMethod(.Object, ..., id = id)
-  }
+  slots = c(
+    id = "character",
+    params = "ANY"
+  )
 )
 
 
@@ -208,13 +234,6 @@ setClass("MLModel",
     input = "MLInput",
     steps = "ListOf"
   )
-)
-
-
-setMethod("initialize", "MLModel",
-  function(.Object, ..., id = make_id(), input = NullInput()) {
-    callNextMethod(.Object, ..., id = id, input = input)
-  }
 )
 
 
@@ -249,6 +268,17 @@ ModelFormulaTerms <- setClass("ModelFormulaTerms",
 
 setClass("ModelRecipe",
   contains = c("recipe", "MLInput")
+)
+
+
+setClass("ModelSpecification",
+  slots = c(
+    id = "character",
+    input = "MLInput",
+    model = "MLModel",
+    params = "TrainingParams",
+    grid = "tbl_df"
+  )
 )
 
 
@@ -330,10 +360,7 @@ setClass("TunedModeledRecipe",
 #################### Models ####################
 
 
-setClass("ParsnipModel", contains = "MLModel")
-
-
-setClass("SelectedModel",
+setClass("EnsembleModel",
   contains = "MLModel",
   slots = c(
     models = "ListOf",
@@ -342,8 +369,10 @@ setClass("SelectedModel",
 )
 
 
-setClass("StackedModel", contains = "MLModel")
-setClass("SuperModel", contains = "MLModel")
+setClass("ParsnipModel", contains = "MLModel")
+setClass("SelectedModel", contains = "EnsembleModel")
+setClass("StackedModel", contains = "EnsembleModel")
+setClass("SuperModel", contains = "StackedModel")
 
 
 setClass("TunedModel",
@@ -442,7 +471,7 @@ setClass("MLMetric",
 )
 
 
-Performance <- setClass("Performance",
+setClass("Performance",
   contains = "TabularArray",
   slots = c(control = "MLControl")
 )
@@ -462,7 +491,10 @@ PerformanceDiffTest <- setClass("PerformanceDiffTest",
 
 setClass("PerformanceCurve",
   contains = "data.frame",
-  slots = c(metrics = "list")
+  slots = c(
+    metrics = "list",
+    control = "MLControl"
+  )
 )
 
 
@@ -475,16 +507,17 @@ setClass("Resample",
   contains = "data.frame",
   slots = c(
     control = "MLControl",
-    case_comps = "data.frame"
+    vars = "tbl_df"
   )
 )
 
 
-TrainingStep <- setClass("TrainingStep",
+setClass("TrainingStep",
   slots = c(
     id = "character",
     name = "character",
-    grid = "tbl_df",
+    method = "character",
+    log = "tbl_df",
     performance = "Performance"
   )
 )

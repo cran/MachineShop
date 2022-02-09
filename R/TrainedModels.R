@@ -12,9 +12,9 @@
 #'   these with which to calculate performance.  If not specified, default
 #'   metrics defined in the \link{performance} functions are used.  Model
 #'   selection is based on the first calculated metric.
+#' @param cutoff argument passed to the \code{metrics} functions.
 #' @param stat function or character string naming a function to compute a
 #'   summary statistic on resampled metric values for model selection.
-#' @param cutoff argument passed to the \code{metrics} functions.
 #'
 #' @details
 #' \describe{
@@ -40,8 +40,8 @@
 #'
 SelectedModel <- function(
   ..., control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.TrainingParams"),
-  cutoff = MachineShop::settings("cutoff")
+  cutoff = MachineShop::settings("cutoff"),
+  stat = MachineShop::settings("stat.TrainingParams")
 ) {
 
   models <- as.list(unlist(list(...)))
@@ -51,7 +51,7 @@ SelectedModel <- function(
     return(models[[1]])
   }
 
-  default_names <- map("char", training_names.MLModel, models)
+  default_names <- map("char", slot, models, "name")
   names(models) <- make_names_along(models, default_names)
 
   slots <- combine_model_slots(models, settings("response_types"))
@@ -61,10 +61,10 @@ SelectedModel <- function(
     response_types = slots$response_types,
     weights = slots$weights,
     params = TrainingParams(
-      control = as.MLControl(control),
+      control = control,
       metrics = metrics,
-      stat = stat,
-      cutoff = cutoff
+      cutoff = cutoff,
+      stat = stat
     )
   ), models = ListOf(models))
 
@@ -74,13 +74,7 @@ MLModelFunction(SelectedModel) <- NULL
 
 
 .fit.SelectedModel <- function(object, ...) {
-  grid <- tibble(id = map("char", slot, object@models, "id"))
-  step <- resample_selection(
-    object, ..., grid = grid, params = object@params, id = object@id,
-    name = "SelectedModel"
-  )
-  model <- update(object, grid[step@grid$selected, ])
-  push(step, fit(model, ...))
+  fit_optim(object, ...)
 }
 
 
@@ -129,7 +123,7 @@ update.SelectedModel <- function(object, params = list(), ...) {
 #'
 #' @return \code{TunedModel} class object that inherits from \code{MLModel}.
 #'
-#' @seealso \code{\link{fit}}, \code{\link{resample}}
+#' @seealso \code{\link{fit}}, \code{\link{resample}}, \code{\link{set_optim}}
 #'
 #' @examples
 #' \donttest{
@@ -166,8 +160,8 @@ update.SelectedModel <- function(object, params = list(), ...) {
 TunedModel <- function(
   object, grid = MachineShop::settings("grid"), fixed = list(),
   control = MachineShop::settings("control"), metrics = NULL,
-  stat = MachineShop::settings("stat.TrainingParams"),
-  cutoff = MachineShop::settings("cutoff")
+  cutoff = MachineShop::settings("cutoff"),
+  stat = MachineShop::settings("stat.TrainingParams")
 ) {
 
   fixed <- as_tibble(dep_fixedarg(fixed))
@@ -180,7 +174,7 @@ TunedModel <- function(
     response_types <- settings("response_types")
     weights <- FALSE
   } else {
-    object <- update(as.MLModel(object), fixed)
+    object <- update(as.MLModel(object), params = fixed)
     response_types <- object@response_types
     weights <- object@weights
   }
@@ -204,10 +198,10 @@ TunedModel <- function(
   } else {
     params <- object@gridinfo$param
     params_type <- "grid"
-    if (!grid@random) params <- params[object@gridinfo$default]
     grid_params <- names(grid@size)
     if (is.null(grid_params)) {
       if (length(grid@size) == 1) {
+        if (!grid@random) params <- params[object@gridinfo$default]
         grid_params <- params
         grid@size <- rep(grid@size, max(length(grid_params), 1))
         names(grid@size) <- grid_params
@@ -228,14 +222,14 @@ TunedModel <- function(
 
   new("TunedModel", MLModel(
     name = "TunedModel",
-    label = "Grid Tuned Model",
+    label = paste("Grid Tuned", object@name),
     response_types = response_types,
     weights = weights,
     params = TrainingParams(
-      control = as.MLControl(control),
+      control = control,
       metrics = metrics,
-      stat = stat,
-      cutoff = cutoff
+      cutoff = cutoff,
+      stat = stat
     )
   ), model = object, grid = grid)
 
@@ -245,11 +239,16 @@ MLModelFunction(TunedModel) <- NULL
 
 
 .fit.TunedModel <- function(object, ...) {
-  grid <- expand_modelgrid(object, ...)
-  step <- resample_selection(
-    object@model, ..., grid = grid, params = object@params, id = object@id,
-    name = "TunedModel"
-  )
-  model <- update(object@model, grid[step@grid$selected, ])
-  push(step, fit(model, ...))
+  fit_optim(object, ...)
+}
+
+
+update.TunedModel <- function(
+  object, params = NULL, ...
+) {
+  if (is.list(params)) {
+    update(object@model, params = params, new_id = object@id)
+  } else {
+    object
+  }
 }

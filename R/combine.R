@@ -166,8 +166,14 @@ c.PerformanceCurve <- function(...) {
       throw(Error(class, " arguments have different metrics."))
     }
 
-    df <- do.call(append, set_model_names(args))
-    do.call(class, list(df, metrics = args[[1]]@metrics, .check = FALSE))
+    if (!identical_elements(args, function(x) x@control)) {
+      throw(Error(class, " arguments have different control structures."))
+    }
+
+    do.call(class, list(
+      do.call(append, set_model_names(args)), metrics = args[[1]]@metrics,
+      control = args[[1]]@control, .check = FALSE
+    ))
 
   } else {
     NextMethod()
@@ -185,13 +191,13 @@ c.Resample <- function(...) {
       throw(Error("Resample arguments have different control structures."))
     }
 
-    if (!identical_elements(args, function(x) x@case_comps)) {
-      throw(Error("Resample arguments have different case components."))
+    if (!identical_elements(args, function(x) x@vars)) {
+      throw(Error("Resample arguments have different sampling variables."))
     }
 
     df <- do.call(append, set_model_names(args))
-    Resample(df, control = args[[1]]@control,
-              case_comps = args[[1]]@case_comps, .check = FALSE)
+    Resample(df, control = args[[1]]@control, vars = args[[1]]@vars,
+             .check = FALSE)
 
   } else {
     NextMethod()

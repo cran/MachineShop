@@ -81,24 +81,6 @@ ParameterGrid.parameters <- function(object, size = 3, random = FALSE, ...) {
 }
 
 
-new_gridinfo <- function(
-  param = character(), get_values = list(), default = logical()
-) {
-  if (is_empty(default)) default <- TRUE
-
-  stopifnot(is.character(param))
-  stopifnot(is.list(get_values))
-  stopifnot(is.logical(default))
-
-  if (!all(map("logi", is.function, get_values))) {
-    get_values <- Error("Value must be a list of functions.")
-    throw(check_assignment(get_values))
-  }
-
-  as_tibble(list(param = param, get_values = get_values, default = default))
-}
-
-
 #' Tuning Grid Control
 #'
 #' Defines control parameters for a tuning grid.
@@ -135,4 +117,191 @@ TuningGrid <- function(size = 3, random = FALSE) {
   }
 
   new("TuningGrid", size = size, random = random)
+}
+
+
+get_grid <- function(object, ...) {
+  UseMethod("get_grid")
+}
+
+
+get_grid.default <- function(object, ...) {
+  make_grid(object, class1(object))
+}
+
+
+get_grid.ModelSpecification <- function(object, ...) {
+  make_grid(object, "ModelSpec", object@grid)
+}
+
+
+get_grid.SelectedInput <- function(object, ...) {
+  make_grid(
+    object,
+    names(object@inputs),
+    tibble(id = map("char", slot, object@inputs, "id"))
+  )
+}
+
+
+get_grid.SelectedModel <- function(object, ...) {
+  make_grid(
+    object,
+    names(object@models),
+    tibble(id = map("char", slot, object@models, "id"))
+  )
+}
+
+
+get_grid.TunedModelRecipe <- function(object, ...) {
+  make_grid(object, "ModelRecipe", as(object@grid, "tbl_df"))
+}
+
+
+get_grid.TunedModel <- function(object, ...) {
+  make_grid(object, object@model@name, expand_modelgrid(object, ...))
+}
+
+
+make_grid <- function(object, name = character(), params = tibble()) {
+  if (is_empty(name)) name <- "Model"
+  if (is_empty(params)) params <- tibble(.rows = 1)
+  name <- make_unique(rep_len(name, nrow(params)))
+  if (is_optim_method(object, "RandomGridSearch")) {
+    n <- nrow(params)
+    size <- get_optim_field(object, "size")
+    inds <- sort(sample.int(n, min(max(size, 1), n)))
+    params <- params[inds, ]
+    name <- name[inds]
+  }
+  tibble(name = name, params = params)
+}
+
+
+new_gridinfo <- function(
+  param = character(), get_values = list(), default = logical()
+) {
+  if (is_empty(default)) default <- TRUE
+
+  stopifnot(is.character(param))
+  stopifnot(is.list(get_values))
+  stopifnot(is.logical(default))
+
+  if (!all(map("logi", is.function, get_values))) {
+    get_values <- Error("Value must be a list of functions.")
+    throw(check_assignment(get_values))
+  }
+
+  as_tibble(list(param = param, get_values = get_values, default = default))
+}
+
+
+random_grid <- function(x, size = integer()) {
+  stopifnot(is.list(x))
+
+  names(x) <- make_names_along(x, "value")
+  grids <- map(function(value, name) {
+    do.call(tibble, structure(list(value), names = name))
+  }, x, names(x))
+
+  max_size <- prod(map("int", nrow, grids))
+  if (is_empty(size)) size <- max_size
+  size <- min(size, max_size)
+
+  if (is_empty(grids) || size < 1) {
+    grid <- as_tibble(map(function(data) data[NULL, 1, drop = TRUE], grids))
+  } else {
+    grid <- NULL
+    iter <- 0
+    while (size(grid, 1) < size && iter < 100) {
+      iter <- iter + 1
+      grid_sample <- as_tibble(map(function(data) {
+        inds <- sample.int(nrow(data), size = size, replace = TRUE)
+        data[inds, 1, drop = TRUE]
+      }, grids))
+      grid <- unique_grid(rbind(grid, grid_sample))
+    }
+
+    grid <- head(grid, size)
+    cols <- unname(unnest_params(grid))
+    sortable_types <- c("character", "complex", "Date", "factor", "logical",
+                        "numeric")
+    is_sortable <- map("logi", function(col) {
+      any(map("logi", is, list(col), sortable_types))
+    }, cols)
+    if (any(is_sortable)) {
+      sort_order <- do.call(order, cols[is_sortable])
+      grid <- grid[sort_order, ]
+    }
+  }
+
+  grid
+}
+
+
+regular_grid <- function(x) {
+  stopifnot(is.list(x))
+
+  names(x) <- make_names_along(x, "value")
+  grids <- map(function(value, name) {
+    do.call(tibble, structure(list(value), names = name))
+  }, x, names(x))
+
+  ns <- map("int", nrow, grids)
+  n <- prod(ns)
+
+  if (is_empty(grids) || n == 0) {
+    repeats <- 0
+  } else {
+    ns_cumprod <- cumprod(ns)
+    grids <- map(function(data, each) {
+      inds <- rep(seq_len(nrow(data)), each = each)
+      data[inds, ]
+    }, grids, n / ns_cumprod)
+    repeats <- ns_cumprod / ns
+  }
+  grids <- map(function(data, times) {
+    inds <- rep(seq_len(nrow(data)), times = times)
+    data[inds, 1, drop = TRUE]
+  }, grids, repeats)
+
+  as_tibble(grids)
+}
+
+
+renest_params <-function(x, template, drop = FALSE) {
+  res <- template
+  ind <- 1
+  for (name in names(template)) {
+    node <- template[[name]]
+    res[[name]] <- if (is_tibble(node)) {
+      size <- length(unnest_params(node))
+      renest_params(x[seq(ind, length = size)], node, drop = TRUE)
+    } else {
+      size <- 1
+      x[[ind]]
+    }
+    ind <- ind + size
+  }
+  if (length(res) || !drop) res
+}
+
+
+unique_grid <- function(x) {
+  if (is_empty(x)) x else x[!duplicated(unnest_params(x)), ]
+}
+
+
+unnest_params <- function(x, compact_names = FALSE) {
+  res <- tibble(.rows = nrow(x))
+  for (name in names(x)) {
+    value <- x[[name]]
+    if (is_tibble(value)) {
+      value <- unnest_params(value)
+      if (compact_names) name <- c(name, character(length(value) - 1))
+      name <- paste0(name, "$", names(value))
+    }
+    res[name] <- value
+  }
+  res
 }
