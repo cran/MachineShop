@@ -178,10 +178,11 @@ bake.step_lincomp <- function(object, new_data, ...) {
 
 
 print.step_lincomp <- function(x, width = console_width(), ...) {
-  msg <- paste(x$prefix, "variable reduction for ")
-  width <- max(width - nchar(msg), 20)
-  cat(msg)
-  recipes::printer(rownames(x$res$weights), x$terms, x$trained, width = width)
+  title <- paste(x$prefix, "variable reduction for ")
+  recipes::print_step(
+    rownames(x$res$weights), x$terms, x$trained, title = title,
+    width = max(width - nchar(title), 20)
+  )
   invisible(x)
 }
 
@@ -193,7 +194,7 @@ tidy.step_lincomp <- function(x, ...) {
   if (is_trained(x)) {
     res_attrs <- res[names(res) != "weights"]
     res <- res$weights %>% as.matrix %>% as.table %>%
-      as.data.frame(responseName = "weight", stringsAsFactors = FALSE)
+      as.data.frame(responseName = "weight")
     res <- tibble(res[c("terms", "weight")], name = res$names)
     attributes(res) <- c(attributes(res), res_attrs)
   }

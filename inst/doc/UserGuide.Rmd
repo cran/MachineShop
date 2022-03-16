@@ -653,13 +653,13 @@ A named list of available metrics can be obtained interactively with the `r rdoc
 
 `label`
   : Character descriptor for the metric.
-  
+
 `maximize`
   : Logical indicating whether higher values of the metric correspond to better predictive performance.
-  
+
 `arguments`
   : Closure with the argument names and corresponding default values of the metric function.
-  
+
 `response_types`
   : Data frame of the observed and predicted response variable types supported by the metric.
 
@@ -687,7 +687,7 @@ cindex
 
 ### Type-Specific Metrics
 
-When data objects are supplied as arguments to `r rdoc_url("metricinfo()")`, information is returned on all metrics applicable to response variables of the same data types.  Observed response variable type is inferred from the first data argument and predicted type from the second, if given.  For survival responses, predicted types may be `numeric` for survival means, `r rdoc_url("SurvEvents", "SurvMatrix")` for 0-1 survival events at specified follow-up times, or `r rdoc_url("SurvProbs", "SurvMatrix")` for follow-up time survival probabilities.  If model functions are additionally supplied as arguments, information on the subset matching the data types is returned. 
+When data objects are supplied as arguments to `r rdoc_url("metricinfo()")`, information is returned on all metrics applicable to response variables of the same data types.  Observed response variable type is inferred from the first data argument and predicted type from the second, if given.  For survival responses, predicted types may be `numeric` for survival means, `r rdoc_url("SurvEvents", "SurvMatrix")` for 0-1 survival events at specified follow-up times, or `r rdoc_url("SurvProbs", "SurvMatrix")` for follow-up time survival probabilities.  If model functions are additionally supplied as arguments, information on the subset matching the data types is returned.
 
 ```{r using_metrics_metricinfo_type}
 ## Metrics for observed and predicted response variable types
@@ -725,16 +725,16 @@ Metrics applicable to multi-level factor response variables are summarized below
 
 `r rdoc_url("brier()", "metrics")`
   : [Brier score](https://en.wikipedia.org/wiki/Brier_score).
-  
+
 `r rdoc_url("cross_entropy()", "metrics")`
   : [Cross entropy](https://en.wikipedia.org/wiki/Cross_entropy) loss averaged over the number of cases.
-  
+
 `r rdoc_url("kappa2()", "metrics")`
   : [Cohen's kappa](https://en.wikipedia.org/wiki/Cohen%27s_kappa) statistic measuring relative agreement between observed and predicted classifications.
 
 `r rdoc_url("weighted_kappa2()", "metrics")`
   : [Weighted Cohen's kappa](https://en.wikipedia.org/wiki/Cohen%27s_kappa#Weighted_kappa) for ordered factor responses only.
-  
+
 Brier score and cross entropy loss are computed directly on predicted class probabilities.  The other metrics are computed on predicted class membership, defined as the factor level with the highest predicted probability.
 
 
@@ -773,24 +773,24 @@ kable(conf,
 `r rdoc_url("npv()", "metrics")`
   : Negative predictive value, $NPV = \frac{TN}{TN + FN}$.
 
+`r rdoc_url("ppr()", "metrics")`
+  : Positive prediction rate, $PPR = \frac{TP + FP}{TP + FP + TN + FN}$.
+
 `r rdoc_url("ppv()", "metrics")`, `r rdoc_url("precision()", "metrics")`
   : Positive predictive value, $PPV = \frac{TP}{TP + FP}$.
 
 `r rdoc_url("pr_auc()", "metrics")`, `r rdoc_url("auc()", "metrics")`
   : Area under a precision recall curve.
-  
+
 `r rdoc_url("roc_auc()", "metrics")`, `r rdoc_url("auc()", "metrics")`
   : [Area under an ROC curve](https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve).
 
 `r rdoc_url("roc_index()", "metrics")`
   : A tradeoff function of sensitivity and specificity as defined by the `fun` argument in this function (default: (sensitivity + specificity) / 2).  The function allows for specification of tradeoffs [@perkins:2006:IOC] other than the default of Youden's J statistic [@youden:1950:IRD].
-  
-`r rdoc_url("rpp()", "metrics")`
-  : Rate of positive prediction, $RPP = \frac{TP + FP}{TP + FP + TN + FN}$.
-  
+
 `r rdoc_url("sensitivity()", "metrics")`, `r rdoc_url("recall()", "metrics")`, `r rdoc_url("tpr()", "metrics")`
   : True positive rate, $TPR =\frac{TP}{TP + FN} = 1 - FNR$.
-  
+
 `r rdoc_url("specificity()", "metrics")`, `r rdoc_url("tnr()", "metrics")`
   : True negative rate, $TNR = \frac{TN}{TN + FP} = 1 - FPR$.
 
@@ -803,7 +803,7 @@ Performance metrics are defined below for numeric vector responses.  If applied 
 
 `r rdoc_url("gini()", "metrics")`
   : [Gini coefficient](https://en.wikipedia.org/wiki/Gini_coefficient).
-  
+
 `r rdoc_url("mae()", "metrics")`
   : Mean absolute error, $MAE = \frac{1}{N}\sum_{i=1}^N|y_i - \hat{y}_i|$, where $y_i$ and $\hat{y}_i$ are the $N$ observed and predicted responses.
 
@@ -1066,7 +1066,7 @@ modelinfo(SVMModel)[[1]]$varimp
 
 Variable importance can be computed with model-agnostic permutation methods [@fisher:2019:AMW] as an alternative to model-specific methods.  The following algorithm for permutation-based variable importance is implemented and the default method in **MachineShop**.
 
-* Fit a model to a training dataset
+* Fit a model to a training dataset.
 
 * Compute training performance.
 
@@ -1412,12 +1412,12 @@ as.MLModel(model_fit)
 #> # A tibble: 3 x 4
 #>   name             selected params$id  metrics$`C-Index`
 #>   <chr>            <lgl>    <chr>                  <dbl>
-#> 1 ModelRecipe.1    FALSE    input.W4KN             0.761
-#> 2 ModelRecipe.2    FALSE    input.azpi             0.643
-#> 3 TunedModelRecipe TRUE     input.CuYF             0.800
+#> 1 ModelRecipe.1    FALSE    input.azpi             0.761
+#> 2 ModelRecipe.2    FALSE    input.aLHo             0.643
+#> 3 TunedModelRecipe TRUE     input.W4KN             0.804
 #> 
 #> Selected row: 3
-#> Metric: C-Index = 0.7997292
+#> Metric: C-Index = 0.8035826
 #> 
 #> === $TrainingStep2 =============================================================
 #> === TrainingStep object ===
@@ -1450,13 +1450,13 @@ model_fit <- fit(sel_fo, model = GBMModel)
 as.MLModel(model_fit)
 ```
 
-In the previous examples, selection of different inputs was performed with the same model (`r rdoc_url("GBMModel")`).  Selection among different combinations of inputs and models is supported with the `r rdoc_url("ModeledInput()")` constructor.
+In the previous examples, selection of different inputs was performed with the same model (`r rdoc_url("GBMModel")`).  Selection among different combinations of inputs and models is supported with the `r rdoc_url("ModelSpecification()")` constructor.
 
 ```{r using_strategies_SelectedInput4, eval=FALSE}
 ## Different combinations of inputs and models
 sel_mfo <- SelectedInput(
-  ModeledInput(fo1, data = surv_train, model = CoxModel),
-  ModeledInput(fo2, data = surv_train, model = GBMModel)
+  ModelSpecification(fo1, data = surv_train, model = CoxModel),
+  ModelSpecification(fo2, data = surv_train, model = GBMModel)
 )
 
 ## Input-selected model fit and final trained model
@@ -1546,7 +1546,7 @@ fit(surv_fo, data = surv_train,
 ```
 
 Statistics summarizing the resampled performance metrics across all tuning parameter combinations can be obtained with the `r rdoc_url("summary()")` and `r rdoc_url("performance()")`functions.
-  
+
 ```{r using_strategies_tune_summary, eval=FALSE}
 summary(trained_model)
 #> --- $TrainingStep1 -------------------------------------------------------------
@@ -1644,16 +1644,16 @@ Ensemble learning models combine $m = 1, \ldots, M$ base models as a strategy to
 $$
 \hat{f}(x) = \sum_{m=1}^M \hat{w}_m \hat{f}_m(x).
 $$
-Stacking weights $w$ are estimated by (constrained) least squares regression of case responses $y_i$ on predictions $\hat{f}^{-\kappa(i)}(x_i)$ from learners fit to data subsamples $-\kappa(i)$ not containing the corresponding cases. In particular, they are obtained as the solution
+Stacking weights $w$ are estimated by (constrained) least squares regression of case responses $y_i$ on predictions $\hat{f}_m^{-\kappa(i)}(x_i)$ from learners fit to data subsamples $-\kappa(i)$ not containing the corresponding cases. In particular, they are obtained as the solution
 $$
-\hat{w} = \underset{w}{\operatorname{argmin}} \sum_{i=1}^{N}\left(y_i - \sum_{m=1}^{M} w_m \hat{f}^{-\kappa(i)}(x_i) \right)^2
+\hat{w} = \underset{w}{\operatorname{argmin}} \sum_{i=1}^{N}\left(y_i - \sum_{m=1}^{M} w_m \hat{f}_m^{-\kappa(i)}(x_i) \right)^2
 $$
 subject to the constraints that all $w_m \ge 0$ and $\sum_m w_m = 1$.  K-fold cross-validation is the default subsampling method employed in the estimation, with the other resampling methods provided by the package available as options.  Survival outcomes are handled with a modified version of the stacked regression algorithm in which
 
 * minimization of least squares is replaced by maximization of Harrell's concordance index [-@harrell:1982:EYM] to accommodate censoring, and
 * prediction can only be performed on the same response type used for the model fit; i.e., either survival means or survival probabilities at given follow-up times.
 
-Super learners are a generalization of stacked regression that fit a specified model, such as `r rdoc_url("GBMModel")`, to case responses $y_i$, base learner predictions $\hat{f}^{-\kappa(i)}(x_i)$, and optionally also to the original predictor variables $x_i$.  Given below are examples of a stacked regression and super learner each fit with gradient boosted, random forest, and Cox regression base learners.  A separate gradient boosted model is used as the super learner in the latter.
+Super learners are a generalization of stacked regression that fit a specified model, such as `r rdoc_url("GBMModel")`, to case responses $y_i$, base learner predictions $\hat{f}_m^{-\kappa(i)}(x_i)$, and optionally also to the original predictor variables $x_i$.  Given below are examples of a stacked regression and super learner each fit with gradient boosted, random forest, and Cox regression base learners.  A separate gradient boosted model is used as the super learner in the latter.
 
 ```{r using_strategies_ensembles, eval=FALSE}
 ## Stacked regression
@@ -1662,7 +1662,7 @@ res_stacked <- resample(surv_fo, data = surv_train, model = stackedmodel)
 summary(res_stacked)
 #>          Statistic
 #> Metric         Mean    Median        SD       Min       Max NA
-#>   C-Index 0.7171778 0.7555556 0.1260723 0.5194805 0.8432432  0
+#>   C-Index 0.7197215 0.7555556 0.1220386 0.5194805 0.8324324  0
 
 ## Super learner
 supermodel <- SuperModel(CoxModel, CForestModel, GLMBoostModel,
@@ -1670,8 +1670,8 @@ supermodel <- SuperModel(CoxModel, CForestModel, GLMBoostModel,
 res_super <- resample(surv_fo, data = surv_train, model = supermodel)
 summary(res_super)
 #>          Statistic
-#> Metric         Mean    Median         SD       Min       Max NA
-#>   C-Index 0.7374148 0.7830189 0.09755047 0.5748899 0.8090909  0
+#> Metric         Mean Median        SD       Min       Max NA
+#>   C-Index 0.7590918    0.8 0.1168708 0.5726872 0.8609272  0
 ```
 
 
@@ -1730,15 +1730,15 @@ Nesting of resampling routines is repeated recursively when a fit involves multi
 #> # A tibble: 3 x 4
 #>   name          selected params$PCA$num_comp metrics$`C-Index`
 #>   <chr>         <lgl>                  <int>             <dbl>
-#> 1 ModelRecipe.1 TRUE                       1             0.742
-#> 2 ModelRecipe.2 FALSE                      2             0.732
-#> 3 ModelRecipe.3 FALSE                      3             0.742
+#> 1 ModelRecipe.1 TRUE                       1             0.735
+#> 2 ModelRecipe.2 FALSE                      2             0.733
+#> 3 ModelRecipe.3 FALSE                      3             0.722
 #> 
 #> Selected row: 1
-#> Metric: C-Index = 0.7422126
+#> Metric: C-Index = 0.7347546
 ```
 
-In order to identify and return a final model fitted to the entire input data, the hierarchy is traversed from top to bottom along the path determined by the choice at each node.  Steps along the path are labeled `TrainStep1` and `TrainStep2` in the output.  As seen above in `TrainStep1`, one principal component is first selected for the tuned input.  Using an input recipe with one principal component, the entire dataset is refit at `TrainStep2` to select the `r rdoc_url("TunedModel")`.
+In order to identify and return a final model fitted to the entire input data, the hierarchy is traversed from top to bottom along the path determined by the choice at each node.  Steps along the path are labeled `TrainStep1` and `TrainStep2` in the output.  As seen above in `TrainStep1`, one principal component is first selected for the tuned input.  Using an input recipe with one principal component, the entire dataset is refit at `TrainStep2` to finally select `r rdoc_url("GBMModel")`.
 
 ```{r using_strategies_methods2, eval=FALSE}
 #> === $TrainingStep2 =============================================================
@@ -1749,37 +1749,12 @@ In order to identify and return a final model fitted to the entire input data, t
 #> # A tibble: 3 x 4
 #>   name         selected params$id  metrics$`C-Index`
 #>   <chr>        <lgl>    <chr>                  <dbl>
-#> 1 GBMModel     FALSE    model.t8x4             0.740
-#> 2 TunedModel   TRUE     model.JS8n             0.745
-#> 3 StackedModel FALSE    model.ywzF             0.651
-#> 
-#> Selected row: 2
-#> Metric: C-Index = 0.7448616
-```
-
-Finally, a tuned `r rdoc_url("GBMModel")` with 50 trees and an interaction depth of 1 is selected.
-
-```{r using_strategies_methods3, eval=FALSE}
-#> === $TrainingStep3 =============================================================
-#> === TrainingStep object ===
-#> 
-#> Optimization method: Grid Search
-#> TunedModel log:
-#> # A tibble: 9 x 4
-#>   name       selected params$n.trees $interaction.depth metrics$`C-Index`
-#>   <chr>      <lgl>             <int>              <int>             <dbl>
-#> 1 GBMModel.1 TRUE                 50                  1             0.744
-#> 2 GBMModel.2 FALSE                50                  2             0.720
-#> 3 GBMModel.3 FALSE                50                  3             0.706
-#> 4 GBMModel.4 FALSE               100                  1             0.740
-#> 5 GBMModel.5 FALSE               100                  2             0.724
-#> 6 GBMModel.6 FALSE               100                  3             0.710
-#> 7 GBMModel.7 FALSE               150                  1             0.732
-#> 8 GBMModel.8 FALSE               150                  2             0.717
-#> 9 GBMModel.9 FALSE               150                  3             0.695
+#> 1 GBMModel     TRUE     model.1mQk             0.740
+#> 2 TunedModel   FALSE    model.hRF5             0.735
+#> 3 StackedModel FALSE    model.CYj0             0.656
 #> 
 #> Selected row: 1
-#> Metric: C-Index = 0.7440588
+#> Metric: C-Index = 0.7399641
 ```
 
 After the series of training steps reaches the bottom of its hierarchy, the final model is fitted to the entire dataset and returned.
@@ -1797,8 +1772,8 @@ After the series of training steps reaches the bottom of its hierarchy, the fina
 #> 
 #> Parameters:
 #> List of 5
-#>  $ n.trees          : int 50
-#>  $ interaction.depth: int 1
+#>  $ n.trees          : num 100
+#>  $ interaction.depth: num 1
 #>  $ n.minobsinnode   : num 10
 #>  $ shrinkage        : num 0.1
 #>  $ bag.fraction     : num 0.5

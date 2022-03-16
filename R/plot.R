@@ -111,7 +111,7 @@ plot.ConfusionList <- function(x, ...) {
 #' @rdname plot-methods
 #'
 plot.ConfusionMatrix <- function(x, ...) {
-  df <- as.data.frame(prop.table(as(x, "table")), responseName = "Value")
+  df <- as.data.frame(proportions(as(x, "table")), responseName = "Value")
   df$Predicted <- factor(df$Predicted, rev(levels(df$Predicted)))
   ggplot(df, aes_(~ Observed, ~ Predicted, fill = ~ Value)) +
     geom_raster() +
@@ -338,7 +338,7 @@ plot.TrainingStep <- function(
     indices <- map("logi", function(x) length(unique(x)), params[-1])
     args <- list(~ x, ~ Value)
     if (any(indices)) {
-      df$Group <- interaction(params[-1][indices])
+      df$Group <- interaction(params[-1][indices], sep = ":")
       args$color <- args$shape <- ~ Group
     } else {
       args$group <- 1

@@ -142,7 +142,7 @@ setMethod("initialize", "MLModel",
 
 
 NullModel <- function() {
-  MLModel(
+  new("NullModel", MLModel(
     id = "null",
     name = "NullModel",
     label = "Null Model",
@@ -150,22 +150,25 @@ NullModel <- function() {
     fit = function(...) {
       throw(Error("No specified model to fit."), call = call("fit"))
     }
-  )
+  ))
 }
 
 
 update.MLModel <- function(
-  object, params = list(), quote = TRUE, new_id = FALSE, ...
+  object, params = NULL, quote = TRUE, new_id = FALSE, ...
 ) {
-  new_params <- as(object, "list")
-  new_params[names(params)] <- params
-  res <- do.call(object@name, new_params, quote = quote)
-  if (is.character(new_id)) {
-    res@id <- new_id
-  } else if (!isTRUE(new_id)) {
-    res@id <- object@id
+  old_id <- object@id
+  if (is.list(params)) {
+    new_params <- as(object, "list")
+    new_params[names(params)] <- params
+    object <- do.call(object@name, new_params, quote = quote)
   }
-  res
+  if (is.character(new_id)) {
+    object@id <- new_id
+  } else if (!isTRUE(new_id)) {
+    object@id <- old_id
+  }
+  object
 }
 
 

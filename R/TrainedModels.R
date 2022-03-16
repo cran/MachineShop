@@ -2,10 +2,15 @@
 #'
 #' Model selection from a candidate set.
 #'
+#' @rdname SelectedModel
+#'
 #' @param ... \link[=models]{model} functions, function names, objects; other
-#'   objects that can be \link[=as.MLModel]{coerced} to models; or vectors of
+#'   objects that can be \link[=as.MLModel]{coerced} to models; vectors of
 #'   these to serve as the candidate set from which to select, such as that
-#'   returned by \code{\link{expand_model}}.
+#'   returned by \code{\link{expand_model}}; or model
+#'   \link[=ModelSpecification]{specifications}.
+#' @param x list of models followed by arguments passed to their method
+#'   function.
 #' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
@@ -22,7 +27,9 @@
 #'     \code{Surv}}
 #' }
 #'
-#' @return \code{SelectedModel} class object that inherits from \code{MLModel}.
+#' @return \code{SelectedModel} or \code{SelectedModelSpecification} class
+#' object that inherits from \code{MLModel} or \code{ModelSpecification},
+#' respectively.
 #'
 #' @seealso \code{\link{fit}}, \code{\link{resample}}
 #'
@@ -38,7 +45,16 @@
 #' summary(selected_model)
 #' }
 #'
-SelectedModel <- function(
+SelectedModel <- function(...) {
+  UseMethod("SelectedModel")
+}
+
+MLModelFunction(SelectedModel) <- NULL
+
+
+#' @rdname SelectedModel
+#'
+SelectedModel.default <- function(
   ..., control = MachineShop::settings("control"), metrics = NULL,
   cutoff = MachineShop::settings("cutoff"),
   stat = MachineShop::settings("stat.TrainingParams")
@@ -66,20 +82,36 @@ SelectedModel <- function(
       cutoff = cutoff,
       stat = stat
     )
-  ), models = ListOf(models))
+  ), candidates = ListOf(models))
 
 }
 
-MLModelFunction(SelectedModel) <- NULL
+
+#' @rdname SelectedModel
+#'
+SelectedModel.ModelSpecification <- function(
+  ..., control = MachineShop::settings("control"), metrics = NULL,
+  cutoff = MachineShop::settings("cutoff"),
+  stat = MachineShop::settings("stat.TrainingParams")
+) {
+  do.call(SelectedInput, c(list(...), as.list(environment())))
+}
+
+
+#' @rdname SelectedModel
+#'
+SelectedModel.list <- function(x, ...) {
+  do.call(SelectedModel, c(x, list(...)))
+}
 
 
 .fit.SelectedModel <- function(object, ...) {
-  fit_optim(object, ...)
+  .fit_optim(object, ...)
 }
 
 
-update.SelectedModel <- function(object, params = list(), ...) {
-  object <- subset_selected(object, "models", params$id)
+update.SelectedModel <- function(object, params = NULL, ...) {
+  object <- subset_selected(object, "candidates", params$id)
   params$id <- NULL
   NextMethod()
 }
@@ -98,10 +130,6 @@ update.SelectedModel <- function(object, params = list(), ...) {
 #'   \code{\link{ParameterGrid}} object; or \link[=data.frame]{data frame}
 #'   containing parameter values at which to evaluate the model, such as that
 #'   returned by \code{\link{expand_params}}.
-#' @param fixed list or one-row data frame with columns of fixed parameter
-#'   values to combine with those in \code{grid}.  This argument is deprecated
-#'   and will be removed in a future version.  Fixed parameters may be specified
-#'   directly in the model \code{object} instead.
 #' @param control \link[=controls]{control} function, function name, or object
 #'   defining the resampling method to be employed.
 #' @param metrics \link[=metrics]{metric} function, function name, or vector of
@@ -158,23 +186,18 @@ update.SelectedModel <- function(object, params = list(), ...) {
 #' }
 #'
 TunedModel <- function(
-  object, grid = MachineShop::settings("grid"), fixed = list(),
+  object, grid = MachineShop::settings("grid"),
   control = MachineShop::settings("control"), metrics = NULL,
   cutoff = MachineShop::settings("cutoff"),
   stat = MachineShop::settings("stat.TrainingParams")
 ) {
-
-  fixed <- as_tibble(dep_fixedarg(fixed))
-  if (nrow(fixed) > 1) {
-    throw(Error("Only single values allowed for fixed parameters."))
-  }
 
   if (missing(object)) {
     object <- NullModel()
     response_types <- settings("response_types")
     weights <- FALSE
   } else {
-    object <- update(as.MLModel(object), params = fixed)
+    object <- as.MLModel(object)
     response_types <- object@response_types
     weights <- object@weights
   }
@@ -239,7 +262,7 @@ MLModelFunction(TunedModel) <- NULL
 
 
 .fit.TunedModel <- function(object, ...) {
-  fit_optim(object, ...)
+  .fit_optim(object, ...)
 }
 
 

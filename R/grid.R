@@ -135,20 +135,11 @@ get_grid.ModelSpecification <- function(object, ...) {
 }
 
 
-get_grid.SelectedInput <- function(object, ...) {
+get_grid.SelectedInputOrModel <- function(object, ...) {
   make_grid(
     object,
-    names(object@inputs),
-    tibble(id = map("char", slot, object@inputs, "id"))
-  )
-}
-
-
-get_grid.SelectedModel <- function(object, ...) {
-  make_grid(
-    object,
-    names(object@models),
-    tibble(id = map("char", slot, object@models, "id"))
+    names(object@candidates),
+    tibble(id = map("char", slot, object@candidates, "id"))
   )
 }
 
@@ -160,6 +151,20 @@ get_grid.TunedModelRecipe <- function(object, ...) {
 
 get_grid.TunedModel <- function(object, ...) {
   make_grid(object, object@model@name, expand_modelgrid(object, ...))
+}
+
+
+grid_diff <- function(x, params = NULL, drop = FALSE) {
+  res <- x
+  for (name in names(x)) {
+    node <- x[[name]]
+    if (is_tibble(node)) {
+      res[[name]] <- grid_diff(node, params[[name]], drop = TRUE)
+    } else if (name %in% names(params)) {
+      res[[name]] <- NULL
+    }
+  }
+  if (length(res) || !drop) res
 }
 
 

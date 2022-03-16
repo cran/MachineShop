@@ -11,13 +11,20 @@ utils::globalVariables(c("x", "y"))
 #'
 #' Shorthand notation for the \code{\link[base:substitute]{quote}} function.
 #' The quote operator simply returns its argument unevaluated and can be applied
-#' to any \R expression.  Useful for calling model constructors with quoted
-#' parameter values that are defined in terms of \code{nobs}, \code{nvars}, or
-#' \code{y}.
+#' to any \R expression.
 #'
 #' @name quote
 #'
 #' @param expr any syntactically valid \R expression.
+#'
+#' @details
+#' Useful for calling \link[=models]{model functions} with quoted parameter
+#' values defined in terms of one or more of the following variables.
+#' \describe{
+#'   \item{\code{nobs}}{number of observations in data to be \link{fit}.}
+#'   \item{\code{nvars}}{number of predictor variables.}
+#'   \item{\code{y}}{the response variable.}
+#' }
 #'
 #' @return
 #' The quoted (unevaluated) expression.
@@ -40,12 +47,13 @@ as_string <- function(x, ...) {
 
 
 as_string.default <- function(x, ...) {
-  x <- format(x, trim = TRUE)
+  x <- format(x, trim = TRUE, justify = "none", drop0trailing = TRUE)
   as_string(structure(as.character(x), names = names(x)), ...)
 }
 
 
 as_string.character <- function(x, sep = ", ", conj = character()) {
+  x <- trimws(x)
   if (length(conj)) {
     n <- length(x)
     if (n > 1) x[n] <- paste(conj, x[n])
@@ -69,15 +77,24 @@ class1 <- function(x) {
 }
 
 
-combine_data_frames <- function(x, y = NULL) {
-  if (is.null(y)) return(x)
-  common_cols <- intersect(names(x), names(y))
-  if (!identical(x[common_cols], y[common_cols])) {
-    throw(Error("Common columns in data frames differ."))
+combine_inputs <- function(x) {
+  names(x) <- make_names_along(x, map("char", class, x))
+  all_data <- NULL
+  for (i in seq_along(x)) {
+    data <- as.data.frame(x[[i]])
+    if (is.null(all_data)) all_data <- data[NULL]
+    same_cols <- intersect(names(all_data), names(data))
+    if (!identical(all_data[same_cols], data[same_cols])) {
+      throw(Error(
+        "Cannot combine ", names(x)[i], " with previous data fames due to ",
+        "differences in column values or attributes."
+      ))
+    }
+    diff_cols <- setdiff(names(data), same_cols)
+    all_data[diff_cols] <- data[diff_cols]
+    x[[i]] <- update(x[[i]], data = data[NULL, , drop = FALSE])
   }
-  diff_cols <- setdiff(names(y), common_cols)
-  x[diff_cols] <- y[diff_cols]
-  x
+  list(data = all_data, candidates = ListOf(x))
 }
 
 
@@ -115,11 +132,6 @@ combine_model_slots <- function(models, types) {
 complete_subset <- function(...) {
   is_complete <- complete.cases(...)
   map(function(x) subset(x, is_complete), list(...))
-}
-
-
-deparse1 <- function(expr, collapse = " ", width.cutoff = 500L, ...) {
-  paste(deparse(expr, width.cutoff, ...), collapse = collapse)
 }
 
 
@@ -387,14 +399,12 @@ new_params <- function(envir, ...) {
 }
 
 
-new_progress_bar <- function(total, object = NULL, model = NULL, index = 0) {
+new_progress_bar <- function(total, object, index = 0) {
   if (getDoParName() == "doSEQ") index <- as.numeric(index)
   width <- max(round(0.25 * console_width()), 10)
-  if (!is.null(object)) object <- substr(class1(object), 1, width)
-  if (!is.null(model)) {
-    model <- substr(as.MLModel(model)@name, 1, width)
-  }
-  format <- paste(object, "|", model)
+  input <- substr(class(as.MLInput(object)), 1, width)
+  model <- substr(as.MLModel(object)@name, 1, width)
+  format <- paste(input, "|", model)
   if (index > 0) format <- paste0(index, ": ", format)
   if (getDoParName() %in% c("doSEQ", "doSNOW")) {
     format <- paste(format, "[:bar] :percent | :eta")

@@ -6,10 +6,10 @@
 #' @name resample
 #' @rdname resample-methods
 #'
-#' @param ... arguments passed from the generic function to its methods and from
-#'   the \code{MLModel} and \code{MLModelFunction} methods to others.  The
-#'   first argument of each \code{resample} method is positional and, as such,
-#'   must be given first in calls to them.
+#' @param ... arguments passed from the \code{MLModel} and
+#'   \code{MLModelFunction} methods to others and from the others to
+#'   \code{ModelSpecification}.  The first argument of each \code{resample}
+#'   method is positional and, as such, must be given first in calls to them.
 #' @param object model \link[=inputs]{input} or
 #'   \link[=ModelSpecification]{specification}.
 #' @param formula,data \link[=formula]{formula} defining the model predictor and
@@ -59,16 +59,6 @@ resample <- function(...) {
 
 #' @rdname resample-methods
 #'
-resample.default <- function(
-  object, model = NULL, control = MachineShop::settings("control"), ...
-) {
-  .resample(as.MLControl(control), object = object, model = as.MLModel(model),
-            ...)
-}
-
-
-#' @rdname resample-methods
-#'
 #' @details
 #' Stratified resampling is performed automatically for the \code{formula} and
 #' \code{matrix} methods according to the type of response variable.  In
@@ -81,14 +71,15 @@ resample.default <- function(
 #' \code{\link{MLControl}}.
 #'
 resample.formula <- function(formula, data, model, ...) {
-  resample(as.MLInput(formula, data), model = model, ...)
+  resample(ModelSpecification(formula, data, model = model, control = NULL),
+           ...)
 }
 
 
 #' @rdname resample-methods
 #'
 resample.matrix <- function(x, y, model, ...) {
-  resample(as.MLInput(x, y), model = model, ...)
+  resample(ModelSpecification(x, y, model = model, control = NULL), ...)
 }
 
 
@@ -101,7 +92,7 @@ resample.matrix <- function(x, y, model, ...) {
 #' default.
 #'
 resample.ModelFrame <- function(input, model = NULL, ...) {
-  resample.default(as.MLInput(input), model = model, ...)
+  resample(ModelSpecification(input, model = model, control = NULL), ...)
 }
 
 
@@ -113,16 +104,16 @@ resample.ModelFrame <- function(input, model = NULL, ...) {
 #' otherwise.
 #'
 resample.recipe <- function(input, model = NULL, ...) {
-  resample.default(as.MLInput(input), model = model, ...)
+  resample(ModelSpecification(input, model = model, control = NULL), ...)
 }
 
 
 #' @rdname resample-methods
 #'
-resample.ModelSpecification <- function(object, ...) {
-  args <- list(object, ...)
-  args$model <- as.MLModel(object)
-  do.call(resample.default, args)
+resample.ModelSpecification <- function(
+  object, control = MachineShop::settings("control"), ...
+) {
+  .resample(as.MLControl(control), object = object, ...)
 }
 
 
@@ -140,32 +131,30 @@ resample.MLModelFunction <- function(model, ...) {
 }
 
 
-.resample <- function(control, object, model, ...) {
+.resample <- function(control, object, ...) {
   UseMethod(".resample")
 }
 
 
-.resample.BootControl <- function(
-  control, object, model, progress_index = 0, ...
-) {
+.resample.BootControl <- function(control, object, progress_index = 0, ...) {
   presets <- settings()
   set.seed(control@seed)
   splits <- rsample_split(
-    function(..., strata = NULL) {
+    function(..., strata = NULL) suppressWarnings(
       bootstraps(..., times = control@samples, strata = strata)$splits
-    }, data = object, control = control
+    ), data = object, control = control
   )
   seeds <- rand_int(length(splits))
 
   is_optimism_control <- is(control, "BootOptimismControl")
   if (is_optimism_control) {
-    train_pred <- subsample(object, object, model, control)$Predicted
+    train_pred <- subsample(object, object, control)$Predicted
   }
 
   snow_opts <- list()
   progress <- function(n) NULL
   if (control@monitor$progress) {
-    pb <- new_progress_bar(length(splits), object = object, model = model,
+    pb <- new_progress_bar(length(splits), object = object,
                            index = progress_index)
     switch(getDoParName(),
       "doSEQ"  = progress <- function(n) pb$tick(),
@@ -186,7 +175,7 @@ resample.MLModelFunction <- function(model, ...) {
     set.seed(seeds[i])
     train <- update(object, data = rsample::analysis(splits[[i]]))
     if (is_optimism_control) {
-      subs <- subsample(train, list(object, train), model, control, i)
+      subs <- subsample(train, list(object, train), control, i)
       df <- subs[[1]]
       df_boot <- subs[[2]]
       indices <- seq_boot(df_boot, df)
@@ -195,30 +184,44 @@ resample.MLModelFunction <- function(model, ...) {
       df$Train.Predicted <- train_pred
       df
     } else {
-      subsample(train, object, model, control, i)
+      subsample(train, object, control, i)
     }
   } %>% Resample(control = control, vars = attr(splits, "vars"))
 }
 
 
-.resample.CVControl <- function(
-  control, object, model, progress_index = 0, ...
-) {
+.resample.CVControl <- function(control, object, progress_index = 0, ...) {
   presets <- settings()
   set.seed(control@seed)
   splits <- rsample_split(
     function(..., group = NULL, strata = NULL) {
       v <- control@folds
       repeats <- control@repeats
-      if (length(group)) {
-        splits <- list()
-        for (i in seq_len(repeats)) {
-          splits <- c(splits, group_vfold_cv(..., v = v, group = group)$splits)
+      res <- suppressWarnings(
+        if (length(group)) {
+          method <- "grouping"
+          splits <- list()
+          for (i in seq_len(repeats)) {
+            splits <- c(
+              splits, group_vfold_cv(..., v = v, group = group)$splits
+            )
+          }
+          splits
+        } else {
+          method <- "stratification"
+          vfold_cv(..., v = v, repeats = repeats, strata = strata)$splits
         }
-        splits
-      } else {
-        vfold_cv(..., v = v, repeats = repeats, strata = strata)$splits
+      )
+      control@folds <<- as.integer(length(res) / repeats)
+      if (control@folds < v) {
+        throw(Warning(
+          "Fewer folds constructed (", control@folds, ") than specified in ",
+          class(control), " (", v, ") due to the resample ", method, " size.  ",
+          "To address the issue, increase the size or use a ModelFrame or ",
+          "recipe to resample without ", method, "."
+        ), call = call("resample"))
       }
+      res
     }, data = object, control = control
   )
   seeds <- rand_int(length(splits))
@@ -228,7 +231,7 @@ resample.MLModelFunction <- function(model, ...) {
   snow_opts <- list()
   progress <- function(n) NULL
   if (control@monitor$progress) {
-    pb <- new_progress_bar(length(splits), object = object, model = model,
+    pb <- new_progress_bar(length(splits), object = object,
                            index = progress_index)
     switch(getDoParName(),
       "doSEQ"  = progress <- function(n) pb$tick(),
@@ -250,10 +253,10 @@ resample.MLModelFunction <- function(model, ...) {
     train <- update(object, data = rsample::analysis(splits[[i]]))
     test <- update(object, data = rsample::assessment(splits[[i]]))
     if (is_optimism_control) {
-      subs <- subsample(train, list(test, object), model, control, i)
+      subs <- subsample(train, list(test, object), control, i)
       structure(subs[[1]], CV.Predicted = subs[[2]]["Predicted"])
     } else {
-      subsample(train, test, model, control, i)
+      subsample(train, test, control, i)
     }
   }
   res <- Resample(df_list, control = control, vars = attr(splits, "vars"))
@@ -265,7 +268,7 @@ resample.MLModelFunction <- function(model, ...) {
       map(function(indices) do.call(append, pred_list[indices]), .) %>%
       as.data.frame
     names(df) <- make_names_len(length(df), "CV.Predicted.")
-    pred <- subsample(object, object, model, control)$Predicted
+    pred <- subsample(object, object, control)$Predicted
     df$Train.Predicted <- do.call(append, rep(list(pred), control@repeats))
     res[names(df)] <- df
   }
@@ -274,22 +277,20 @@ resample.MLModelFunction <- function(model, ...) {
 }
 
 
-.resample.OOBControl <- function(
-  control, object, model, progress_index = 0, ...
-) {
+.resample.OOBControl <- function(control, object, progress_index = 0, ...) {
   presets <- settings()
   set.seed(control@seed)
   splits <- rsample_split(
-    function(..., strata = NULL) {
+    function(..., strata = NULL) suppressWarnings(
       bootstraps(..., times = control@samples, strata = strata)$splits
-    }, data = object, control = control
+    ), data = object, control = control
   )
   seeds <- rand_int(length(splits))
 
   snow_opts <- list()
   progress <- function(n) NULL
   if (control@monitor$progress) {
-    pb <- new_progress_bar(length(splits), object = object, model = model,
+    pb <- new_progress_bar(length(splits), object = object,
                            index = progress_index)
     switch(getDoParName(),
       "doSEQ"  = progress <- function(n) pb$tick(),
@@ -310,12 +311,12 @@ resample.MLModelFunction <- function(model, ...) {
     set.seed(seeds[i])
     train <- update(object, data = rsample::analysis(splits[[i]]))
     test <- update(object, data = rsample::assessment(splits[[i]]))
-    subsample(train, test, model, control, i)
+    subsample(train, test, control, i)
   } %>% Resample(control = control, vars = attr(splits, "vars"))
 }
 
 
-.resample.SplitControl <- function(control, object, model, ...) {
+.resample.SplitControl <- function(control, object, ...) {
   set.seed(control@seed)
   split <- rsample_split(
     function(...) initial_split(..., prop = control@prop),
@@ -323,14 +324,14 @@ resample.MLModelFunction <- function(model, ...) {
   )
   train <- update(object, data = rsample::training(split))
   test <- update(object, data = rsample::testing(split))
-  subsample(train, test, model, control) %>%
+  subsample(train, test, control) %>%
     Resample(control = control, vars = attr(split, "vars"))
 }
 
 
-.resample.TrainControl <- function(control, object, model, ...) {
+.resample.TrainControl <- function(control, object, ...) {
   set.seed(control@seed)
-  Resample(subsample(object, object, model, control), control = control)
+  Resample(subsample(object, object, control), control = control)
 }
 
 
@@ -382,8 +383,8 @@ rsample_split <- function(fun, data, control) {
     ))
     df[["(groups)"]] <- NULL
   }
-  res <- suppressWarnings(fun(df, group = case_comp_name(df, "groups"),
-                              strata = case_comp_name(df, "strata"), pool = 0))
+  res <- fun(df, group = case_comp_name(df, "groups"),
+             strata = case_comp_name(df, "strata"), pool = 0)
 
   vars <- tibble(Case = rownames(df))
   types <- c(Grouping = "groups", Stratification = "strata")
@@ -400,8 +401,8 @@ rsample_split <- function(fun, data, control) {
 }
 
 
-subsample <- function(train, test, model, control, iter = 1) {
-  model_fit <- fit(train, model)
+subsample <- function(train, test, control, iter = 1) {
+  model_fit <- fit(train)
   times <- time(model_fit)
   if (length(times)) control@predict$times <- times
 
@@ -409,10 +410,9 @@ subsample <- function(train, test, model, control, iter = 1) {
     weights <- if (control@weights) "weights"
     comps <- case_comps(model_fit, newdata = as.MLInput(test),
                         types = c("names", weights), response = TRUE)
-    df <- data.frame(Model = factor(model@name),
+    df <- data.frame(Model = factor(as.MLModel(train)@name),
                      Iteration = as.integer(iter),
-                     Case = comps$names,
-                     stringsAsFactors = FALSE)
+                     Case = comps$names)
     df$Observed <- comps$response
     predict_args <- list(model_fit, as.data.frame(test), type = "default")
     df$Predicted <- do.call(predict, c(predict_args, control@predict))

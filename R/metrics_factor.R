@@ -128,7 +128,7 @@ setMetricMethod("brier", c("Surv", "SurvProbs"),
       stop_after <- time(observed) > time
       known_status <- start_by & (observed[, "status"] == 0 | stop_after)
       cens <- predict(cens_fit, pmin(time, time(observed)))
-      cens_weights <- prop.table(ifelse(known_status, weights / cens, 0))
+      cens_weights <- proportions(ifelse(known_status, weights / cens, 0))
       sum(cens_weights * (stop_after - predicted[, i, drop = TRUE])^2)
     }, seq_along(times))
 
@@ -279,7 +279,7 @@ MLMetric(kappa2) <- list("kappa2", "Cohen's Kappa", TRUE)
 
 setMetric_ConfusionMatrix("kappa2",
   function(observed, predicted, ...) {
-    p <- prop.table(observed)
+    p <- proportions(observed)
     1 - (1 - sum(diag(p))) / (1 - sum(rowSums(p) * colSums(p)))
   }
 )
@@ -300,6 +300,25 @@ MLMetric(npv) <- list("npv", "Negative Predictive Value", TRUE)
 setMetric_BinaryConfusionMatrix("npv",
   function(observed, predicted, ...) {
     observed[1, 1] / (observed[1, 1] + observed[1, 2])
+  }
+)
+
+
+#' @rdname metrics
+#'
+ppr <- function(
+  observed, predicted = NULL, weights = NULL,
+  cutoff = MachineShop::settings("cutoff"), ...
+) {
+  call_metric_method("ppr", environment())
+}
+
+MLMetric(ppr) <- list("ppr", "Positive Prediction Rate", FALSE)
+
+
+setMetric_BinaryConfusionMatrix("ppr",
+  function(observed, predicted, ...) {
+    (observed[2, 1] + observed[2, 2]) / sum(observed)
   }
 )
 
@@ -401,25 +420,6 @@ MLMetric(roc_index) <- list("roc_index", "ROC Index", TRUE)
 setMetric_BinaryConfusionMatrix("roc_index",
   function(observed, predicted, fun, ...) {
     fun(sens = sensitivity(observed), spec = specificity(observed))
-  }
-)
-
-
-#' @rdname metrics
-#'
-rpp <- function(
-  observed, predicted = NULL, weights = NULL,
-  cutoff = MachineShop::settings("cutoff"), ...
-) {
-  call_metric_method("rpp", environment())
-}
-
-MLMetric(rpp) <- list("rpp", "Rate of Positive Prediction", FALSE)
-
-
-setMetric_BinaryConfusionMatrix("rpp",
-  function(observed, predicted, ...) {
-    (observed[2, 1] + observed[2, 2]) / sum(observed)
   }
 )
 

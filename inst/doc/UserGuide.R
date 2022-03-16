@@ -697,12 +697,12 @@ plot(lf, find = 0.75)
 #  #> # A tibble: 3 x 4
 #  #>   name             selected params$id  metrics$`C-Index`
 #  #>   <chr>            <lgl>    <chr>                  <dbl>
-#  #> 1 ModelRecipe.1    FALSE    input.W4KN             0.761
-#  #> 2 ModelRecipe.2    FALSE    input.azpi             0.643
-#  #> 3 TunedModelRecipe TRUE     input.CuYF             0.800
+#  #> 1 ModelRecipe.1    FALSE    input.azpi             0.761
+#  #> 2 ModelRecipe.2    FALSE    input.aLHo             0.643
+#  #> 3 TunedModelRecipe TRUE     input.W4KN             0.804
 #  #>
 #  #> Selected row: 3
-#  #> Metric: C-Index = 0.7997292
+#  #> Metric: C-Index = 0.8035826
 #  #>
 #  #> === $TrainingStep2 =============================================================
 #  #> === TrainingStep object ===
@@ -734,8 +734,8 @@ plot(lf, find = 0.75)
 ## ----using_strategies_SelectedInput4, eval=FALSE------------------------------
 #  ## Different combinations of inputs and models
 #  sel_mfo <- SelectedInput(
-#    ModeledInput(fo1, data = surv_train, model = CoxModel),
-#    ModeledInput(fo2, data = surv_train, model = GBMModel)
+#    ModelSpecification(fo1, data = surv_train, model = CoxModel),
+#    ModelSpecification(fo2, data = surv_train, model = GBMModel)
 #  )
 #  
 #  ## Input-selected model fit and final trained model
@@ -892,7 +892,7 @@ knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 #  summary(res_stacked)
 #  #>          Statistic
 #  #> Metric         Mean    Median        SD       Min       Max NA
-#  #>   C-Index 0.7171778 0.7555556 0.1260723 0.5194805 0.8432432  0
+#  #>   C-Index 0.7197215 0.7555556 0.1220386 0.5194805 0.8324324  0
 #  
 #  ## Super learner
 #  supermodel <- SuperModel(CoxModel, CForestModel, GLMBoostModel,
@@ -900,8 +900,8 @@ knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 #  res_super <- resample(surv_fo, data = surv_train, model = supermodel)
 #  summary(res_super)
 #  #>          Statistic
-#  #> Metric         Mean    Median         SD       Min       Max NA
-#  #>   C-Index 0.7374148 0.7830189 0.09755047 0.5748899 0.8090909  0
+#  #> Metric         Mean Median        SD       Min       Max NA
+#  #>   C-Index 0.7590918    0.8 0.1168708 0.5726872 0.8609272  0
 
 ## ----using_strategies_methods, eval=FALSE-------------------------------------
 #  ## Preprocessing recipe with PCA steps
@@ -945,12 +945,12 @@ knitr::include_graphics("img/FigNestedCV.png")
 #  #> # A tibble: 3 x 4
 #  #>   name          selected params$PCA$num_comp metrics$`C-Index`
 #  #>   <chr>         <lgl>                  <int>             <dbl>
-#  #> 1 ModelRecipe.1 TRUE                       1             0.742
-#  #> 2 ModelRecipe.2 FALSE                      2             0.732
-#  #> 3 ModelRecipe.3 FALSE                      3             0.742
+#  #> 1 ModelRecipe.1 TRUE                       1             0.735
+#  #> 2 ModelRecipe.2 FALSE                      2             0.733
+#  #> 3 ModelRecipe.3 FALSE                      3             0.722
 #  #>
 #  #> Selected row: 1
-#  #> Metric: C-Index = 0.7422126
+#  #> Metric: C-Index = 0.7347546
 
 ## ----using_strategies_methods2, eval=FALSE------------------------------------
 #  #> === $TrainingStep2 =============================================================
@@ -961,34 +961,12 @@ knitr::include_graphics("img/FigNestedCV.png")
 #  #> # A tibble: 3 x 4
 #  #>   name         selected params$id  metrics$`C-Index`
 #  #>   <chr>        <lgl>    <chr>                  <dbl>
-#  #> 1 GBMModel     FALSE    model.t8x4             0.740
-#  #> 2 TunedModel   TRUE     model.JS8n             0.745
-#  #> 3 StackedModel FALSE    model.ywzF             0.651
-#  #>
-#  #> Selected row: 2
-#  #> Metric: C-Index = 0.7448616
-
-## ----using_strategies_methods3, eval=FALSE------------------------------------
-#  #> === $TrainingStep3 =============================================================
-#  #> === TrainingStep object ===
-#  #>
-#  #> Optimization method: Grid Search
-#  #> TunedModel log:
-#  #> # A tibble: 9 x 4
-#  #>   name       selected params$n.trees $interaction.depth metrics$`C-Index`
-#  #>   <chr>      <lgl>             <int>              <int>             <dbl>
-#  #> 1 GBMModel.1 TRUE                 50                  1             0.744
-#  #> 2 GBMModel.2 FALSE                50                  2             0.720
-#  #> 3 GBMModel.3 FALSE                50                  3             0.706
-#  #> 4 GBMModel.4 FALSE               100                  1             0.740
-#  #> 5 GBMModel.5 FALSE               100                  2             0.724
-#  #> 6 GBMModel.6 FALSE               100                  3             0.710
-#  #> 7 GBMModel.7 FALSE               150                  1             0.732
-#  #> 8 GBMModel.8 FALSE               150                  2             0.717
-#  #> 9 GBMModel.9 FALSE               150                  3             0.695
+#  #> 1 GBMModel     TRUE     model.1mQk             0.740
+#  #> 2 TunedModel   FALSE    model.hRF5             0.735
+#  #> 3 StackedModel FALSE    model.CYj0             0.656
 #  #>
 #  #> Selected row: 1
-#  #> Metric: C-Index = 0.7440588
+#  #> Metric: C-Index = 0.7399641
 
 ## ----using_strategies_methods0, eval=FALSE------------------------------------
 #  #> --- MLModel object -------------------------------------------------------------
@@ -1003,8 +981,8 @@ knitr::include_graphics("img/FigNestedCV.png")
 #  #>
 #  #> Parameters:
 #  #> List of 5
-#  #>  $ n.trees          : int 50
-#  #>  $ interaction.depth: int 1
+#  #>  $ n.trees          : num 100
+#  #>  $ interaction.depth: num 1
 #  #>  $ n.minobsinnode   : num 10
 #  #>  $ shrinkage        : num 0.1
 #  #>  $ bag.fraction     : num 0.5
