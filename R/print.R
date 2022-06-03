@@ -314,7 +314,7 @@ print.ModelRecipe <- function(
   ), n = n)
   if (level < 2) {
     steps <- map("char", class1, x$steps)
-    step_label <- paste(if (is_trained(x)) "Prepared" else "Unprepared", "step")
+    step_label <- paste(if (is_trained(x)) "Trained" else "Untrained", "step")
     if (id) {
       steps <- structure(map("char", getElement, x$steps, "id"), names = steps)
       step_label <- paste(step_label, "ID")
@@ -325,7 +325,7 @@ print.ModelRecipe <- function(
     )
   }
   if (level < 1) print_fields(list("Tuning grid: " = has_grid(x)))
-  if (data) print_data(x$template, n = n, level = level)
+  if (data) print_data(as_tibble(as.data.frame(x)), n = n, level = level)
   invisible(x)
 }
 
@@ -792,7 +792,8 @@ print_control <- function(x, fields = NULL, n = Inf, ...) {
 print_data <- function(x, n = Inf, level = 0) {
   if (level < 1) {
     print_label("Data:")
-    print_items(within(x, remove("(names)")), n = n)
+    x[["(names)"]] <- NULL
+    print_items(x, n = n)
   } else if (level == 1) {
     print_fields(list("Number of observations: " = nrow(x)))
   }
@@ -1004,8 +1005,9 @@ print_progress <- function(
   print_fields(items, add_size = TRUE, add_names = TRUE, n = n)
   print_fields(list(
     "Metric: " = metric,
-    "Current maximum score (iteration): " =
-      as_string(list(max(scores), " (", selected, ")"), sep = ""),
+    "Current maximum score (iteration): " = as_string(list(
+      max(scores), paste0("(", selected, ")")
+    ), sep = " "),
     "Elapsed time: " = round(difftime(Sys.time(), start_time), 1)
   ), add_names = TRUE)
   if (pad && iter < max_iter) newline()

@@ -209,6 +209,15 @@ setClassUnion("Grid",
 #################### Model Components ####################
 
 
+setClass("EnsembleInputOrModel",
+  contains = "VIRTUAL",
+  slots = c(
+    candidates = "ListOf",
+    params = "TrainingParams"
+  )
+)
+
+
 setClass("MLInput",
   slots = c(
     id = "character",
@@ -231,17 +240,7 @@ setClass("MLModel",
     fit = "function",
     predict = "function",
     varimp = "function",
-    input = "MLInput",
     steps = "ListOf"
-  )
-)
-
-
-setClass("SelectedInputOrModel",
-  contains = "VIRTUAL",
-  slots = c(
-    candidates = "ListOf",
-    params = "TrainingParams"
   )
 )
 
@@ -307,28 +306,26 @@ setClass("ModeledRecipe",
 )
 
 
-setClass("NullInput",
-  contains = "MLInput"
-)
+setClass("PredictorFrame", contains = "ModelFrame")
 
 
 setClass("SelectedInput",
-  contains = c("SelectedInputOrModel", "MLInput")
+  contains = c("EnsembleInputOrModel", "MLInput")
 )
 
 
 setClass("SelectedModelFrame",
-  contains = c("SelectedInput", "SelectedInputOrModel", "ModelFrame")
+  contains = c("SelectedInput", "EnsembleInputOrModel", "ModelFrame")
 )
 
 
 setClass("SelectedModelRecipe",
-  contains = c("SelectedInput", "SelectedInputOrModel", "ModelRecipe")
+  contains = c("SelectedInput", "EnsembleInputOrModel", "ModelRecipe")
 )
 
 
 setClass("SelectedModelSpecification",
-  contains = c("SelectedInput", "SelectedInputOrModel", "ModelSpecification")
+  contains = c("SelectedInput", "EnsembleInputOrModel", "ModelSpecification")
 )
 
 
@@ -350,7 +347,7 @@ setClass("TunedModelRecipe",
 #################### Models ####################
 
 
-setClass("EnsembleModel", contains = c("SelectedInputOrModel", "MLModel"))
+setClass("EnsembleModel", contains = c("EnsembleInputOrModel", "MLModel"))
 setClass("NullModel", contains = "MLModel")
 setClass("ParsnipModel", contains = "MLModel")
 setClass("SelectedModel", contains = "EnsembleModel")
@@ -368,14 +365,9 @@ setClass("TunedModel",
 )
 
 
-MLModelFunction <- setClass("MLModelFunction",
+setClass("MLModelFunction",
   contains = "function"
 )
-
-
-"MLModelFunction<-" <- function(object, value) {
-  do.call(MLModelFunction, c(object, value))
-}
 
 
 #################### Model Fits ####################
@@ -383,7 +375,7 @@ MLModelFunction <- setClass("MLModelFunction",
 
 setClass("MLModelFit",
   contains = "VIRTUAL",
-  slots = c(mlmodel = "MLModel")
+  slots = c(.MachineShop = "list")
 )
 
 

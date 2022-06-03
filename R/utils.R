@@ -139,7 +139,7 @@ fget <- function(x, package = character()) {
   throw(check_packages(package))
   if (is.character(x)) {
     x <- paste(c(package, x), collapse = "::")
-    err_msg <- paste0("Function '", x, "' not found.")
+    err_msg <- paste0("Function `", x, "` not found.")
   } else {
     err_msg <- "Invalid function."
   }
@@ -400,13 +400,17 @@ new_params <- function(envir, ...) {
 
 
 new_progress_bar <- function(total, object, index = 0) {
-  if (getDoParName() == "doSEQ") index <- as.numeric(index)
+  backend <- getDoParName()
+  progress <- function(...) NULL
+  snow_opts <- list()
+
+  if (backend == "doSEQ") index <- as.numeric(index)
   width <- max(round(0.25 * console_width()), 10)
   input <- substr(class(as.MLInput(object)), 1, width)
   model <- substr(as.MLModel(object)@name, 1, width)
   format <- paste(input, "|", model)
   if (index > 0) format <- paste0(index, ": ", format)
-  if (getDoParName() %in% c("doSEQ", "doSNOW")) {
+  if (backend %in% c("doSEQ", "doSNOW")) {
     format <- paste(format, "[:bar] :percent | :eta")
   }
   pb <- progress_bar$new(
@@ -420,8 +424,14 @@ new_progress_bar <- function(total, object, index = 0) {
       names(index), if (is.finite(max(index))) paste0("(", max(index), ")")
     ))
   }
-  pb$tick(0)
-  pb
+
+  if (total) {
+    pb$tick(0)
+    body(progress) <- quote(pb$tick())
+    if (backend == "doSNOW") snow_opts$progress <- progress
+  }
+
+  list(pb = pb, progress = progress, snow_opts = snow_opts)
 }
 
 
@@ -479,14 +489,9 @@ push <- function(x, object, ...) {
 
 push.TrainingStep <- function(x, object, ...) {
   stopifnot(is(object, "MLModelFit"))
-  mlmodel <- if (isS4(object)) object@mlmodel else object$mlmodel
-  steps <- ListOf(c(x, mlmodel@steps))
+  steps <- ListOf(c(x, attr(object, ".MachineShop")$model@steps))
   names(steps) <- make_names_len(length(steps), class(x))
-  if (isS4(object)) {
-    object@mlmodel@steps <- steps
-  } else {
-    object$mlmodel@steps <- steps
-  }
+  attr(object, ".MachineShop")$model@steps <- steps
   object
 }
 
@@ -631,7 +636,7 @@ subset_names <- function(x, select = NULL) {
   } else if (is.numeric(select)) {
     x <- x[select]
   } else if (!is.null(select)) {
-    throw(Warning("Invalid 'select' value of class ", class1(select), "."))
+    throw(Warning("Invalid `select` value of class ", class1(select), "."))
   }
   x
 }

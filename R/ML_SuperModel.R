@@ -91,7 +91,7 @@ MLModelFunction(SuperModel) <- NULL
        super_fit = fit(super_mf, model = super_learner),
        all_vars = all_vars,
        times = control@predict$times) %>%
-    MLModelFit("SuperModelFit", model = object, input = input_prep)
+    MLModelFit("SuperModelFit", input = input_prep, model = object)
 }
 
 
@@ -101,7 +101,6 @@ MLModelFunction(SuperModel) <- NULL
   }, model_fit$base_fits)
 
   df <- if (model_fit$all_vars) {
-    newdata <- predictor_frame(object, newdata)
     newdata[["(names)"]] <- rownames(newdata)
     super_df(NA, predictors, newdata[["(names)"]], newdata)
   } else {

@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 
-<meta name="date" content="2022-03-16" />
+<meta name="date" content="2022-06-02" />
 
 <title>MachineShop User Guide</title>
 
@@ -559,12 +559,12 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 <h1 class="title toc-ignore">MachineShop User Guide</h1>
-<h3 class="subtitle">R Package Version 3.4.0</h3>
+<h3 class="subtitle">R Package Version 3.5.0</h3>
 <h4 class="author">Brian J Smith</h4>
 <address class="author_afil">
 University of Iowa<br><a class="author_email" href="mailto:#"><a href="mailto:brian-j-smith@uiowa.edu" class="email">brian-j-smith@uiowa.edu</a></a>
 </address>
-<h4 class="date">2022-03-16</h4>
+<h4 class="date">2022-06-02</h4>
 
 
 <div id="TOC">
@@ -879,25 +879,25 @@ Median (Range)
 <p>Model fitting requires user specification of a <strong>MachineShop</strong> compatible model. A named list of package-supplied models can be obtained interactively with the modelinfo() function, and includes the following components for each.</p>
 <dl>
 <dt><code>label</code></dt>
-<dd>Character descriptor for the model.
+<dd>character descriptor for the model.
 </dd>
 <dt><code>packages</code></dt>
-<dd>Character vector of source packages required to use the model. These need only be installed with the <code>install.packages()</code> function or by equivalent means; but need not be loaded with, for example, the <code>library()</code> function.
+<dd>character vector of source packages required to use the model. These need only be installed with the <code>install.packages()</code> function or by equivalent means; but need not be loaded with, for example, the <code>library()</code> function.
 </dd>
 <dt><code>response_types</code></dt>
-<dd>Character vector of response variable types supported by the model.
+<dd>character vector of response variable types supported by the model.
 </dd>
 <dt><code>weights</code></dt>
-<dd>Logical value or vector of the same length as <code>response_types</code> indicating whether case weights are supported for the responses.
+<dd>logical value or vector of the same length as <code>response_types</code> indicating whether case weights are supported for the responses.
 </dd>
 <dt><code>arguments</code></dt>
-<dd>Closure with the argument names and corresponding default values of the model function.
+<dd>closure with the argument names and corresponding default values of the model function.
 </dd>
 <dt><code>grid</code></dt>
-<dd>Logical indicating whether automatic generation of tuning parameter grids is implemented for the model.
+<dd>logical indicating whether automatic generation of tuning parameter grids is implemented for the model.
 </dd>
 <dt><code>varimp</code></dt>
-<dd>Logical indicating whether model-specific variable importance is defined.
+<dd>logical indicating whether model-specific variable importance is defined.
 </dd>
 </dl>
 <p>Function modelinfo() may be called without arguments, with one or more model functions, observed response variables, or vectors representing response variable types; and will return information on all matching models.</p>
@@ -1130,7 +1130,7 @@ Median (Range)
 <span id="cb16-5"><a href="#cb16-5"></a><span class="co">## Design matrix specification</span></span>
 <span id="cb16-6"><a href="#cb16-6"></a>model_fit &lt;-<span class="st"> </span><span class="kw">fit</span>(x, y, <span class="dt">model =</span> GBMModel)</span>
 <span id="cb16-7"><a href="#cb16-7"></a><span class="kw">predict</span>(model_fit, <span class="dt">newdata =</span> Pima.te) <span class="op">%&gt;%</span><span class="st"> </span>head</span>
-<span id="cb16-8"><a href="#cb16-8"></a><span class="co">#&gt; [1] Yes No  No  No  No  Yes</span></span>
+<span id="cb16-8"><a href="#cb16-8"></a><span class="co">#&gt; [1] Yes No  No  No  Yes Yes</span></span>
 <span id="cb16-9"><a href="#cb16-9"></a><span class="co">#&gt; Levels: No Yes</span></span></code></pre></div>
 </div>
 <div id="model-frame" class="section level2">
@@ -1142,14 +1142,14 @@ Median (Range)
 <span id="cb17-4"><a href="#cb17-4"></a>mf &lt;-<span class="st"> </span><span class="kw">ModelFrame</span>(type <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> Pima.tr)</span>
 <span id="cb17-5"><a href="#cb17-5"></a>model_fit &lt;-<span class="st"> </span><span class="kw">fit</span>(mf, <span class="dt">model =</span> GBMModel)</span>
 <span id="cb17-6"><a href="#cb17-6"></a><span class="kw">predict</span>(model_fit, <span class="dt">newdata =</span> Pima.te) <span class="op">%&gt;%</span><span class="st"> </span>head</span>
-<span id="cb17-7"><a href="#cb17-7"></a><span class="co">#&gt; [1] Yes No  No  No  No  Yes</span></span>
+<span id="cb17-7"><a href="#cb17-7"></a><span class="co">#&gt; [1] Yes No  No  No  Yes Yes</span></span>
 <span id="cb17-8"><a href="#cb17-8"></a><span class="co">#&gt; Levels: No Yes</span></span>
 <span id="cb17-9"><a href="#cb17-9"></a></span>
 <span id="cb17-10"><a href="#cb17-10"></a><span class="co">## Design matrix</span></span>
 <span id="cb17-11"><a href="#cb17-11"></a>mf &lt;-<span class="st"> </span><span class="kw">ModelFrame</span>(x, y)</span>
 <span id="cb17-12"><a href="#cb17-12"></a>model_fit &lt;-<span class="st"> </span><span class="kw">fit</span>(mf, <span class="dt">model =</span> GBMModel)</span>
 <span id="cb17-13"><a href="#cb17-13"></a><span class="kw">predict</span>(model_fit, <span class="dt">newdata =</span> Pima.te) <span class="op">%&gt;%</span><span class="st"> </span>head</span>
-<span id="cb17-14"><a href="#cb17-14"></a><span class="co">#&gt; [1] Yes No  No  No  Yes Yes</span></span>
+<span id="cb17-14"><a href="#cb17-14"></a><span class="co">#&gt; [1] Yes No  No  No  No  Yes</span></span>
 <span id="cb17-15"><a href="#cb17-15"></a><span class="co">#&gt; Levels: No Yes</span></span></code></pre></div>
 <p>The model frame approach has a few advantages over model fitting directly with a traditional formula. One is that cases with missing values on any of the response or predictor variables are excluded from the model frame by default. This is often desirable for models that do not handle missing values. Conversely, missing values can be retained in the model frame by setting its argument <code>na.rm = FALSE</code> for models, like GBMModel, that do handle them. A second advantage is that case weights can be included in the model frame to be passed on to the model fitting functions.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a><span class="co">## Model frame specification with case weights</span></span>
@@ -1334,12 +1334,12 @@ Recipe
 <span id="cb21-5"><a href="#cb21-5"></a><span class="co">#&gt; Levels: setosa versicolor virginica</span></span>
 <span id="cb21-6"><a href="#cb21-6"></a><span class="kw">predict</span>(model_fit, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span>head</span>
 <span id="cb21-7"><a href="#cb21-7"></a><span class="co">#&gt;         setosa   versicolor    virginica</span></span>
-<span id="cb21-8"><a href="#cb21-8"></a><span class="co">#&gt; [1,] 0.9999325 6.739366e-05 5.727269e-08</span></span>
-<span id="cb21-9"><a href="#cb21-9"></a><span class="co">#&gt; [2,] 0.9999861 1.363781e-05 2.765021e-07</span></span>
-<span id="cb21-10"><a href="#cb21-10"></a><span class="co">#&gt; [3,] 0.9999799 1.992538e-05 1.381414e-07</span></span>
-<span id="cb21-11"><a href="#cb21-11"></a><span class="co">#&gt; [4,] 0.9999799 1.992538e-05 1.381414e-07</span></span>
-<span id="cb21-12"><a href="#cb21-12"></a><span class="co">#&gt; [5,] 0.9999448 5.511938e-05 5.727339e-08</span></span>
-<span id="cb21-13"><a href="#cb21-13"></a><span class="co">#&gt; [6,] 0.9999325 6.739366e-05 5.727269e-08</span></span></code></pre></div>
+<span id="cb21-8"><a href="#cb21-8"></a><span class="co">#&gt; [1,] 0.9998347 1.652944e-04 2.210308e-08</span></span>
+<span id="cb21-9"><a href="#cb21-9"></a><span class="co">#&gt; [2,] 0.9999337 6.620459e-05 6.166477e-08</span></span>
+<span id="cb21-10"><a href="#cb21-10"></a><span class="co">#&gt; [3,] 0.9999147 8.530051e-05 4.640879e-08</span></span>
+<span id="cb21-11"><a href="#cb21-11"></a><span class="co">#&gt; [4,] 0.9999147 8.530051e-05 4.640879e-08</span></span>
+<span id="cb21-12"><a href="#cb21-12"></a><span class="co">#&gt; [5,] 0.9998347 1.652944e-04 2.210308e-08</span></span>
+<span id="cb21-13"><a href="#cb21-13"></a><span class="co">#&gt; [6,] 0.9998347 1.652944e-04 2.210308e-08</span></span></code></pre></div>
 <p>In the case of a binary factor, the second factor level is treated as the event and the level for which predicted probabilities are computed.</p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1"></a><span class="co">## Pima Indians diabetes statuses (binary factor)</span></span>
 <span id="cb22-2"><a href="#cb22-2"></a><span class="kw">data</span>(Pima.te, <span class="dt">package =</span> <span class="st">&quot;MASS&quot;</span>)</span>
@@ -1350,7 +1350,7 @@ Recipe
 <span id="cb22-7"><a href="#cb22-7"></a><span class="co">#&gt; [1] Yes No  No  No  Yes Yes</span></span>
 <span id="cb22-8"><a href="#cb22-8"></a><span class="co">#&gt; Levels: No Yes</span></span>
 <span id="cb22-9"><a href="#cb22-9"></a><span class="kw">predict</span>(model_fit, <span class="dt">newdata =</span> Pima.te, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span>head</span>
-<span id="cb22-10"><a href="#cb22-10"></a><span class="co">#&gt; [1] 0.85596439 0.09038667 0.03160905 0.03118802 0.50185662 0.73603858</span></span></code></pre></div>
+<span id="cb22-10"><a href="#cb22-10"></a><span class="co">#&gt; [1] 0.88189211 0.09680931 0.01404337 0.04758292 0.52982760 0.70900736</span></span></code></pre></div>
 </div>
 <div id="ordered-factor" class="section level2">
 <h2><span class="header-section-number">7.2</span> Ordered Factor</h2>
@@ -1368,12 +1368,12 @@ Recipe
 <span id="cb23-11"><a href="#cb23-11"></a><span class="co">#&gt; Levels: Low &lt; Medium &lt; High</span></span>
 <span id="cb23-12"><a href="#cb23-12"></a><span class="kw">predict</span>(model_fit, <span class="dt">type =</span> <span class="st">&quot;prob&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span>head</span>
 <span id="cb23-13"><a href="#cb23-13"></a><span class="co">#&gt;            Low      Medium         High</span></span>
-<span id="cb23-14"><a href="#cb23-14"></a><span class="co">#&gt; [1,] 0.9969152 0.003036691 4.813355e-05</span></span>
-<span id="cb23-15"><a href="#cb23-15"></a><span class="co">#&gt; [2,] 0.9978783 0.002097812 2.386046e-05</span></span>
-<span id="cb23-16"><a href="#cb23-16"></a><span class="co">#&gt; [3,] 0.9883758 0.011579390 4.479346e-05</span></span>
-<span id="cb23-17"><a href="#cb23-17"></a><span class="co">#&gt; [4,] 0.9763221 0.023601381 7.652018e-05</span></span>
-<span id="cb23-18"><a href="#cb23-18"></a><span class="co">#&gt; [5,] 0.9007960 0.099051848 1.521868e-04</span></span>
-<span id="cb23-19"><a href="#cb23-19"></a><span class="co">#&gt; [6,] 0.9227200 0.077161540 1.184966e-04</span></span></code></pre></div>
+<span id="cb23-14"><a href="#cb23-14"></a><span class="co">#&gt; [1,] 0.9962275 0.003745918 2.661860e-05</span></span>
+<span id="cb23-15"><a href="#cb23-15"></a><span class="co">#&gt; [2,] 0.9971052 0.002874523 2.026888e-05</span></span>
+<span id="cb23-16"><a href="#cb23-16"></a><span class="co">#&gt; [3,] 0.9870746 0.012894634 3.080882e-05</span></span>
+<span id="cb23-17"><a href="#cb23-17"></a><span class="co">#&gt; [4,] 0.9634014 0.036535258 6.335981e-05</span></span>
+<span id="cb23-18"><a href="#cb23-18"></a><span class="co">#&gt; [5,] 0.9201659 0.079734424 9.972266e-05</span></span>
+<span id="cb23-19"><a href="#cb23-19"></a><span class="co">#&gt; [6,] 0.9511779 0.048756153 6.593049e-05</span></span></code></pre></div>
 </div>
 <div id="numeric-vector" class="section level2">
 <h2><span class="header-section-number">7.3</span> Numeric Vector</h2>
@@ -1381,9 +1381,9 @@ Recipe
 <div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1"></a><span class="co">## Iowa City housing prices</span></span>
 <span id="cb24-2"><a href="#cb24-2"></a>model_fit &lt;-<span class="st"> </span><span class="kw">fit</span>(sale_amount <span class="op">~</span><span class="st"> </span>., <span class="dt">data =</span> ICHomes, <span class="dt">model =</span> GBMModel)</span>
 <span id="cb24-3"><a href="#cb24-3"></a><span class="kw">predict</span>(model_fit) <span class="op">%&gt;%</span><span class="st"> </span>head</span>
-<span id="cb24-4"><a href="#cb24-4"></a><span class="co">#&gt; [1] 107197 165026 213353 129058 223543 224585</span></span>
+<span id="cb24-4"><a href="#cb24-4"></a><span class="co">#&gt; [1] 106153 175550 220200 130631 223192 233459</span></span>
 <span id="cb24-5"><a href="#cb24-5"></a><span class="kw">predict</span>(model_fit, <span class="dt">type =</span> <span class="st">&quot;numeric&quot;</span>) <span class="op">%&gt;%</span><span class="st"> </span>head</span>
-<span id="cb24-6"><a href="#cb24-6"></a><span class="co">#&gt; [1] 107196.7 165025.9 213353.1 129057.8 223543.4 224584.8</span></span></code></pre></div>
+<span id="cb24-6"><a href="#cb24-6"></a><span class="co">#&gt; [1] 106153.2 175550.2 220199.6 130631.3 223191.6 233458.7</span></span></code></pre></div>
 </div>
 <div id="numeric-matrix" class="section level2">
 <h2><span class="header-section-number">7.4</span> Numeric Matrix</h2>
@@ -1561,16 +1561,16 @@ Recipe
 <p>A named list of available metrics can be obtained interactively with the metricinfo() function, and includes the following components for each one.</p>
 <dl>
 <dt><code>label</code></dt>
-<dd>Character descriptor for the metric.
+<dd>character descriptor for the metric.
 </dd>
 <dt><code>maximize</code></dt>
-<dd>Logical indicating whether higher values of the metric correspond to better predictive performance.
+<dd>logical indicating whether maximization of the metric leads to better predictive performance.
 </dd>
 <dt><code>arguments</code></dt>
-<dd>Closure with the argument names and corresponding default values of the metric function.
+<dd>closure with the argument names and corresponding default values of the metric function.
 </dd>
 <dt><code>response_types</code></dt>
-<dd>Data frame of the observed and predicted response variable types supported by the metric.
+<dd>data frame of the observed and predicted response variable types supported by the metric.
 </dd>
 </dl>
 <p>Function metricinfo() may be called without arguments, with one or more metric functions, an observed response variable, an observed and predicted response variable pair, response variable types, or resampled output; and will return information on all matching metrics.</p>
@@ -1669,19 +1669,19 @@ Recipe
 <p>Metrics applicable to multi-level factor response variables are summarized below.</p>
 <dl>
 <dt>accuracy()</dt>
-<dd>Proportion of correctly classified responses.
+<dd>proportion of correctly classified responses.
 </dd>
 <dt>brier()</dt>
 <dd><a href="https://en.wikipedia.org/wiki/Brier_score">Brier score</a>.
 </dd>
 <dt>cross_entropy()</dt>
-<dd><a href="https://en.wikipedia.org/wiki/Cross_entropy">Cross entropy</a> loss averaged over the number of cases.
+<dd><a href="https://en.wikipedia.org/wiki/Cross_entropy">cross entropy</a> loss averaged over the number of cases.
 </dd>
 <dt>kappa2()</dt>
 <dd><a href="https://en.wikipedia.org/wiki/Cohen%27s_kappa">Cohen’s kappa</a> statistic measuring relative agreement between observed and predicted classifications.
 </dd>
 <dt>weighted_kappa2()</dt>
-<dd><a href="https://en.wikipedia.org/wiki/Cohen%27s_kappa#Weighted_kappa">Weighted Cohen’s kappa</a> for ordered factor responses only.
+<dd><a href="https://en.wikipedia.org/wiki/Cohen%27s_kappa#Weighted_kappa">weighted Cohen’s kappa</a> for ordered factor responses only.
 </dd>
 </dl>
 <p>Brier score and cross entropy loss are computed directly on predicted class probabilities. The other metrics are computed on predicted class membership, defined as the factor level with the highest predicted probability.</p>
@@ -1691,16 +1691,16 @@ Recipe
 <p>Metrics for binary factors include those given for multi-level factors as well as the following.</p>
 <dl>
 <dt>auc()</dt>
-<dd>Area under a performance curve.
+<dd>area under a performance curve.
 </dd>
 <dt>cindex()</dt>
-<dd>Concordance index computed as rank order agreement between predicted probabilities for paired event and non-event cases. This metric can be interpreted as the probability that a randomly selected event case will have a higher predicted value than a randomly selected non-event case, and is the same as area under the ROC curve.
+<dd>concordance index computed as rank order agreement between predicted probabilities for paired event and non-event cases. This metric can be interpreted as the probability that a randomly selected event case will have a higher predicted value than a randomly selected non-event case, and is the same as area under the ROC curve.
 </dd>
 <dt>f_score()</dt>
 <dd><a href="https://en.wikipedia.org/wiki/Precision_and_recall#F-measure">F score</a>, <span class="math inline">\(F_\beta = (1 + \beta^2) \frac{\text{precision} \times \text{recall}}{\beta^2 \times \text{precision} + \text{recall}}\)</span>. F1 score <span class="math inline">\((\beta = 1)\)</span> is the package default.
 </dd>
 <dt>fnr()</dt>
-<dd>False negative rate, <span class="math inline">\(FNR = \frac{FN}{TP + FN} = 1 - TPR\)</span>.
+<dd>false negative rate, <span class="math inline">\(FNR = \frac{FN}{TP + FN} = 1 - TPR\)</span>.
 </dd>
 </dl>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -1758,31 +1758,31 @@ True Positive (TP)
 </table>
 <dl>
 <dt>fpr()</dt>
-<dd>False positive rate, <span class="math inline">\(FPR = \frac{FP}{TN + FP} = 1 - TNR\)</span>.
+<dd>false positive rate, <span class="math inline">\(FPR = \frac{FP}{TN + FP} = 1 - TNR\)</span>.
 </dd>
 <dt>npv()</dt>
-<dd>Negative predictive value, <span class="math inline">\(NPV = \frac{TN}{TN + FN}\)</span>.
+<dd>negative predictive value, <span class="math inline">\(NPV = \frac{TN}{TN + FN}\)</span>.
 </dd>
 <dt>ppr()</dt>
-<dd>Positive prediction rate, <span class="math inline">\(PPR = \frac{TP + FP}{TP + FP + TN + FN}\)</span>.
+<dd>positive prediction rate, <span class="math inline">\(PPR = \frac{TP + FP}{TP + FP + TN + FN}\)</span>.
 </dd>
 <dt>ppv(), precision()</dt>
-<dd>Positive predictive value, <span class="math inline">\(PPV = \frac{TP}{TP + FP}\)</span>.
+<dd>positive predictive value, <span class="math inline">\(PPV = \frac{TP}{TP + FP}\)</span>.
 </dd>
 <dt>pr_auc(), auc()</dt>
-<dd>Area under a precision recall curve.
+<dd>area under a precision recall curve.
 </dd>
 <dt>roc_auc(), auc()</dt>
-<dd><a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve">Area under an ROC curve</a>.
+<dd><a href="https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve">area under an ROC curve</a>.
 </dd>
 <dt>roc_index()</dt>
-<dd>A tradeoff function of sensitivity and specificity as defined by the <code>fun</code> argument in this function (default: (sensitivity + specificity) / 2). The function allows for specification of tradeoffs <span class="citation">(Perkins and Schisterman 2006)</span> other than the default of Youden’s J statistic <span class="citation">(Youden 1950)</span>.
+<dd>a tradeoff function of sensitivity and specificity as defined by the <code>fun</code> argument in this function (default: (sensitivity + specificity) / 2). The function allows for specification of tradeoffs <span class="citation">(Perkins and Schisterman 2006)</span> other than the default of Youden’s J statistic <span class="citation">(Youden 1950)</span>.
 </dd>
 <dt>sensitivity(), recall(), tpr()</dt>
-<dd>True positive rate, <span class="math inline">\(TPR =\frac{TP}{TP + FN} = 1 - FNR\)</span>.
+<dd>true positive rate, <span class="math inline">\(TPR =\frac{TP}{TP + FN} = 1 - FNR\)</span>.
 </dd>
 <dt>specificity(), tnr()</dt>
-<dd>True negative rate, <span class="math inline">\(TNR = \frac{TN}{TN + FP} = 1 - FPR\)</span>.
+<dd>true negative rate, <span class="math inline">\(TNR = \frac{TN}{TN + FP} = 1 - FPR\)</span>.
 </dd>
 </dl>
 <p>Area under the ROC and precision-recall curves as well as the concordance index are computed directly on predicted class probabilities. The other metrics are computed on predicted class membership. Memberships are defined to be in the second factor level if predicted probabilities are greater than the function default or user-specified cutoff value.</p>
@@ -1795,22 +1795,22 @@ True Positive (TP)
 <dd><a href="https://en.wikipedia.org/wiki/Gini_coefficient">Gini coefficient</a>.
 </dd>
 <dt>mae()</dt>
-<dd>Mean absolute error, <span class="math inline">\(MAE = \frac{1}{N}\sum_{i=1}^N|y_i - \hat{y}_i|\)</span>, where <span class="math inline">\(y_i\)</span> and <span class="math inline">\(\hat{y}_i\)</span> are the <span class="math inline">\(N\)</span> observed and predicted responses.
+<dd>mean absolute error, <span class="math inline">\(MAE = \frac{1}{N}\sum_{i=1}^N|y_i - \hat{y}_i|\)</span>, where <span class="math inline">\(y_i\)</span> and <span class="math inline">\(\hat{y}_i\)</span> are the <span class="math inline">\(N\)</span> observed and predicted responses.
 </dd>
 <dt>mse()</dt>
-<dd>Mean squared error, <span class="math inline">\(MSE = \frac{1}{N}\sum_{i=1}^N(y_i - \hat{y}_i)^2\)</span>.
+<dd>mean squared error, <span class="math inline">\(MSE = \frac{1}{N}\sum_{i=1}^N(y_i - \hat{y}_i)^2\)</span>.
 </dd>
 <dt>msle()</dt>
-<dd>Mean squared log error, <span class="math inline">\(MSLE = \frac{1}{N}\sum_{i=1}^N(log(1 + y_i) - log(1 + \hat{y}_i))^2\)</span>.
+<dd>mean squared log error, <span class="math inline">\(MSLE = \frac{1}{N}\sum_{i=1}^N(log(1 + y_i) - log(1 + \hat{y}_i))^2\)</span>.
 </dd>
 <dt>r2()</dt>
-<dd>One minus residual divided by total sums of squares, <span class="math inline">\(R^2 = 1 - \sum_{i=1}^N(y_i - \hat{y}_i)^2 / \sum_{i=1}^N(y_i - \bar{y})^2\)</span>.
+<dd>one minus residual divided by total sums of squares, <span class="math inline">\(R^2 = 1 - \sum_{i=1}^N(y_i - \hat{y}_i)^2 / \sum_{i=1}^N(y_i - \bar{y})^2\)</span>.
 </dd>
 <dt>rmse()</dt>
-<dd>Square root of mean squared error.
+<dd>square root of mean squared error.
 </dd>
 <dt>rmsle()</dt>
-<dd>Square root of mean squared log error.
+<dd>square root of mean squared log error.
 </dd>
 </dl>
 </div>
@@ -1880,25 +1880,25 @@ Event
 <p>Model performance can be estimated with resampling methods that simulate repeated training and test set fits and predictions. With these methods, performance metrics are computed on each resample to produce an empirical distribution for inference. Resampling is controlled in the <strong>MachineShop</strong> with the functions:</p>
 <dl>
 <dt>BootControl()</dt>
-<dd>Simple bootstrap resampling <span class="citation">(Efron and Tibshirani 1993)</span>. Models are repeatedly fit with bootstrap resampled training sets and used to predict the full dataset.
+<dd>simple bootstrap resampling <span class="citation">(Efron and Tibshirani 1993)</span> to repeatedly fit a model to bootstrap resampled training sets and predict the full dataset.
 </dd>
 <dt>BootOptimismControl()</dt>
-<dd>Optimism-corrected bootstrap resampling <span class="citation">(Efron and Gong 1983; Harrell, Lee, and Mark 1996)</span>.
+<dd>optimism-corrected bootstrap resampling <span class="citation">(Efron and Gong 1983; Harrell, Lee, and Mark 1996)</span>.
 </dd>
 <dt>CVControl()</dt>
-<dd>Repeated K-fold cross-validation <span class="citation">(Kohavi 1995)</span>. The full dataset is repeatedly partitioned into K-folds. For a given partitioning, prediction is performed on each of the K folds with models fit on all remaining folds. 10-fold cross-validation is the package default.
+<dd>repeated K-fold cross-validation <span class="citation">(Kohavi 1995)</span> to repeatedly partition the full dataset into K folds. For a given partitioning, prediction is performed on each of the K folds with models fit on all remaining folds. The package default is 10-fold cross-validation.
 </dd>
 <dt>CVOptimismControl()</dt>
-<dd>Optimism-corrected cross-validation <span class="citation">(Davison and Hinkley 1997, eq. 6.48)</span>.
+<dd>optimism-corrected cross-validation <span class="citation">(Davison and Hinkley 1997, eq. 6.48)</span>.
 </dd>
 <dt>OOBControl()</dt>
-<dd>Out-of-bootstrap resampling. Models are fit with bootstrap resampled training sets and used to predict the unsampled cases.
+<dd>out-of-bootstrap resampling to repeatedly fit a model to bootstrap resampled training sets and predict the unsampled cases.
 </dd>
 <dt>SplitControl()</dt>
-<dd>Split training and test sets <span class="citation">(Hastie, Tibshirani, and Friedman 2009)</span>. The data are randomly partitioned into a training and test set.
+<dd>split training and test sets <span class="citation">(Hastie, Tibshirani, and Friedman 2009)</span> to randomly partition the full dataset for model fitting and prediction, respectively.
 </dd>
 <dt>TrainControl()</dt>
-<dd>Training resubstitution. A model is fit on and used to predict the full training set in order to estimate training, or apparent, error <span class="citation">(Efron 1986)</span>.
+<dd>training resubstitution for both model fitting and prediction on the full dataset in order to estimate training, or apparent, error <span class="citation">(Efron 1986)</span>.
 </dd>
 </dl>
 <p>For the survival example, repeated cross-validation control structures are defined for the estimation of model performance in predicting survival means and 5 and 10-year survival probabilities. In addition to arguments controlling the resampling methods, a <code>seed</code> can be set to ensure reproducibility of resampling results obtained with the structures. The default control structure can also be set globally by users and subsequently changed back to its package default as desired.</p>
@@ -1934,7 +1934,7 @@ Event
 <span id="cb40-5"><a href="#cb40-5"></a><span class="co">#&gt; </span></span>
 <span id="cb40-6"><a href="#cb40-6"></a><span class="co">#&gt; Model: GBMModel</span></span>
 <span id="cb40-7"><a href="#cb40-7"></a><span class="co">#&gt; Sampling variables:</span></span>
-<span id="cb40-8"><a href="#cb40-8"></a><span class="co">#&gt; # A tibble: 136 x 2</span></span>
+<span id="cb40-8"><a href="#cb40-8"></a><span class="co">#&gt; # A tibble: 136 × 2</span></span>
 <span id="cb40-9"><a href="#cb40-9"></a><span class="co">#&gt;    Case  Stratification$`(strata)`</span></span>
 <span id="cb40-10"><a href="#cb40-10"></a><span class="co">#&gt;    &lt;chr&gt; &lt;fct&gt;                    </span></span>
 <span id="cb40-11"><a href="#cb40-11"></a><span class="co">#&gt;  1 159   0:(2.56e+03,3.45e+03]    </span></span>
@@ -1947,7 +1947,7 @@ Event
 <span id="cb40-18"><a href="#cb40-18"></a><span class="co">#&gt;  8 43    1:(1.05e+03,3.18e+03]    </span></span>
 <span id="cb40-19"><a href="#cb40-19"></a><span class="co">#&gt;  9 203   0:(3.45e+03,5.56e+03]    </span></span>
 <span id="cb40-20"><a href="#cb40-20"></a><span class="co">#&gt; 10 199   0:(3.45e+03,5.56e+03]    </span></span>
-<span id="cb40-21"><a href="#cb40-21"></a><span class="co">#&gt; # ... with 126 more rows</span></span>
+<span id="cb40-21"><a href="#cb40-21"></a><span class="co">#&gt; # … with 126 more rows</span></span>
 <span id="cb40-22"><a href="#cb40-22"></a><span class="co">#&gt; </span></span>
 <span id="cb40-23"><a href="#cb40-23"></a><span class="co">#&gt; === CVControl object ===</span></span>
 <span id="cb40-24"><a href="#cb40-24"></a><span class="co">#&gt; </span></span>
@@ -1961,7 +1961,7 @@ Event
 <span id="cb40-32"><a href="#cb40-32"></a><span class="co">#&gt; </span></span>
 <span id="cb40-33"><a href="#cb40-33"></a><span class="co">#&gt; Model: GBMModel</span></span>
 <span id="cb40-34"><a href="#cb40-34"></a><span class="co">#&gt; Sampling variables:</span></span>
-<span id="cb40-35"><a href="#cb40-35"></a><span class="co">#&gt; # A tibble: 136 x 2</span></span>
+<span id="cb40-35"><a href="#cb40-35"></a><span class="co">#&gt; # A tibble: 136 × 2</span></span>
 <span id="cb40-36"><a href="#cb40-36"></a><span class="co">#&gt;    Case  Stratification$`(strata)`</span></span>
 <span id="cb40-37"><a href="#cb40-37"></a><span class="co">#&gt;    &lt;chr&gt; &lt;fct&gt;                    </span></span>
 <span id="cb40-38"><a href="#cb40-38"></a><span class="co">#&gt;  1 159   0:(2.56e+03,3.45e+03]    </span></span>
@@ -1974,7 +1974,7 @@ Event
 <span id="cb40-45"><a href="#cb40-45"></a><span class="co">#&gt;  8 43    1:(1.05e+03,3.18e+03]    </span></span>
 <span id="cb40-46"><a href="#cb40-46"></a><span class="co">#&gt;  9 203   0:(3.45e+03,5.56e+03]    </span></span>
 <span id="cb40-47"><a href="#cb40-47"></a><span class="co">#&gt; 10 199   0:(3.45e+03,5.56e+03]    </span></span>
-<span id="cb40-48"><a href="#cb40-48"></a><span class="co">#&gt; # ... with 126 more rows</span></span>
+<span id="cb40-48"><a href="#cb40-48"></a><span class="co">#&gt; # … with 126 more rows</span></span>
 <span id="cb40-49"><a href="#cb40-49"></a><span class="co">#&gt; </span></span>
 <span id="cb40-50"><a href="#cb40-50"></a><span class="co">#&gt; === CVControl object ===</span></span>
 <span id="cb40-51"><a href="#cb40-51"></a><span class="co">#&gt; </span></span>
@@ -2081,7 +2081,7 @@ Event
 <span id="cb47-12"><a href="#cb47-12"></a><span class="co">#&gt; </span></span>
 <span id="cb47-13"><a href="#cb47-13"></a><span class="co">#&gt; Models: GBM1, GBM2, GBM3</span></span>
 <span id="cb47-14"><a href="#cb47-14"></a><span class="co">#&gt; Sampling variables:</span></span>
-<span id="cb47-15"><a href="#cb47-15"></a><span class="co">#&gt; # A tibble: 136 x 2</span></span>
+<span id="cb47-15"><a href="#cb47-15"></a><span class="co">#&gt; # A tibble: 136 × 2</span></span>
 <span id="cb47-16"><a href="#cb47-16"></a><span class="co">#&gt;    Case  Stratification$`(strata)`</span></span>
 <span id="cb47-17"><a href="#cb47-17"></a><span class="co">#&gt;    &lt;chr&gt; &lt;fct&gt;                    </span></span>
 <span id="cb47-18"><a href="#cb47-18"></a><span class="co">#&gt;  1 159   0:(2.56e+03,3.45e+03]    </span></span>
@@ -2094,7 +2094,7 @@ Event
 <span id="cb47-25"><a href="#cb47-25"></a><span class="co">#&gt;  8 43    1:(1.05e+03,3.18e+03]    </span></span>
 <span id="cb47-26"><a href="#cb47-26"></a><span class="co">#&gt;  9 203   0:(3.45e+03,5.56e+03]    </span></span>
 <span id="cb47-27"><a href="#cb47-27"></a><span class="co">#&gt; 10 199   0:(3.45e+03,5.56e+03]    </span></span>
-<span id="cb47-28"><a href="#cb47-28"></a><span class="co">#&gt; # ... with 126 more rows</span></span>
+<span id="cb47-28"><a href="#cb47-28"></a><span class="co">#&gt; # … with 126 more rows</span></span>
 <span id="cb47-29"><a href="#cb47-29"></a><span class="co">#&gt; </span></span>
 <span id="cb47-30"><a href="#cb47-30"></a><span class="co">#&gt; === CVControl object ===</span></span>
 <span id="cb47-31"><a href="#cb47-31"></a><span class="co">#&gt; </span></span>
@@ -2250,7 +2250,7 @@ t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
 <span id="cb53-5"><a href="#cb53-5"></a><span class="co">#&gt; </span></span>
 <span id="cb53-6"><a href="#cb53-6"></a><span class="co">#&gt; Optimization method: Global Recursive Feature Elimination</span></span>
 <span id="cb53-7"><a href="#cb53-7"></a><span class="co">#&gt; ModelSpecification log:</span></span>
-<span id="cb53-8"><a href="#cb53-8"></a><span class="co">#&gt; # A tibble: 4 x 5</span></span>
+<span id="cb53-8"><a href="#cb53-8"></a><span class="co">#&gt; # A tibble: 4 × 5</span></span>
 <span id="cb53-9"><a href="#cb53-9"></a><span class="co">#&gt;   name                 terms     selected params$size metrics$`C-Index`</span></span>
 <span id="cb53-10"><a href="#cb53-10"></a><span class="co">#&gt;   &lt;chr&gt;                &lt;list&gt;    &lt;lgl&gt;          &lt;int&gt;             &lt;dbl&gt;</span></span>
 <span id="cb53-11"><a href="#cb53-11"></a><span class="co">#&gt; 1 ModelSpecification.1 &lt;chr [5]&gt; FALSE              5             0.730</span></span>
@@ -2557,10 +2557,10 @@ t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
 <span id="cb71-29"><a href="#cb71-29"></a><span class="co">#&gt;   &lt;chr&gt;            &lt;lgl&gt;    &lt;chr&gt;                  &lt;dbl&gt;</span></span>
 <span id="cb71-30"><a href="#cb71-30"></a><span class="co">#&gt; 1 ModelRecipe.1    FALSE    input.azpi             0.761</span></span>
 <span id="cb71-31"><a href="#cb71-31"></a><span class="co">#&gt; 2 ModelRecipe.2    FALSE    input.aLHo             0.643</span></span>
-<span id="cb71-32"><a href="#cb71-32"></a><span class="co">#&gt; 3 TunedModelRecipe TRUE     input.W4KN             0.804</span></span>
+<span id="cb71-32"><a href="#cb71-32"></a><span class="co">#&gt; 3 TunedModelRecipe TRUE     input.W4KN             0.796</span></span>
 <span id="cb71-33"><a href="#cb71-33"></a><span class="co">#&gt; </span></span>
 <span id="cb71-34"><a href="#cb71-34"></a><span class="co">#&gt; Selected row: 3</span></span>
-<span id="cb71-35"><a href="#cb71-35"></a><span class="co">#&gt; Metric: C-Index = 0.8035826</span></span>
+<span id="cb71-35"><a href="#cb71-35"></a><span class="co">#&gt; Metric: C-Index = 0.7960841</span></span>
 <span id="cb71-36"><a href="#cb71-36"></a><span class="co">#&gt; </span></span>
 <span id="cb71-37"><a href="#cb71-37"></a><span class="co">#&gt; === $TrainingStep2 =============================================================</span></span>
 <span id="cb71-38"><a href="#cb71-38"></a><span class="co">#&gt; === TrainingStep object ===</span></span>
@@ -2762,7 +2762,7 @@ t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
 <span id="cb80-4"><a href="#cb80-4"></a><span class="kw">summary</span>(res_stacked)</span>
 <span id="cb80-5"><a href="#cb80-5"></a><span class="co">#&gt;          Statistic</span></span>
 <span id="cb80-6"><a href="#cb80-6"></a><span class="co">#&gt; Metric         Mean    Median        SD       Min       Max NA</span></span>
-<span id="cb80-7"><a href="#cb80-7"></a><span class="co">#&gt;   C-Index 0.7197215 0.7555556 0.1220386 0.5194805 0.8324324  0</span></span>
+<span id="cb80-7"><a href="#cb80-7"></a><span class="co">#&gt;   C-Index 0.7255417 0.7703704 0.1281829 0.5064935 0.8324324  0</span></span>
 <span id="cb80-8"><a href="#cb80-8"></a></span>
 <span id="cb80-9"><a href="#cb80-9"></a><span class="co">## Super learner</span></span>
 <span id="cb80-10"><a href="#cb80-10"></a>supermodel &lt;-<span class="st"> </span><span class="kw">SuperModel</span>(CoxModel, CForestModel, GLMBoostModel,</span>
@@ -2770,8 +2770,8 @@ t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
 <span id="cb80-12"><a href="#cb80-12"></a>res_super &lt;-<span class="st"> </span><span class="kw">resample</span>(surv_fo, <span class="dt">data =</span> surv_train, <span class="dt">model =</span> supermodel)</span>
 <span id="cb80-13"><a href="#cb80-13"></a><span class="kw">summary</span>(res_super)</span>
 <span id="cb80-14"><a href="#cb80-14"></a><span class="co">#&gt;          Statistic</span></span>
-<span id="cb80-15"><a href="#cb80-15"></a><span class="co">#&gt; Metric         Mean Median        SD       Min       Max NA</span></span>
-<span id="cb80-16"><a href="#cb80-16"></a><span class="co">#&gt;   C-Index 0.7590918    0.8 0.1168708 0.5726872 0.8609272  0</span></span></code></pre></div>
+<span id="cb80-15"><a href="#cb80-15"></a><span class="co">#&gt; Metric         Mean    Median        SD       Min       Max NA</span></span>
+<span id="cb80-16"><a href="#cb80-16"></a><span class="co">#&gt;   C-Index 0.7448593 0.7954545 0.1094031 0.5770925 0.8543046  0</span></span></code></pre></div>
 </div>
 <div id="methodology" class="section level2">
 <h2><span class="header-section-number">11.4</span> Methodology</h2>
@@ -2814,12 +2814,12 @@ t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
 <span id="cb82-6"><a href="#cb82-6"></a><span class="co">#&gt; # A tibble: 3 x 4</span></span>
 <span id="cb82-7"><a href="#cb82-7"></a><span class="co">#&gt;   name          selected params$PCA$num_comp metrics$`C-Index`</span></span>
 <span id="cb82-8"><a href="#cb82-8"></a><span class="co">#&gt;   &lt;chr&gt;         &lt;lgl&gt;                  &lt;int&gt;             &lt;dbl&gt;</span></span>
-<span id="cb82-9"><a href="#cb82-9"></a><span class="co">#&gt; 1 ModelRecipe.1 TRUE                       1             0.735</span></span>
-<span id="cb82-10"><a href="#cb82-10"></a><span class="co">#&gt; 2 ModelRecipe.2 FALSE                      2             0.733</span></span>
-<span id="cb82-11"><a href="#cb82-11"></a><span class="co">#&gt; 3 ModelRecipe.3 FALSE                      3             0.722</span></span>
+<span id="cb82-9"><a href="#cb82-9"></a><span class="co">#&gt; 1 ModelRecipe.1 TRUE                       1             0.737</span></span>
+<span id="cb82-10"><a href="#cb82-10"></a><span class="co">#&gt; 2 ModelRecipe.2 FALSE                      2             0.730</span></span>
+<span id="cb82-11"><a href="#cb82-11"></a><span class="co">#&gt; 3 ModelRecipe.3 FALSE                      3             0.696</span></span>
 <span id="cb82-12"><a href="#cb82-12"></a><span class="co">#&gt; </span></span>
 <span id="cb82-13"><a href="#cb82-13"></a><span class="co">#&gt; Selected row: 1</span></span>
-<span id="cb82-14"><a href="#cb82-14"></a><span class="co">#&gt; Metric: C-Index = 0.7347546</span></span></code></pre></div>
+<span id="cb82-14"><a href="#cb82-14"></a><span class="co">#&gt; Metric: C-Index = 0.7365799</span></span></code></pre></div>
 <p>In order to identify and return a final model fitted to the entire input data, the hierarchy is traversed from top to bottom along the path determined by the choice at each node. Steps along the path are labeled <code>TrainStep1</code> and <code>TrainStep2</code> in the output. As seen above in <code>TrainStep1</code>, one principal component is first selected for the tuned input. Using an input recipe with one principal component, the entire dataset is refit at <code>TrainStep2</code> to finally select GBMModel.</p>
 <div class="sourceCode" id="cb83"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1"></a><span class="co">#&gt; === $TrainingStep2 =============================================================</span></span>
 <span id="cb83-2"><a href="#cb83-2"></a><span class="co">#&gt; === TrainingStep object ===</span></span>
@@ -2831,7 +2831,7 @@ t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
 <span id="cb83-8"><a href="#cb83-8"></a><span class="co">#&gt;   &lt;chr&gt;        &lt;lgl&gt;    &lt;chr&gt;                  &lt;dbl&gt;</span></span>
 <span id="cb83-9"><a href="#cb83-9"></a><span class="co">#&gt; 1 GBMModel     TRUE     model.1mQk             0.740</span></span>
 <span id="cb83-10"><a href="#cb83-10"></a><span class="co">#&gt; 2 TunedModel   FALSE    model.hRF5             0.735</span></span>
-<span id="cb83-11"><a href="#cb83-11"></a><span class="co">#&gt; 3 StackedModel FALSE    model.CYj0             0.656</span></span>
+<span id="cb83-11"><a href="#cb83-11"></a><span class="co">#&gt; 3 StackedModel FALSE    model.CYj0             0.653</span></span>
 <span id="cb83-12"><a href="#cb83-12"></a><span class="co">#&gt; </span></span>
 <span id="cb83-13"><a href="#cb83-13"></a><span class="co">#&gt; Selected row: 1</span></span>
 <span id="cb83-14"><a href="#cb83-14"></a><span class="co">#&gt; Metric: C-Index = 0.7399641</span></span></code></pre></div>
@@ -2962,33 +2962,33 @@ t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
 <p>The MLModel() function creates a model object that can be used with the previously described fitting functions. It take the following arguments.</p>
 <dl>
 <dt><code>name</code></dt>
-<dd>Character name of the object to which the model is assigned.
+<dd>character name of the object to which the model is assigned.
 </dd>
 <dt><code>label</code></dt>
-<dd>Optional character descriptor for the model (default: <code>name</code>).
+<dd>optional character descriptor for the model (default: <code>name</code>).
 </dd>
 <dt><code>packages</code></dt>
-<dd>Character vector of package names upon which the model depends. Each name may be optionally followed by a comment in parentheses specifying a version requirement. The comment should contain a comparison operator, whitespace and a valid version number, e.g. <code>&quot;xgboost (&gt;= 1.3.0)&quot;</code>.
+<dd>character vector of packages upon which the model depends. Each name may be optionally followed by a comment in parentheses specifying a version requirement. The comment should contain a comparison operator, whitespace and a valid version number, e.g. <code>&quot;xgboost (&gt;= 1.3.0)&quot;</code>.
 </dd>
 <dt><code>response_types</code></dt>
-<dd>Character vector of response variable types to which the model can be fit. Supported types are <code>&quot;binary&quot;</code>, <code>&quot;factor&quot;</code>, <code>&quot;matrix&quot;</code>, <code>&quot;numeric&quot;</code>, <code>&quot;ordered&quot;</code>, and <code>&quot;Surv&quot;</code>.
+<dd>character vector of response variable types to which the model can be fit. Supported types are <code>&quot;binary&quot;</code>, <code>&quot;BinomialVariate&quot;</code>, <code>&quot;DiscreteVariate&quot;</code>, <code>&quot;factor&quot;</code>, <code>&quot;matrix&quot;</code>, <code>&quot;NegBinomialVariate&quot;</code>, <code>&quot;numeric&quot;</code>, <code>&quot;ordered&quot;</code>, <code>&quot;PoissonVariate&quot;</code>, and <code>&quot;Surv&quot;</code>.
 </dd>
 <dt><code>fit</code></dt>
-<dd>Model fitting function whose arguments are a <code>formula</code>, a ModelFrame named <code>data</code>, case <code>weights</code>, and an ellipsis. Argument <code>data</code> may be converted to a data frame with the <code>as.data.frame()</code> function as commonly needed. The fit function should return the object resulting from the model fit.
+<dd>model fitting function whose arguments are a <code>formula</code>, a ModelFrame named <code>data</code>, case <code>weights</code>, and an ellipsis. Argument <code>data</code> may be converted to a data frame with the <code>as.data.frame()</code> function as is commonly needed. The fit function should return the object resulting from the model fit.
 </dd>
 <dt><code>predict</code></dt>
-<dd>Prediction function whose arguments are the <code>object</code> returned by fit(), a ModelFrame named <code>newdata</code> of predictor variables, optional vector of <code>times</code> at which to predict survival, and an ellipsis. Argument <code>data</code> may be converted to a data frame with the <code>as.data.frame()</code> function as needed. Values returned by the function should be formatted according to the response variable types below.
+<dd>prediction function whose arguments are the <code>object</code> returned by fit(), a ModelFrame named <code>newdata</code> of predictor variables, optional vector of <code>times</code> at which to predict survival, and an ellipsis. Argument <code>data</code> may be converted to a data frame with the <code>as.data.frame()</code> function as needed. Values returned by the function should be formatted according to the response variable types below.
 </dd>
 </dl>
 <ul>
-<li><code>factor</code> : Vector or column matrix of probabilities for the second level of binary factors or a matrix whose columns contain the probabilities for factors with more than two levels.</li>
-<li><code>matrix</code> : Matrix of predicted responses.</li>
-<li><code>numeric</code> : Vector or column matrix of predicted responses.</li>
-<li><code>Surv</code> : Matrix whose columns contain survival probabilities at <code>times</code> if supplied or a vector of predicted survival means otherwise.</li>
+<li><code>factor</code> : matrix whose columns contain the probabilities for multi-level factors or vector of probabilities for the second level of binary factors.</li>
+<li><code>matrix</code> : matrix of predicted responses.</li>
+<li><code>numeric</code> : vector or column matrix of predicted responses.</li>
+<li><code>Surv</code> : matrix whose columns contain survival probabilities at <code>times</code> if supplied or vector of predicted survival means otherwise.</li>
 </ul>
 <dl>
 <dt><code>varimp</code></dt>
-<dd>Variable importance function whose arguments are the <code>object</code> returned by fit(), optional arguments passed from calls to varimp(), and an ellipsis. The function should return a vector of importance values named after the predictor variables or a matrix or data frame whose rows are named after the predictors.
+<dd>variable importance function whose arguments are the <code>object</code> returned by fit(), optional arguments passed from calls to varimp(), and an ellipsis. The function should return a vector of importance values named after the predictor variables or a matrix or data frame whose rows are named after the predictors.
 </dd>
 </dl>
 <div class="sourceCode" id="cb87"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1"></a><span class="co">## Logistic regression model extension</span></span>
@@ -3014,13 +3014,13 @@ t = \frac{\bar{x}_R}{\sqrt{F s^2_R / R}},
 <p>The MLMetric() function creates a metric object that can be used as previously described for the model performance metrics. Its first argument is a function to compute the metric, defined to accept <code>observed</code> and <code>predicted</code> as the first two arguments and with an ellipsis to accommodate others. Its remaining arguments are as follows.</p>
 <dl>
 <dt><code>name</code></dt>
-<dd>Character name of the object to which the metric is assigned.
+<dd>character name of the object to which the metric is assigned.
 </dd>
 <dt><code>label</code></dt>
-<dd>Optional character descriptor for the metric (default: <code>name</code>).
+<dd>optional character descriptor for the metric (default: <code>name</code>).
 </dd>
 <dt><code>maximize</code></dt>
-<dd>Logical indicating whether higher values of the metric correspond to better predictive performance.
+<dd>logical indicating whether higher values of the metric correspond to better predictive performance.
 </dd>
 </dl>
 <div class="sourceCode" id="cb88"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb88-1"><a href="#cb88-1"></a><span class="co">## F2 score metric extension</span></span>
@@ -4015,7 +4015,7 @@ auc
 Area Under Performance Curve
 </td>
 <td style="text-align:center;">
-b
+f
 </td>
 <td style="text-align:center;">
 </td>
@@ -4254,7 +4254,7 @@ pr_auc
 Area Under Precision-Recall Curve
 </td>
 <td style="text-align:center;">
-b
+f
 </td>
 <td style="text-align:center;">
 </td>
@@ -4350,7 +4350,7 @@ roc_auc
 Area Under ROC Curve
 </td>
 <td style="text-align:center;">
-b
+f
 </td>
 <td style="text-align:center;">
 </td>

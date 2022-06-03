@@ -42,7 +42,8 @@ expand_model <- function(object, ..., random = FALSE) {
 
 .expand_model.tbl_df <- function(object, model, ...) {
   models <- map(function(params) {
-    do.call(update, list(model, params = params, new_id = TRUE), quote = TRUE)
+    new_id <- make_id("model")
+    do.call(update, list(model, params = params, id = new_id), quote = TRUE)
   }, split(object, seq_len(max(nrow(object), 1))))
   names(models) <- paste0(models[[1]]@name, ".", names(models))
   models
@@ -148,7 +149,7 @@ expand_modelgrid.ModelSpecification <- function(object, ...) {
 
   if (is_empty(grid)) {
 
-    types <- c("ModeledInput", "SelectedInputOrModel")
+    types <- c("ModeledInput", "SelectedInput", "SelectedModel")
     found <- unique(unlist(map_slots(function(slot) {
       types[map("logi", is, list(slot), types)]
     }, object)))
@@ -368,8 +369,8 @@ expand_params <- function(..., random = FALSE) {
 #' data(Boston, package = "MASS")
 #'
 #' rec <- recipe(medv ~ ., data = Boston) %>%
-#'   step_corr(all_numeric(), -all_outcomes(), id = "corr") %>%
-#'   step_pca(all_numeric(), -all_outcomes(), id = "pca")
+#'   step_corr(all_numeric_predictors(), id = "corr") %>%
+#'   step_pca(all_numeric_predictors(), id = "pca")
 #'
 #' expand_steps(
 #'   corr = list(threshold = c(0.8, 0.9),

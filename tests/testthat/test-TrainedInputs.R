@@ -12,9 +12,9 @@ test_that("testing of trained inputs", {
 
     rec1 <- recipe(sale_amount ~ ., data = ICHomes)
     rec2 <- rec1 %>%
-      step_center(all_numeric(), -all_outcomes()) %>%
-      step_scale(all_numeric(), -all_outcomes()) %>%
-      step_pca(all_numeric(), -all_outcomes(), id = "pca")
+      step_center(all_numeric_predictors()) %>%
+      step_scale(all_numeric_predictors()) %>%
+      step_pca(all_numeric_predictors(), id = "pca")
 
     sel_fo <- SelectedInput(fo1, fo2, data = df)
     sel_mat <- SelectedInput(
@@ -27,13 +27,13 @@ test_that("testing of trained inputs", {
       ModelFrame(fo2, data = df)
     )
     sel_mo_mf <- SelectedInput(
-      ModeledInput(fo1, data = df, model = GLMModel),
-      ModeledInput(fo2, data = df, model = GBMModel)
+      ModelSpecification(fo1, data = df, model = GLMModel),
+      ModelSpecification(fo2, data = df, model = GBMModel)
     )
     sel_rec <- SelectedInput(rec1, rec2)
     sel_mo_rec <- SelectedInput(
-      ModeledInput(rec1, model = GLMModel),
-      ModeledInput(rec2, model = GBMModel)
+      ModelSpecification(rec1, model = GLMModel),
+      ModelSpecification(rec2, model = GBMModel)
     )
     tun_rec <- TunedInput(rec2, grid = expand_steps(pca = list(num_comp = 1:3)))
 

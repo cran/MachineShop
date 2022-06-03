@@ -46,6 +46,7 @@ auc(
   observed,
   predicted = NULL,
   weights = NULL,
+  multiclass = c("pairs", "all"),
   metrics = c(MachineShop::tpr, MachineShop::fpr),
   stat = MachineShop::settings("stat.Curve"),
   ...
@@ -114,7 +115,13 @@ ppv(
   ...
 )
 
-pr_auc(observed, predicted = NULL, weights = NULL, ...)
+pr_auc(
+  observed,
+  predicted = NULL,
+  weights = NULL,
+  multiclass = c("pairs", "all"),
+  ...
+)
 
 precision(
   observed,
@@ -132,7 +139,13 @@ recall(
   ...
 )
 
-roc_auc(observed, predicted = NULL, weights = NULL, ...)
+roc_auc(
+  observed,
+  predicted = NULL,
+  weights = NULL,
+  multiclass = c("pairs", "all"),
+  ...
+)
 
 roc_index(
   observed,
@@ -185,7 +198,14 @@ mse(observed, predicted = NULL, weights = NULL, ...)
 
 msle(observed, predicted = NULL, weights = NULL, ...)
 
-r2(observed, predicted = NULL, weights = NULL, distr = character(), ...)
+r2(
+  observed,
+  predicted = NULL,
+  weights = NULL,
+  method = c("mse", "pearson", "spearman"),
+  distr = character(),
+  ...
+)
 
 rmse(observed, predicted = NULL, weights = NULL, ...)
 
@@ -210,6 +230,11 @@ metrics are computed on predicted class probabilities if given.}
 
 \item{...}{arguments passed to or from other methods.}
 
+\item{multiclass}{character string specifying the method for computing
+generalized area under the performance curve for multiclass factor
+responses.  Options are to average over areas for each pair of classes
+(\code{"pairs"}) or for each class versus all others (\code{"all"}).}
+
 \item{metrics}{vector of two metric functions or function names that define a
 curve under which to calculate area [default: ROC metrics].}
 
@@ -226,6 +251,10 @@ curves, or \code{NULL} for resample-specific metrics.}
 main diagonal in confusion matrices are raised to calculate
 \code{weighted_kappa2}.}
 
+\item{method}{character string specifying whether to compute \code{r2} as
+the coefficient of determination (\code{"mse"}) or as the square of
+\code{"pearson"} or \code{"spearman"} correlation.}
+
 \item{distr}{character string specifying a distribution with which to
 estimate the observed survival mean in the total sum of square component of
 \code{r2}.  Possible values are \code{"empirical"} for the Kaplan-Meier
@@ -237,6 +266,11 @@ times.}
 }
 \description{
 Compute measures of agreement between observed and predicted responses.
+}
+\references{
+Hand, D. J., & Till, R. J. (2001). A simple generalisation of the area under
+the ROC curve for multiple class classification problems. \emph{Machine
+Learning}, \emph{45}, 171-186.
 }
 \seealso{
 \code{\link{metricinfo}}, \code{\link{performance}}

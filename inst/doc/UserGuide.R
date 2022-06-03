@@ -699,10 +699,10 @@ plot(lf, find = 0.75)
 #  #>   <chr>            <lgl>    <chr>                  <dbl>
 #  #> 1 ModelRecipe.1    FALSE    input.azpi             0.761
 #  #> 2 ModelRecipe.2    FALSE    input.aLHo             0.643
-#  #> 3 TunedModelRecipe TRUE     input.W4KN             0.804
+#  #> 3 TunedModelRecipe TRUE     input.W4KN             0.796
 #  #>
 #  #> Selected row: 3
-#  #> Metric: C-Index = 0.8035826
+#  #> Metric: C-Index = 0.7960841
 #  #>
 #  #> === $TrainingStep2 =============================================================
 #  #> === TrainingStep object ===
@@ -892,7 +892,7 @@ knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 #  summary(res_stacked)
 #  #>          Statistic
 #  #> Metric         Mean    Median        SD       Min       Max NA
-#  #>   C-Index 0.7197215 0.7555556 0.1220386 0.5194805 0.8324324  0
+#  #>   C-Index 0.7255417 0.7703704 0.1281829 0.5064935 0.8324324  0
 #  
 #  ## Super learner
 #  supermodel <- SuperModel(CoxModel, CForestModel, GLMBoostModel,
@@ -900,8 +900,8 @@ knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 #  res_super <- resample(surv_fo, data = surv_train, model = supermodel)
 #  summary(res_super)
 #  #>          Statistic
-#  #> Metric         Mean Median        SD       Min       Max NA
-#  #>   C-Index 0.7590918    0.8 0.1168708 0.5726872 0.8609272  0
+#  #> Metric         Mean    Median        SD       Min       Max NA
+#  #>   C-Index 0.7448593 0.7954545 0.1094031 0.5770925 0.8543046  0
 
 ## ----using_strategies_methods, eval=FALSE-------------------------------------
 #  ## Preprocessing recipe with PCA steps
@@ -945,12 +945,12 @@ knitr::include_graphics("img/FigNestedCV.png")
 #  #> # A tibble: 3 x 4
 #  #>   name          selected params$PCA$num_comp metrics$`C-Index`
 #  #>   <chr>         <lgl>                  <int>             <dbl>
-#  #> 1 ModelRecipe.1 TRUE                       1             0.735
-#  #> 2 ModelRecipe.2 FALSE                      2             0.733
-#  #> 3 ModelRecipe.3 FALSE                      3             0.722
+#  #> 1 ModelRecipe.1 TRUE                       1             0.737
+#  #> 2 ModelRecipe.2 FALSE                      2             0.730
+#  #> 3 ModelRecipe.3 FALSE                      3             0.696
 #  #>
 #  #> Selected row: 1
-#  #> Metric: C-Index = 0.7347546
+#  #> Metric: C-Index = 0.7365799
 
 ## ----using_strategies_methods2, eval=FALSE------------------------------------
 #  #> === $TrainingStep2 =============================================================
@@ -963,7 +963,7 @@ knitr::include_graphics("img/FigNestedCV.png")
 #  #>   <chr>        <lgl>    <chr>                  <dbl>
 #  #> 1 GBMModel     TRUE     model.1mQk             0.740
 #  #> 2 TunedModel   FALSE    model.hRF5             0.735
-#  #> 3 StackedModel FALSE    model.CYj0             0.656
+#  #> 3 StackedModel FALSE    model.CYj0             0.653
 #  #>
 #  #> Selected row: 1
 #  #> Metric: C-Index = 0.7399641

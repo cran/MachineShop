@@ -23,7 +23,7 @@
 #' @param method character string specifying the empirical method of estimating
 #'   baseline survival curves for Cox proportional hazards-based models.
 #'   Choices are \code{"breslow"} or \code{"efron"} (default).
-#' @param ... arguments passed to model-specific prediction functions.
+#' @param ... arguments passed from the S4 to the S3 method.
 #'
 #' @seealso \code{\link{confusion}}, \code{\link{performance}},
 #' \code{\link{metrics}}
@@ -39,12 +39,19 @@
 #' predict(gbm_fit, newdata = veteran, times = c(90, 180, 360), type = "prob")
 #' }
 #'
+NULL
+
+
+#' @name predict
+#' @method predict MLModelFit
+#'
 predict.MLModelFit <- function(
   object, newdata = NULL, times = numeric(),
   type = c("response", "default", "numeric", "prob"),
   cutoff = MachineShop::settings("cutoff"), distr = character(),
   method = character(), ...
 ) {
+  object <- update(object)
   model <- as.MLModel(object)
   throw(check_packages(model@packages))
 
@@ -54,22 +61,30 @@ predict.MLModelFit <- function(
   throw(check_assignment(times))
 
   obs <- response(object)
+  .MachineShop <- attr(object, ".MachineShop")
   pred <- convert_predicted(obs, .predict(
-    model, model_fit = object, newdata = newdata, times = times, distr = distr,
-    method = method, ...
+    model, model_fit = unMLModelFit(object),
+    newdata = PredictorFrame(.MachineShop$input, newdata),
+    times = times, distr = distr, method = method,
+    .MachineShop = .MachineShop, ...
   ))
 
   pred <- switch(match.arg(type),
     "default" = pred,
     "numeric" = convert_numeric(pred),
-    "prob" = {
-      cond <- convert_numeric(pred, bounds = c(0, 1))
-      if (is(cond, "error")) Warning(cond$message, value = pred) else pred
-    },
+    "prob" = convert_numeric(pred, bounds = c(0, 1)),
     "response" = convert_response(obs, pred, cutoff = cutoff)
   )
   throw(check_assignment(pred))
 }
+
+
+#' @name predict
+#' @aliases predict,MLModelFit-method
+#'
+setMethod("predict", "MLModelFit",
+  function(object, ...) predict.MLModelFit(object, ...)
+)
 
 
 .predict <- function(object, ...) {
@@ -77,9 +92,46 @@ predict.MLModelFit <- function(
 }
 
 
-.predict.MLModel <- function(object, model_fit, newdata, ...) {
-  object@predict(
-    unMLModelFit(model_fit), newdata = predictor_frame(object, newdata),
-    model = object, ...
-  )
+.predict.MLModel <- function(object, model_fit, ...) {
+  object@predict(model_fit, ...)
+}
+
+
+PredictorFrame <- function(input, newdata = NULL) {
+  if (!is(newdata, "PredictorFrame")) {
+    new("PredictorFrame", ModelFrame(
+      delete.response(terms(input)), predictors(input, newdata), na.rm = FALSE
+    ))
+  } else {
+    newdata
+  }
+}
+
+
+predictors <- function(object, ...) {
+  UseMethod("predictors")
+}
+
+
+predictors.formula <- function(object, data = NULL, ...) {
+  if (is.null(data)) {
+    object[[length(object)]]
+  } else {
+    data[, all.vars(predictors(object)), drop = FALSE]
+  }
+}
+
+
+predictors.ModelFrame <- function(object, newdata = NULL, ...) {
+  data <- as.data.frame(if (is.null(newdata)) object else newdata)
+  predictors(terms(object), data)
+}
+
+
+predictors.recipe <- function(object, newdata = NULL, ...) {
+  object <- prep(object, retain = FALSE)
+  data <- bake(object, newdata = newdata)
+  info <- summary(object)
+  pred_names <- info$variable[info$role %in% c("predictor", "pred_offset")]
+  data[, pred_names, drop = FALSE]
 }

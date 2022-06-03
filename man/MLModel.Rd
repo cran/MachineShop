@@ -2,7 +2,8 @@
 % Please edit documentation in R/MLModel.R
 \name{MLModel}
 \alias{MLModel}
-\title{MLModel Class Constructor}
+\alias{MLModelFunction}
+\title{MLModel and MLModelFunction Class Constructors}
 \usage{
 MLModel(
   name = "MLModel",
@@ -19,6 +20,8 @@ MLModel(
   varimp = function(object, ...) NULL,
   ...
 )
+
+MLModelFunction(object, ...)
 }
 \arguments{
 \item{name}{character name of the object to which the model is assigned.}
@@ -72,12 +75,15 @@ which to predict survival, and an ellipsis.}
 to \code{\link{varimp}}, and an ellipsis.}
 
 \item{...}{arguments passed to other methods.}
+
+\item{object}{function that returns an \code{MLModel} object when called
+without any supplied argument values.}
 }
 \value{
-\code{MLModel} class object.
+An \code{MLModel} or \code{MLModelFunction} class object.
 }
 \description{
-Create a model for use with the \pkg{MachineShop} package.
+Create a model or model function for use with the \pkg{MachineShop} package.
 }
 \details{
 If supplied, the \code{grid} function should return a list whose elements are
@@ -90,9 +96,9 @@ if needed for their operation.  The \code{fit} function should return the
 object resulting from the model fit.  Values returned by the \code{predict}
 functions should be formatted according to the response variable types below.
 \describe{
-  \item{factor}{vector or column matrix of probabilities for the second level
-    of binary factors or a matrix whose columns contain the probabilities for
-    factors with more than two levels.}
+  \item{factor}{matrix whose columns contain the probabilities for
+    multi-level factors or vector of probabilities for the second level of
+    binary factors.}
   \item{matrix}{matrix of predicted responses.}
   \item{numeric}{vector or column matrix of predicted responses.}
   \item{Surv}{matrix whose columns contain survival probabilities at
@@ -103,6 +109,12 @@ functions should be formatted according to the response variable types below.
 The \code{varimp} function should return a vector of importance values named
 after the predictor variables or a matrix or data frame whose rows are named
 after the predictors.
+
+The \code{predict} and \code{varimp} functions are additionally passed a list
+named \code{.MachineShop} containing the \code{\link[=inputs]{input}}
+and \code{\link[=models]{model}} from \code{\link{fit}}.  This argument may
+be included in the function definitions as needed for their implementations.
+Otherwise, it will be captured by the ellipsis.
 }
 \examples{
 ## Logistic regression model

@@ -24,7 +24,7 @@
 #' importance to range from 0 to 100.  To obtain unscaled importance values, set
 #' \code{scale = FALSE}.
 #'
-#' #' @return \code{MLModel} class object.
+#' @return \code{MLModel} class object.
 #'
 #' @seealso \code{\link[survival]{coxph}},
 #' \code{\link[survival]{coxph.control}}, \code{\link[MASS]{stepAIC}},
@@ -54,12 +54,13 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
                       weights = weights, ...)
     },
 
-    predict = function(object, newdata, model, ...) {
+    predict = function(object, newdata, .MachineShop, ...) {
       y <- object$y
+      weights <- case_weights(.MachineShop$input)
       newdata <- as.data.frame(newdata)
       lp <- predict(object, type = "lp")
       new_lp <- predict(object, newdata = newdata, type = "lp")
-      predict(y, lp, new_lp, weights = case_weights(model), ...)
+      predict(y, lp, new_lp, weights = weights, ...)
     },
 
     varimp = function(object, base = exp(1), ...) {

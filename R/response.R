@@ -48,15 +48,10 @@ response.formula <- function(object, data = NULL, template = NULL, ...) {
 }
 
 
-response.MLModel <- function(object, newdata = NULL, ...) {
-  response(object@input, newdata)
-}
-
-
 #' @rdname response-methods
 #'
 response.MLModelFit <- function(object, newdata = NULL, ...) {
-  response(as.MLModel(object), newdata)
+  response(as.MLInput(object), newdata)
 }
 
 
@@ -82,8 +77,8 @@ response.ModelSpecification <- function(object, newdata = NULL, ...) {
 #' @rdname response-methods
 #'
 response.recipe <- function(object, newdata = NULL, ...) {
-  object <- prep(object)
-  response(terms(object), bake(object, newdata))
+  object <- prep(object, retain = FALSE)
+  response(terms(object), bake(object, newdata = newdata))
 }
 
 

@@ -1,6 +1,6 @@
-#' MLModel Class Constructor
+#' MLModel and MLModelFunction Class Constructors
 #'
-#' Create a model for use with the \pkg{MachineShop} package.
+#' Create a model or model function for use with the \pkg{MachineShop} package.
 #'
 #' @param name character name of the object to which the model is assigned.
 #' @param label optional character descriptor for the model.
@@ -42,6 +42,8 @@
 #'   \code{object} returned by \code{fit}, optional arguments passed from calls
 #'   to \code{\link{varimp}}, and an ellipsis.
 #' @param ... arguments passed to other methods.
+#' @param object function that returns an \code{MLModel} object when called
+#'   without any supplied argument values.
 #'
 #' @details
 #' If supplied, the \code{grid} function should return a list whose elements are
@@ -54,9 +56,9 @@
 #' object resulting from the model fit.  Values returned by the \code{predict}
 #' functions should be formatted according to the response variable types below.
 #' \describe{
-#'   \item{factor}{vector or column matrix of probabilities for the second level
-#'     of binary factors or a matrix whose columns contain the probabilities for
-#'     factors with more than two levels.}
+#'   \item{factor}{matrix whose columns contain the probabilities for
+#'     multi-level factors or vector of probabilities for the second level of
+#'     binary factors.}
 #'   \item{matrix}{matrix of predicted responses.}
 #'   \item{numeric}{vector or column matrix of predicted responses.}
 #'   \item{Surv}{matrix whose columns contain survival probabilities at
@@ -68,7 +70,13 @@
 #' after the predictor variables or a matrix or data frame whose rows are named
 #' after the predictors.
 #'
-#' @return \code{MLModel} class object.
+#' The \code{predict} and \code{varimp} functions are additionally passed a list
+#' named \code{.MachineShop} containing the \code{\link[=inputs]{input}}
+#' and \code{\link[=models]{model}} from \code{\link{fit}}.  This argument may
+#' be included in the function definitions as needed for their implementations.
+#' Otherwise, it will be captured by the ellipsis.
+#'
+#' @return An \code{MLModel} or \code{MLModelFunction} class object.
 #'
 #' @seealso \code{\link{models}}, \code{\link{fit}}, \code{\link{resample}}
 #'
@@ -135,8 +143,8 @@ MLModel <- function(
 
 
 setMethod("initialize", "MLModel",
-  function(.Object, ..., id = make_id("model"), input = NullInput()) {
-    callNextMethod(.Object, ..., id = id, input = input)
+  function(.Object, ..., id = make_id("model")) {
+    callNextMethod(.Object, ..., id = id)
   }
 )
 
@@ -155,7 +163,7 @@ NullModel <- function() {
 
 
 update.MLModel <- function(
-  object, params = NULL, quote = TRUE, new_id = FALSE, ...
+  object, params = NULL, quote = TRUE, id = object@id, ...
 ) {
   old_id <- object@id
   if (is.list(params)) {
@@ -163,36 +171,90 @@ update.MLModel <- function(
     new_params[names(params)] <- params
     object <- do.call(object@name, new_params, quote = quote)
   }
-  if (is.character(new_id)) {
-    object@id <- new_id
-  } else if (!isTRUE(new_id)) {
-    object@id <- old_id
-  }
+  object@id <- id
   object
 }
 
 
-MLModelFit <- function(object, Class, model, input) {
-  model@input <- prep(input)
+#' @rdname MLModel
+#'
+MLModelFunction <- function(object, ...) {
+  if (!is(try(object(), silent = TRUE), "MLModel")) {
+    Error("Call to object() does not return an MLModel.")
+  }
+  new("MLModelFunction", object, ...)
+}
 
-  if (is(object, Class)) {
-    object <- unMLModelFit(object)
-  } else if (is(object, "MLModelFit")) {
+
+"MLModelFunction<-" <- function(object, value) {
+  do.call(MLModelFunction, c(object, value))
+}
+
+
+MLModelFit <- function(object, class, input, model) {
+  if (is(object, "MLModelFit") && !is(object, class)) {
     throw(Error("Cannot change MLModelFit class."))
   }
 
-  if (!is(model, "MLModel")) throw(TypeError(model, "MLModel", "'model'"))
+  if (!is(model, "MLModel")) throw(TypeError(model, "MLModel", "`model`"))
 
   if (isS4(object)) {
-    object <- new(Class, object, mlmodel = model)
-  } else if (is.list(object)) {
-    object$mlmodel <- model
-    class(object) <- c(Class, "MLModelFit", class(object))
+    object <- new(class, object)
   } else {
-    throw(TypeError(object, c("S4 class", "list"), "'object'"))
+    class <- setdiff(c(class, "MLModelFit"), class(object))
+    class(object) <- c(class, class(object))
   }
 
+  .MachineShop <- list(
+    input = prep(input, retain = FALSE),
+    model = model,
+    version = packageVersion("MachineShop")
+  )
+  attr(object, ".MachineShop")[names(.MachineShop)] <- .MachineShop
+
   object
+}
+
+
+update.MLModelFit <- function(object, ...) {
+  model <- NULL
+  if ("mlmodel" %in% names(object)) {
+    model <- object$mlmodel
+    object$mlmodel <- NULL
+  } else if ("mlmodel" %in% names(attributes(object))) {
+    model <- attr(object, "mlmodel")
+    attr(object, "mlmodel") <- NULL
+  }
+  if (is(model, "MLModel")) {
+    .MachineShop <- list()
+    y_levels <- c("y_levels" = "levels")
+    add <- switch(model@name,
+      "LARSModel" = "step",
+      "LDAModel" = c("dimen", "use"),
+      "QDAModel" = "use",
+      "XGBModel" = y_levels,
+      "XGBDARTModel" = y_levels,
+      "XGBLinearModel" = y_levels,
+      "XGBTreeModel" = y_levels
+    )
+    if (length(add)) {
+      if (is.null(names(add))) names(add) <- add
+      .MachineShop[names(add)] <- object[add]
+      object[add] <- NULL
+    }
+    attr(object, ".MachineShop") <- .MachineShop
+    input <- model@input
+    if (is(input, "ModelRecipe") && is.null(input$orig_template)) {
+      input$orig_template <- input$template
+      input$template <- NULL
+    }
+    new_model <- update(model, params = model@params)
+    new_model@label <- model@label
+    new_model@steps <- model@steps
+    MLModelFit(object, class1(object), input, new_model)
+  } else {
+    object
+  }
 }
 
 
@@ -212,7 +274,8 @@ unMLModelFit <- function(object) {
       pos <- match("MLModelFit", classes)
       as(object, classes[pos + 1])
     } else {
-      object$mlmodel <- NULL
+      object <- update(object)
+      attr(object, ".MachineShop") <- NULL
       classes <- class(object)
       pos <- match("MLModelFit", classes)
       structure(object, class = classes[-seq_len(pos)])

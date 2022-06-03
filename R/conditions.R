@@ -1,9 +1,12 @@
 #################### Constructors ####################
 
 
-DeprecatedCondition <- function(old, new, expired = FALSE, call = FALSE) {
+DeprecatedCondition <- function(
+  old, new, value = NULL, expired = FALSE, call = FALSE
+) {
   make_cond <- function(f, class) {
     f(message = paste0(old, " is deprecated; use ", new, " instead."),
+      value = value,
       call = select_call(call, sys.call(-2)),
       class = class)
   }
@@ -175,7 +178,7 @@ check_array <- function(
 
 
 check_assignment <- function(x, value = x) {
-  msg <- paste0(" '", deparse1(substitute(x)), "' value.\n")
+  msg <- paste0(" `", deparse1(substitute(x)), "` value.\n")
   if (is(value, "error")) {
     value$message <- paste0("Failed to assign", msg, value$message)
   } else if (is(value, "condition")) {
@@ -188,9 +191,9 @@ check_assignment <- function(x, value = x) {
 check_censoring <- function(x, types, ...) {
   type <- attr(x, "type")
   if (!(type %in% types)) {
-    types <- paste0("'", types, "'")
+    types <- paste0("\"", types, "\"")
     Error("Expected survival data censoring type to be ",
-          as_string(types, conj = "or"), "; got '", type, "' instead.")
+          as_string(types, conj = "or"), "; got \"", type, "\" instead.")
   } else x
 }
 
@@ -202,7 +205,7 @@ check_character <- function(x, ...) {
 
 check_const_setting <- function(x, name) {
   if (!identical(x, x <- .global_defaults[[name]])) {
-    LocalWarning("MachineShop '", name, "' setting cannot be changed.",
+    LocalWarning("MachineShop `", name, "` setting cannot be changed.",
                  value = x)
   } else x
 }
@@ -436,6 +439,6 @@ dep_modeledinput <- function(x, class, dots) {
   throw(DeprecatedCondition(
       class(x), "a ModelSpecification", expired = Sys.Date() >= "2022-07-01"
   ), call = FALSE)
-  dots$model <- as.MLModel(x)
+  dots$model <- x@model
   do.call(ModelSpecification, c(list(as(x, class)), dots))
 }

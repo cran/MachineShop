@@ -3,13 +3,8 @@ case_comps <- function(object, ...) {
 }
 
 
-case_comps.MLModel <- function(object, ...) {
-  case_comps(object@input, ...)
-}
-
-
 case_comps.MLModelFit <- function(object, ...) {
-  case_comps(as.MLModel(object), ...)
+  case_comps(as.MLInput(object), ...)
 }
 
 
@@ -34,7 +29,9 @@ case_comps.recipe <- function(
 ) {
   stopifnot(!original)
   names <- map(function(type) case_comp_name(object, type), types)
-  data <- if (any(lengths(names)) || response) bake(prep(object), newdata)
+  data <- if (any(lengths(names)) || response) {
+    bake(prep(object, retain = FALSE), newdata = newdata)
+  }
   res <- map(function(type) {
     name <- names[[type]]
     if (length(name)) data[[name]]
@@ -88,7 +85,7 @@ case_strata <- function(object, ...) {
 case_strata.default <- function(object, ...) {
   types <- c("BinomialVariate", "character", "factor", "logical", "matrix",
              "numeric", "Surv")
-  throw(TypeError(object, types, "'object'"))
+  throw(TypeError(object, types, "`object`"))
 }
 
 

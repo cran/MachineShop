@@ -45,13 +45,15 @@ ModelRecipe.recipe <- function(object, ...) {
 }
 
 
-bake.ModelRecipe <- function(object, new_data, ...) {
-  new_data <- if (is.null(new_data)) {
-    object$template
-  } else if (is(new_data, "ModelRecipe")) {
-    new_data$template
-  } else {
-    prep_recipe_data(new_data)
+bake.ModelRecipe <- function(object, new_data, newdata = NULL, ...) {
+  if (missing(new_data)) {
+    new_data <- if (is.null(newdata)) {
+      as.data.frame(object)
+    } else if (is(newdata, "ModelRecipe")) {
+      as.data.frame(newdata)
+    } else {
+      prep_recipe_data(newdata)
+    }
   }
   bake(as(object, "recipe"), new_data)
 }
@@ -70,13 +72,20 @@ bake.TunedInput <- function(object, ...) {
 prep.ModelFrame <- function(x, ...) x
 
 
-prep.ModelRecipe <- function(x, ...) {
+prep.ModelRecipe <- function(x, retain = TRUE, ...) {
   if (!is_trained(x)) {
     template <- x$template
-    x <- new(class(x), prep(as(x, "recipe"), retain = FALSE))
-    x$template <- template
+    x <- new(class(x), prep(as(x, "recipe"), retain = retain))
+    x$orig_template <- template
     x$orig_lvls[["(names)"]] <- list(values = NA, ordered = NA)
     x$levels[["(names)"]] <- x$orig_lvls[["(names)"]]
+  } else if (!retain) {
+    x$template <- x$template[NULL, ]
+    x$retained <- FALSE
+  } else if (!x$retained) {
+    throw(Error(
+      "ModelRecipe prep cannot be updated from `retain = FALSE` to `TRUE`."
+    ))
   }
   x
 }
@@ -100,8 +109,9 @@ prep_recipe_data <- function(x) {
 
 
 update.ModelRecipe <- function(
-  object, params = NULL, data = NULL, new_id = FALSE, ...
+  object, params = NULL, data = NULL, id = object@id, ...
 ) {
+  stopifnot(!is_trained(object))
   if (is.list(params)) {
     for (i in seq_along(object$steps)) {
       step <- object$steps[[i]]
@@ -112,10 +122,6 @@ update.ModelRecipe <- function(
     }
   }
   if (is.data.frame(data)) object$template <- prep_recipe_data(data)
-  if (is.character(new_id)) {
-    object@id <- new_id
-  } else if (isTRUE(new_id)) {
-    object@id <- make_id()
-  }
+  object@id <- id
   object
 }

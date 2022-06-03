@@ -20,11 +20,11 @@ importFrom(progress, progress_bar)
 importFrom(recipes, bake, prep, recipe, tidy, tunable)
 importFrom(rsample, bootstraps, group_vfold_cv, initial_split, vfold_cv)
 importFrom(stats, aggregate, approx, coef, complete.cases, contr.helmert, cor,
-           delete.response, drop1, formula, get_all_vars, loess, lm, median,
-           model.frame, model.matrix, model.matrix.default, model.response,
-           model.weights, na.fail, na.omit, na.pass, offset, p.adjust, pchisq,
-           pnorm, predict, pt, quantile, reformulate, reshape, runif, sd,
-           t.test, terms, time, update, var, vcov, xtabs)
+           cov.wt, delete.response, drop1, formula, get_all_vars, loess, lm,
+           median, model.frame, model.matrix, model.matrix.default,
+           model.response, model.weights, na.fail, na.omit, na.pass, offset,
+           p.adjust, pchisq, pnorm, predict, pt, quantile, reformulate,
+           reshape, runif, sd, t.test, terms, time, update, var, vcov, xtabs)
 importFrom(survival, concordance, is.Surv, Surv, survfit, survreg,
            survreg.distributions)
 importFrom(tibble, as_tibble, as_tibble_col, is_tibble, tibble)
@@ -51,6 +51,7 @@ export(expand_model,
        TuningGrid)
 
 export(MLModel,
+       MLModelFunction,
        AdaBagModel,
        AdaBoostModel,
        BARTModel,
@@ -164,6 +165,7 @@ export(MLMetric,
 
 export(.,
        "%>%",
+       as.MLInput,
        as.MLModel,
        calibration,
        case_weights,
@@ -192,6 +194,8 @@ export(.,
        unMLModelFit,
        varimp)
 
+exportMethods(predict)
+
 S3method(as.data.frame, BinomialVariate)
 S3method(as.data.frame, ModelFrame)
 S3method(as.data.frame, PerformanceDiffTest)
@@ -204,11 +208,14 @@ S3method(as.MLControl, "function")
 S3method(as.MLControl, MLControl)
 S3method(as.MLMetric, character)
 S3method(as.MLMetric, MLMetric)
+S3method(as.MLInput, MLModelFit)
+S3method(as.MLInput, ModelSpecification)
 S3method(as.MLModel, character)
 S3method(as.MLModel, MLModel)
 S3method(as.MLModel, MLModelFit)
 S3method(as.MLModel, MLModelFunction)
 S3method(as.MLModel, model_spec)
+S3method(as.MLModel, ModelSpecification)
 S3method(as.MLModel, ModeledInput)
 S3method(as_string, default)
 S3method(as_string, character)
@@ -393,6 +400,7 @@ S3method(tunable, step_kmedoids)
 S3method(tunable, step_lincomp)
 S3method(tunable, step_spca)
 S3method(TunedInput, recipe)
+S3method(update, MLModelFit)
 S3method(update, ModelFrame)
 S3method(update, ModelRecipe)
 S3method(update, ModelSpecification)

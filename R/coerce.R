@@ -38,7 +38,7 @@ setAs("SelectedModelFrame", "data.frame",
 
 
 as.data.frame.ModelRecipe <- function(x, ...) {
-  as.data.frame(x$template)
+  as.data.frame(x[[if (is_trained(x)) "orig_template" else "template"]])
 }
 
 
@@ -86,13 +86,13 @@ as.double.BinomialVariate <- function(x, ...) {
 }
 
 
-setAs("MLModel", "list",
-  function(from) as(from@params, "list")
+setAs("EnsembleInputOrModel", "list",
+  function(from) c(list(from@candidates), as(from@params, "list"))
 )
 
 
-setAs("SelectedInputOrModel", "list",
-  function(from) c(list(from@candidates), as(from@params, "list"))
+setAs("MLModel", "list",
+  function(from) as(from@params, "list")
 )
 
 
@@ -162,6 +162,16 @@ as.MLControl.NULL <- function(x, ...) {
 }
 
 
+#' Coerce to an MLInput
+#'
+#' Function to coerce an object to \code{MLInput}.
+#'
+#' @param x model \link{fit} result or \pkg{MachineShop}
+#'   \link[=ModelSpecification]{model specification}.
+#' @param ... arguments passed to other methods.
+#'
+#' @return \code{MLInput} class object.
+#'
 as.MLInput <- function(x, ...) {
   UseMethod("as.MLInput")
 }
@@ -188,6 +198,15 @@ as.MLInput.MLInput <- function(x, ...) {
 }
 
 
+#' @rdname as.MLInput
+#'
+as.MLInput.MLModelFit <- function(x, ...) {
+  attr(update(x), ".MachineShop")$input
+}
+
+
+#' @rdname as.MLInput
+#'
 as.MLInput.ModelSpecification <- function(x, ...) {
   x@input
 }
@@ -223,9 +242,9 @@ as.MLMetric.MLMetric <- function(x, ...) {
 #'
 #' Function to coerce an object to \code{MLModel}.
 #'
-#' @param x model \link{fit} result, \link[=ModeledInput]{modeled input}, or
-#'   \link[parsnip:model_spec]{model specification} from the \pkg{parsnip}
-#'   package.
+#' @param x model \link{fit} result, \pkg{MachineShop}
+#'   \link[=ModelSpecification]{model specification},  or
+#'   \pkg{parsnip} \link[parsnip:model_spec]{model specification}.
 #' @param ... arguments passed to other methods.
 #'
 #' @return \code{MLModel} class object.
@@ -256,7 +275,7 @@ as.MLModel.MLModel <- function(x, ...) {
 #' @rdname as.MLModel
 #'
 as.MLModel.MLModelFit <- function(x, ...) {
-  getElement(x, "mlmodel")
+  attr(update(x), ".MachineShop")$model
 }
 
 
@@ -265,9 +284,14 @@ as.MLModel.MLModelFunction <- function(x, ...) {
 }
 
 
+as.MLModel.ModeledInput <- function(x, ...) {
+  as.MLModel(ModelSpecification(x))
+}
+
+
 #' @rdname as.MLModel
 #'
-as.MLModel.ModeledInput <- function(x, ...) {
+as.MLModel.ModelSpecification <- function(x, ...) {
   x@model
 }
 
@@ -276,11 +300,6 @@ as.MLModel.ModeledInput <- function(x, ...) {
 #'
 as.MLModel.model_spec <- function(x, ...) {
   ParsnipModel(x)
-}
-
-
-as.MLModel.ModelSpecification <- function(x, ...) {
-  x@model
 }
 
 

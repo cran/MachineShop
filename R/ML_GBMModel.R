@@ -85,7 +85,7 @@ GBMModel <- function(
       }
       cond <- NULL
       suppressWarnings(withCallingHandlers(
-        model_fit <- eval_fit(
+        res <- eval_fit(
           data,
           formula = gbm::gbm(
             formula, data = data, weights = weights,
@@ -105,18 +105,19 @@ GBMModel <- function(
           warning(cond)
         }
       }
-      model_fit
+      res
     },
 
-    predict = function(object, newdata, model, ...) {
+    predict = function(object, newdata, .MachineShop, ...) {
+      input <- .MachineShop$input
       newdata <- as.data.frame(newdata)
       n <- object$n.trees
       if (object$distribution$name == "coxph") {
-        y <- response(model)
-        data <- as.data.frame(predictor_frame(model))
+        y <- response(input)
+        data <- as.data.frame(PredictorFrame(input))
         lp <- predict(object, newdata = data, n.trees = n, type = "link")
         new_lp <- predict(object, newdata = newdata, n.trees = n, type = "link")
-        predict(y, lp, new_lp, weights = case_weights(model), ...)
+        predict(y, lp, new_lp, weights = case_weights(input), ...)
       } else {
         predict(object, newdata = newdata, n.trees = n, type = "response")
       }
