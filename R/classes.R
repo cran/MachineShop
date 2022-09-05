@@ -235,6 +235,7 @@ setClass("MLModel",
     response_types = "character",
     weights = "logical",
     predictor_encoding = "character",
+    na.rm = "character",
     params = "Params",
     gridinfo = "tbl_df",
     fit = "function",
@@ -287,22 +288,6 @@ setClass("ModelSpecification",
     params = "TrainingParams",
     grid = "tbl_df"
   )
-)
-
-
-setClass("ModeledInput",
-  contains = "VIRTUAL",
-  slots = c(model = "MLModel")
-)
-
-
-setClass("ModeledFrame",
-  contains = c("ModeledInput", "ModelFrame")
-)
-
-
-setClass("ModeledRecipe",
-  contains = c("ModeledInput", "ModelRecipe")
 )
 
 

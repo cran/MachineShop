@@ -6,6 +6,22 @@ setAsS3Part <- function(from, to) {
 }
 
 
+#' Coerce to a Data Frame
+#'
+#' Functions to coerce objects to data frames.
+#'
+#' @name as.data.frame
+#'
+#' @param x \code{\link{ModelFrame}}, \link{resample} results, resampled
+#'   \link{performance} estimates, model performance \link[=diff]{differences},
+#'   or \link[=t.test]{t-test} comparisons of the differences.
+#' @param ... arguments passed to other methods.
+#'
+#' @return \code{data.frame} class object.
+#'
+NULL
+
+
 as.data.frame.BinomialVariate <- function(x, ...) {
   as.data.frame.model.matrix(x, ...)
 }
@@ -17,17 +33,14 @@ as.data.frame.formula <- function(x, data, ...) {
 }
 
 
+#' @rdname as.data.frame
+#'
 as.data.frame.ModelFrame <- function(x, ...) {
   structure(asS3(S3Part(x)), terms = NULL)
 }
 
 
 setAs("ModelFrame", "data.frame",
-  function(from) as.data.frame(from)
-)
-
-
-setAs("ModeledFrame", "data.frame",
   function(from) as.data.frame(from)
 )
 
@@ -66,6 +79,8 @@ as.data.frame.PerformanceDiffTest <- function(x, ...) {
 }
 
 
+#' @rdname as.data.frame
+#'
 as.data.frame.Resample <- function(x, ...) {
   asS3(as(x, "data.frame"))
 }
@@ -76,8 +91,10 @@ as.data.frame.SurvMatrix <- function(x, ...) {
 }
 
 
-as.data.frame.TabularArray <- function(x, ..., responseName = "Value") {
-  as.data.frame.table(as(x, "array"), responseName = responseName, ...)
+#' @rdname as.data.frame
+#'
+as.data.frame.TabularArray <- function(x, ...) {
+  as.data.frame.table(as(x, "array"), responseName = "Value", ...)
 }
 
 
@@ -229,6 +246,7 @@ as.MLMetric.default <- function(x, ...) {
 
 as.MLMetric.character <- function(x, ...) {
   x <- get0(x)
+  if (is.null(x)) throw(Error("Cannot coerce \"", x, "\" to an MLMetric."))
   as.MLMetric(x)
 }
 
@@ -243,7 +261,7 @@ as.MLMetric.MLMetric <- function(x, ...) {
 #' Function to coerce an object to \code{MLModel}.
 #'
 #' @param x model \link{fit} result, \pkg{MachineShop}
-#'   \link[=ModelSpecification]{model specification},  or
+#'   \link[=ModelSpecification]{model specification}, or
 #'   \pkg{parsnip} \link[parsnip:model_spec]{model specification}.
 #' @param ... arguments passed to other methods.
 #'
@@ -263,12 +281,13 @@ as.MLModel.default <- function(x, ...) {
 
 as.MLModel.character <- function(x, ...) {
   x <- get0(x)
+  if (is.null(x)) throw(Error("Cannot coerce \"", x, "\" to an MLModel."))
   as.MLModel(x)
 }
 
 
 as.MLModel.MLModel <- function(x, ...) {
-  x
+  update(x)
 }
 
 
@@ -281,11 +300,6 @@ as.MLModel.MLModelFit <- function(x, ...) {
 
 as.MLModel.MLModelFunction <- function(x, ...) {
   x()
-}
-
-
-as.MLModel.ModeledInput <- function(x, ...) {
-  as.MLModel(ModelSpecification(x))
 }
 
 
@@ -317,9 +331,6 @@ setAsS3Part("ParameterGrid", "parameters")
 
 
 setAsS3Part("ModelRecipe", "recipe")
-
-
-setAsS3Part("ModeledRecipe", "recipe")
 
 
 setAsS3Part("SelectedModelRecipe", "recipe")

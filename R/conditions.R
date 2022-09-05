@@ -281,6 +281,16 @@ check_metrics <- function(x, convert = FALSE) {
 }
 
 
+check_na.rm <- function(x) {
+  if (is.logical(x)) {
+    if (x) "all" else "none"
+  } else {
+    na.rm <- check_match(x, c("none", "all", "response"))
+    check_assignment(na.rm)
+  }
+}
+
+
 check_numeric <- function(
   x, bounds = c(-Inf, Inf), include = TRUE,
   type = c("numeric", "double", "integer"), ...
@@ -388,57 +398,4 @@ check_weights <- function(x, along) {
   } else {
     check_numeric(x, bounds = c(0, Inf), include = c(TRUE, FALSE), size = n)
   }
-}
-
-
-#################### Deprecations ####################
-
-
-#' Deprecated Functions
-#'
-#' Functions that have been deprecated and will be removed in a future version
-#' of the package.
-#'
-#' @name deprecated
-#' @rdname deprecated
-#'
-#' @param ... arguments passed to non-deprecated equivalent.
-#'
-NULL
-
-
-#' @rdname deprecated
-#'
-#' @details
-#' Use \code{\link[=ModelSpecification]{ModelSpecification()}} instead of
-#' \code{ModeledInput()}.
-#'
-ModeledInput <- function(...) {
-  throw(DeprecatedCondition(
-    "ModeledInput()", "ModelSpecification()",
-    expired = Sys.Date() >= "2022-06-01"
-  ))
-  ModelSpecification(...)
-}
-
-
-#' @rdname deprecated
-#'
-#' @details
-#' Use \code{\link[=ppr]{ppr()}} instead of \code{rpp()}.
-#'
-rpp <- function(...) {
-  throw(DeprecatedCondition(
-    "rpp()", "ppr()", expired = Sys.Date() >= "2022-06-01"
-  ))
-  ppr(...)
-}
-
-
-dep_modeledinput <- function(x, class, dots) {
-  throw(DeprecatedCondition(
-      class(x), "a ModelSpecification", expired = Sys.Date() >= "2022-07-01"
-  ), call = FALSE)
-  dots$model <- x@model
-  do.call(ModelSpecification, c(list(as(x, class)), dots))
 }

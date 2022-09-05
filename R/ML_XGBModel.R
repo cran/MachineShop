@@ -115,6 +115,7 @@ XGBModel <- function(
     response_types = c("factor", "numeric", "PoissonVariate", "Surv"),
     weights = TRUE,
     predictor_encoding = "model.matrix",
+    na.rm = "response",
     params = new_params(c(params[1], ..., params[-1])),
 
     fit = function(
@@ -168,11 +169,9 @@ XGBModel <- function(
         params$top_k <- NULL
       }
 
-      (if (verbose) identity else capture.output)(
-        res <- xgboost::xgboost(
-          dmat, weight = weights, params = params, nrounds = nrounds,
-          verbose = verbose, print_every_n = print_every_n
-        )
+      res <- xgboost::xgboost(
+        dmat, weight = weights, params = params, nrounds = nrounds,
+        verbose = verbose, print_every_n = print_every_n
       )
       attr(res, ".MachineShop") <- list(y_levels = y_levels)
       res

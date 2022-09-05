@@ -7,10 +7,11 @@
 #' @name rfe
 #' @rdname rfe-methods
 #'
-#' @param ... arguments passed from the \code{MLModel} and
-#'   \code{MLModelFunction} methods to others and from the others to
-#'   \code{ModelSpecification}.  The first argument of each \code{rfe}
-#'   method is positional and, as such, must be given first in calls to them.
+#' @param ... arguments passed from the generic function to its methods, from
+#'   the \code{MLModel} and \code{MLModelFunction} methods to first arguments of
+#'   others, and from others to the \code{ModelSpecification} method.  The
+#'   first argument of each \code{fit} method is positional and, as such, must
+#'   be given first in calls to them.
 #' @param object model \link[=inputs]{input} or
 #'   \link[=ModelSpecification]{specification}.
 #' @param formula,data \link[=formula]{formula} defining the model predictor and
@@ -21,9 +22,7 @@
 #'   predictor and response variables.
 #' @param model \link[=models]{model} function, function name, or object; or
 #'   another object that can be \link[=as.MLModel]{coerced} to a model.  A model
-#'   can be given first followed by any of the variable specifications, and the
-#'   argument can be omitted altogether in the case of
-#'   \link[=ModeledInput]{modeled inputs}.
+#'   can be given first followed by any of the variable specifications.
 #' @param select expression indicating predictor variables that can be
 #'   eliminated (see \code{\link[base]{subset}} for syntax) [default: all].
 #' @param control \link[=controls]{control} function, function name, or object

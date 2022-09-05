@@ -5,8 +5,9 @@
 #' @name fit
 #' @rdname fit-methods
 #'
-#' @param ... arguments passed from the generic function to its methods and from
-#'   the \code{MLModel} and \code{MLModelFunction} methods to others.  The
+#' @param ... arguments passed from the generic function to its methods, from
+#'   the \code{MLModel} and \code{MLModelFunction} methods to first arguments of
+#'   others, and from others to the \code{ModelSpecification} method.  The
 #'   first argument of each \code{fit} method is positional and, as such, must
 #'   be given first in calls to them.
 #' @param formula,data \link[=formula]{formula} defining the model predictor and
@@ -18,9 +19,10 @@
 #' @param object model \link[=ModelSpecification]{specification}.
 #' @param model \link[=models]{model} function, function name, or object; or
 #'   another object that can be \link[=as.MLModel]{coerced} to a model.  A model
-#'   can be given first followed by any of the variable specifications, and the
-#'   argument can be omitted altogether in the case of
-#'   \link[=ModeledInput]{modeled inputs}.
+#'   can be given first followed by any of the variable specifications.
+#' @param verbose logical indicating whether to display printed output generated
+#'   by some model-specific fit functions to aid in monitoring progress and
+#'   diagnosing errors.
 #'
 #' @return \code{MLModelFit} class object.
 #'
@@ -82,11 +84,14 @@ fit.recipe <- function(input, model = NULL, ...) {
 
 #' @rdname fit-methods
 #'
-fit.ModelSpecification <- function(object, ...) {
+fit.ModelSpecification <- function(object, verbose = FALSE, ...) {
   if (is_optim_method(object)) {
     .fit_optim(object)
   } else {
-    .fit(as.MLInput(object), model = as.MLModel(object))
+    (if (verbose) identity else capture.output)(
+      res <- .fit(as.MLInput(object), model = as.MLModel(object))
+    )
+    res
   }
 }
 
@@ -117,7 +122,10 @@ fit.MLModelFunction <- function(model, ...) {
 
 .fit.MLModel <- function(object, input, ...) {
   input_prep <- prep(input)
-  mf <- ModelFrame(input_prep, na.rm = FALSE)
+  mf <- ModelFrame(input_prep, na.rm = object@na.rm)
+  if (!nrow(mf)) {
+    throw(Error("No case observations to fit."), call = call("fit"))
+  }
   y <- response(mf)
 
   info <- data.frame(type = object@response_types, weights = object@weights)

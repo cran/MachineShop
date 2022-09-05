@@ -47,6 +47,7 @@ KNNModel <- function(
     packages = "kknn",
     response_types = c("factor", "numeric", "ordered"),
     predictor_encoding = "model.matrix",
+    na.rm = TRUE,
     params = new_params(environment()),
 
     gridinfo = new_gridinfo(
@@ -71,6 +72,8 @@ KNNModel <- function(
     },
 
     predict = function(object, newdata, ...) {
+      opts <- options("contrasts")
+
       attach_objects(list(
         contr.dummy = kknn::contr.dummy,
         contr.ordinal = kknn::contr.ordinal,
@@ -78,7 +81,13 @@ KNNModel <- function(
       ), name = "kknn_exports")
 
       object$test <- as.data.frame(newdata)
-      pred <- do.call(kknn::kknn, object)
+      pred <- tryCatch(
+        do.call(kknn::kknn, object),
+        error = function(cond) {
+          options(opts)
+          stop(cond)
+        }
+      )
       if (pred$response == "continuous") pred$fitted.values else pred$prob
     }
 

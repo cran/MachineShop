@@ -23,6 +23,9 @@
 #' @param method character string specifying the empirical method of estimating
 #'   baseline survival curves for Cox proportional hazards-based models.
 #'   Choices are \code{"breslow"} or \code{"efron"} (default).
+#' @param verbose logical indicating whether to display printed output generated
+#'   by some model-specific predict functions to aid in monitoring progress and
+#'   diagnosing errors.
 #' @param ... arguments passed from the S4 to the S3 method.
 #'
 #' @seealso \code{\link{confusion}}, \code{\link{performance}},
@@ -49,26 +52,32 @@ predict.MLModelFit <- function(
   object, newdata = NULL, times = numeric(),
   type = c("response", "default", "numeric", "prob"),
   cutoff = MachineShop::settings("cutoff"), distr = character(),
-  method = character(), ...
+  method = character(), verbose = FALSE, ...
 ) {
   object <- update(object)
   model <- as.MLModel(object)
   throw(check_packages(model@packages))
+
+  newdata <- PredictorFrame(as.MLInput(object), newdata)
+  newnames <- rownames(newdata)
+  newdata <- ModelFrame(newdata, na.rm = model@na.rm)
+  if (!nrow(newdata)) throw(Error("No case observations to predict."))
+  subset <- newnames %in% rownames(newdata)
 
   times <- check_numeric(
     times, bounds = c(0, Inf), include = FALSE, size = NA, nonempty = FALSE
   )
   throw(check_assignment(times))
 
-  obs <- response(object)
   .MachineShop <- attr(object, ".MachineShop")
-  pred <- convert_predicted(obs, .predict(
-    model, model_fit = unMLModelFit(object),
-    newdata = PredictorFrame(.MachineShop$input, newdata),
-    times = times, distr = distr, method = method,
-    .MachineShop = .MachineShop, ...
-  ))
-
+  (if (verbose) identity else capture.output)(
+    pred <- .predict(
+      model, model_fit = unMLModelFit(object), newdata = newdata, times = times,
+      distr = distr, method = method, .MachineShop = .MachineShop, ...
+    )
+  )
+  obs <- response(object)
+  pred <- convert_predicted(obs, pred)
   pred <- switch(match.arg(type),
     "default" = pred,
     "numeric" = convert_numeric(pred),
@@ -76,6 +85,7 @@ predict.MLModelFit <- function(
     "response" = convert_response(obs, pred, cutoff = cutoff)
   )
   throw(check_assignment(pred))
+  na.add(pred, !subset)
 }
 
 

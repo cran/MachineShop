@@ -370,17 +370,6 @@ print.ModelTerms <- function(x, n = MachineShop::settings("print_max"), ...) {
 }
 
 
-print.ModeledInput <- function(x, n = MachineShop::settings("print_max"), ...) {
-  NextMethod()
-  level <- nesting_level(...)
-  if (level < 2) {
-    newline()
-    print(x@model, n = n, level = level + 1)
-  }
-  invisible(x)
-}
-
-
 print.ParameterGrid <- function(x, ...) {
   NextMethod()
   newline()
@@ -982,6 +971,7 @@ print_modelinfo <- function(x, trained = FALSE, level = 0, id = FALSE, ...) {
       packages = "Package{?s}: ",
       response_types = "Response type{?s}: ",
       weights = "Case weights support: ",
+      na.rm = "Missing case removal: ",
       grid = "Tuning grid: ",
       varimp = "Variable importance: "
     ))
