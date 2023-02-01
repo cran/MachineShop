@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 3.6.0
-Date: 2022-09-01
+Version: 3.6.1
+Date: 2023-02-01
 Authors@R: person(c("Brian", "J"), "Smith",
                   email = "brian-j-smith@uiowa.edu",
                   role = c("aut", "cre"))
@@ -24,9 +24,9 @@ Description: Meta-package for statistical and machine learning with a unified
     curves.
 Depends: R (>= 4.0.0)
 Imports: abind, cli (>= 3.1.0), dials (>= 0.0.4), foreach, ggplot2 (>=
-        3.3.0), kernlab, magrittr, Matrix, methods, nnet, party,
-        polspline, progress, recipes (>= 0.2.0), rlang, rsample (>=
-        0.1.0), Rsolnp, survival, tibble, utils
+        3.4.0), kernlab, magrittr, Matrix (>= 1.5-0), methods, nnet,
+        party, polspline, progress, recipes (>= 1.0.0), rlang, rsample
+        (>= 0.1.0), Rsolnp, survival, tibble, utils
 Suggests: adabag, BART, bartMachine, C50, censored, cluster,
         doParallel, e1071, earth, elasticnet, generics, gbm, glmnet,
         gridExtra, Hmisc, kableExtra, kknn, knitr, lars, MASS, mboost,
@@ -37,7 +37,7 @@ LazyData: true
 License: GPL-3
 URL: https://brian-j-smith.github.io/MachineShop/
 BugReports: https://github.com/brian-j-smith/MachineShop/issues
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 VignetteBuilder: knitr
 Encoding: UTF-8
 Collate: 'classes.R' 'conditions.R' 'MachineShop-package.R'
@@ -66,6 +66,6 @@ Collate: 'classes.R' 'conditions.R' 'MachineShop-package.R'
         'step_kmedoids.R' 'step_lincomp.R' 'step_sbf.R' 'step_spca.R'
         'summary.R' 'survival.R' 'utils.R' 'varimp.R'
 NeedsCompilation: yes
-Packaged: 2022-09-01 11:54:36 UTC; bjsmith
+Packaged: 2023-02-01 18:09:19 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2022-09-05 15:20:11 UTC
+Date/Publication: 2023-02-01 18:40:12 UTC
