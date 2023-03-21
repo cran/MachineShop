@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 3.6.1
-Date: 2023-02-01
+Version: 3.6.2
+Date: 2023-03-21
 Authors@R: person(c("Brian", "J"), "Smith",
                   email = "brian-j-smith@uiowa.edu",
                   role = c("aut", "cre"))
@@ -66,6 +66,6 @@ Collate: 'classes.R' 'conditions.R' 'MachineShop-package.R'
         'step_kmedoids.R' 'step_lincomp.R' 'step_sbf.R' 'step_spca.R'
         'summary.R' 'survival.R' 'utils.R' 'varimp.R'
 NeedsCompilation: yes
-Packaged: 2023-02-01 18:09:19 UTC; bjsmith
+Packaged: 2023-03-21 12:39:43 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2023-02-01 18:40:12 UTC
+Date/Publication: 2023-03-21 13:00:02 UTC

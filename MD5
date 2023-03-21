@@ -1,10 +1,10 @@
-d4d80faa9e40ccc1c7d314a57122ff33 *DESCRIPTION
+30c255878d43a3b70fa53f3cab4cb658 *DESCRIPTION
 0f9347f847843c07ed8c46b9e251d936 *NAMESPACE
-91f0780226e36757c7f5c52f7564f351 *NEWS.md
+8da550309c3a5b55eeb92d37a29785e7 *NEWS.md
 8db6b53a07dddd795fcae4978bd3b942 *R/MLControl.R
 1654887bda121ff7ca4c029b067181e1 *R/MLInput.R
 bdfb2065226a444ab70edfffbbb88c24 *R/MLMetric.R
-3856d14eb84cdb499426222604861fd7 *R/MLModel.R
+dfa61fcd9c1e8068df897c7663e0b5e0 *R/MLModel.R
 f69a371a6f264b17071c31291216986b *R/MLOptimization.R
 865a06de95ea65f2c76802c1c03306e1 *R/ML_AdaBagModel.R
 96fd8fb8b0c0493ac8ebe23ad79b55bd *R/ML_AdaBoostModel.R
@@ -76,7 +76,7 @@ d73bde5b943c1aa00d5a823e655fdf28 *R/modelinfo.R
 ff9822cd585451ad9b87392b24021b1a *R/plot.R
 26ba3828afcfc1e145e72df7be878f1d *R/predict.R
 00b918451dcad109254044e79b6c8fa1 *R/print.R
-4d73fcc98769f42a47ec3f99cab71dde *R/recipe_roles.R
+5a693e57f6c3b5e731a7c14706645836 *R/recipe_roles.R
 69f593311ca3997678478348ee87bc85 *R/reexports.R
 f08f4b415f08ab7d16933c3edbaaa73b *R/resample.R
 0a6b354e733de7b4db89c61cf238e28d *R/response.R
@@ -89,7 +89,7 @@ bf3934153e490ffca7ae9974097bc72c *R/step_kmeans.R
 b6af2b1869371273a082bb466063e46e *R/step_spca.R
 4e2cd6611e4cca715d1e6d697f82d3b0 *R/summary.R
 498beb4477c0568898003d7aa858f7e7 *R/survival.R
-d175aba2dfdb218dd55e5636bb1d753e *R/utils.R
+e35a281a888b8fc47cd9a8730421a567 *R/utils.R
 c789bac0e24480f0427af59c6dd23f82 *R/varimp.R
 cf7ec106ccc7c76a073d56b33d901188 *README.md
 fa7a0b3b50cb685830115df9e3ac663c *build/vignette.rds
@@ -97,10 +97,10 @@ c26f6cfd0062113b7e0da8de106b57c8 *data/ICHomes.RData
 35e49dfbe6b7474fb40eee2174f07f32 *inst/CITATION
 7979d954acf56057c6259ea348f58132 *inst/doc/MLModels.R
 ad3124ecec0cb5484e67f57cd01b348e *inst/doc/MLModels.Rmd
-d9edd3aaf0ab50c89e2f7820cb9b49b2 *inst/doc/MLModels.html
+9b14da8f1afa4f3ead41c4900f8eed83 *inst/doc/MLModels.html
 18ceed8ff072694a4f46574bfbc3d51e *inst/doc/UserGuide.R
 95af21f9fc79cb15a7cc80f0f8fe1314 *inst/doc/UserGuide.Rmd
-70a55d9d3d9614cc74c801a148163210 *inst/doc/UserGuide.html
+4264bc81636069cf5c90328367cc4602 *inst/doc/UserGuide.html
 9da886c4e6538bfc8b96a6669dd97817 *man/AdaBagModel.Rd
 bd9ba5e348d99668c866ed45d543d849 *man/AdaBoostModel.Rd
 4f046d841f34b1bfcf9b306fe906f82c *man/BARTMachineModel.Rd
@@ -234,7 +234,7 @@ e8625a9f24458f6065c32f065379dae5 *man/unMLModelFit.Rd
 2f51c66a10ea81da39e429e2d08e44c2 *src/hazfit_efron.c
 9ae9de7adfbc014f209014941701bf80 *src/init.c
 51ab8daa181916e7049370dbc89034df *tests/testthat.R
-2b38ea58670481801c42f0029ca8f6d6 *tests/testthat/Rplots.pdf
+517341e318185596a70d2b87608c5030 *tests/testthat/Rplots.pdf
 2f03c341474d36e6c62f579eb0e0f087 *tests/testthat/helper-models.R
 22f3cebb4ca130b14f6f501a1bddee87 *tests/testthat/helper-parallel.R
 e8eabb9d7ad4bb6d6802454a22bf283d *tests/testthat/test-ML_AdaBagModel.R
@@ -286,7 +286,7 @@ d1fa96fe3702c634c5b026ee7827335f *tests/testthat/test-offsets.R
 763f361956770f8fa89775ea7d526d34 *tests/testthat/test-rfe.R
 9e77741c7dd1f9c43ef07833d8055fb4 *tests/testthat/test-settings.R
 b6f9b0e89d9d17ec502e1f3680a5362f *tests/testthat/test-survival.R
-8013a415348b104f49bec2f2399cad74 *tests/testthat/test-survival.txt
+8ac2b526ae3ed6751fc8a29cfdf73a1b *tests/testthat/test-survival.txt
 32c355e751b7d15f16ade9263fb4a7bd *tests/testthat/test-varimp.R
 992abe2b3a70278db0ed23ee0b30a453 *tests/testthat/test-weights.R
 ad3124ecec0cb5484e67f57cd01b348e *vignettes/MLModels.Rmd
