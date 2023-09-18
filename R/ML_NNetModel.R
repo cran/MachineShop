@@ -30,8 +30,8 @@
 #'   }
 #' }
 #'
-#' Default values and further model details can be found in the source link
-#' below.
+#' Default argument values and further model details can be found in the source
+#' See Also link below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -85,8 +85,8 @@ NNetModel <- function(
         res
       } else {
         nnet::nnet(
-          formula, data = as.data.frame(formula, data), weights = weights,
-          na.action = na.pass, linout = linout, ...
+          formula, data = as.data.frame(formula, data = data),
+          weights = weights, na.action = na.pass, linout = linout, ...
         )
       }
     },

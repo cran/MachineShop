@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 3.6.2
-Date: 2023-03-21
+Version: 3.7.0
+Date: 2023-09-18
 Authors@R: person(c("Brian", "J"), "Smith",
                   email = "brian-j-smith@uiowa.edu",
                   role = c("aut", "cre"))
@@ -22,17 +22,18 @@ Description: Meta-package for statistical and machine learning with a unified
     descriptive statistics; calibration curves; variable importance; partial
     dependence plots; confusion matrices; and ROC, lift, and other performance
     curves.
-Depends: R (>= 4.0.0)
+Depends: R (>= 4.1.0)
 Imports: abind, cli (>= 3.1.0), dials (>= 0.0.4), foreach, ggplot2 (>=
         3.4.0), kernlab, magrittr, Matrix (>= 1.5-0), methods, nnet,
         party, polspline, progress, recipes (>= 1.0.0), rlang, rsample
-        (>= 0.1.0), Rsolnp, survival, tibble, utils
+        (>= 1.1.0), Rsolnp, survival, tibble, utils
 Suggests: adabag, BART, bartMachine, C50, censored, cluster,
         doParallel, e1071, earth, elasticnet, generics, gbm, glmnet,
         gridExtra, Hmisc, kableExtra, kknn, knitr, lars, MASS, mboost,
-        mda, ParBayesianOptimization, parsnip, partykit, pls, pso,
-        randomForest, randomForestSRC, ranger, rBayesianOptimization,
-        rmarkdown, rms, rpart, testthat, tree, xgboost
+        mda, ParBayesianOptimization, parsnip (>= 1.1.0), partykit,
+        pls, pso, randomForest, randomForestSRC, ranger,
+        rBayesianOptimization, rmarkdown, rms, rpart, testthat, tree,
+        xgboost
 LazyData: true
 License: GPL-3
 URL: https://brian-j-smith.github.io/MachineShop/
@@ -66,6 +67,6 @@ Collate: 'classes.R' 'conditions.R' 'MachineShop-package.R'
         'step_kmedoids.R' 'step_lincomp.R' 'step_sbf.R' 'step_spca.R'
         'summary.R' 'survival.R' 'utils.R' 'varimp.R'
 NeedsCompilation: yes
-Packaged: 2023-03-21 12:39:43 UTC; bjsmith
+Packaged: 2023-09-18 12:59:08 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2023-03-21 13:00:02 UTC
+Date/Publication: 2023-09-18 14:00:02 UTC

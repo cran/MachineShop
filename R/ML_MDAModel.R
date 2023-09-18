@@ -36,8 +36,8 @@
 #'     if different from the training set.}
 #' }
 #'
-#' Default values and further model details can be found in the source links
-#' below.
+#' Default argument values and further model details can be found in the source
+#' See Also links below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -75,7 +75,7 @@ MDAModel <- function(
     ),
 
     fit = function(formula, data, weights, ...) {
-      mda::mda(formula, data = as.data.frame(formula, data), ...)
+      mda::mda(formula, data = as.data.frame(formula, data = data), ...)
     },
 
     predict = function(object, newdata, prior = object$prior, ...) {

@@ -394,10 +394,10 @@ kable(conf,
   add_header_above(c("Predicted Response" = 1, "Observed Response" = 2))
 
 ## ----using_metrics_conf_surv, echo=FALSE--------------------------------------
-conf <- matrix(c("$TN = \\Pr(\\hat{S}(t) \\ge \\text{cutoff} \\cap T \\gt t)$",
-                 "$FP = \\Pr(\\hat{S}(t) \\lt \\text{cutoff} \\cap T \\gt t)$",
+conf <- matrix(c("$TN = \\Pr(\\hat{S}(t) \\ge \\text{cutoff} \\cap T >    t)$",
+                 "$FP = \\Pr(\\hat{S}(t) <    \\text{cutoff} \\cap T >    t)$",
                  "$FN = \\Pr(\\hat{S}(t) \\ge \\text{cutoff} \\cap T \\le t)$",
-                 "$TP = \\Pr(\\hat{S}(t) \\lt \\text{cutoff} \\cap T \\le t)$"),
+                 "$TP = \\Pr(\\hat{S}(t) <    \\text{cutoff} \\cap T \\le t)$"),
                2, 2,
                dimnames = list("Predicted Response" = c("Non-Event", "Event"),
                                "Observed Response" = c("Non-Event", "Event")))

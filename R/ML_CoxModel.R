@@ -14,8 +14,8 @@
 #'   \item{Response types:}{\code{Surv}}
 #' }
 #'
-#' Default values and further model details can be found in the source links
-#' below.
+#' Default argument values and further model details can be found in the source
+#' See Also links below.
 #'
 #' In calls to \code{\link{varimp}} for \code{CoxModel} and
 #' \code{CoxStepAICModel}, numeric argument \code{base} may be specified for the
@@ -52,7 +52,7 @@ CoxModel <- function(ties = c("efron", "breslow", "exact"), ...) {
 
     fit = function(formula, data, weights, ...) {
       survival::coxph(
-        formula, data = as.data.frame(formula, data), weights = weights,
+        formula, data = as.data.frame(formula, data = data), weights = weights,
         na.action = na.pass, ...
       )
     },
@@ -118,7 +118,7 @@ CoxStepAICModel <- function(
     fit = function(
       formula, data, weights, direction, scope = list(), k, trace, steps, ...
     ) {
-      data <- as.data.frame(formula, data)
+      data <- as.data.frame(formula, data = data)
       stepargs <- stepAIC_args(formula, direction, scope)
       MASS::stepAIC(
         survival::coxph(

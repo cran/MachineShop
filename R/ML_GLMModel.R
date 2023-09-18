@@ -22,8 +22,8 @@
 #'     \code{PoissonVariate}}
 #' }
 #'
-#' Default values and further model details can be found in the source links
-#' below.
+#' Default argument values and further model details can be found in the source
+#' See Also links below.
 #'
 #' In calls to \code{\link{varimp}} for \code{GLMModel} and
 #' \code{GLMStepAICModel}, numeric argument \code{base} may be specified for the
@@ -71,7 +71,7 @@ GLMModel <- function(family = NULL, quasi = FALSE, ...) {
           "PoissonVariate" = quasi_prefix("poisson")
         )
       }
-      data <- as.data.frame(formula, data)
+      data <- as.data.frame(formula, data = data)
       control <- stats::glm.control(...)
       if (identical(family, "mgaussian")) {
         stats::lm(formula, data = data, weights = weights)
@@ -168,7 +168,7 @@ GLMStepAICModel <- function(
           "PoissonVariate" = quasi_prefix("poisson")
         )
       }
-      data <- as.data.frame(formula, data)
+      data <- as.data.frame(formula, data = data)
       stepargs <- stepAIC_args(formula, direction, scope)
       control <- stats::glm.control(...)
       if (family == "negbin") {

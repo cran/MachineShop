@@ -34,8 +34,8 @@
 #' }
 #' * excluded from grids by default
 #'
-#' Default values and further model details can be found in the source link
-#' below.
+#' Default argument values and further model details can be found in the source
+#' See Also link below.
 #'
 #' @return \code{MLModel} class object.
 #'
@@ -94,8 +94,8 @@ RangerModel <- function(
 
     fit = function(formula, data, weights, ...) {
       ranger::ranger(
-        formula, data = as.data.frame(formula, data), case.weights = weights,
-        probability = is(response(data), "factor"), ...
+        formula, data = as.data.frame(formula, data = data),
+        case.weights = weights, probability = is(response(data), "factor"), ...
       )
     },
 
