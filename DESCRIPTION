@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 3.7.0
-Date: 2023-09-18
+Version: 3.8.0
+Date: 2024-08-19
 Authors@R: person(c("Brian", "J"), "Smith",
                   email = "brian-j-smith@uiowa.edu",
                   role = c("aut", "cre"))
@@ -38,7 +38,7 @@ LazyData: true
 License: GPL-3
 URL: https://brian-j-smith.github.io/MachineShop/
 BugReports: https://github.com/brian-j-smith/MachineShop/issues
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 VignetteBuilder: knitr
 Encoding: UTF-8
 Collate: 'classes.R' 'conditions.R' 'MachineShop-package.R'
@@ -67,6 +67,6 @@ Collate: 'classes.R' 'conditions.R' 'MachineShop-package.R'
         'step_kmedoids.R' 'step_lincomp.R' 'step_sbf.R' 'step_spca.R'
         'summary.R' 'survival.R' 'utils.R' 'varimp.R'
 NeedsCompilation: yes
-Packaged: 2023-09-18 12:59:08 UTC; bjsmith
+Packaged: 2024-08-19 16:31:32 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2023-09-18 14:00:02 UTC
+Date/Publication: 2024-08-19 17:40:16 UTC

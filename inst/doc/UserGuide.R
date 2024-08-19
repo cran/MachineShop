@@ -394,13 +394,19 @@ kable(conf,
   add_header_above(c("Predicted Response" = 1, "Observed Response" = 2))
 
 ## ----using_metrics_conf_surv, echo=FALSE--------------------------------------
-conf <- matrix(c("$TN = \\Pr(\\hat{S}(t) \\ge \\text{cutoff} \\cap T >    t)$",
-                 "$FP = \\Pr(\\hat{S}(t) <    \\text{cutoff} \\cap T >    t)$",
-                 "$FN = \\Pr(\\hat{S}(t) \\ge \\text{cutoff} \\cap T \\le t)$",
-                 "$TP = \\Pr(\\hat{S}(t) <    \\text{cutoff} \\cap T \\le t)$"),
-               2, 2,
-               dimnames = list("Predicted Response" = c("Non-Event", "Event"),
-                               "Observed Response" = c("Non-Event", "Event")))
+conf <- matrix(
+  c(
+    "$TN = \\Pr(\\hat{S}(t) \\ge \\text{cutoff} \\cap T \\gt t)$",
+    "$FP = \\Pr(\\hat{S}(t) \\lt \\text{cutoff} \\cap T \\gt t)$",
+    "$FN = \\Pr(\\hat{S}(t) \\ge \\text{cutoff} \\cap T \\le t)$",
+    "$TP = \\Pr(\\hat{S}(t) \\lt \\text{cutoff} \\cap T \\le t)$"
+  ),
+  2, 2,
+  dimnames = list(
+    "Predicted Response" = c("Non-Event", "Event"),
+    "Observed Response" = c("Non-Event", "Event")
+  )
+)
 kable(conf,
       caption = "Table 5. Confusion matrix of observed and predicted survival response classifications.",
       align = c("c", "c"),
@@ -620,7 +626,7 @@ plot(lf, find = 0.75)
 #  ## Input-tuned model fit and final trained model
 #  model_fit <- fit(tun_rec, model = GBMModel)
 #  as.MLModel(model_fit)
-#  #> --- MLModel object -------------------------------------------------------------
+#  #> --- MLModel object ----------------------------------------------------------
 #  #>
 #  #> Model name: GBMModel
 #  #> Label: Trained Generalized Boosted Regression
@@ -639,7 +645,7 @@ plot(lf, find = 0.75)
 #  #>  $ shrinkage        : num 0.1
 #  #>  $ bag.fraction     : num 0.5
 #  #>
-#  #> === $TrainingStep1 =============================================================
+#  #> === $TrainingStep1 ==========================================================
 #  #> === TrainingStep object ===
 #  #>
 #  #> Optimization method: Grid Search
@@ -672,7 +678,7 @@ plot(lf, find = 0.75)
 #  ## Input-selected model fit and model
 #  model_fit <- fit(sel_rec, model = GBMModel)
 #  as.MLModel(model_fit)
-#  #> --- MLModel object -------------------------------------------------------------
+#  #> --- MLModel object ----------------------------------------------------------
 #  #>
 #  #> Model name: GBMModel
 #  #> Label: Trained Generalized Boosted Regression
@@ -691,7 +697,7 @@ plot(lf, find = 0.75)
 #  #>  $ shrinkage        : num 0.1
 #  #>  $ bag.fraction     : num 0.5
 #  #>
-#  #> === $TrainingStep1 =============================================================
+#  #> === $TrainingStep1 ==========================================================
 #  #> === TrainingStep object ===
 #  #>
 #  #> Optimization method: Grid Search
@@ -706,7 +712,7 @@ plot(lf, find = 0.75)
 #  #> Selected row: 3
 #  #> Metric: C-Index = 0.7960841
 #  #>
-#  #> === $TrainingStep2 =============================================================
+#  #> === $TrainingStep2 ==========================================================
 #  #> === TrainingStep object ===
 #  #>
 #  #> Optimization method: Grid Search
@@ -754,7 +760,7 @@ plot(lf, find = 0.75)
 #                     metrics = c("CIndex" = cindex, "RMSE" = rmse)
 #                   ))
 #  (trained_model <- as.MLModel(model_fit))
-#  #> --- MLModel object -------------------------------------------------------------
+#  #> --- MLModel object ----------------------------------------------------------
 #  #>
 #  #> Model name: GBMModel
 #  #> Label: Trained Generalized Boosted Regression
@@ -773,7 +779,7 @@ plot(lf, find = 0.75)
 #  #>  $ shrinkage        : num 0.1
 #  #>  $ bag.fraction     : num 0.5
 #  #>
-#  #> === $TrainingStep1 =============================================================
+#  #> === $TrainingStep1 ==========================================================
 #  #> === TrainingStep object ===
 #  #>
 #  #> Optimization method: Grid Search
@@ -814,7 +820,7 @@ plot(lf, find = 0.75)
 
 ## ----using_strategies_tune_summary, eval=FALSE--------------------------------
 #  summary(trained_model)
-#  #> --- $TrainingStep1 -------------------------------------------------------------
+#  #> --- $TrainingStep1 ----------------------------------------------------------
 #  #> # A tibble: 9 × 4
 #  #>   name       selected params$n.trees $interaction.depth metrics$CIndex  $RMSE
 #  #>   <chr>      <lgl>             <int>              <int>          <dbl>  <dbl>
@@ -940,7 +946,7 @@ knitr::include_graphics("img/FigModelDAG.png")
 knitr::include_graphics("img/FigNestedCV.png")
 
 ## ----using_strategies_methods1, eval=FALSE------------------------------------
-#  #> === $TrainingStep1 =============================================================
+#  #> === $TrainingStep1 ==========================================================
 #  #> === TrainingStep object ===
 #  #>
 #  #> Optimization method: Grid Search
@@ -956,7 +962,7 @@ knitr::include_graphics("img/FigNestedCV.png")
 #  #> Metric: C-Index = 0.7405534
 
 ## ----using_strategies_methods2, eval=FALSE------------------------------------
-#  #> === $TrainingStep2 =============================================================
+#  #> === $TrainingStep2 ==========================================================
 #  #> === TrainingStep object ===
 #  #>
 #  #> Optimization method: Grid Search
@@ -972,7 +978,7 @@ knitr::include_graphics("img/FigNestedCV.png")
 #  #> Metric: C-Index = 0.7399641
 
 ## ----using_strategies_methods0, eval=FALSE------------------------------------
-#  #> --- MLModel object -------------------------------------------------------------
+#  #> --- MLModel object ----------------------------------------------------------
 #  #>
 #  #> Model name: GBMModel
 #  #> Label: Trained Generalized Boosted Regression
