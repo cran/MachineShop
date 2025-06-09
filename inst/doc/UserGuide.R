@@ -7,24 +7,24 @@ library(MachineShop)
 info <- modelinfo()
 
 ## ----overview_install, eval = FALSE-------------------------------------------
-#  # Current release from CRAN
-#  install.packages("MachineShop")
-#  
-#  # Development version from GitHub
-#  # install.packages("devtools")
-#  devtools::install_github("brian-j-smith/MachineShop")
-#  
-#  # Development version with vignettes
-#  devtools::install_github("brian-j-smith/MachineShop", build_vignettes = TRUE)
+# # Current release from CRAN
+# install.packages("MachineShop")
+# 
+# # Development version from GitHub
+# # install.packages("devtools")
+# devtools::install_github("brian-j-smith/MachineShop")
+# 
+# # Development version with vignettes
+# devtools::install_github("brian-j-smith/MachineShop", build_vignettes = TRUE)
 
 ## ----overview_docs, eval = FALSE, message = FALSE-----------------------------
-#  library(MachineShop)
-#  
-#  # Package help summary
-#  ?MachineShop
-#  
-#  # Vignette
-#  RShowDoc("UserGuide", package = "MachineShop")
+# library(MachineShop)
+# 
+# # Package help summary
+# ?MachineShop
+# 
+# # Vignette
+# RShowDoc("UserGuide", package = "MachineShop")
 
 ## ----using_example_melanoma---------------------------------------------------
 ## Analysis libraries and dataset
@@ -321,18 +321,18 @@ pred_events <- predict(surv_fit, newdata = surv_test, times = surv_times)
 performance(obs, pred_events)
 
 ## ----using_performance_function_metrics, eval=FALSE---------------------------
-#  ## Single metric function
-#  performance(obs, pred_means, metrics = cindex)
-#  
-#  ## Single metric function name
-#  performance(obs, pred_means, metrics = "cindex")
-#  
-#  ## List of metric functions
-#  performance(obs, pred_means, metrics = c(cindex, rmse, rmsle))
-#  
-#  ## Named list of metric functions
-#  performance(obs, pred_means,
-#              metrics = c("CIndex" = cindex, "RMSE" = rmse, "RMSLE" = rmsle))
+# ## Single metric function
+# performance(obs, pred_means, metrics = cindex)
+# 
+# ## Single metric function name
+# performance(obs, pred_means, metrics = "cindex")
+# 
+# ## List of metric functions
+# performance(obs, pred_means, metrics = c(cindex, rmse, rmsle))
+# 
+# ## Named list of metric functions
+# performance(obs, pred_means,
+#             metrics = c("CIndex" = cindex, "RMSE" = rmse, "RMSLE" = rmsle))
 
 ## ----using_performance_function_cutoff----------------------------------------
 ## User-specified survival probability metrics
@@ -607,337 +607,337 @@ lf <- lift(res_probs)
 plot(lf, find = 0.75)
 
 ## ----using_stategies_TunedInput1, eval=FALSE----------------------------------
-#  ## Preprocessing recipe with PCA steps
-#  pca_rec <- recipe(y ~ ., data = surv_train) %>%
-#    role_case(stratum = y) %>%
-#    step_center(all_predictors()) %>%
-#    step_scale(all_predictors()) %>%
-#    step_pca(all_predictors(), id = "PCA")
-#  
-#  ## Tuning grid of number of PCA components
-#  pca_grid <- expand_steps(
-#    PCA = list(num_comp = 1:3)
-#  )
-#  
-#  ## Tuning specification
-#  tun_rec <- TunedInput(pca_rec, grid = pca_grid)
+# ## Preprocessing recipe with PCA steps
+# pca_rec <- recipe(y ~ ., data = surv_train) %>%
+#   role_case(stratum = y) %>%
+#   step_center(all_predictors()) %>%
+#   step_scale(all_predictors()) %>%
+#   step_pca(all_predictors(), id = "PCA")
+# 
+# ## Tuning grid of number of PCA components
+# pca_grid <- expand_steps(
+#   PCA = list(num_comp = 1:3)
+# )
+# 
+# ## Tuning specification
+# tun_rec <- TunedInput(pca_rec, grid = pca_grid)
 
 ## ----using_stategies_TunedInput2, eval=FALSE----------------------------------
-#  ## Input-tuned model fit and final trained model
-#  model_fit <- fit(tun_rec, model = GBMModel)
-#  as.MLModel(model_fit)
-#  #> --- MLModel object ----------------------------------------------------------
-#  #>
-#  #> Model name: GBMModel
-#  #> Label: Trained Generalized Boosted Regression
-#  #> Package: gbm
-#  #> Response types: factor, numeric, PoissonVariate, Surv
-#  #> Case weights support: TRUE
-#  #> Missing case removal: response
-#  #> Tuning grid: TRUE
-#  #> Variable importance: TRUE
-#  #>
-#  #> Parameters:
-#  #> List of 5
-#  #>  $ n.trees          : num 100
-#  #>  $ interaction.depth: num 1
-#  #>  $ n.minobsinnode   : num 10
-#  #>  $ shrinkage        : num 0.1
-#  #>  $ bag.fraction     : num 0.5
-#  #>
-#  #> === $TrainingStep1 ==========================================================
-#  #> === TrainingStep object ===
-#  #>
-#  #> Optimization method: Grid Search
-#  #> TunedModelRecipe log:
-#  #> # A tibble: 3 × 4
-#  #>   name          selected params$PCA$num_comp metrics$`C-Index`
-#  #>   <chr>         <lgl>                  <int>             <dbl>
-#  #> 1 ModelRecipe.1 TRUE                       1             0.740
-#  #> 2 ModelRecipe.2 FALSE                      2             0.720
-#  #> 3 ModelRecipe.3 FALSE                      3             0.725
-#  #>
-#  #> Selected row: 1
-#  #> Metric: C-Index = 0.7399641
+# ## Input-tuned model fit and final trained model
+# model_fit <- fit(tun_rec, model = GBMModel)
+# as.MLModel(model_fit)
+# #> --- MLModel object ----------------------------------------------------------
+# #>
+# #> Model name: GBMModel
+# #> Label: Trained Generalized Boosted Regression
+# #> Package: gbm
+# #> Response types: factor, numeric, PoissonVariate, Surv
+# #> Case weights support: TRUE
+# #> Missing case removal: response
+# #> Tuning grid: TRUE
+# #> Variable importance: TRUE
+# #>
+# #> Parameters:
+# #> List of 5
+# #>  $ n.trees          : num 100
+# #>  $ interaction.depth: num 1
+# #>  $ n.minobsinnode   : num 10
+# #>  $ shrinkage        : num 0.1
+# #>  $ bag.fraction     : num 0.5
+# #>
+# #> === $TrainingStep1 ==========================================================
+# #> === TrainingStep object ===
+# #>
+# #> Optimization method: Grid Search
+# #> TunedModelRecipe log:
+# #> # A tibble: 3 × 4
+# #>   name          selected params$PCA$num_comp metrics$`C-Index`
+# #>   <chr>         <lgl>                  <int>             <dbl>
+# #> 1 ModelRecipe.1 TRUE                       1             0.740
+# #> 2 ModelRecipe.2 FALSE                      2             0.720
+# #> 3 ModelRecipe.3 FALSE                      3             0.725
+# #>
+# #> Selected row: 1
+# #> Metric: C-Index = 0.7399641
 
 ## ----using_strategies_SelectedInput1, eval=FALSE------------------------------
-#  ## Preprocessing recipe without PCA steps
-#  rec1 <- recipe(y ~ sex + age + year + thickness + ulcer, data = surv_train) %>%
-#    role_case(stratum = y)
-#  rec2 <- recipe(y ~ sex + age + year, data = surv_train) %>%
-#    role_case(stratum = y)
-#  
-#  ## Selection among recipes with and without PCA steps
-#  sel_rec <- SelectedInput(
-#    rec1,
-#    rec2,
-#    TunedInput(pca_rec, grid = pca_grid)
-#  )
+# ## Preprocessing recipe without PCA steps
+# rec1 <- recipe(y ~ sex + age + year + thickness + ulcer, data = surv_train) %>%
+#   role_case(stratum = y)
+# rec2 <- recipe(y ~ sex + age + year, data = surv_train) %>%
+#   role_case(stratum = y)
+# 
+# ## Selection among recipes with and without PCA steps
+# sel_rec <- SelectedInput(
+#   rec1,
+#   rec2,
+#   TunedInput(pca_rec, grid = pca_grid)
+# )
 
 ## ----using_strategies_SelectedInput2, eval=FALSE------------------------------
-#  ## Input-selected model fit and model
-#  model_fit <- fit(sel_rec, model = GBMModel)
-#  as.MLModel(model_fit)
-#  #> --- MLModel object ----------------------------------------------------------
-#  #>
-#  #> Model name: GBMModel
-#  #> Label: Trained Generalized Boosted Regression
-#  #> Package: gbm
-#  #> Response types: factor, numeric, PoissonVariate, Surv
-#  #> Case weights support: TRUE
-#  #> Missing case removal: response
-#  #> Tuning grid: TRUE
-#  #> Variable importance: TRUE
-#  #>
-#  #> Parameters:
-#  #> List of 5
-#  #>  $ n.trees          : num 100
-#  #>  $ interaction.depth: num 1
-#  #>  $ n.minobsinnode   : num 10
-#  #>  $ shrinkage        : num 0.1
-#  #>  $ bag.fraction     : num 0.5
-#  #>
-#  #> === $TrainingStep1 ==========================================================
-#  #> === TrainingStep object ===
-#  #>
-#  #> Optimization method: Grid Search
-#  #> SelectedModelRecipe log:
-#  #> # A tibble: 3 × 4
-#  #>   name             selected params$id  metrics$`C-Index`
-#  #>   <chr>            <lgl>    <chr>                  <dbl>
-#  #> 1 ModelRecipe.1    FALSE    input.azpi             0.761
-#  #> 2 ModelRecipe.2    FALSE    input.aLHo             0.643
-#  #> 3 TunedModelRecipe TRUE     input.W4KN             0.796
-#  #>
-#  #> Selected row: 3
-#  #> Metric: C-Index = 0.7960841
-#  #>
-#  #> === $TrainingStep2 ==========================================================
-#  #> === TrainingStep object ===
-#  #>
-#  #> Optimization method: Grid Search
-#  #> TunedModelRecipe log:
-#  #> # A tibble: 3 × 4
-#  #>   name          selected params$PCA$num_comp metrics$`C-Index`
-#  #>   <chr>         <lgl>                  <int>             <dbl>
-#  #> 1 ModelRecipe.1 TRUE                       1             0.740
-#  #> 2 ModelRecipe.2 FALSE                      2             0.720
-#  #> 3 ModelRecipe.3 FALSE                      3             0.725
-#  #>
-#  #> Selected row: 1
-#  #> Metric: C-Index = 0.7399641
+# ## Input-selected model fit and model
+# model_fit <- fit(sel_rec, model = GBMModel)
+# as.MLModel(model_fit)
+# #> --- MLModel object ----------------------------------------------------------
+# #>
+# #> Model name: GBMModel
+# #> Label: Trained Generalized Boosted Regression
+# #> Package: gbm
+# #> Response types: factor, numeric, PoissonVariate, Surv
+# #> Case weights support: TRUE
+# #> Missing case removal: response
+# #> Tuning grid: TRUE
+# #> Variable importance: TRUE
+# #>
+# #> Parameters:
+# #> List of 5
+# #>  $ n.trees          : num 100
+# #>  $ interaction.depth: num 1
+# #>  $ n.minobsinnode   : num 10
+# #>  $ shrinkage        : num 0.1
+# #>  $ bag.fraction     : num 0.5
+# #>
+# #> === $TrainingStep1 ==========================================================
+# #> === TrainingStep object ===
+# #>
+# #> Optimization method: Grid Search
+# #> SelectedModelRecipe log:
+# #> # A tibble: 3 × 4
+# #>   name             selected params$id  metrics$`C-Index`
+# #>   <chr>            <lgl>    <chr>                  <dbl>
+# #> 1 ModelRecipe.1    FALSE    input.azpi             0.761
+# #> 2 ModelRecipe.2    FALSE    input.aLHo             0.643
+# #> 3 TunedModelRecipe TRUE     input.W4KN             0.796
+# #>
+# #> Selected row: 3
+# #> Metric: C-Index = 0.7960841
+# #>
+# #> === $TrainingStep2 ==========================================================
+# #> === TrainingStep object ===
+# #>
+# #> Optimization method: Grid Search
+# #> TunedModelRecipe log:
+# #> # A tibble: 3 × 4
+# #>   name          selected params$PCA$num_comp metrics$`C-Index`
+# #>   <chr>         <lgl>                  <int>             <dbl>
+# #> 1 ModelRecipe.1 TRUE                       1             0.740
+# #> 2 ModelRecipe.2 FALSE                      2             0.720
+# #> 3 ModelRecipe.3 FALSE                      3             0.725
+# #>
+# #> Selected row: 1
+# #> Metric: C-Index = 0.7399641
 
 ## ----using_strategies_SelectedInput3, eval=FALSE------------------------------
-#  ## Traditional formulas
-#  fo1 <- y ~ sex + age + year + thickness + ulcer
-#  fo2 <- y ~ sex + age + year
-#  
-#  ## Selection among formulas
-#  sel_fo <- SelectedInput(fo1, fo2, data = surv_train)
-#  
-#  ## Input-selected model fit and final trained model
-#  model_fit <- fit(sel_fo, model = GBMModel)
-#  as.MLModel(model_fit)
+# ## Traditional formulas
+# fo1 <- y ~ sex + age + year + thickness + ulcer
+# fo2 <- y ~ sex + age + year
+# 
+# ## Selection among formulas
+# sel_fo <- SelectedInput(fo1, fo2, data = surv_train)
+# 
+# ## Input-selected model fit and final trained model
+# model_fit <- fit(sel_fo, model = GBMModel)
+# as.MLModel(model_fit)
 
 ## ----using_strategies_SelectedInput4, eval=FALSE------------------------------
-#  ## Different combinations of inputs and models
-#  sel_mfo <- SelectedInput(
-#    ModelSpecification(fo1, data = surv_train, model = CoxModel),
-#    ModelSpecification(fo2, data = surv_train, model = GBMModel)
-#  )
-#  
-#  ## Input-selected model fit and final trained model
-#  model_fit <- fit(sel_mfo)
-#  as.MLModel(model_fit)
+# ## Different combinations of inputs and models
+# sel_mfo <- SelectedInput(
+#   ModelSpecification(fo1, data = surv_train, model = CoxModel),
+#   ModelSpecification(fo2, data = surv_train, model = GBMModel)
+# )
+# 
+# ## Input-selected model fit and final trained model
+# model_fit <- fit(sel_mfo)
+# as.MLModel(model_fit)
 
 ## ----using_strategies_tune, eval=FALSE----------------------------------------
-#  ## Tune over automatic grid of model parameters
-#  model_fit <- fit(surv_fo, data = surv_train,
-#                   model = TunedModel(
-#                     GBMModel,
-#                     grid = 3,
-#                     control = surv_means_control,
-#                     metrics = c("CIndex" = cindex, "RMSE" = rmse)
-#                   ))
-#  (trained_model <- as.MLModel(model_fit))
-#  #> --- MLModel object ----------------------------------------------------------
-#  #>
-#  #> Model name: GBMModel
-#  #> Label: Trained Generalized Boosted Regression
-#  #> Package: gbm
-#  #> Response types: factor, numeric, PoissonVariate, Surv
-#  #> Case weights support: TRUE
-#  #> Missing case removal: response
-#  #> Tuning grid: TRUE
-#  #> Variable importance: TRUE
-#  #>
-#  #> Parameters:
-#  #> List of 5
-#  #>  $ n.trees          : int 50
-#  #>  $ interaction.depth: int 1
-#  #>  $ n.minobsinnode   : num 10
-#  #>  $ shrinkage        : num 0.1
-#  #>  $ bag.fraction     : num 0.5
-#  #>
-#  #> === $TrainingStep1 ==========================================================
-#  #> === TrainingStep object ===
-#  #>
-#  #> Optimization method: Grid Search
-#  #> TunedModel log:
-#  #> # A tibble: 9 × 4
-#  #>   name       selected params$n.trees $interaction.depth metrics$CIndex  $RMSE
-#  #>   <chr>      <lgl>             <int>              <int>          <dbl>  <dbl>
-#  #> 1 GBMModel.1 TRUE                 50                  1          0.765  3869.
-#  #> 2 GBMModel.2 FALSE                50                  2          0.750  5450.
-#  #> 3 GBMModel.3 FALSE                50                  3          0.739  7877.
-#  #> 4 GBMModel.4 FALSE               100                  1          0.746  3919.
-#  #> 5 GBMModel.5 FALSE               100                  2          0.730  5262.
-#  #> 6 GBMModel.6 FALSE               100                  3          0.720 10596.
-#  #> 7 GBMModel.7 FALSE               150                  1          0.726  4167.
-#  #> 8 GBMModel.8 FALSE               150                  2          0.712  5428.
-#  #> 9 GBMModel.9 FALSE               150                  3          0.699 16942.
-#  #>
-#  #> Selected row: 1
-#  #> Metric: CIndex = 0.7647633
+# ## Tune over automatic grid of model parameters
+# model_fit <- fit(surv_fo, data = surv_train,
+#                  model = TunedModel(
+#                    GBMModel,
+#                    grid = 3,
+#                    control = surv_means_control,
+#                    metrics = c("CIndex" = cindex, "RMSE" = rmse)
+#                  ))
+# (trained_model <- as.MLModel(model_fit))
+# #> --- MLModel object ----------------------------------------------------------
+# #>
+# #> Model name: GBMModel
+# #> Label: Trained Generalized Boosted Regression
+# #> Package: gbm
+# #> Response types: factor, numeric, PoissonVariate, Surv
+# #> Case weights support: TRUE
+# #> Missing case removal: response
+# #> Tuning grid: TRUE
+# #> Variable importance: TRUE
+# #>
+# #> Parameters:
+# #> List of 5
+# #>  $ n.trees          : int 50
+# #>  $ interaction.depth: int 1
+# #>  $ n.minobsinnode   : num 10
+# #>  $ shrinkage        : num 0.1
+# #>  $ bag.fraction     : num 0.5
+# #>
+# #> === $TrainingStep1 ==========================================================
+# #> === TrainingStep object ===
+# #>
+# #> Optimization method: Grid Search
+# #> TunedModel log:
+# #> # A tibble: 9 × 4
+# #>   name       selected params$n.trees $interaction.depth metrics$CIndex  $RMSE
+# #>   <chr>      <lgl>             <int>              <int>          <dbl>  <dbl>
+# #> 1 GBMModel.1 TRUE                 50                  1          0.765  3869.
+# #> 2 GBMModel.2 FALSE                50                  2          0.750  5450.
+# #> 3 GBMModel.3 FALSE                50                  3          0.739  7877.
+# #> 4 GBMModel.4 FALSE               100                  1          0.746  3919.
+# #> 5 GBMModel.5 FALSE               100                  2          0.730  5262.
+# #> 6 GBMModel.6 FALSE               100                  3          0.720 10596.
+# #> 7 GBMModel.7 FALSE               150                  1          0.726  4167.
+# #> 8 GBMModel.8 FALSE               150                  2          0.712  5428.
+# #> 9 GBMModel.9 FALSE               150                  3          0.699 16942.
+# #>
+# #> Selected row: 1
+# #> Metric: CIndex = 0.7647633
 
 ## ----using_strategies_tune_grid, eval=FALSE-----------------------------------
-#  ## Tune over randomly sampled grid points
-#  fit(surv_fo, data = surv_train,
-#      model = TunedModel(
-#        GBMModel,
-#        grid = TuningGrid(size = 100, random = 10),
-#        control = surv_means_control
-#      ))
-#  
-#  ## Tune over user-specified grid points
-#  fit(surv_fo, data = surv_train,
-#      model = TunedModel(
-#        GBMModel,
-#        grid = expand_params(n.trees = c(25, 50, 100),
-#                             interaction.depth = 1:3),
-#        control = surv_means_control
-#      ))
+# ## Tune over randomly sampled grid points
+# fit(surv_fo, data = surv_train,
+#     model = TunedModel(
+#       GBMModel,
+#       grid = TuningGrid(size = 100, random = 10),
+#       control = surv_means_control
+#     ))
+# 
+# ## Tune over user-specified grid points
+# fit(surv_fo, data = surv_train,
+#     model = TunedModel(
+#       GBMModel,
+#       grid = expand_params(n.trees = c(25, 50, 100),
+#                            interaction.depth = 1:3),
+#       control = surv_means_control
+#     ))
 
 ## ----using_strategies_tune_summary, eval=FALSE--------------------------------
-#  summary(trained_model)
-#  #> --- $TrainingStep1 ----------------------------------------------------------
-#  #> # A tibble: 9 × 4
-#  #>   name       selected params$n.trees $interaction.depth metrics$CIndex  $RMSE
-#  #>   <chr>      <lgl>             <int>              <int>          <dbl>  <dbl>
-#  #> 1 GBMModel.1 TRUE                 50                  1          0.765  3869.
-#  #> 2 GBMModel.2 FALSE                50                  2          0.750  5450.
-#  #> 3 GBMModel.3 FALSE                50                  3          0.739  7877.
-#  #> 4 GBMModel.4 FALSE               100                  1          0.746  3919.
-#  #> 5 GBMModel.5 FALSE               100                  2          0.730  5262.
-#  #> 6 GBMModel.6 FALSE               100                  3          0.720 10596.
-#  #> 7 GBMModel.7 FALSE               150                  1          0.726  4167.
-#  #> 8 GBMModel.8 FALSE               150                  2          0.712  5428.
-#  #> 9 GBMModel.9 FALSE               150                  3          0.699 16942.
-#  
-#  performance(trained_model) %>% lapply(summary)
-#  #> $TrainingStep1
-#  #> , , Metric = CIndex
-#  #>
-#  #>             Statistic
-#  #> Model             Mean    Median         SD       Min       Max NA
-#  #>   GBMModel.1 0.7647633 0.7630332 0.05151443 0.6497797 0.8632075  0
-#  #>   GBMModel.2 0.7502765 0.7549020 0.04636802 0.6688742 0.8349057  0
-#  #>   GBMModel.3 0.7388766 0.7500000 0.04594197 0.6621622 0.8197425  0
-#  #>   GBMModel.4 0.7463392 0.7601810 0.05087334 0.6497797 0.8160377  0
-#  #>   GBMModel.5 0.7301734 0.7345133 0.04361416 0.6621622 0.7847222  0
-#  #>   GBMModel.6 0.7199483 0.7122642 0.05168649 0.6216216 0.7889908  0
-#  #>   GBMModel.7 0.7263693 0.7385321 0.05069831 0.6351351 0.7896996  0
-#  #>   GBMModel.8 0.7121314 0.7169811 0.05331152 0.6199095 0.7847222  0
-#  #>   GBMModel.9 0.6994678 0.7156863 0.05314909 0.6081081 0.7639485  0
-#  #>
-#  #> , , Metric = RMSE
-#  #>
-#  #>             Statistic
-#  #> Model             Mean    Median        SD      Min       Max NA
-#  #>   GBMModel.1  3868.629  3321.249  1431.839 2123.875  7401.789  0
-#  #>   GBMModel.2  5450.093  4741.129  2438.173 2385.426 11695.273  0
-#  #>   GBMModel.3  7877.487  5827.739  5036.837 4192.463 20009.854  0
-#  #>   GBMModel.4  3919.126  3535.514  1454.999 2373.413  7558.280  0
-#  #>   GBMModel.5  5262.122  5052.969  1900.353 2280.193  8212.727  0
-#  #>   GBMModel.6 10595.888  8308.733  7057.327 4996.420 28610.367  0
-#  #>   GBMModel.7  4167.128  3789.596  1115.371 2587.440  6701.087  0
-#  #>   GBMModel.8  5427.518  6129.309  2313.742 2039.894  9212.369  0
-#  #>   GBMModel.9 16941.696 10865.160 16841.774 4914.743 71150.177  0
+# summary(trained_model)
+# #> --- $TrainingStep1 ----------------------------------------------------------
+# #> # A tibble: 9 × 4
+# #>   name       selected params$n.trees $interaction.depth metrics$CIndex  $RMSE
+# #>   <chr>      <lgl>             <int>              <int>          <dbl>  <dbl>
+# #> 1 GBMModel.1 TRUE                 50                  1          0.765  3869.
+# #> 2 GBMModel.2 FALSE                50                  2          0.750  5450.
+# #> 3 GBMModel.3 FALSE                50                  3          0.739  7877.
+# #> 4 GBMModel.4 FALSE               100                  1          0.746  3919.
+# #> 5 GBMModel.5 FALSE               100                  2          0.730  5262.
+# #> 6 GBMModel.6 FALSE               100                  3          0.720 10596.
+# #> 7 GBMModel.7 FALSE               150                  1          0.726  4167.
+# #> 8 GBMModel.8 FALSE               150                  2          0.712  5428.
+# #> 9 GBMModel.9 FALSE               150                  3          0.699 16942.
+# 
+# performance(trained_model) %>% lapply(summary)
+# #> $TrainingStep1
+# #> , , Metric = CIndex
+# #>
+# #>             Statistic
+# #> Model             Mean    Median         SD       Min       Max NA
+# #>   GBMModel.1 0.7647633 0.7630332 0.05151443 0.6497797 0.8632075  0
+# #>   GBMModel.2 0.7502765 0.7549020 0.04636802 0.6688742 0.8349057  0
+# #>   GBMModel.3 0.7388766 0.7500000 0.04594197 0.6621622 0.8197425  0
+# #>   GBMModel.4 0.7463392 0.7601810 0.05087334 0.6497797 0.8160377  0
+# #>   GBMModel.5 0.7301734 0.7345133 0.04361416 0.6621622 0.7847222  0
+# #>   GBMModel.6 0.7199483 0.7122642 0.05168649 0.6216216 0.7889908  0
+# #>   GBMModel.7 0.7263693 0.7385321 0.05069831 0.6351351 0.7896996  0
+# #>   GBMModel.8 0.7121314 0.7169811 0.05331152 0.6199095 0.7847222  0
+# #>   GBMModel.9 0.6994678 0.7156863 0.05314909 0.6081081 0.7639485  0
+# #>
+# #> , , Metric = RMSE
+# #>
+# #>             Statistic
+# #> Model             Mean    Median        SD      Min       Max NA
+# #>   GBMModel.1  3868.629  3321.249  1431.839 2123.875  7401.789  0
+# #>   GBMModel.2  5450.093  4741.129  2438.173 2385.426 11695.273  0
+# #>   GBMModel.3  7877.487  5827.739  5036.837 4192.463 20009.854  0
+# #>   GBMModel.4  3919.126  3535.514  1454.999 2373.413  7558.280  0
+# #>   GBMModel.5  5262.122  5052.969  1900.353 2280.193  8212.727  0
+# #>   GBMModel.6 10595.888  8308.733  7057.327 4996.420 28610.367  0
+# #>   GBMModel.7  4167.128  3789.596  1115.371 2587.440  6701.087  0
+# #>   GBMModel.8  5427.518  6129.309  2313.742 2039.894  9212.369  0
+# #>   GBMModel.9 16941.696 10865.160 16841.774 4914.743 71150.177  0
 
 ## ----using_strategies_tune_plot, eval=FALSE-----------------------------------
-#  plot(trained_model, type = "line")
-#  #> $TrainStep1
+# plot(trained_model, type = "line")
+# #> $TrainStep1
 
 ## ----using_strategies_tune_png, echo=FALSE------------------------------------
 knitr::include_graphics("img/using_strategies_tune_plot-1.png")
 
 ## ----using_strategies_select, results="hide", eval=FALSE----------------------
-#  ## Model interface for model selection
-#  sel_model <- SelectedModel(
-#    expand_model(GBMModel, n.trees = c(50, 100), interaction.depth = 1:2),
-#    GLMNetModel(lambda = 0.01),
-#    CoxModel,
-#    SurvRegModel
-#  )
-#  
-#  ## Fit the selected model
-#  fit(surv_fo, data = surv_train, model = sel_model)
+# ## Model interface for model selection
+# sel_model <- SelectedModel(
+#   expand_model(GBMModel, n.trees = c(50, 100), interaction.depth = 1:2),
+#   GLMNetModel(lambda = 0.01),
+#   CoxModel,
+#   SurvRegModel
+# )
+# 
+# ## Fit the selected model
+# fit(surv_fo, data = surv_train, model = sel_model)
 
 ## ----using_strategies_select_tune, results="hide", eval=FALSE-----------------
-#  ## Model interface for selection among tuned models
-#  sel_tun_model <- SelectedModel(
-#    TunedModel(GBMModel, control = surv_means_control),
-#    TunedModel(GLMNetModel, control = surv_means_control),
-#    TunedModel(CoxModel, control = surv_means_control)
-#  )
-#  
-#  ## Fit the selected tuned model
-#  fit(surv_fo, data = surv_train, model = sel_tun_model)
+# ## Model interface for selection among tuned models
+# sel_tun_model <- SelectedModel(
+#   TunedModel(GBMModel, control = surv_means_control),
+#   TunedModel(GLMNetModel, control = surv_means_control),
+#   TunedModel(CoxModel, control = surv_means_control)
+# )
+# 
+# ## Fit the selected tuned model
+# fit(surv_fo, data = surv_train, model = sel_tun_model)
 
 ## ----using_strategies_ensembles, eval=FALSE-----------------------------------
-#  ## Stacked regression
-#  stackedmodel <- StackedModel(CoxModel, CForestModel, GLMBoostModel)
-#  res_stacked <- resample(surv_fo, data = surv_train, model = stackedmodel)
-#  summary(res_stacked)
-#  #>          Statistic
-#  #> Metric         Mean   Median        SD       Min       Max NA
-#  #>   C-Index 0.7294869 0.762963 0.1275484 0.5194805 0.8556701  0
-#  
-#  ## Super learner
-#  supermodel <- SuperModel(CoxModel, CForestModel, GLMBoostModel,
-#                           model = GBMModel)
-#  res_super <- resample(surv_fo, data = surv_train, model = supermodel)
-#  summary(res_super)
-#  #>          Statistic
-#  #> Metric         Mean    Median        SD       Min       Max NA
-#  #>   C-Index 0.7534803 0.8325472 0.1243104 0.5748899 0.8454545  0
+# ## Stacked regression
+# stackedmodel <- StackedModel(CoxModel, CForestModel, GLMBoostModel)
+# res_stacked <- resample(surv_fo, data = surv_train, model = stackedmodel)
+# summary(res_stacked)
+# #>          Statistic
+# #> Metric         Mean   Median        SD       Min       Max NA
+# #>   C-Index 0.7294869 0.762963 0.1275484 0.5194805 0.8556701  0
+# 
+# ## Super learner
+# supermodel <- SuperModel(CoxModel, CForestModel, GLMBoostModel,
+#                          model = GBMModel)
+# res_super <- resample(surv_fo, data = surv_train, model = supermodel)
+# summary(res_super)
+# #>          Statistic
+# #> Metric         Mean    Median        SD       Min       Max NA
+# #>   C-Index 0.7534803 0.8325472 0.1243104 0.5748899 0.8454545  0
 
 ## ----using_strategies_methods, eval=FALSE-------------------------------------
-#  ## Preprocessing recipe with PCA steps
-#  pca_rec <- recipe(y ~ ., data = surv_train) %>%
-#    role_case(stratum = y) %>%
-#    step_center(all_predictors()) %>%
-#    step_scale(all_predictors()) %>%
-#    step_pca(all_predictors(), id = "PCA")
-#  
-#  ## Tuning grid of number of PCA components
-#  pca_grid <- expand_steps(
-#    PCA = list(num_comp = 1:3)
-#  )
-#  
-#  ## Input specification
-#  tun_rec <- TunedInput(pca_rec, grid = pca_grid)
-#  
-#  ## Model specification
-#  sel_model <- SelectedModel(
-#    GBMModel,
-#    TunedModel(GBMModel),
-#    StackedModel(CoxModel, TunedModel(CForestModel), TunedModel(GBMModel))
-#  )
-#  
-#  ## Model fit and final trained model
-#  model_fit <- fit(tun_rec, model = sel_model)
-#  as.MLModel(model_fit)
+# ## Preprocessing recipe with PCA steps
+# pca_rec <- recipe(y ~ ., data = surv_train) %>%
+#   role_case(stratum = y) %>%
+#   step_center(all_predictors()) %>%
+#   step_scale(all_predictors()) %>%
+#   step_pca(all_predictors(), id = "PCA")
+# 
+# ## Tuning grid of number of PCA components
+# pca_grid <- expand_steps(
+#   PCA = list(num_comp = 1:3)
+# )
+# 
+# ## Input specification
+# tun_rec <- TunedInput(pca_rec, grid = pca_grid)
+# 
+# ## Model specification
+# sel_model <- SelectedModel(
+#   GBMModel,
+#   TunedModel(GBMModel),
+#   StackedModel(CoxModel, TunedModel(CForestModel), TunedModel(GBMModel))
+# )
+# 
+# ## Model fit and final trained model
+# model_fit <- fit(tun_rec, model = sel_model)
+# as.MLModel(model_fit)
 
 ## ----using_strategies_dag, echo = FALSE, out.width = "100%"-------------------
 knitr::include_graphics("img/FigModelDAG.png")
@@ -946,60 +946,60 @@ knitr::include_graphics("img/FigModelDAG.png")
 knitr::include_graphics("img/FigNestedCV.png")
 
 ## ----using_strategies_methods1, eval=FALSE------------------------------------
-#  #> === $TrainingStep1 ==========================================================
-#  #> === TrainingStep object ===
-#  #>
-#  #> Optimization method: Grid Search
-#  #> TunedModelRecipe log:
-#  #> # A tibble: 3 × 4
-#  #>   name          selected params$PCA$num_comp metrics$`C-Index`
-#  #>   <chr>         <lgl>                  <int>             <dbl>
-#  #> 1 ModelRecipe.1 TRUE                       1             0.741
-#  #> 2 ModelRecipe.2 FALSE                      2             0.730
-#  #> 3 ModelRecipe.3 FALSE                      3             0.702
-#  #>
-#  #> Selected row: 1
-#  #> Metric: C-Index = 0.7405534
+# #> === $TrainingStep1 ==========================================================
+# #> === TrainingStep object ===
+# #>
+# #> Optimization method: Grid Search
+# #> TunedModelRecipe log:
+# #> # A tibble: 3 × 4
+# #>   name          selected params$PCA$num_comp metrics$`C-Index`
+# #>   <chr>         <lgl>                  <int>             <dbl>
+# #> 1 ModelRecipe.1 TRUE                       1             0.741
+# #> 2 ModelRecipe.2 FALSE                      2             0.730
+# #> 3 ModelRecipe.3 FALSE                      3             0.702
+# #>
+# #> Selected row: 1
+# #> Metric: C-Index = 0.7405534
 
 ## ----using_strategies_methods2, eval=FALSE------------------------------------
-#  #> === $TrainingStep2 ==========================================================
-#  #> === TrainingStep object ===
-#  #>
-#  #> Optimization method: Grid Search
-#  #> SelectedModel log:
-#  #> # A tibble: 3 × 4
-#  #>   name         selected params$id  metrics$`C-Index`
-#  #>   <chr>        <lgl>    <chr>                  <dbl>
-#  #> 1 GBMModel     TRUE     model.1mQk             0.740
-#  #> 2 TunedModel   FALSE    model.hRF5             0.735
-#  #> 3 StackedModel FALSE    model.CYj0             0.653
-#  #>
-#  #> Selected row: 1
-#  #> Metric: C-Index = 0.7399641
+# #> === $TrainingStep2 ==========================================================
+# #> === TrainingStep object ===
+# #>
+# #> Optimization method: Grid Search
+# #> SelectedModel log:
+# #> # A tibble: 3 × 4
+# #>   name         selected params$id  metrics$`C-Index`
+# #>   <chr>        <lgl>    <chr>                  <dbl>
+# #> 1 GBMModel     TRUE     model.1mQk             0.740
+# #> 2 TunedModel   FALSE    model.hRF5             0.735
+# #> 3 StackedModel FALSE    model.CYj0             0.653
+# #>
+# #> Selected row: 1
+# #> Metric: C-Index = 0.7399641
 
 ## ----using_strategies_methods0, eval=FALSE------------------------------------
-#  #> --- MLModel object ----------------------------------------------------------
-#  #>
-#  #> Model name: GBMModel
-#  #> Label: Trained Generalized Boosted Regression
-#  #> Package: gbm
-#  #> Response types: factor, numeric, PoissonVariate, Surv
-#  #> Case weights support: TRUE
-#  #> Missing case removal: response
-#  #> Tuning grid: TRUE
-#  #> Variable importance: TRUE
-#  #>
-#  #> Parameters:
-#  #> List of 5
-#  #>  $ n.trees          : num 100
-#  #>  $ interaction.depth: num 1
-#  #>  $ n.minobsinnode   : num 10
-#  #>  $ shrinkage        : num 0.1
-#  #>  $ bag.fraction     : num 0.5
+# #> --- MLModel object ----------------------------------------------------------
+# #>
+# #> Model name: GBMModel
+# #> Label: Trained Generalized Boosted Regression
+# #> Package: gbm
+# #> Response types: factor, numeric, PoissonVariate, Surv
+# #> Case weights support: TRUE
+# #> Missing case removal: response
+# #> Tuning grid: TRUE
+# #> Variable importance: TRUE
+# #>
+# #> Parameters:
+# #> List of 5
+# #>  $ n.trees          : num 100
+# #>  $ interaction.depth: num 1
+# #>  $ n.minobsinnode   : num 10
+# #>  $ shrinkage        : num 0.1
+# #>  $ bag.fraction     : num 0.5
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  ## Generalization performance of the modeling strategy
-#  resample(tun_rec, model = sel_model)
+# ## Generalization performance of the modeling strategy
+# resample(tun_rec, model = sel_model)
 
 ## ----using_settings-----------------------------------------------------------
 ## Change settings

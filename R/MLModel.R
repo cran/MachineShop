@@ -158,22 +158,23 @@ setMethod("initialize", "MLModel",
 
 
 NullModel <- function() {
-  new("NullModel", MLModel(
-    id = "null",
-    name = "NullModel",
-    label = "Null Model",
-    response_types = settings("response_types"),
-    fit = function(...) {
-      throw(Error("No specified model to fit."), call = call("fit"))
-    }
-  ))
+  new("NullModel",
+    MLModel(
+      id = "null",
+      name = "NullModel",
+      label = "Null Model",
+      response_types = settings("response_types"),
+      fit = function(...) {
+        throw(Error("No specified model to fit."), call = call("fit"))
+      }
+    )
+  )
 }
 
 
 update.MLModel <- function(
   object, params = NULL, quote = TRUE, id = object@id, ...
 ) {
-  old_id <- object@id
   if (is.list(params)) {
     new_params <- as(object, "list")
     new_params[names(params)] <- params

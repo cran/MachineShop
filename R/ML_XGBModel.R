@@ -130,6 +130,7 @@ XGBModel <- function(
       formula, data, weights, nrounds, verbose, print_every_n, ...
     ) {
       x <- model.matrix(data, intercept = FALSE)
+      offset <- model.offset(data)
       y <- response(data)
       y_levels <- levels(y)
 
@@ -139,8 +140,10 @@ XGBModel <- function(
           y <- as.numeric(y) - 1
           c("multi:softprob", if (length(y_levels) <= 2) "binary:logistic")
         },
-        "numeric" = c("reg:squarederror", "reg:logistic", "reg:gamma",
-                      "reg:tweedie", "rank:pairwise", "rank:ndcg", "rank:map"),
+        "numeric" = c(
+          "reg:squarederror", "reg:logistic", "reg:gamma", "reg:tweedie",
+          "rank:pairwise", "rank:ndcg", "rank:map"
+        ),
         "PoissonVariate" = "count:poisson",
         "Surv" = {
           throw(check_censoring(y, "right"))
@@ -151,7 +154,7 @@ XGBModel <- function(
       )
       params$objective <- match.arg(params$objective, choices)
 
-      dmat <- xgboost::xgb.DMatrix(x)
+      dmat <- xgboost::xgb.DMatrix(x, base_margin = offset)
       if (params$objective == "survival:aft") {
         y_lower <- y_upper <- y_time
         y_upper[!y_event] <- Inf
@@ -187,21 +190,25 @@ XGBModel <- function(
 
     predict = function(object, newdata, times, .MachineShop, ...) {
       input <- .MachineShop$input
-      newx <- model.matrix(newdata, intercept = FALSE)
-      xgb_predict <- function(newdata = newx, lp = FALSE) {
-        predict(object, newdata = newdata, outputmargin = lp)
+      xgb_predict <- function(newdata, outputmargin = FALSE) {
+        newdmat <- xgboost::xgb.DMatrix(
+          model.matrix(newdata, intercept = FALSE),
+          base_margin = model.offset(newdata)
+        )
+        predict(object, newdata = newdmat, outputmargin = outputmargin)
       }
       switch(object$params$objective,
         "multi:softprob" = {
-          matrix(xgb_predict(), nrow(newx), byrow = TRUE)
+          matrix(xgb_predict(newdata), nrow(newdata), byrow = TRUE)
         },
         "survival:aft" = {
           distr <- object$params$aft_loss_distribution
           if (distr == "normal") distr <- "gaussian"
           if (length(times)) {
-            pred <- xgb_predict(lp = TRUE)
-            log_times <- matrix(log(times), length(pred), length(times),
-                                byrow = TRUE)
+            pred <- xgb_predict(newdata, outputmargin = TRUE)
+            log_times <- matrix(
+              log(times), length(pred), length(times), byrow = TRUE
+            )
             scale <- object$params$aft_loss_distribution_scale
             quants <- (log_times - pred) / scale
             surv_probs <- switch(distr,
@@ -212,17 +219,18 @@ XGBModel <- function(
             )
             SurvProbs(surv_probs, times = times, distr = distr)
           } else {
-            SurvTimes(xgb_predict(), distr = distr)
+            SurvTimes(xgb_predict(newdata), distr = distr)
           }
         },
         "survival:cox" = {
-          x <- model.matrix(PredictorFrame(input), intercept = FALSE)
-          lp <- xgb_predict(x, lp = TRUE)
-          new_lp <- xgb_predict(newx, lp = TRUE)
-          predict(response(input), lp, new_lp, times = times,
-                  weights = case_weights(input), ...)
+          lp <- xgb_predict(PredictorFrame(input), outputmargin = TRUE)
+          new_lp <- xgb_predict(newdata, outputmargin = TRUE)
+          predict(
+            response(input), lp, new_lp, times = times,
+            weights = case_weights(input), ...
+          )
         },
-        xgb_predict()
+        xgb_predict(newdata)
       )
     },
 
@@ -304,8 +312,10 @@ XGBTreeModel <- function(
   grow_policy = "depthwise", max_leaves = 0, max_bin = 256,
   num_parallel_tree = 1, ...
 ) {
-  .XGBModel(name = "XGBTreeModel", label = "Extreme Gradient Boosting (Tree)",
-            model = "gbtree", envir = environment(), ...)
+  .XGBModel(
+    name = "XGBTreeModel", label = "Extreme Gradient Boosting (Tree)",
+    model = "gbtree", envir = environment(), ...
+  )
 }
 
 MLModelFunction(XGBTreeModel) <- NULL
@@ -319,9 +329,10 @@ MLModelFunction(XGBTreeModel) <- NULL
   model@label <- label
 
   gridinfo <- new_gridinfo(
-    param = c("nrounds", "eta", "gamma", "max_depth", "min_child_weight",
-              "subsample", "colsample_bytree", "rate_drop", "skip_drop",
-              "alpha", "lambda"),
+    param = c(
+      "nrounds", "eta", "gamma", "max_depth", "min_child_weight", "subsample",
+      "colsample_bytree", "rate_drop", "skip_drop", "alpha", "lambda"
+    ),
     get_values = c(
       function(n, ...) round_int(seq_range(0, 50, c(1, 1000), n + 1)),
       function(n, ...) seq(0.001, 0.6, length = n),
@@ -338,11 +349,15 @@ MLModelFunction(XGBTreeModel) <- NULL
     default = c(TRUE, rep(FALSE, 2), TRUE, rep(FALSE, 5), rep(TRUE, 2))
   )
   grid_params <- switch(params$booster,
-    "dart" = c("nrounds", "eta", "gamma", "max_depth", "min_child_weight",
-               "subsample", "colsample_bytree", "rate_drop", "skip_drop"),
+    "dart" = c(
+      "nrounds", "eta", "gamma", "max_depth", "min_child_weight", "subsample",
+      "colsample_bytree", "rate_drop", "skip_drop"
+    ),
     "gblinear" = c("nrounds", "alpha", "lambda"),
-    "gbtree" = c("nrounds", "eta", "gamma", "max_depth", "min_child_weight",
-                 "subsample", "colsample_bytree")
+    "gbtree" = c(
+      "nrounds", "eta", "gamma", "max_depth", "min_child_weight", "subsample",
+      "colsample_bytree"
+    )
   )
   model@gridinfo <- gridinfo[gridinfo$param %in% grid_params, ]
 

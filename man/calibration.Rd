@@ -11,6 +11,7 @@ calibration(
   breaks = 10,
   span = 0.75,
   distr = character(),
+  pool = FALSE,
   na.rm = TRUE,
   ...
 )
@@ -40,6 +41,13 @@ estimate the observed survival mean.  Possible values are
 \code{"logistic"}, \code{"loglogistic"}, \code{"lognormal"},
 \code{"rayleigh"}, \code{"t"}, or \code{"weibull"}.  Defaults to the
 distribution that was used in predicting mean survival times.}
+
+\item{pool}{logical indicating whether to compute a single calibration curve
+on predictions pooled over all resampling iterations or to compute them for
+each iteration individually and return the mean calibration curve. Pooling
+can result in large memory allocation errors when fitting smooth curves
+with \code{breaks = NULL}. The current default is changed from versions
+<= 3.8.0 of the package which only implemented \code{pool = TRUE}.}
 
 \item{na.rm}{logical indicating whether to remove observed or predicted
 responses that are \code{NA} when calculating metrics.}

@@ -91,8 +91,11 @@ expand_model <- function(object, ..., random = FALSE) {
 #' @examples
 #' expand_modelgrid(TunedModel(GBMModel, grid = 5))
 #'
+#' \donttest{
+#' ## Requires prior installation of suggested package glmnet to run
 #' expand_modelgrid(TunedModel(GLMNetModel, grid = c(alpha = 5, lambda = 10)),
 #'                  sale_amount ~ ., data = ICHomes)
+#' }
 #'
 #' gbm_grid <- ParameterGrid(
 #'   n.trees = dials::trees(),
@@ -249,9 +252,7 @@ expand_modelgrid.MLModelFunction <- function(model, ...) {
   needs_data <- any(map("logi", has_data_arg, gridinfo$get_values))
   if (needs_data && has_grid(model)) {
     if (!missing(input)) mf <- ModelFrame(input, ..., na.rm = FALSE)
-    if (is.null(mf)) {
-      return(NULL)
-    }
+    if (is.null(mf)) return(NULL)
     y <- response(mf)
     if (!any(is_response(y, model@response_types))) {
       throw(LocalWarning(
@@ -265,8 +266,10 @@ expand_modelgrid.MLModelFunction <- function(model, ...) {
   }
 
   param_names <- unique(gridinfo$param)
-  params <- map(function(fun, n) unique(fun(n = n, data = mf)),
-                gridinfo$get_values, gridinfo$size)
+  params <- map(
+    function(fun, n) unique(fun(n = n, data = mf)),
+    gridinfo$get_values, gridinfo$size
+  )
   params <- map(function(name) {
     unlist(params[gridinfo$param == name], use.names = FALSE)
   }, param_names)
