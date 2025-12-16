@@ -1,8 +1,8 @@
 Package: MachineShop
 Type: Package
 Title: Machine Learning Models and Tools
-Version: 3.9.0
-Date: 2025-06-09
+Version: 3.9.1
+Date: 2025-12-15
 Authors@R: person(c("Brian", "J"), "Smith",
                   email = "brian-j-smith@uiowa.edu",
                   role = c("aut", "cre"))
@@ -33,12 +33,12 @@ Suggests: adabag, BART, bartMachine, C50, censored, cluster,
         mda, ParBayesianOptimization, parsnip (>= 1.1.0), partykit,
         pls, pso, randomForest, randomForestSRC, ranger,
         rBayesianOptimization, rmarkdown, rms, rpart, testthat, tree,
-        xgboost
+        xgboost (>= 3.1.2)
 LazyData: true
 License: GPL-3
 URL: https://brian-j-smith.github.io/MachineShop/
 BugReports: https://github.com/brian-j-smith/MachineShop/issues
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 VignetteBuilder: knitr
 Encoding: UTF-8
 Collate: 'classes.R' 'conditions.R' 'MachineShop-package.R'
@@ -67,6 +67,6 @@ Collate: 'classes.R' 'conditions.R' 'MachineShop-package.R'
         'step_kmedoids.R' 'step_lincomp.R' 'step_sbf.R' 'step_spca.R'
         'summary.R' 'survival.R' 'utils.R' 'varimp.R'
 NeedsCompilation: yes
-Packaged: 2025-06-09 13:21:40 UTC; bjsmith
+Packaged: 2025-12-15 21:59:03 UTC; bjsmith
 Repository: CRAN
-Date/Publication: 2025-06-09 19:10:02 UTC
+Date/Publication: 2025-12-16 06:20:02 UTC
