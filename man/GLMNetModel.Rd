@@ -16,7 +16,9 @@ GLMNetModel(
   maxit = 1e+05,
   type.gaussian = .(if (nvars < 500) "covariance" else "naive"),
   type.logistic = c("Newton", "modified.Newton"),
-  type.multinomial = c("ungrouped", "grouped")
+  type.multinomial = c("ungrouped", "grouped"),
+  cox.ties = NULL,
+  control = list()
 )
 }
 \arguments{
@@ -41,15 +43,23 @@ coefficient.}
 \item{standardize.response}{logical indicating whether to standardize
 \code{"mgaussian"} response variables.}
 
-\item{thresh}{convergence threshold for coordinate descent.}
+\item{thresh}{convergence threshold for coordinate descent [deprecated].}
 
-\item{maxit}{maximum number of passes over the data for all lambda values.}
+\item{maxit}{maximum number of passes over the data for all lambda values
+[deprecated].}
 
 \item{type.gaussian}{algorithm type for guassian models.}
 
 \item{type.logistic}{algorithm type for logistic models.}
 
 \item{type.multinomial}{algorithm type for multinomial models.}
+
+\item{cox.ties}{character string of \code{"efron"} or \code{"breslow"} for
+the method of handling ties in Cox survival models.}
+
+\item{control}{named list of algorithm control parameters, providing
+per-call overrides of session defaults set by
+\code{\link[glmnet]{glmnet.control}}.}
 }
 \value{
 \code{MLModel} class object.

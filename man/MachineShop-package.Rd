@@ -87,4 +87,9 @@ Useful links:
 \author{
 \strong{Maintainer}: Brian J Smith \email{brian-j-smith@uiowa.edu}
 
+Authors:
+\itemize{
+  \item Brian J Smith \email{brian-j-smith@uiowa.edu}
+}
+
 }

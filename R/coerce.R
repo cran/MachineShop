@@ -1,3 +1,10 @@
+setAsMLInput <- function(from, to) {
+  setAs(from, to, function(from) {
+    new(to, asS3(S3Part(from)), id = from@id, params = from@params)
+  })
+}
+
+
 setAsS3Part <- function(from, to) {
   setAs(from, to, function(from) {
     if (!isS4(from)) throw(TypeError(from, "S4 class"))
@@ -322,9 +329,18 @@ as.MLModel.NULL <- function(x, ...) {
 }
 
 
+setAsMLInput("SelectedModelFrame", "ModelFrame")
+
+
 setAs("recipe", "ModelRecipe",
   function(from) ModelRecipe(from)
 )
+
+
+setAsMLInput("SelectedModelRecipe", "ModelRecipe")
+
+
+setAsMLInput("TunedModelRecipe", "ModelRecipe")
 
 
 setAsS3Part("ParameterGrid", "parameters")

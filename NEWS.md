@@ -2,6 +2,17 @@
 
 ## Version Updates
 
+## 3.9.3
+
+* Add `install.packages()` repository for the `ParBayesianOptimization` package to the `set_optim` help example.
+* Fix recipes subclass check error for `step_kmeans()`, `step_kmedoids()`, and `step_spca()`.
+* Fix prediction of `BinomialVariate` success in `GLMNetModel`.
+* Compatibility updates for **glmnet** 5.0.
+  * Deprecate arguments `thresh` and `maxit` in `GLMNetModel()`.
+  * Add arguments `cox.ties` and `control` to `GLMNetModel()`.
+* Compatibility updates for **R** 4.7.0.
+  * Fix `ModelFrame` and `ModelRecipe` errors: $ operator not defined for this S4 class.
+
 ## 3.9.2
 
 * Remove dead Rd links to the **ParBayesianOptimization** package.

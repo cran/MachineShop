@@ -16,11 +16,17 @@
 #'   coefficient.
 #' @param standardize.response logical indicating whether to standardize
 #'   \code{"mgaussian"} response variables.
-#' @param thresh convergence threshold for coordinate descent.
-#' @param maxit maximum number of passes over the data for all lambda values.
+#' @param thresh convergence threshold for coordinate descent [deprecated].
+#' @param maxit maximum number of passes over the data for all lambda values
+#'   [deprecated].
 #' @param type.gaussian algorithm type for guassian models.
 #' @param type.logistic algorithm type for logistic models.
 #' @param type.multinomial algorithm type for multinomial models.
+#' @param cox.ties character string of \code{"efron"} or \code{"breslow"} for
+#'   the method of handling ties in Cox survival models.
+#' @param control named list of algorithm control parameters, providing
+#'   per-call overrides of session defaults set by
+#'   \code{\link[glmnet]{glmnet.control}}.
 #'
 #' @details
 #' \describe{
@@ -52,11 +58,28 @@ GLMNetModel <- function(
   standardize.response = FALSE, thresh = 1e-7, maxit = 100000,
   type.gaussian = .(if (nvars < 500) "covariance" else "naive"),
   type.logistic = c("Newton", "modified.Newton"),
-  type.multinomial = c("ungrouped", "grouped")
+  type.multinomial = c("ungrouped", "grouped"), cox.ties = NULL,
+  control = list()
 ) {
 
   type.logistic <- match.arg(type.logistic)
   type.multinomial <- match.arg(type.multinomial)
+
+  if (!missing(thresh)) {
+    throw(DeprecatedCondition(
+      "Argument 'thresh'", "'control = list(thresh = ...)'"
+    ))
+  }
+  if (is.null(control$thresh)) control$thresh <- thresh
+  remove(thresh)
+
+  if (!missing(maxit)) {
+    throw(DeprecatedCondition(
+      "Argument 'maxit'", "'control = list(maxit = ...)'"
+    ))
+  }
+  if (is.null(control$maxit)) control$maxit <- maxit
+  remove(maxit)
 
   MLModel(
 
@@ -103,7 +126,10 @@ GLMNetModel <- function(
       y <- response(data)
       if (is.null(family)) {
         family <- switch_class(y,
-          "BinomialVariate" = "binomial",
+          "BinomialVariate" = {
+            y <- y[, c("Failure", "Success")]
+            "binomial"
+          },
           "factor" = if (nlevels(y) <= 2) "binomial" else "multinomial",
           "matrix" = "mgaussian",
           "numeric" = "gaussian",
@@ -111,10 +137,18 @@ GLMNetModel <- function(
           "Surv" = "cox"
         )
       }
-      glmnet::glmnet(
+      args <- list(
         x, y, family = family, weights = weights, offset = offset,
         nlambda = nlambda, ...
       )
+      if (packageVersion("glmnet") < "5.0") {
+        args$cox.ties <- NULL
+        for (name in c("thresh", "dfmax", "pmax", "maxit")) {
+          args[[name]] <- args$control[[name]]
+        }
+        args$control <- NULL
+      }
+      do.call(glmnet::glmnet, args)
     },
 
     predict = function(object, newdata, .MachineShop, ...) {
