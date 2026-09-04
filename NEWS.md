@@ -2,6 +2,10 @@
 
 ## Version Updates
 
+## 3.9.4
+
+* Remove import of defunct **mboost** function `bns()`.
+
 ## 3.9.3
 
 * Add `install.packages()` repository for the `ParBayesianOptimization` package to the `set_optim` help example.

@@ -83,9 +83,7 @@ GAMBoostModel <- function(
       attach_objects(list(
         bbs = mboost::bbs,
         bols = mboost::bols,
-        btree = mboost::btree,
-        bbs = mboost::bbs,
-        bns = mboost::bns
+        btree = mboost::btree
       ), name = "mboost_exports")
 
       if (is.null(family)) {

@@ -1,6 +1,6 @@
-ba6e8943a09c9be273921173eb4a4d8f *DESCRIPTION
+07d63bf6cab5a8781319120540f4ec4d *DESCRIPTION
 13569718e11c6e5519a1c074d0a5a8b2 *NAMESPACE
-6208ad4b53f2ce2be8c745687c98a732 *NEWS.md
+b5271fabf39735adc7408d26f13939da *NEWS.md
 691a2bac88260f20ffb03ed619f7e33b *R/MLControl.R
 1654887bda121ff7ca4c029b067181e1 *R/MLInput.R
 bdfb2065226a444ab70edfffbbb88c24 *R/MLMetric.R
@@ -16,7 +16,7 @@ cf655256e763a994bb774224032c9215 *R/ML_CForestModel.R
 9bfec952925c9dab86a1dbe59a93bc68 *R/ML_CoxModel.R
 ec17e031df669906b89e2c0c58eab02c *R/ML_EarthModel.R
 c181b8dad88c36db47c521f5a242030a *R/ML_FDAModel.R
-c7fd7fb9b0a8e2f82fb4500e60f2ffe5 *R/ML_GAMBoostModel.R
+6e9c92e79ec46140f91c9e75efebedd6 *R/ML_GAMBoostModel.R
 eeddfb1522f7b97bacd3407ef48ddcdc *R/ML_GBMModel.R
 19b5d4680e1caa47e62b9e612b1625e4 *R/ML_GLMBoostModel.R
 5cce58761a75b818a7e4bb73e9539bed *R/ML_GLMModel.R
@@ -92,7 +92,7 @@ fba5680d828323929ab20e4aa222d17e *R/survival.R
 42b1c48056a5ed45bcd29757432d840c *R/utils.R
 660090a2be44438026a2e472950888bf *R/varimp.R
 e8abba2d56cd37463a61c422e011e53e *README.md
-23ddc9d824fa694940d47c92c92aefaa *build/vignette.rds
+dee9001afb24b054157ee4355f269c56 *build/vignette.rds
 c26f6cfd0062113b7e0da8de106b57c8 *data/ICHomes.RData
 35e49dfbe6b7474fb40eee2174f07f32 *inst/CITATION
 0d290de4c84373adf6b18bf235c7a608 *inst/doc/MLModels.R
@@ -100,7 +100,7 @@ ad3124ecec0cb5484e67f57cd01b348e *inst/doc/MLModels.Rmd
 a46090976ed9f1af291863a068091a3a *inst/doc/MLModels.html
 271bedd7de63d4266e93feced9081dd7 *inst/doc/UserGuide.R
 32a4e500b0cc6fa9ce8dc3440790806d *inst/doc/UserGuide.Rmd
-2ecd583a08d6c9b8d4d658bbdd9c37ea *inst/doc/UserGuide.html
+198700a35d801a3e90f03a4911a01d30 *inst/doc/UserGuide.html
 9da886c4e6538bfc8b96a6669dd97817 *man/AdaBagModel.Rd
 bd9ba5e348d99668c866ed45d543d849 *man/AdaBoostModel.Rd
 9b510cad0f67f6505a036a5af41cbf8c *man/BARTMachineModel.Rd
